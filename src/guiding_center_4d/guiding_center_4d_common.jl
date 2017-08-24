@@ -37,6 +37,84 @@ function ω(t, q, Β)
 end
 
 
+function D²ϑ₁(t, q, D²ϑ)
+    D²ϑ[1,1] = d²A₁dx₁dx₁(t,q) + u(t,q) * d²b₁dx₁dx₁(t,q)
+    D²ϑ[1,2] = d²A₁dx₁dx₂(t,q) + u(t,q) * d²b₁dx₁dx₂(t,q)
+    D²ϑ[1,3] = d²A₁dx₁dx₃(t,q) + u(t,q) * d²b₁dx₁dx₃(t,q)
+    D²ϑ[1,4] = db₁dx₁(t,q)
+
+    D²ϑ[2,1] = d²A₁dx₂dx₁(t,q) + u(t,q) * d²b₁dx₂dx₁(t,q)
+    D²ϑ[2,2] = d²A₁dx₂dx₂(t,q) + u(t,q) * d²b₁dx₂dx₂(t,q)
+    D²ϑ[2,3] = d²A₁dx₂dx₃(t,q) + u(t,q) * d²b₁dx₂dx₃(t,q)
+    D²ϑ[2,4] = db₁dx₂(t,q)
+
+    D²ϑ[2,1] = d²A₁dx₃dx₁(t,q) + u(t,q) * d²b₁dx₃dx₁(t,q)
+    D²ϑ[2,2] = d²A₁dx₃dx₂(t,q) + u(t,q) * d²b₁dx₃dx₂(t,q)
+    D²ϑ[2,3] = d²A₁dx₃dx₃(t,q) + u(t,q) * d²b₁dx₃dx₃(t,q)
+    D²ϑ[2,4] = db₁dx₃(t,q)
+
+    D²ϑ[4,1] = db₁dx₁(t,q)
+    D²ϑ[4,2] = db₁dx₂(t,q)
+    D²ϑ[4,3] = db₁dx₃(t,q)
+    D²ϑ[4,4] = 0
+
+    nothing
+end
+
+function D²ϑ₂(t, q, D²ϑ)
+    D²ϑ[1,1] = d²A₂dx₁dx₁(t,q) + u(t,q) * d²b₂dx₁dx₁(t,q)
+    D²ϑ[1,2] = d²A₂dx₁dx₂(t,q) + u(t,q) * d²b₂dx₁dx₂(t,q)
+    D²ϑ[1,3] = d²A₂dx₁dx₃(t,q) + u(t,q) * d²b₂dx₁dx₃(t,q)
+    D²ϑ[1,4] = db₂dx₁(t,q)
+
+    D²ϑ[2,1] = d²A₂dx₂dx₁(t,q) + u(t,q) * d²b₂dx₂dx₁(t,q)
+    D²ϑ[2,2] = d²A₂dx₂dx₂(t,q) + u(t,q) * d²b₂dx₂dx₂(t,q)
+    D²ϑ[2,3] = d²A₂dx₂dx₃(t,q) + u(t,q) * d²b₂dx₂dx₃(t,q)
+    D²ϑ[2,4] = db₂dx₂(t,q)
+
+    D²ϑ[2,1] = d²A₂dx₃dx₁(t,q) + u(t,q) * d²b₂dx₃dx₁(t,q)
+    D²ϑ[2,2] = d²A₂dx₃dx₂(t,q) + u(t,q) * d²b₂dx₃dx₂(t,q)
+    D²ϑ[2,3] = d²A₂dx₃dx₃(t,q) + u(t,q) * d²b₂dx₃dx₃(t,q)
+    D²ϑ[2,4] = db₂dx₃(t,q)
+
+    D²ϑ[4,1] = db₂dx₁(t,q)
+    D²ϑ[4,2] = db₂dx₂(t,q)
+    D²ϑ[4,3] = db₂dx₃(t,q)
+    D²ϑ[4,4] = 0
+
+    nothing
+end
+
+function D²ϑ₃(t, q, D²ϑ)
+    D²ϑ[1,1] = d²A₃dx₁dx₁(t,q) + u(t,q) * d²b₃dx₁dx₁(t,q)
+    D²ϑ[1,2] = d²A₃dx₁dx₂(t,q) + u(t,q) * d²b₃dx₁dx₂(t,q)
+    D²ϑ[1,3] = d²A₃dx₁dx₃(t,q) + u(t,q) * d²b₃dx₁dx₃(t,q)
+    D²ϑ[1,4] = db₃dx₁(t,q)
+
+    D²ϑ[2,1] = d²A₃dx₂dx₁(t,q) + u(t,q) * d²b₃dx₂dx₁(t,q)
+    D²ϑ[2,2] = d²A₃dx₂dx₂(t,q) + u(t,q) * d²b₃dx₂dx₂(t,q)
+    D²ϑ[2,3] = d²A₃dx₂dx₃(t,q) + u(t,q) * d²b₃dx₂dx₃(t,q)
+    D²ϑ[2,4] = db₃dx₂(t,q)
+
+    D²ϑ[2,1] = d²A₃dx₃dx₁(t,q) + u(t,q) * d²b₃dx₃dx₁(t,q)
+    D²ϑ[2,2] = d²A₃dx₃dx₂(t,q) + u(t,q) * d²b₃dx₃dx₂(t,q)
+    D²ϑ[2,3] = d²A₃dx₃dx₃(t,q) + u(t,q) * d²b₃dx₃dx₃(t,q)
+    D²ϑ[2,4] = db₃dx₃(t,q)
+
+    D²ϑ[4,1] = db₃dx₁(t,q)
+    D²ϑ[4,2] = db₃dx₂(t,q)
+    D²ϑ[4,3] = db₃dx₃(t,q)
+    D²ϑ[4,4] = 0
+
+    nothing
+end
+
+function D²ϑ₄(t, q, D²ϑ)
+    D²ϑ .= 0
+    nothing
+end
+
+
 function dα(t, q, dα)
     dα[1,1] = dα1d1(t,q)
     dα[1,2] = dα1d2(t,q)
@@ -200,23 +278,52 @@ function guiding_center_4d_iode_v(t, q, p, v)
 end
 
 
-function guiding_center_4d_p₀(q₀)
+function guiding_center_4d_p₀(q₀, t₀=0)
     p₀ = zeros(q₀)
 
     if ndims(q₀) == 1
-        α(0, q₀, p₀)
+        α(t₀, q₀, p₀)
     else
         for i in 1:size(q₀,2)
             tq = zeros(eltype(q₀), size(q₀,1))
             tp = zeros(eltype(p₀), size(p₀,1))
             simd_copy_xy_first!(tq, q₀, i)
-            α(0, tq, tp)
+            α(t₀, tq, tp)
             simd_copy_yx_first!(tp, p₀, i)
         end
     end
     p₀
 end
 
+
+function guiding_center_4d_λ(q::Vector{DT}, λ::Vector{DT}, Ω::Matrix{DT}, dh::Vector{DT}, Δt::DT, t::DT) where {DT}
+    dH(t, q, dh)
+    ω(t, q, Ω)
+    simd_mult!(λ, inv(Ω), dh)
+    # simd_scale!(λ, 1/Δt)
+    nothing
+end
+
+
+function guiding_center_4d_λ₀(q₀::Array{DT}, Δt::DT=1., t₀::DT=0.) where {DT}
+    D  = size(q₀, 1)
+    λ₀ = zeros(q₀)
+    q  = zeros(DT, D)
+    λ  = zeros(DT, D)
+    Ω  = zeros(DT, D, D)
+    dh = zeros(DT, D)
+
+    if ndims(q₀) == 1
+        guiding_center_4d_λ(q₀, λ₀, Ω, dh, Δt, t₀)
+    else
+        for i in 1:size(q₀,2)
+            simd_copy_xy_first!(q, q₀, i)
+            guiding_center_4d_λ(q, λ, Ω, dh, Δt, t₀)
+            simd_copy_yx_first!(λ, λ₀, i)
+        end
+    end
+    λ₀
+end
 
 
 # function guiding_center_4d_iode_double(q₀=q₀; periodic=true)
@@ -237,6 +344,20 @@ function guiding_center_4d_iode(q₀=q₀; periodic=true)
         IODE(guiding_center_4d_iode_α, guiding_center_4d_iode_f,
              guiding_center_4d_iode_g, guiding_center_4d_iode_v,
              q₀, p₀)
+    end
+end
+
+function guiding_center_4d_iode_λ(q₀=q₀; periodic=true)
+    p₀ = guiding_center_4d_p₀(q₀)
+    λ₀ = guiding_center_4d_λ₀(q₀)
+    if periodic
+        IODE(guiding_center_4d_iode_α, guiding_center_4d_iode_f,
+             guiding_center_4d_iode_g, guiding_center_4d_iode_v,
+             q₀, p₀, λ₀; periodicity=guiding_center_4d_periodicity(q₀))
+    else
+        IODE(guiding_center_4d_iode_α, guiding_center_4d_iode_f,
+             guiding_center_4d_iode_g, guiding_center_4d_iode_v,
+             q₀, p₀, λ₀)
     end
 end
 

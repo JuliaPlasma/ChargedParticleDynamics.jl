@@ -2,7 +2,7 @@ module TokamakFastBarelyTrapped
 
     import MagneticEquilibria
 
-    export guiding_center_4d_ode, guiding_center_4d_iode,
+    export guiding_center_4d_ode, guiding_center_4d_iode, guiding_center_4d_iode_λ,
            hamiltonian, toroidal_momentum, u, ω, α, α1, α2, α3, α4, dα, β, β1, β2, β3, b1, b2, b3, dH
 
     # Δt=3, nt=100

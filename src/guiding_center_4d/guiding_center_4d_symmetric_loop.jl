@@ -16,46 +16,32 @@ module SymmetricLoop
 
 
     function f_loop(s)
-        z0 = 0.0
-        u0 = 0.5
-        u1 = 0.01
         rx = 0.5
         ry = 0.3
-        rz = 0.2
+        z0 = 0.0
+        z1 = 0.1
+        u0 = 5E-1
+        u1 = 5E-2
 
         xs = rx*cos(2π*s)
         ys = ry*sin(2π*s)
-        # zs = rz*sin(2π*s)
-        # us = u0 + u1 * cos(2π*s)
+        zs = z0 + z1 * sin(2π*s)
+        us = u0 + u1 * cos(2π*s)
 
-        qs = [xs, ys, z0, u0]
-        # qs = [xs, ys, zs, u0]
-        # qs = [xs, ys, zs, us]
+        qs = [xs, ys, zs, us]
 
         return qs
     end
 
-    # function f_loop(i, n)
-    #     f_loop(i/n)
-    # end
-    #
-    # function get_initial_conditions(n)
-    #     q₀ = zeros(4,n)
-    #
-    #     for i in 1:size(q₀,2)
-    #         q₀[:,i] = f_loop(i,n)
-    #     end
-    #
-    #     return q₀
-    # end
-
 
     function guiding_center_4d_ode_poincare_invariant_1st(Δt, nloop, ntime, nsave, DT=Float64)
-        PoincareInvariant1st(guiding_center_4d_ode, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
+        guiding_center_4d_ode_init(q₀) = guiding_center_4d_ode(q₀; periodic=false)
+        PoincareInvariant1st(guiding_center_4d_ode_init, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
     end
 
     function guiding_center_4d_iode_poincare_invariant_1st(Δt, nloop, ntime, nsave, DT=Float64)
-        PoincareInvariant1st(guiding_center_4d_iode, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
+        guiding_center_4d_iode_init(q₀) = guiding_center_4d_iode(q₀; periodic=false)
+        PoincareInvariant1st(guiding_center_4d_iode_init, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
     end
 
 end

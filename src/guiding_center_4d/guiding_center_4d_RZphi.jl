@@ -21,15 +21,15 @@ end
 
 
 function dRdx₁(t,q)
-    1.
+    one(eltype(q))
 end
 
 function dRdx₂(t,q)
-    0.
+    zero(eltype(q))
 end
 
 function dRdx₃(t,q)
-    0.
+    zero(eltype(q))
 end
 
 
@@ -99,9 +99,9 @@ function dα3d4(t, q)
 end
 
 
-function compute_parallel_velocity(t,x,pᵤ)
-    - (pᵤ + 0.5 * ( x[2]^2 + (R₀ - x[1])^2 ) * B₀ / q) * B(t,x) / (B₀ * R₀)
-end
+# function compute_parallel_velocity(t,x,pᵤ)
+#     - (pᵤ + 0.5 * ( x[2]^2 + (R₀ - x[1])^2 ) * B₀ / q) * B(t,x) / (B₀ * R₀)
+# end
 
 
-include("guiding_center_4d_general.jl")
+include("guiding_center_4d_common.jl")
