@@ -19,9 +19,9 @@ function α(t, q, p)
     p[1] = α1(t,q)
     p[2] = α2(t,q)
     p[3] = α3(t,q)
-    p[4] = zero(eltype(q₀))
-    p[5] = zero(eltype(q₀))
-    p[6] = zero(eltype(q₀))
+    p[4] = zero(eltype(q))
+    p[5] = zero(eltype(q))
+    p[6] = zero(eltype(q))
     nothing
 end
 
