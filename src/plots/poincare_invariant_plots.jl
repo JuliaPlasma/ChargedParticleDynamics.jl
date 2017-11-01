@@ -1,31 +1,11 @@
 
-using PyPlot
 
-
-function plot_integral_error(t::Vector, I::Vector, filename; plot_title=nothing)
+function plot_poincare_error(t::Vector, I::Vector, filename; plot_title=nothing)
     if plot_title == nothing
         plot_title=L"\Delta I"
     end
 
-    function power10ticks(x, pos)
-        if x == 0
-            return "\$ 0 \$"
-        end
-
-        # xpower      = log10(x)
-        xpower      = log10(t[end])
-        exponent    = @sprintf("%2d",   floor(Int64, xpower))
-        coefficient = @sprintf("%2.1f", x / (10^floor(xpower)))
-
-        return "\$ $coefficient \\times 10^\{ $exponent \} \$"
-    end
-
-    xf = matplotlib[:ticker][:FuncFormatter](power10ticks)
-
-    yf = matplotlib[:ticker][:ScalarFormatter]()
-    yf[:set_powerlimits]((-1,+1))
-    yf[:set_scientific](true)
-    yf[:set_useOffset](true)
+    xf, yf = get_default_formatter(t)
 
     I_error = (I - I[1]) / I[1]
 
@@ -45,30 +25,12 @@ function plot_integral_error(t::Vector, I::Vector, filename; plot_title=nothing)
 end
 
 
-function plot_integral_error(t::Vector, I::Vector, K::Vector, Δt, filename; plot_title=nothing)
+function plot_poincare_error(t::Vector, I::Vector, K::Vector, Δt, filename; plot_title=nothing)
     if plot_title == nothing
         plot_title=L"\Delta I"
     end
 
-    function power10ticks(x, pos)
-        if x == 0
-            return "\$ 0 \$"
-        end
-
-        # xpower      = log10(x)
-        xpower      = log10(t[end])
-        exponent    = @sprintf("%2d",   floor(Int64, xpower))
-        coefficient = @sprintf("%2.1f", x / (10^floor(xpower)))
-
-        return "\$ $coefficient \\times 10^\{ $exponent \} \$"
-    end
-
-    xf = matplotlib[:ticker][:FuncFormatter](power10ticks)
-
-    yf = matplotlib[:ticker][:ScalarFormatter]()
-    yf[:set_powerlimits]((-1,+1))
-    yf[:set_scientific](true)
-    yf[:set_useOffset](true)
+    xf, yf = get_default_formatter(t)
 
     I_error  = zeros(I)
     I_error .= (I .- I[1]) .- Δt^2 .* (K .- K[1])
