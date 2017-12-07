@@ -12,26 +12,26 @@ function α(t, q, p)
 end
 
 
-function ω(t, q, Β)
-    Β[1,1] = 0
-    Β[1,2] = dα1d2(t,q) - dα2d1(t,q)
-    Β[1,3] = dα1d3(t,q) - dα3d1(t,q)
-    Β[1,4] = dα1d4(t,q)
+function ω(t, q, Ω)
+    Ω[1,1] = 0
+    Ω[1,2] = dα1d2(t,q) - dα2d1(t,q)
+    Ω[1,3] = dα1d3(t,q) - dα3d1(t,q)
+    Ω[1,4] = dα1d4(t,q)
 
-    Β[2,1] = dα2d1(t,q) - dα1d2(t,q)
-    Β[2,2] = 0
-    Β[2,3] = dα2d3(t,q) - dα3d2(t,q)
-    Β[2,4] = dα2d4(t,q)
+    Ω[2,1] = dα2d1(t,q) - dα1d2(t,q)
+    Ω[2,2] = 0
+    Ω[2,3] = dα2d3(t,q) - dα3d2(t,q)
+    Ω[2,4] = dα2d4(t,q)
 
-    Β[3,1] = dα3d1(t,q) - dα1d3(t,q)
-    Β[3,2] = dα3d2(t,q) - dα2d3(t,q)
-    Β[3,3] = 0
-    Β[3,4] = dα3d4(t,q)
+    Ω[3,1] = dα3d1(t,q) - dα1d3(t,q)
+    Ω[3,2] = dα3d2(t,q) - dα2d3(t,q)
+    Ω[3,3] = 0
+    Ω[3,4] = dα3d4(t,q)
 
-    Β[4,1] =-dα1d4(t,q)
-    Β[4,2] =-dα2d4(t,q)
-    Β[4,3] =-dα3d4(t,q)
-    Β[4,4] = 0
+    Ω[4,1] = dα4d1(t,q) - dα1d4(t,q)
+    Ω[4,2] = dα4d2(t,q) - dα2d4(t,q)
+    Ω[4,3] = dα4d3(t,q) - dα3d4(t,q)
+    Ω[4,4] = 0
 
     nothing
 end
@@ -222,8 +222,6 @@ function guiding_center_4d_ode_v(t, q, v)
     local lB₁ = B₁(t,q)
     local lB₂ = B₂(t,q)
     local lB₃ = B₃(t,q)
-    # local lB  = B(t,q)
-    # local lB  = lB₁ * dα1d4(t,q) + lB₂ * dα2d4(t,q) + lB₃ * dα3d4(t,q)
 
     local lβ₁ = β1(t,q)
     local lβ₂ = β2(t,q)

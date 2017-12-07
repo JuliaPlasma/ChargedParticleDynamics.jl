@@ -1,4 +1,4 @@
-module TokamakSurface
+module TokamakSlowSurface
 
     export guiding_center_4d_surface_ode, guiding_center_4d_surface_iode,
            hamiltonian, toroidal_momentum, u, α, α1, α2, α3, α4, β, β1, β2, β3, b1, b2, b3
@@ -49,6 +49,6 @@ module TokamakSurface
     end
 
 
-    include("guiding_center_4d_RZphi.jl")
+    include("guiding_center_4d_coords_RZphi.jl")
 
 end

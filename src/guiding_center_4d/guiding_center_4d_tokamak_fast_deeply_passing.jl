@@ -1,3 +1,6 @@
+"""
+Fast deeply passing particle in analytic, axisymmetric tokamak equilibrium.
+"""
 module TokamakFastDeeplyPassing
 
     import MagneticEquilibria
@@ -16,6 +19,6 @@ module TokamakFastDeeplyPassing
 
     MagneticEquilibria.load_equilibrium(MagneticEquilibria.AxisymmetricTokamak(R₀, B₀, q); target_module=TokamakFastDeeplyPassing)
 
-    include("guiding_center_4d_RZphi.jl")
+    include("guiding_center_4d_coords_RZphi.jl")
 
 end

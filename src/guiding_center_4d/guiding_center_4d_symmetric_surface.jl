@@ -1,3 +1,27 @@
+"""
+Second Poincaré invariant for a guiding center particle in an axisymmetric
+magnetic field of the form ``B(x,y,z) = B_0 (1 + x^2 + y^2) e_z``.
+
+The surface for the invariant is initialized by
+```math
+q (\\tau) = \\begin{pmatrix}
+r_0 (\\sigma - 0.5) \\\\
+r_0 (\\tau   - 0.5) \\\\
+z_0 + z_1 \\cos (2\\pi \\sigma) \\cos (2\\pi \\tau) \\\\
+u_0 + u_1 \\sin (2\\pi \\sigma) \\sin (2\\pi \\tau) \\\\
+\\end{pmatrix}
+```
+with parameters
+```math
+B_0 = 1, \\quad
+r_0 = 0.5, \\quad
+z_0 = 0.0, \\quad
+z_1 = 0.1, \\quad
+u_0 = 0.5, \\quad
+u_1 = 0.01, \\quad
+\\mu = 0.01 .
+```
+"""
 module SymmetricSurface
 
     using GeometricIntegrators
@@ -13,7 +37,7 @@ module SymmetricSurface
 
     load_equilibrium(SymmetricQuadratic(B₀); target_module=SymmetricSurface)
 
-    include("guiding_center_4d_xyz.jl")
+    include("guiding_center_4d_coords_xyz.jl")
 
 
     function f_surface(s,t)

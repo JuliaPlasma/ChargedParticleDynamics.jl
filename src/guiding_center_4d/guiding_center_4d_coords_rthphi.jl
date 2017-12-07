@@ -1,3 +1,4 @@
+# Common functions for (r,θ,ϕ) tokamak coordinates.
 
 using GeometricIntegrators.Equations
 using GeometricIntegrators.Utils

@@ -46,6 +46,6 @@ module UniformLoop
     end
 
 
-    include("guiding_center_4d_xyz.jl")
+    include("guiding_center_4d_coords_xyz.jl")
 
 end

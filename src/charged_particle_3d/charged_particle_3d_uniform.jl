@@ -1,3 +1,7 @@
+"""
+Charged Particle in an uniform magnetic field of the form
+``B(x,y,z) = B_0 e_z``.
+"""
 module ChargedParticle3dUniform
 
     export charged_particle_3d_iode, hamiltonian, angular_momentum

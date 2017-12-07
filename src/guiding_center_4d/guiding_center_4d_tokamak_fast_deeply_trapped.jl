@@ -1,3 +1,6 @@
+"""
+Fast deeply trapped particle in analytic, axisymmetric tokamak equilibrium.
+"""
 module TokamakFastDeeplyTrapped
 
     import MagneticEquilibria
@@ -16,6 +19,6 @@ module TokamakFastDeeplyTrapped
 
     MagneticEquilibria.load_equilibrium(MagneticEquilibria.AxisymmetricTokamak(R₀, B₀, q); target_module=TokamakFastDeeplyTrapped)
 
-    include("guiding_center_4d_RZphi.jl")
+    include("guiding_center_4d_coords_RZphi.jl")
 
 end

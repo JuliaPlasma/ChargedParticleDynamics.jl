@@ -1,3 +1,4 @@
+# Common functions for cartesian (x,y,z) coordinates.
 
 using GeometricIntegrators.Equations
 using GeometricIntegrators.Utils

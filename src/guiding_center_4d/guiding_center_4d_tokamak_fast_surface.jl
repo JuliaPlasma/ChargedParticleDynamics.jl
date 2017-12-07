@@ -14,7 +14,7 @@ module TokamakFastSurface
 
     load_equilibrium(MagneticEquilibria.AxisymmetricTokamak(R₀, B₀, q); target_module=TokamakFastSurface)
 
-    include("guiding_center_4d_RZphi.jl")
+    include("guiding_center_4d_coords_RZphi.jl")
 
 
     function f_surface(s,t)

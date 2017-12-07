@@ -1,3 +1,28 @@
+"""
+First Poincaré invariant for a guiding center particle in an axisymmetric
+magnetic field of the form ``B(x,y,z) = B_0 (1 + x^2 + y^2) e_z``.
+
+The loop for the invariant is initialized by
+```math
+q (\\tau) = \\begin{pmatrix}
+r_x \\cos (2\\pi \\tau) \\\\
+r_y \\sin (2\\pi \\tau) \\\\
+z_0 + z_1 \\sin (2\\pi \\tau) \\\\
+u_0 + u_1 \\cos (2\\pi \\tau) \\\\
+\\end{pmatrix}
+```
+with parameters
+```math
+B_0 = 1, \\quad
+r_x = 0.5, \\quad
+r_y = 0.3, \\quad
+z_0 = 0.0, \\quad
+z_1 = 0.1, \\quad
+u_0 = 0.5, \\quad
+u_1 = 0.05, \\quad
+\\mu = 0.01 .
+```
+"""
 module SymmetricLoop
 
     using GeometricIntegrators
@@ -12,7 +37,7 @@ module SymmetricLoop
 
     load_equilibrium(SymmetricQuadratic(B₀); target_module=SymmetricLoop)
 
-    include("guiding_center_4d_xyz.jl")
+    include("guiding_center_4d_coords_xyz.jl")
 
 
     function f_loop(s)
