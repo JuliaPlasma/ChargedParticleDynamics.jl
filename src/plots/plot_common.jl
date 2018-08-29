@@ -1,4 +1,6 @@
 
+using Printf
+
 function power10ticks(x, xmax, pos)
     if x == 0
         return "\$ 0 \$"
@@ -7,8 +9,9 @@ function power10ticks(x, xmax, pos)
     xpower      = log10(xmax)
     exponent    = @sprintf("%2d",   floor(Int64, xpower))
     coefficient = @sprintf("%2.1f", x / (10^floor(xpower)))
+    ticks       = "\$ $coefficient \\times 10^{ $exponent } \$"
 
-    return "\$ $coefficient \\times 10^\{ $exponent \} \$"
+    return ticks
 end
 
 

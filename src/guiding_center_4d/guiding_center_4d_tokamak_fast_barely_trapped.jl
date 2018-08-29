@@ -17,7 +17,7 @@ module TokamakFastBarelyTrapped
     const μ  = 1E-2
     const q₀ = [2.5, 0., 0., 3.375E-1]
 
-    MagneticEquilibria.load_equilibrium(MagneticEquilibria.AxisymmetricTokamak(R₀, B₀, q); target_module=TokamakFastBarelyTrapped)
+    MagneticEquilibria.load_equilibrium(MagneticEquilibria.AxisymmetricTokamakCylindrical(R₀, B₀, q); target_module=TokamakFastBarelyTrapped)
 
     include("guiding_center_4d_coords_RZphi.jl")
 

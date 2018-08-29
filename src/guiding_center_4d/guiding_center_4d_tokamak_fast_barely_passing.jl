@@ -17,7 +17,7 @@ module TokamakFastBarelyPassing
     const μ  = 1E-2
     const q₀ = [2.5, 0., 0., 3.425E-1]
 
-    MagneticEquilibria.load_equilibrium(MagneticEquilibria.AxisymmetricTokamak(R₀, B₀, q); target_module=TokamakFastBarelyPassing)
+    MagneticEquilibria.load_equilibrium(MagneticEquilibria.AxisymmetricTokamakCylindrical(R₀, B₀, q); target_module=TokamakFastBarelyPassing)
 
     include("guiding_center_4d_coords_RZphi.jl")
 

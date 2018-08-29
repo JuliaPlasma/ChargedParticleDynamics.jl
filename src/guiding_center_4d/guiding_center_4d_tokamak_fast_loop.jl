@@ -12,7 +12,7 @@ module TokamakFastLoop
     const q  = 2
     const μ  = 1E-3
 
-    load_equilibrium(MagneticEquilibria.AxisymmetricTokamak(R₀, B₀, q); target_module=TokamakFastLoop)
+    load_equilibrium(MagneticEquilibria.AxisymmetricTokamakCylindrical(R₀, B₀, q); target_module=TokamakFastLoop)
 
     include("guiding_center_4d_coords_RZphi.jl")
 

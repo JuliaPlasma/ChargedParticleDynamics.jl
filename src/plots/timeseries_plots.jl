@@ -100,7 +100,7 @@ function plot_one_form(t::TimeSeries{DT}, ϑ::DataSeries{DT}, filename_prefix; n
             ylim(-2E-16, +2E-16)
         end
         xlabel("\$ t \$", labelpad=10, fontsize=20)
-        ylabel("\$ \\vartheta_\{ {i} \} (q(t)) \$", labelpad=6, fontsize=20)
+        ylabel("\$ \\vartheta_{" * string(i) * "} (q(t)) \$", labelpad=6, fontsize=20)
         ax = gca()
         ax[:xaxis][:set_major_formatter](xf)
         ax[:yaxis][:set_major_formatter](yf)
@@ -124,7 +124,7 @@ function plot_momentum_error(t::TimeSeries{DT}, e::DataSeries{DT}, filename_pref
             ylim(-2E-16, +2E-16)
         end
         xlabel("\$ t \$", labelpad=10, fontsize=20)
-        ylabel("\$ p_\{" * string(i) * "\} (t) - \\vartheta_\{" * string(i) * "\} (q(t)) \$", labelpad=6, fontsize=20)
+        ylabel("\$ p_{" * string(i) * "} (t) - \\vartheta_{" * string(i) * "} (q(t)) \$", labelpad=6, fontsize=20)
         ax = gca()
         ax[:xaxis][:set_major_formatter](xf)
         ax[:yaxis][:set_major_formatter](yf)
@@ -148,7 +148,7 @@ function plot_lagrange_multiplier(t::TimeSeries{DT}, λ::DataSeries{DT}, filenam
             ylim(-2E-16, +2E-16)
         end
         xlabel("\$t\$", labelpad=10, fontsize=20)
-        ylabel("\$\\lambda_\{" * string(i) * "\} (t)\$", labelpad=6, fontsize=20)
+        ylabel("\$\\lambda_{" * string(i) * "} (t)\$", labelpad=6, fontsize=20)
         ax = gca()
         ax[:xaxis][:set_major_formatter](xf)
         ax[:yaxis][:set_major_formatter](yf)

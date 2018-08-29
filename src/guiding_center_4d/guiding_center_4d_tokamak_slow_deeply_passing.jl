@@ -15,7 +15,7 @@ module TokamakSlowDeeplyPassing
     const μ  = 2.448E-6
     const q₀ = [1.05, 0., 0., 1.623E-3]
 
-    MagneticEquilibria.load_equilibrium(MagneticEquilibria.AxisymmetricTokamak(R0, B0, q); target_module=TokamakSlowDeeplyPassing)
+    MagneticEquilibria.load_equilibrium(MagneticEquilibria.AxisymmetricTokamakCylindrical(R0, B0, q); target_module=TokamakSlowDeeplyPassing)
 
     include("guiding_center_4d_coords_RZphi.jl")
 

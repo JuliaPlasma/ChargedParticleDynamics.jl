@@ -277,7 +277,7 @@ end
 
 
 function guiding_center_4d_p₀(q₀, t₀=0)
-    p₀ = zeros(q₀)
+    p₀ = zero(q₀)
 
     if ndims(q₀) == 1
         α(t₀, q₀, p₀)
@@ -305,7 +305,7 @@ end
 
 function guiding_center_4d_λ₀(q₀::Array{DT}, Δt::DT=1., t₀::DT=0.) where {DT}
     D  = size(q₀, 1)
-    λ₀ = zeros(q₀)
+    λ₀ = zero(q₀)
     q  = zeros(DT, D)
     λ  = zeros(DT, D)
     Ω  = zeros(DT, D, D)

@@ -91,7 +91,7 @@ function charged_particle_3d_iode_v(t, q, p, v)
 end
 
 function charged_particle_3d_iode(q₀=q₀)
-    p₀ = zeros(q₀)
+    p₀ = zero(q₀)
 
     if ndims(q₀) == 1
         α(0, q₀, p₀)

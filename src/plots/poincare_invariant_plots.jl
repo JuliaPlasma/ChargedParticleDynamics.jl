@@ -129,7 +129,7 @@ function plot_poincare_surface(sol::Solution, nplot, filename, dpi=100; xmin=-0.
                 tpower      = log10(sol.t[end])
                 exponent    = @sprintf("%2d", floor(Int64, tpower))
                 coefficient = @sprintf("%2.2f", sol.t[i] / 10^floor(tpower))
-                tstr = "$coefficient \\times 10^\{ $exponent \}"
+                tstr = "$coefficient \\times 10^{ $exponent }"
                 plot3D(sol.q.d[1,i+1,:], sol.q.d[2,i+1,:], sol.q.d[3,i+1,:], ".", label="\$ t = $tstr \$")
            end
         end
