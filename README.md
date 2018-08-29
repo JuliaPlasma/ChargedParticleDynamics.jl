@@ -1,7 +1,7 @@
 
 # ChargedParticleDynamics.jl
 
-*Collection of problems for charged particle dynamics and guiding centre dynamics for GeometricIntegrators.jl.*
+*Collection of problems for charged particle dynamics and guiding centre dynamics for [GeometricIntegrators.jl](https://github.com/DDMGNI/GeometricIntegrators.jl).*
 
 
 ## License
