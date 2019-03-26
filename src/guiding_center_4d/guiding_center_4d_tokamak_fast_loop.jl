@@ -1,7 +1,7 @@
 module TokamakFastLoop
 
     using GeometricIntegrators
-    using MagneticEquilibria
+    using ElectromagneticFields
 
     export guiding_center_4d_ode_poincare_invariant_1st,
            guiding_center_4d_iode_poincare_invariant_1st,
@@ -12,7 +12,7 @@ module TokamakFastLoop
     const q  = 2
     const μ  = 1E-3
 
-    load_equilibrium(MagneticEquilibria.AxisymmetricTokamakCylindrical(R₀, B₀, q); target_module=TokamakFastLoop)
+    load_equilibrium(ElectromagneticFields.AxisymmetricTokamakCylindrical(R₀, B₀, q); target_module=TokamakFastLoop)
 
     include("guiding_center_4d_coords_RZphi.jl")
 

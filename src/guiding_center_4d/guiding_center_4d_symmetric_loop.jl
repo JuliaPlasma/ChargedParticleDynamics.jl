@@ -26,7 +26,7 @@ u_1 = 0.05, \\quad
 module SymmetricLoop
 
     using GeometricIntegrators
-    using MagneticEquilibria
+    using ElectromagneticFields
 
     export guiding_center_4d_ode_poincare_invariant_1st,
            guiding_center_4d_iode_poincare_invariant_1st,

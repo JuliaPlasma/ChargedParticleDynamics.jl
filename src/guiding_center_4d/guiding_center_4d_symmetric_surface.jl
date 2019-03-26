@@ -26,7 +26,7 @@ module SymmetricSurface
 
     using GeometricIntegrators
     using GeometricIntegrators.Utils
-    using MagneticEquilibria
+    using ElectromagneticFields
 
     export guiding_center_4d_ode_poincare_invariant_2nd,
            guiding_center_4d_iode_poincare_invariant_2nd,
