@@ -1,0 +1,13 @@
+name = "ChargedParticleDynamics"
+uuid = "209b3593-7183-5600-9f8f-df5ce7fddd64"
+authors = ["Michael Kraus <michael.kraus@ipp.mpg.de>"]
+version = "0.1.0"
+
+[deps]
+DecFP = "55939f99-70c6-5e9b-8bb0-5071ed7d61fd"
+ElectromagneticFields = "d6c1ba6f-ee03-53af-b876-68cefeb88ec8"
+GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

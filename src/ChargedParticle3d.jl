@@ -3,6 +3,7 @@ __precompile__()
 module ChargedParticle3d
 
     using GeometricIntegrators
+    using ElectromagneticFields
     using LinearAlgebra
     
     export ChargedParticle3dSingular, ChargedParticle3dSymmetric, ChargedParticle3dUniform

@@ -3,6 +3,7 @@ __precompile__()
 module GuidingCenter4d
 
     using GeometricIntegrators
+    using ElectromagneticFields
     using LinearAlgebra
 
     export TokamakSlowBarelyPassing,
