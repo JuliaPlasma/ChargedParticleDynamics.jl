@@ -110,6 +110,30 @@ function plot_one_form(t::TimeSeries{DT}, ϑ::DataSeries{DT}, filename_prefix; n
 end
 
 
+function plot_momentum(t::TimeSeries{DT}, p::DataSeries{DT}, filename_prefix; nplot=1, markersize=.5) where {DT}
+    @assert t.n == p.nt
+
+    xf, yf = get_default_formatter(t)
+
+    for i in 1:p.nd
+        fig = figure(figsize=(6,5))
+        subplots_adjust(left=0.18, right=0.95, top=0.95, bottom=0.16)
+        plot(t[0:nplot:end], p[i,0:nplot:p.nt], ".", markersize=markersize)
+        xlim(t[0], t[end])
+        if maximum(p[i]) == 0.
+            ylim(-2E-16, +2E-16)
+        end
+        xlabel("\$ t \$", labelpad=10, fontsize=20)
+        ylabel("\$ p_{" * string(i) * "} (t) \$", labelpad=6, fontsize=20)
+        ax = gca()
+        ax[:xaxis][:set_major_formatter](xf)
+        ax[:yaxis][:set_major_formatter](yf)
+        savefig(filename_prefix * "_momentum" * string(i) * ".png")
+        close(fig)
+    end
+end
+
+
 function plot_momentum_error(t::TimeSeries{DT}, e::DataSeries{DT}, filename_prefix; nplot=1, markersize=.5) where {DT}
     @assert t.n == e.nt
 
