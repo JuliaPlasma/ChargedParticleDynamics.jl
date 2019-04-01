@@ -39,7 +39,7 @@ function compute_one_form(t::TimeSeries{DT}, q::DataSeries{DT,2}, ϑ::Function) 
     for j in 0:q.nt
         ϑ(t[j], q[:,j], theta)
         for i in 1:q.nd
-            p[i,j] .= theta[i]
+            p[i,j] = theta[i]
         end
     end
     return p

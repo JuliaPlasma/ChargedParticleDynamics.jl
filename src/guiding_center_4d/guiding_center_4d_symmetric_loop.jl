@@ -30,14 +30,14 @@ module SymmetricLoop
 
     export guiding_center_4d_ode_poincare_invariant_1st,
            guiding_center_4d_iode_poincare_invariant_1st,
-           hamiltonian, toroidal_momentum, u, α
+           guiding_center_4d_vode_poincare_invariant_1st
 
     const B₀ = 1.
     const μ  = 1E-2
 
     load_equilibrium(SymmetricQuadratic(B₀); target_module=SymmetricLoop)
 
-    include("guiding_center_4d_coords_xyz.jl")
+    include("guiding_center_4d_common.jl")
 
 
     function f_loop(s)
@@ -67,6 +67,11 @@ module SymmetricLoop
     function guiding_center_4d_iode_poincare_invariant_1st(Δt, nloop, ntime, nsave, DT=Float64)
         guiding_center_4d_iode_init(q₀) = guiding_center_4d_iode(q₀; periodic=false)
         PoincareInvariant1st(guiding_center_4d_iode_init, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
+    end
+
+    function guiding_center_4d_vode_poincare_invariant_1st(Δt, nloop, ntime, nsave, DT=Float64)
+        guiding_center_4d_vode_init(q₀) = guiding_center_4d_vode_formal_lagrangian(q₀; periodic=false)
+        PoincareInvariant1st(guiding_center_4d_vode_init, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
     end
 
 end

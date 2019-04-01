@@ -1,36 +1,123 @@
 
-using DecFP
-# using DoubleDouble
+
+export hamiltonian, u, ω, ϑ, ϑ₁, ϑ₂, ϑ₃, ϑ₄, dϑ, β₁, β₂, β₃, B, B₁, B₂, B₃, b₁, b₂, b₃, dH
 
 
-function α(t, q, p)
-    p[1] = α1(t,q)
-    p[2] = α2(t,q)
-    p[3] = α3(t,q)
-    p[4] = α4(t,q)
+@inline function u(t, q)
+    q[4]
+end
+
+
+function ϑ₁(t, q)
+    A₁(t,q) + u(t,q) * b₁(t,q)
+end
+
+function ϑ₂(t, q)
+    A₂(t,q) + u(t,q) * b₂(t,q)
+end
+
+function ϑ₃(t, q)
+    A₃(t,q) + u(t,q) * b₃(t,q)
+end
+
+function ϑ₄(t, q)
+    zero(eltype(q))
+end
+
+
+function dϑ₁dx₁(t, q)
+    dA₁dx₁(t,q) + u(t,q) * db₁dx₁(t,q)
+end
+
+function dϑ₁dx₂(t, q)
+    dA₁dx₂(t,q) + u(t,q) * db₁dx₂(t,q)
+end
+
+function dϑ₁dx₃(t, q)
+    dA₁dx₃(t,q) + u(t,q) * db₁dx₃(t,q)
+end
+
+function dϑ₁dx₄(t, q)
+    b₁(t,q)
+end
+
+function dϑ₂dx₁(t, q)
+    dA₂dx₁(t,q) + u(t,q) * db₂dx₁(t,q)
+end
+
+function dϑ₂dx₂(t, q)
+    dA₂dx₂(t,q) + u(t,q) * db₂dx₂(t,q)
+end
+
+function dϑ₂dx₃(t, q)
+    dA₂dx₃(t,q) + u(t,q) * db₂dx₃(t,q)
+end
+
+function dϑ₂dx₄(t, q)
+    b₂(t,q)
+end
+
+function dϑ₃dx₁(t, q)
+    dA₃dx₁(t,q) + u(t,q) * db₃dx₁(t,q)
+end
+
+function dϑ₃dx₂(t, q)
+    dA₃dx₂(t,q) + u(t,q) * db₃dx₂(t,q)
+end
+
+function dϑ₃dx₃(t, q)
+    dA₃dx₃(t,q) + u(t,q) * db₃dx₃(t,q)
+end
+
+function dϑ₃dx₄(t, q)
+    b₃(t,q)
+end
+
+function dϑ₄dx₁(t, q)
+    zero(eltype(q))
+end
+
+function dϑ₄dx₂(t, q)
+    zero(eltype(q))
+end
+
+function dϑ₄dx₃(t, q)
+    zero(eltype(q))
+end
+
+function dϑ₄dx₄(t, q)
+    zero(eltype(q))
+end
+
+
+function ϑ(t, q, Θ)
+    Θ[1] = ϑ₁(t,q)
+    Θ[2] = ϑ₂(t,q)
+    Θ[3] = ϑ₃(t,q)
+    Θ[4] = ϑ₄(t,q)
     nothing
 end
 
 
 function ω(t, q, Ω)
     Ω[1,1] = 0
-    Ω[1,2] = dα1d2(t,q) - dα2d1(t,q)
-    Ω[1,3] = dα1d3(t,q) - dα3d1(t,q)
-    Ω[1,4] = dα1d4(t,q)
+    Ω[1,2] = dϑ₁dx₂(t,q) - dϑ₂dx₁(t,q)
+    Ω[1,3] = dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
+    Ω[1,4] = dϑ₁dx₄(t,q) - dϑ₄dx₁(t,q)
 
-    Ω[2,1] = dα2d1(t,q) - dα1d2(t,q)
+    Ω[2,1] = dϑ₂dx₁(t,q) - dϑ₁dx₂(t,q)
     Ω[2,2] = 0
-    Ω[2,3] = dα2d3(t,q) - dα3d2(t,q)
-    Ω[2,4] = dα2d4(t,q)
+    Ω[2,3] = dϑ₂dx₃(t,q) - dϑ₃dx₂(t,q)
+    Ω[2,4] = dϑ₂dx₄(t,q) - dϑ₄dx₂(t,q)
 
-    Ω[3,1] = dα3d1(t,q) - dα1d3(t,q)
-    Ω[3,2] = dα3d2(t,q) - dα2d3(t,q)
+    Ω[3,1] = dϑ₃dx₁(t,q) - dϑ₁dx₃(t,q)
+    Ω[3,2] = dϑ₃dx₂(t,q) - dϑ₂dx₃(t,q)
     Ω[3,3] = 0
-    Ω[3,4] = dα3d4(t,q)
+    Ω[3,4] = dϑ₃dx₄(t,q) - dϑ₄dx₃(t,q)
 
-    Ω[4,1] = dα4d1(t,q) - dα1d4(t,q)
-    Ω[4,2] = dα4d2(t,q) - dα2d4(t,q)
-    Ω[4,3] = dα4d3(t,q) - dα3d4(t,q)
+    Ω[4,1] = dϑ₄dx₁(t,q) - dϑ₁dx₄(t,q)
+    Ω[4,2] = dϑ₄dx₂(t,q) - dϑ₂dx₄(t,q)
+    Ω[4,3] = dϑ₄dx₃(t,q) - dϑ₃dx₄(t,q)
     Ω[4,4] = 0
 
     nothing
@@ -115,52 +202,144 @@ function D²ϑ₄(t, q, D²ϑ)
 end
 
 
-function dα(t, q, dα)
-    dα[1,1] = dα1d1(t,q)
-    dα[1,2] = dα1d2(t,q)
-    dα[1,3] = dα1d3(t,q)
-    dα[1,4] = dα1d4(t,q)
+function D²ϑd₁(t, q, D²ϑ)
+    D²ϑ[1,1] = d²A₁dx₁dx₁(t,q) + u(t,q) * d²b₁dx₁dx₁(t,q)
+    D²ϑ[1,2] = d²A₁dx₁dx₂(t,q) + u(t,q) * d²b₁dx₁dx₂(t,q)
+    D²ϑ[1,3] = d²A₁dx₁dx₃(t,q) + u(t,q) * d²b₁dx₁dx₃(t,q)
+    D²ϑ[1,4] = db₁dx₁(t,q)
 
-    dα[2,1] = dα2d1(t,q)
-    dα[2,2] = dα2d2(t,q)
-    dα[2,3] = dα2d3(t,q)
-    dα[2,4] = dα2d4(t,q)
+    D²ϑ[2,1] = d²A₂dx₁dx₁(t,q) + u(t,q) * d²b₂dx₁dx₁(t,q)
+    D²ϑ[2,2] = d²A₂dx₁dx₂(t,q) + u(t,q) * d²b₂dx₁dx₂(t,q)
+    D²ϑ[2,3] = d²A₂dx₁dx₃(t,q) + u(t,q) * d²b₂dx₁dx₃(t,q)
+    D²ϑ[2,4] = db₂dx₁(t,q)
 
-    dα[3,1] = dα3d1(t,q)
-    dα[3,2] = dα3d2(t,q)
-    dα[3,3] = dα3d3(t,q)
-    dα[3,4] = dα3d4(t,q)
+    D²ϑ[3,1] = d²A₃dx₁dx₁(t,q) + u(t,q) * d²b₃dx₁dx₁(t,q)
+    D²ϑ[3,2] = d²A₃dx₁dx₂(t,q) + u(t,q) * d²b₃dx₁dx₂(t,q)
+    D²ϑ[3,3] = d²A₃dx₁dx₃(t,q) + u(t,q) * d²b₃dx₁dx₃(t,q)
+    D²ϑ[3,4] = db₃dx₁(t,q)
 
-    dα[4,1] = 0
-    dα[4,2] = 0
-    dα[4,3] = 0
-    dα[4,4] = 0
+    D²ϑ[4,1] = 0
+    D²ϑ[4,2] = 0
+    D²ϑ[4,3] = 0
+    D²ϑ[4,4] = 0
+
+    nothing
+end
+
+function D²ϑd₂(t, q, D²ϑ)
+    D²ϑ[2,1] = d²A₁dx₂dx₁(t,q) + u(t,q) * d²b₁dx₂dx₁(t,q)
+    D²ϑ[2,2] = d²A₁dx₂dx₂(t,q) + u(t,q) * d²b₁dx₂dx₂(t,q)
+    D²ϑ[2,3] = d²A₁dx₂dx₃(t,q) + u(t,q) * d²b₁dx₂dx₃(t,q)
+    D²ϑ[2,4] = db₁dx₂(t,q)
+
+    D²ϑ[2,1] = d²A₂dx₂dx₁(t,q) + u(t,q) * d²b₂dx₂dx₁(t,q)
+    D²ϑ[2,2] = d²A₂dx₂dx₂(t,q) + u(t,q) * d²b₂dx₂dx₂(t,q)
+    D²ϑ[2,3] = d²A₂dx₂dx₃(t,q) + u(t,q) * d²b₂dx₂dx₃(t,q)
+    D²ϑ[2,4] = db₂dx₂(t,q)
+
+    D²ϑ[2,1] = d²A₂dx₃dx₁(t,q) + u(t,q) * d²b₂dx₃dx₁(t,q)
+    D²ϑ[2,2] = d²A₂dx₃dx₂(t,q) + u(t,q) * d²b₂dx₃dx₂(t,q)
+    D²ϑ[2,3] = d²A₂dx₃dx₃(t,q) + u(t,q) * d²b₂dx₃dx₃(t,q)
+    D²ϑ[2,4] = db₂dx₃(t,q)
+
+    D²ϑ[4,1] = 0
+    D²ϑ[4,2] = 0
+    D²ϑ[4,3] = 0
+    D²ϑ[4,4] = 0
+
+    nothing
+end
+
+function D²ϑd₃(t, q, D²ϑ)
+    D²ϑ[2,1] = d²A₁dx₃dx₁(t,q) + u(t,q) * d²b₁dx₃dx₁(t,q)
+    D²ϑ[2,2] = d²A₁dx₃dx₂(t,q) + u(t,q) * d²b₁dx₃dx₂(t,q)
+    D²ϑ[2,3] = d²A₁dx₃dx₃(t,q) + u(t,q) * d²b₁dx₃dx₃(t,q)
+    D²ϑ[2,4] = db₁dx₃(t,q)
+
+    D²ϑ[2,1] = d²A₃dx₂dx₁(t,q) + u(t,q) * d²b₃dx₂dx₁(t,q)
+    D²ϑ[2,2] = d²A₃dx₂dx₂(t,q) + u(t,q) * d²b₃dx₂dx₂(t,q)
+    D²ϑ[2,3] = d²A₃dx₂dx₃(t,q) + u(t,q) * d²b₃dx₂dx₃(t,q)
+    D²ϑ[2,4] = db₃dx₂(t,q)
+
+    D²ϑ[2,1] = d²A₃dx₃dx₁(t,q) + u(t,q) * d²b₃dx₃dx₁(t,q)
+    D²ϑ[2,2] = d²A₃dx₃dx₂(t,q) + u(t,q) * d²b₃dx₃dx₂(t,q)
+    D²ϑ[2,3] = d²A₃dx₃dx₃(t,q) + u(t,q) * d²b₃dx₃dx₃(t,q)
+    D²ϑ[2,4] = db₃dx₃(t,q)
+
+    D²ϑ[4,1] = 0
+    D²ϑ[4,2] = 0
+    D²ϑ[4,3] = 0
+    D²ϑ[4,4] = 0
+
+    nothing
+end
+
+function D²ϑd₄(t, q, D²ϑ)
+    D²ϑ[1,1] = db₁dx₁(t,q)
+    D²ϑ[1,2] = db₁dx₂(t,q)
+    D²ϑ[1,3] = db₁dx₃(t,q)
+    D²ϑ[1,4] = 0
+
+    D²ϑ[2,1] = db₂dx₁(t,q)
+    D²ϑ[2,2] = db₂dx₂(t,q)
+    D²ϑ[2,3] = db₂dx₃(t,q)
+    D²ϑ[2,4] = 0
+
+    D²ϑ[3,1] = db₃dx₁(t,q)
+    D²ϑ[3,2] = db₃dx₂(t,q)
+    D²ϑ[3,3] = db₃dx₃(t,q)
+    D²ϑ[3,4] = 0
+
+    D²ϑ[4,1] = 0
+    D²ϑ[4,2] = 0
+    D²ϑ[4,3] = 0
+    D²ϑ[4,4] = 0
 
     nothing
 end
 
 
-function β1(t,q)
-   return dα3d2(t,q) - dα2d3(t,q)
+function dϑ(t, q, dϑ)
+    dϑ[1,1] = dϑ₁dx₁(t,q)
+    dϑ[1,2] = dϑ₁dx₂(t,q)
+    dϑ[1,3] = dϑ₁dx₃(t,q)
+    dϑ[1,4] = dϑ₁dx₄(t,q)
+
+    dϑ[2,1] = dϑ₂dx₁(t,q)
+    dϑ[2,2] = dϑ₂dx₂(t,q)
+    dϑ[2,3] = dϑ₂dx₃(t,q)
+    dϑ[2,4] = dϑ₂dx₄(t,q)
+
+    dϑ[3,1] = dϑ₃dx₁(t,q)
+    dϑ[3,2] = dϑ₃dx₂(t,q)
+    dϑ[3,3] = dϑ₃dx₃(t,q)
+    dϑ[3,4] = dϑ₃dx₄(t,q)
+
+    dϑ[4,1] = dϑ₄dx₁(t,q)
+    dϑ[4,2] = dϑ₄dx₂(t,q)
+    dϑ[4,3] = dϑ₄dx₃(t,q)
+    dϑ[4,4] = dϑ₄dx₄(t,q)
+
+    nothing
 end
 
-function β2(t,q)
-   return dα1d3(t,q) - dα3d1(t,q)
+
+function β₁(t,q)
+   return dϑ₃dx₂(t,q) - dϑ₂dx₃(t,q)
 end
 
-function β3(t,q)
-   return dα2d1(t,q) - dα1d2(t,q)
+function β₂(t,q)
+   return dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
+end
+
+function β₃(t,q)
+   return dϑ₂dx₁(t,q) - dϑ₁dx₂(t,q)
 end
 
 
-function β(t,q)
-   return sqrt(β1(t,q)^2 + β2(t,q)^2 + β3(t,q)^2)
-end
-
-
-function toroidal_momentum(t,q)
-    α3(t,q)
-end
+# function β(t,q)
+#    return sqrt(β1(t,q)^2 + β2(t,q)^2 + β3(t,q)^2)
+# end
 
 
 function hamiltonian(t,q)
@@ -168,73 +347,108 @@ function hamiltonian(t,q)
 end
 
 
-function dHd1(t, q)
+function dHdx₁(t, q)
     μ * dBdx₁(t,q)
 end
 
-function dHd2(t, q)
+function dHdx₂(t, q)
     μ * dBdx₂(t,q)
 end
 
-function dHd3(t, q)
+function dHdx₃(t, q)
     μ * dBdx₃(t,q)
 end
 
-function dHd4(t, q)
+function dHdx₄(t, q)
     u(t,q)
 end
 
 
 function dH(t, q, dH)
-    dH[1] = dHd1(t, q)
-    dH[2] = dHd2(t, q)
-    dH[3] = dHd3(t, q)
-    dH[4] = dHd4(t, q)
+    dH[1] = dHdx₁(t, q)
+    dH[2] = dHdx₂(t, q)
+    dH[3] = dHdx₃(t, q)
+    dH[4] = dHdx₄(t, q)
     nothing
 end
 
 
-function f1(t, q, v)
-    dα1d1(t,q) * v[1] + dα2d1(t,q) * v[2] + dα3d1(t,q) * v[3]
+function f₁(t, q, v)
+    dϑ₁dx₁(t,q) * v[1] + dϑ₂dx₁(t,q) * v[2] + dϑ₃dx₁(t,q) * v[3] + dϑ₄dx₁(t,q) * v[4]
 end
 
-function f2(t, q, v)
-    dα1d2(t,q) * v[1] + dα2d2(t,q) * v[2] + dα3d2(t,q) * v[3]
+function f₂(t, q, v)
+    dϑ₁dx₂(t,q) * v[1] + dϑ₂dx₂(t,q) * v[2] + dϑ₃dx₂(t,q) * v[3] + dϑ₄dx₂(t,q) * v[4]
 end
 
-function f3(t, q, v)
-    dα1d3(t,q) * v[1] + dα2d3(t,q) * v[2] + dα3d3(t,q) * v[3]
+function f₃(t, q, v)
+    dϑ₁dx₃(t,q) * v[1] + dϑ₂dx₃(t,q) * v[2] + dϑ₃dx₃(t,q) * v[3] + dϑ₄dx₃(t,q) * v[4]
 end
 
-function f4(t, q, v)
-    dα1d4(t,q) * v[1] + dα2d4(t,q) * v[2] + dα3d4(t,q) * v[3]
-end
-
-
-function guiding_center_4d_periodicity(q₀)
-    periodicity = zeros(eltype(q₀), size(q₀,1))
-    periodicity[3] = 2π
-    return periodicity
+function f₄(t, q, v)
+    dϑ₁dx₄(t,q) * v[1] + dϑ₂dx₄(t,q) * v[2] + dϑ₃dx₄(t,q) * v[3] + dϑ₄dx₄(t,q) * v[4]
 end
 
 
-function guiding_center_4d_ode_v(t, q, v)
+function g₁(t, q, v)
+    dϑ₁dx₁(t,q) * v[1] + dϑ₁dx₂(t,q) * v[2] + dϑ₁dx₃(t,q) * v[3] + dϑ₁dx₄(t,q) * v[4]
+end
+
+function g₂(t, q, v)
+    dϑ₂dx₁(t,q) * v[1] + dϑ₂dx₂(t,q) * v[2] + dϑ₂dx₃(t,q) * v[3] + dϑ₂dx₄(t,q) * v[4]
+end
+
+function g₃(t, q, v)
+    dϑ₃dx₁(t,q) * v[1] + dϑ₃dx₂(t,q) * v[2] + dϑ₃dx₃(t,q) * v[3] + dϑ₃dx₄(t,q) * v[4]
+end
+
+function g₄(t, q, v)
+    dϑ₄dx₁(t,q) * v[1] + dϑ₄dx₂(t,q) * v[2] + dϑ₄dx₃(t,q) * v[3] + dϑ₄dx₄(t,q) * v[4]
+end
+
+
+function g̅₁(t, q, v)
+    D²ϑ = zeros(eltype(q), length(q), length(v))
+    D²ϑd₁(t, q, D²ϑ)
+    return transpose(q) * (D²ϑ * v)
+end
+
+function g̅₂(t, q, v)
+    D²ϑ = zeros(eltype(q), length(q), length(v))
+    D²ϑd₂(t, q, D²ϑ)
+    return transpose(q) * (D²ϑ * v)
+end
+
+function g̅₃(t, q, v)
+    D²ϑ = zeros(eltype(q), length(q), length(v))
+    D²ϑd₃(t, q, D²ϑ)
+    return transpose(q) * (D²ϑ * v)
+end
+
+function g̅₄(t, q, v)
+    D²ϑ = zeros(eltype(q), length(q), length(v))
+    D²ϑd₄(t, q, D²ϑ)
+    return transpose(q) * (D²ϑ * v)
+end
+
+
+function guiding_center_4d_v(t, q, v)
     local lB₁ = B₁(t,q)
     local lB₂ = B₂(t,q)
     local lB₃ = B₃(t,q)
 
-    local lβ₁ = β1(t,q)
-    local lβ₂ = β2(t,q)
-    local lβ₃ = β3(t,q)
-    local lβ  = lβ₁ * dα1d4(t,q) + lβ₂ * dα2d4(t,q) + lβ₃ * dα3d4(t,q)
+    local lβ₁ = β₁(t,q)
+    local lβ₂ = β₂(t,q)
+    local lβ₃ = β₃(t,q)
+    local lβ  = lβ₁ * dϑ₁dx₄(t,q) + lβ₂ * dϑ₂dx₄(t,q) + lβ₃ * dϑ₃dx₄(t,q)
 
     local ∇₁B = dBdx₁(t,q)
     local ∇₂B = dBdx₂(t,q)
     local ∇₃B = dBdx₃(t,q)
 
-    v[1] = + ( u(t,q) * lβ₁ - μ * ( ∇₂B * dα3d4(t,q) - ∇₃B * dα2d4(t,q) ) ) / lβ
-    v[2] = + ( u(t,q) * lβ₂ - μ * ( ∇₃B * dα1d4(t,q) - ∇₁B * dα3d4(t,q) ) ) / lβ
-    v[3] = + ( u(t,q) * lβ₃ - μ * ( ∇₁B * dα2d4(t,q) - ∇₂B * dα1d4(t,q) ) ) / lβ
+    v[1] = + ( u(t,q) * lβ₁ - μ * ( ∇₂B * dϑ₃dx₄(t,q) - ∇₃B * dϑ₂dx₄(t,q) ) ) / lβ
+    v[2] = + ( u(t,q) * lβ₂ - μ * ( ∇₃B * dϑ₁dx₄(t,q) - ∇₁B * dϑ₃dx₄(t,q) ) ) / lβ
+    v[3] = + ( u(t,q) * lβ₃ - μ * ( ∇₁B * dϑ₂dx₄(t,q) - ∇₂B * dϑ₁dx₄(t,q) ) ) / lβ
     v[4] = - μ * ( ∇₁B * lβ₁
                  + ∇₂B * lβ₂
                  + ∇₃B * lβ₃ ) / lβ
@@ -242,132 +456,123 @@ function guiding_center_4d_ode_v(t, q, v)
     nothing
 end
 
-function guiding_center_4d_ode(q₀=q₀; periodic=true)
-    if periodic
-        ODE(guiding_center_4d_ode_v, q₀; periodicity=guiding_center_4d_periodicity(q₀))
-    else
-        ODE(guiding_center_4d_ode_v, q₀)
-    end
+function guiding_center_4d_v(t, q, p, v)
+    guiding_center_4d_v(t, q, v)
 end
 
-
-function guiding_center_4d_iode_α(t, q, v, p)
-    α(t, q, p)
+function guiding_center_4d_ϑ(t, q, Θ)
+    ϑ(t, q, Θ)
 end
 
-function guiding_center_4d_iode_f(t, q, v, f)
-    f[1] = f1(t,q,v) - dHd1(t,q)
-    f[2] = f2(t,q,v) - dHd2(t,q)
-    f[3] = f3(t,q,v) - dHd3(t,q)
-    f[4] = f4(t,q,v) - dHd4(t,q)
+function guiding_center_4d_ϑ(t, q, v, Θ)
+    ϑ(t, q, Θ)
+end
+
+function guiding_center_4d_ϑ(κ, t, q, v, Θ)
+    Θ[1] = (1-κ) * ϑ₁(t,q) - κ * f₁(t,q,q)
+    Θ[2] = (1-κ) * ϑ₂(t,q) - κ * f₂(t,q,q)
+    Θ[3] = (1-κ) * ϑ₃(t,q) - κ * f₃(t,q,q)
+    Θ[4] = (1-κ) * ϑ₄(t,q) - κ * f₄(t,q,q)
     nothing
 end
 
-function guiding_center_4d_iode_g(t, q, λ, g)
-    g[1] = f1(t,q,λ)
-    g[2] = f2(t,q,λ)
-    g[3] = f3(t,q,λ)
-    g[4] = f4(t,q,λ)
+function guiding_center_4d_f(t, q, v, f)
+    f[1] = f₁(t,q,v) - dHdx₁(t,q)
+    f[2] = f₂(t,q,v) - dHdx₂(t,q)
+    f[3] = f₃(t,q,v) - dHdx₃(t,q)
+    f[4] = f₄(t,q,v) - dHdx₄(t,q)
     nothing
 end
 
-function guiding_center_4d_iode_v(t, q, p, v)
-    guiding_center_4d_ode_v(t, q, v)
+function guiding_center_4d_f(κ, t, q, v, f)
+    f[1] = (1-κ) * f₁(t,q,v) - κ * (g₁(t,q,v) + g̅₁(t,q,v)) - dHdx₁(t,q)
+    f[2] = (1-κ) * f₂(t,q,v) - κ * (g₂(t,q,v) + g̅₂(t,q,v)) - dHdx₂(t,q)
+    f[3] = (1-κ) * f₃(t,q,v) - κ * (g₃(t,q,v) + g̅₃(t,q,v)) - dHdx₃(t,q)
+    f[4] = (1-κ) * f₄(t,q,v) - κ * (g₄(t,q,v) + g̅₄(t,q,v)) - dHdx₄(t,q)
+    nothing
 end
 
-
-function guiding_center_4d_p₀(q₀, t₀=0)
-    p₀ = zero(q₀)
-
-    if ndims(q₀) == 1
-        α(t₀, q₀, p₀)
-    else
-        for i in 1:size(q₀,2)
-            tq = zeros(eltype(q₀), size(q₀,1))
-            tp = zeros(eltype(p₀), size(p₀,1))
-            simd_copy_xy_first!(tq, q₀, i)
-            α(t₀, tq, tp)
-            simd_copy_yx_first!(tp, p₀, i)
-        end
-    end
-    p₀
+function guiding_center_4d_g(t, q, λ, g)
+    g[1] = f₁(t,q,λ)
+    g[2] = f₂(t,q,λ)
+    g[3] = f₃(t,q,λ)
+    g[4] = f₄(t,q,λ)
+    nothing
 end
 
+# function guiding_center_4d_g(t, q, λ, g)
+#     g[1] = g₁(t,q,λ)
+#     g[2] = g₂(t,q,λ)
+#     g[3] = g₃(t,q,λ)
+#     g[4] = g₄(t,q,λ)
+#     nothing
+# end
 
-function guiding_center_4d_λ(q::Vector{DT}, λ::Vector{DT}, Ω::Matrix{DT}, dh::Vector{DT}, Δt::DT, t::DT) where {DT}
+function guiding_center_4d_g(κ, t, q, λ, g)
+    g[1] = (1-κ) * f₁(t,q,λ) - κ * (g₁(t,q,λ) + g̅₁(t,q,λ))
+    g[2] = (1-κ) * f₂(t,q,λ) - κ * (g₂(t,q,λ) + g̅₂(t,q,λ))
+    g[3] = (1-κ) * f₃(t,q,λ) - κ * (g₃(t,q,λ) + g̅₃(t,q,λ))
+    g[4] = (1-κ) * f₄(t,q,λ) - κ * (g₄(t,q,λ) + g̅₄(t,q,λ))
+    nothing
+end
+
+# function guiding_center_4d_g(κ, t, q, λ, g)
+#     g[1] = (1-κ) * g₁(t,q,λ) - κ * (f₁(t,q,λ) + g̅₁(t,q,λ))
+#     g[2] = (1-κ) * g₂(t,q,λ) - κ * (f₂(t,q,λ) + g̅₂(t,q,λ))
+#     g[3] = (1-κ) * g₃(t,q,λ) - κ * (f₃(t,q,λ) + g̅₃(t,q,λ))
+#     g[4] = (1-κ) * g₄(t,q,λ) - κ * (f₄(t,q,λ) + g̅₄(t,q,λ))
+#     nothing
+# end
+
+
+function guiding_center_4d_λ(t::DT, q::Vector{DT}, λ::Vector{DT}, Ω::Matrix{DT}, dh::Vector{DT}) where {DT}
     dH(t, q, dh)
     ω(t, q, Ω)
     simd_mult!(λ, inv(Ω), dh)
-    # simd_scale!(λ, 1/Δt)
     nothing
 end
 
+function guiding_center_4d_λ(t::DT, q::Vector{DT}, λ::Vector{DT}) where {DT}
+    D  = size(q, 1)
+    guiding_center_4d_λ(t, q, λ, zeros(DT,D,D), zeros(DT,D))
+end
 
-function guiding_center_4d_λ₀(q₀::Array{DT}, Δt::DT=1., t₀::DT=0.) where {DT}
-    D  = size(q₀, 1)
-    λ₀ = zero(q₀)
+
+function guiding_center_4d_pᵢ(qᵢ, tᵢ=0)
+    pᵢ = zero(qᵢ)
+
+    if ndims(qᵢ) == 1
+        ϑ(tᵢ, qᵢ, pᵢ)
+    else
+        for i in 1:size(qᵢ,2)
+            tq = zeros(eltype(qᵢ), size(qᵢ,1))
+            tp = zeros(eltype(pᵢ), size(pᵢ,1))
+            simd_copy_xy_first!(tq, qᵢ, i)
+            ϑ(tᵢ, tq, tp)
+            simd_copy_yx_first!(tp, pᵢ, i)
+        end
+    end
+    pᵢ
+end
+
+
+function guiding_center_4d_λᵢ(qᵢ::Array{DT}, Δt::DT=1, tᵢ::DT=0) where {DT}
+    D  = size(qᵢ, 1)
+    λᵢ = zero(qᵢ)
     q  = zeros(DT, D)
     λ  = zeros(DT, D)
     Ω  = zeros(DT, D, D)
     dh = zeros(DT, D)
 
-    if ndims(q₀) == 1
-        guiding_center_4d_λ(q₀, λ₀, Ω, dh, Δt, t₀)
+    if ndims(qᵢ) == 1
+        guiding_center_4d_λ(qᵢ, λᵢ, Ω, dh, Δt, tᵢ)
     else
-        for i in 1:size(q₀,2)
-            simd_copy_xy_first!(q, q₀, i)
-            guiding_center_4d_λ(q, λ, Ω, dh, Δt, t₀)
-            simd_copy_yx_first!(λ, λ₀, i)
+        for i in 1:size(qᵢ,2)
+            simd_copy_xy_first!(q, qᵢ, i)
+            guiding_center_4d_λ(q, λ, Ω, dh, Δt, tᵢ)
+            simd_copy_yx_first!(λ, λᵢ, i)
         end
     end
-    λ₀
-end
 
-
-# function guiding_center_4d_iode_double(q₀=q₀; periodic=true)
-#     guiding_center_4d_iode(Double.(q₀); periodic=periodic)
-# end
-
-function guiding_center_4d_iode_dec128(q₀=q₀; periodic=true)
-    guiding_center_4d_iode(Dec128.(q₀); periodic=periodic)
-end
-
-function guiding_center_4d_iode(q₀=q₀; periodic=true)
-    p₀ = guiding_center_4d_p₀(q₀)
-    if periodic
-        IODE(guiding_center_4d_iode_α, guiding_center_4d_iode_f,
-             guiding_center_4d_iode_g, guiding_center_4d_iode_v,
-             q₀, p₀; periodicity=guiding_center_4d_periodicity(q₀))
-    else
-        IODE(guiding_center_4d_iode_α, guiding_center_4d_iode_f,
-             guiding_center_4d_iode_g, guiding_center_4d_iode_v,
-             q₀, p₀)
-    end
-end
-
-function guiding_center_4d_iode_λ(q₀=q₀; periodic=true)
-    p₀ = guiding_center_4d_p₀(q₀)
-    λ₀ = guiding_center_4d_λ₀(q₀)
-    if periodic
-        IODE(guiding_center_4d_iode_α, guiding_center_4d_iode_f,
-             guiding_center_4d_iode_g, guiding_center_4d_iode_v,
-             q₀, p₀, λ₀; periodicity=guiding_center_4d_periodicity(q₀))
-    else
-        IODE(guiding_center_4d_iode_α, guiding_center_4d_iode_f,
-             guiding_center_4d_iode_g, guiding_center_4d_iode_v,
-             q₀, p₀, λ₀)
-    end
-end
-
-function guiding_center_4d_vode(q₀=q₀; periodic=true)
-    p₀ = guiding_center_4d_p₀(q₀)
-    if periodic
-        VODE(guiding_center_4d_iode_α, guiding_center_4d_iode_f,
-             guiding_center_4d_iode_g, guiding_center_4d_iode_v,
-             ω, dH, q₀, p₀; periodicity=guiding_center_4d_periodicity(q₀))
-    else
-        VODE(guiding_center_4d_iode_α, guiding_center_4d_iode_f,
-             guiding_center_4d_iode_g, guiding_center_4d_iode_v,
-             ω, dH, q₀, p₀)
-    end
+    return λᵢ
 end

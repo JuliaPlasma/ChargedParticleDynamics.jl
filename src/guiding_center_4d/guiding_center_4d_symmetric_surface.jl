@@ -30,14 +30,14 @@ module SymmetricSurface
 
     export guiding_center_4d_ode_poincare_invariant_2nd,
            guiding_center_4d_iode_poincare_invariant_2nd,
-           hamiltonian, toroidal_momentum, u, α, ω
+           guiding_center_4d_iode_poincare_invariant_2nd_λ
 
     const B₀ = 1.
     const μ  = 1E-2
 
     load_equilibrium(SymmetricQuadratic(B₀); target_module=SymmetricSurface)
 
-    include("guiding_center_4d_coords_xyz.jl")
+    include("guiding_center_4d_common.jl")
 
 
     function f_surface(s,t)
@@ -64,6 +64,11 @@ module SymmetricSurface
     function guiding_center_4d_iode_poincare(q₀)
         guiding_center_4d_iode(q₀; periodic=false)
     end
+
+    function guiding_center_4d_iode_poincare_λ(q₀)
+        guiding_center_4d_iode_λ(q₀; periodic=false)
+    end
+
     function guiding_center_4d_ode_poincare_invariant_2nd(Δt, nx, ny, ntime, nsave, DT=Float64)
         PoincareInvariant2nd(guiding_center_4d_ode_poincare, f_surface, ω, Δt, 4, nx, ny, ntime, nsave, DT)
     end
@@ -74,6 +79,10 @@ module SymmetricSurface
 
     function guiding_center_4d_iode_poincare_invariant_2nd(Δt, nx, ny, ntime, nsave, DT=Float64)
         PoincareInvariant2nd(guiding_center_4d_iode_poincare, f_surface, ω, (D²ϑ₁, D²ϑ₂, D²ϑ₃, D²ϑ₄), Δt, 4, nx, ny, ntime, nsave, DT)
+    end
+
+    function guiding_center_4d_iode_poincare_invariant_2nd_λ(Δt, nx, ny, ntime, nsave, DT=Float64)
+        PoincareInvariant2nd(guiding_center_4d_iode_poincare_λ, f_surface, ω, (D²ϑ₁, D²ϑ₂, D²ϑ₃, D²ϑ₄), Δt, 4, nx, ny, ntime, nsave, DT)
     end
 
     function guiding_center_4d_iode_poincare_invariant_2nd_trapezoidal(Δt, nx, ny, ntime, nsave, DT=Float64)
