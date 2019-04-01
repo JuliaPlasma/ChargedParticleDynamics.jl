@@ -99,13 +99,9 @@ Slow particles on a phasespace loop in analytic, axisymmetric tokamak equilibriu
 """
 module TokamakSlowLoop
 
-    export guiding_center_4d_loop_ode, guiding_center_4d_loop_iode
     using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
 
     const μ  = 2.5E-6
-
-
-    include("guiding_center_4d_common.jl")
 
     equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
     load_equilibrium(equ; target_module=TokamakSlowLoop)
@@ -125,30 +121,9 @@ module TokamakSlowLoop
         return qt
     end
 
-    function f_loop(i, n)
-        f_loop(i/n)
-    end
-
-    function get_initial_conditions(n)
-        q₀ = zeros(4, n)
-
-        for i in 1:n
-            q₀[:,i] = f_loop(i, n)
-        end
-
-        return q₀
-    end
-
-
-    function guiding_center_4d_loop_ode(n)
-        q₀ = get_initial_conditions(n)
-        guiding_center_4d_ode(q₀; periodic=false)
-    end
-
-    function guiding_center_4d_loop_iode(n)
-        q₀ = get_initial_conditions(n)
-        guiding_center_4d_iode(q₀; periodic=false)
-    end
+    include("guiding_center_4d_common.jl")
+    include("guiding_center_4d_equations.jl")
+    include("guiding_center_4d_loop.jl")
 
 end
 
@@ -158,13 +133,9 @@ Slow particles on a phasespace surface in analytic, axisymmetric tokamak equilib
 """
 module TokamakSlowSurface
 
-    export guiding_center_4d_surface_ode, guiding_center_4d_surface_iode
     using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
 
     const μ  = 2.5E-6
-
-
-    include("guiding_center_4d_common.jl")
 
     equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
     load_equilibrium(equ; target_module=TokamakSlowSurface)
@@ -184,31 +155,8 @@ module TokamakSlowSurface
         return qt
     end
 
-    function f_surface(i, j, nx, ny)
-        f_surface(i/nx, j/ny)
-    end
-
-    function get_initial_conditions(nx, ny)
-        q₀ = zeros(4, nx*ny)
-
-        for j in 1:ny
-            for i in 1:nx
-                q₀[:,nx*(j-1)+i] = f_surface(i, j, nx, ny)
-            end
-        end
-
-        return q₀
-    end
-
-
-    function guiding_center_4d_surface_ode(nx, ny)
-        q₀ = get_initial_conditions(nx, ny)
-        guiding_center_4d_ode(q₀; periodic=false)
-    end
-
-    function guiding_center_4d_surface_iode(nx, ny)
-        q₀ = get_initial_conditions(nx, ny)
-        guiding_center_4d_iode(q₀; periodic=false)
-    end
+    include("guiding_center_4d_common.jl")
+    include("guiding_center_4d_equations.jl")
+    include("guiding_center_4d_surface.jl")
 
 end

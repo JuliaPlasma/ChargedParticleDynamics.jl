@@ -1,5 +1,6 @@
-julia 0.6-
-GeometricIntegrators
+julia 0.7-
 ElectromagneticFields
+GeometricIntegrators
+PoincareInvariants
 DecFP
 PyPlot

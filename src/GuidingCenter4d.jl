@@ -11,10 +11,9 @@ module GuidingCenter4d
            SymmetricSurface,
            UniformLoop
 
-    include("guiding_center_4d/guiding_center_4d_symmetric_loop.jl")
-    include("guiding_center_4d/guiding_center_4d_symmetric_surface.jl")
+    include("guiding_center_4d/guiding_center_4d_symmetric.jl")
+    include("guiding_center_4d/guiding_center_4d_uniform.jl")
 
-    include("guiding_center_4d/guiding_center_4d_uniform_loop.jl")
 
 
     export TokamakSlowBarelyPassing,

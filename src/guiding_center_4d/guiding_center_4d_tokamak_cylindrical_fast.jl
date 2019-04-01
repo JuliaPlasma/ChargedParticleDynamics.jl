@@ -107,16 +107,9 @@ Fast particles on a phasespace loop in analytic, axisymmetric tokamak equilibriu
 """
 module TokamakFastLoop
 
-
-    export guiding_center_4d_ode_poincare_invariant_1st,
-           guiding_center_4d_iode_poincare_invariant_1st,
-           guiding_center_4d_vode_poincare_invariant_1st
     using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
 
     const μ  = 1E-3
-
-
-    include("guiding_center_4d_common.jl")
 
     equ = AxisymmetricTokamakCylindrical(2., 5., 2.)
     load_equilibrium(equ; target_module=TokamakFastLoop)
@@ -137,21 +130,9 @@ module TokamakFastLoop
         return qs
     end
 
-
-    function guiding_center_4d_ode_poincare_invariant_1st(Δt, nloop, ntime, nsave, DT=Float64)
-        guiding_center_4d_ode_init(q₀) = guiding_center_4d_ode(q₀; periodic=false)
-        PoincareInvariant1st(guiding_center_4d_ode_init, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
-    end
-
-    function guiding_center_4d_iode_poincare_invariant_1st(Δt, nloop, ntime, nsave, DT=Float64)
-        guiding_center_4d_iode_init(q₀) = guiding_center_4d_iode(q₀; periodic=false)
-        PoincareInvariant1st(guiding_center_4d_iode_init, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
-    end
-
-    function guiding_center_4d_vode_poincare_invariant_1st(Δt, nloop, ntime, nsave, DT=Float64)
-        guiding_center_4d_vode_init(q₀) = guiding_center_4d_vode_formal_lagrangian(q₀; periodic=false)
-        PoincareInvariant1st(guiding_center_4d_vode_init, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
-    end
+    include("guiding_center_4d_common.jl")
+    include("guiding_center_4d_equations.jl")
+    include("guiding_center_4d_loop.jl")
 
 end
 
@@ -161,15 +142,9 @@ Fast particles on a phasespace surface in analytic, axisymmetric tokamak equilib
 """
 module TokamakFastSurface
 
-
-    export guiding_center_4d_ode_poincare_invariant_2nd,
-           guiding_center_4d_iode_poincare_invariant_2nd
     using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
 
     const μ  = 1E-3
-
-
-    include("guiding_center_4d_common.jl")
 
     equ = AxisymmetricTokamakCylindrical(2., 5., 2.)
     load_equilibrium(equ; target_module=TokamakFastSurface)
@@ -189,15 +164,8 @@ module TokamakFastSurface
         return qt
     end
 
-
-    function guiding_center_4d_ode_poincare_invariant_2nd(Δt, nx, ny, ntime, nsave, DT=Float64)
-        guiding_center_4d_ode_init(q₀) = guiding_center_4d_ode(q₀; periodic=false)
-        PoincareInvariant2nd(guiding_center_4d_ode_init, f_surface, ω, Δt, 4, nx, ny, ntime, nsave, DT)
-    end
-
-    function guiding_center_4d_iode_poincare_invariant_2nd(Δt, nx, ny, ntime, nsave, DT=Float64)
-        guiding_center_4d_iode_init(q₀) = guiding_center_4d_iode(q₀; periodic=false)
-        PoincareInvariant2nd(guiding_center_4d_iode_init, f_surface, ω, Δt, 4, nx, ny, ntime, nsave, DT)
-    end
+    include("guiding_center_4d_common.jl")
+    include("guiding_center_4d_equations.jl")
+    include("guiding_center_4d_surface.jl")
 
 end
