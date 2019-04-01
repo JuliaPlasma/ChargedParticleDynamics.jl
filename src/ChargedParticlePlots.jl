@@ -10,7 +10,7 @@ module ChargedParticlePlots
     include("plots/plot_common.jl")
 
     export plot_energy, plot_energy_error, plot_energy_drift,
-           plot_toroidal_momentum_error, plot_one_form, plot_momentum_error,
+           plot_toroidal_momentum_error, plot_one_form, plot_momentum, plot_momentum_error,
            plot_lagrange_multiplier
 
     include("plots/timeseries_plots.jl")
