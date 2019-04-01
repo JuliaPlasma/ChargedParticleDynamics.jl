@@ -107,18 +107,19 @@ Fast particles on a phasespace loop in analytic, axisymmetric tokamak equilibriu
 """
 module TokamakFastLoop
 
-    using ElectromagneticFields
 
     export guiding_center_4d_ode_poincare_invariant_1st,
            guiding_center_4d_iode_poincare_invariant_1st,
            guiding_center_4d_vode_poincare_invariant_1st
+    using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
 
     const μ  = 1E-3
 
-    load_equilibrium(ElectromagneticFields.AxisymmetricTokamakCylindrical(2., 5., 2.); target_module=TokamakFastLoop)
 
     include("guiding_center_4d_common.jl")
 
+    equ = AxisymmetricTokamakCylindrical(2., 5., 2.)
+    load_equilibrium(equ; target_module=TokamakFastLoop)
 
     function f_loop(s)
         R0 = 1.75
@@ -160,17 +161,18 @@ Fast particles on a phasespace surface in analytic, axisymmetric tokamak equilib
 """
 module TokamakFastSurface
 
-    using ElectromagneticFields
 
     export guiding_center_4d_ode_poincare_invariant_2nd,
            guiding_center_4d_iode_poincare_invariant_2nd
+    using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
 
     const μ  = 1E-3
 
-    load_equilibrium(ElectromagneticFields.AxisymmetricTokamakCylindrical(2., 5., 2.); target_module=TokamakFastSurface)
 
     include("guiding_center_4d_common.jl")
 
+    equ = AxisymmetricTokamakCylindrical(2., 5., 2.)
+    load_equilibrium(equ; target_module=TokamakFastSurface)
 
     function f_surface(s,t)
         R0 = 1.75

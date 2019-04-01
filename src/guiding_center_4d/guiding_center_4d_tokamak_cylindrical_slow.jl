@@ -99,15 +99,16 @@ Slow particles on a phasespace loop in analytic, axisymmetric tokamak equilibriu
 """
 module TokamakSlowLoop
 
-    import ElectromagneticFields
     export guiding_center_4d_loop_ode, guiding_center_4d_loop_iode
+    using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
 
     const μ  = 2.5E-6
 
-    ElectromagneticFields.load_equilibrium(ElectromagneticFields.AxisymmetricTokamakCylindrical(1., 1., 2.); target_module=TokamakSlowLoop)
 
     include("guiding_center_4d_common.jl")
 
+    equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
+    load_equilibrium(equ; target_module=TokamakSlowLoop)
 
     function f_loop(t)
         R0 = 1.0
@@ -157,15 +158,16 @@ Slow particles on a phasespace surface in analytic, axisymmetric tokamak equilib
 """
 module TokamakSlowSurface
 
-    import ElectromagneticFields
     export guiding_center_4d_surface_ode, guiding_center_4d_surface_iode
+    using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
 
     const μ  = 2.5E-6
 
-    ElectromagneticFields.load_equilibrium(ElectromagneticFields.AxisymmetricTokamakCylindrical(1., 1., 2.); target_module=TokamakSlowSurface)
 
     include("guiding_center_4d_common.jl")
 
+    equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
+    load_equilibrium(equ; target_module=TokamakSlowSurface)
 
     function f_surface(s,t)
         R0 = 1.0

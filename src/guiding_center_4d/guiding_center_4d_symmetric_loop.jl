@@ -25,17 +25,15 @@ u_1 = 0.05, \\quad
 """
 module SymmetricLoop
 
-    using GeometricIntegrators
     using ElectromagneticFields
 
     export guiding_center_4d_ode_poincare_invariant_1st,
            guiding_center_4d_iode_poincare_invariant_1st,
            guiding_center_4d_vode_poincare_invariant_1st
 
-    const B₀ = 1.
     const μ  = 1E-2
 
-    load_equilibrium(SymmetricQuadratic(B₀); target_module=SymmetricLoop)
+    load_equilibrium(SymmetricQuadratic(1.); target_module=SymmetricLoop)
 
     include("guiding_center_4d_common.jl")
 

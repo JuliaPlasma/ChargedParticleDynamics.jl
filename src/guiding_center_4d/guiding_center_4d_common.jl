@@ -545,11 +545,7 @@ function guiding_center_4d_pᵢ(qᵢ, tᵢ=0)
         ϑ(tᵢ, qᵢ, pᵢ)
     else
         for i in 1:size(qᵢ,2)
-            tq = zeros(eltype(qᵢ), size(qᵢ,1))
-            tp = zeros(eltype(pᵢ), size(pᵢ,1))
-            simd_copy_xy_first!(tq, qᵢ, i)
-            ϑ(tᵢ, tq, tp)
-            simd_copy_yx_first!(tp, pᵢ, i)
+            ϑ(tᵢ, (@view qᵢ[:,i]), (@view pᵢ[:,i]))
         end
     end
     pᵢ
@@ -559,8 +555,6 @@ end
 function guiding_center_4d_λᵢ(qᵢ::Array{DT}, Δt::DT=1, tᵢ::DT=0) where {DT}
     D  = size(qᵢ, 1)
     λᵢ = zero(qᵢ)
-    q  = zeros(DT, D)
-    λ  = zeros(DT, D)
     Ω  = zeros(DT, D, D)
     dh = zeros(DT, D)
 
@@ -568,9 +562,7 @@ function guiding_center_4d_λᵢ(qᵢ::Array{DT}, Δt::DT=1, tᵢ::DT=0) where {
         guiding_center_4d_λ(qᵢ, λᵢ, Ω, dh, Δt, tᵢ)
     else
         for i in 1:size(qᵢ,2)
-            simd_copy_xy_first!(q, qᵢ, i)
-            guiding_center_4d_λ(q, λ, Ω, dh, Δt, tᵢ)
-            simd_copy_yx_first!(λ, λᵢ, i)
+            guiding_center_4d_λ((@view qᵢ[:,i]), (@view λᵢ[:,i]), Ω, dh, Δt, tᵢ)
         end
     end
 
