@@ -5,6 +5,7 @@ version = "0.1.0"
 
 [deps]
 DecFP = "55939f99-70c6-5e9b-8bb0-5071ed7d61fd"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ElectromagneticFields = "d6c1ba6f-ee03-53af-b876-68cefeb88ec8"
 GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
