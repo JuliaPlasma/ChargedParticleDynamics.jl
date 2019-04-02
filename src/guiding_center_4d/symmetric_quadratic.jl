@@ -1,8 +1,8 @@
 """
-First Poincaré invariant for a guiding center particle in an axisymmetric
-magnetic field of the form ``B(x,y,z) = B_0 (1 + x^2 + y^2) e_z``.
+First and second Poincaré invariant for a guiding center particle in an
+axisymmetric magnetic field of the form ``B(x,y,z) = B_0 (1 + x^2 + y^2) e_z``.
 
-The loop for the invariant is initialized by
+The loop for the first invariant is initialized by
 ```math
 q (\\tau) = \\begin{pmatrix}
 r_x \\cos (2\\pi \\tau) \\\\
@@ -22,45 +22,8 @@ u_0 = 0.5, \\quad
 u_1 = 0.05, \\quad
 \\mu = 0.01 .
 ```
-"""
-module SymmetricLoop
 
-    using ElectromagneticFields
-
-    const μ  = 1E-2
-
-    load_equilibrium(SymmetricQuadratic(1.); target_module=SymmetricLoop)
-
-    function f_loop(s)
-        rx = 0.5
-        ry = 0.3
-        z0 = 0.0
-        z1 = 0.1
-        u0 = 5E-1
-        u1 = 5E-2
-
-        xs = rx*cos(2π*s)
-        ys = ry*sin(2π*s)
-        zs = z0 + z1 * sin(2π*s)
-        us = u0 + u1 * cos(2π*s)
-
-        qs = [xs, ys, zs, us]
-
-        return qs
-    end
-
-    include("guiding_center_4d_common.jl")
-    include("guiding_center_4d_equations.jl")
-    include("guiding_center_4d_loop.jl")
-
-end
-
-
-"""
-Second Poincaré invariant for a guiding center particle in an axisymmetric
-magnetic field of the form ``B(x,y,z) = B_0 (1 + x^2 + y^2) e_z``.
-
-The surface for the invariant is initialized by
+The surface for the second invariant is initialized by
 ```math
 q (\\tau) = \\begin{pmatrix}
 r_0 (\\sigma - 0.5) \\\\
@@ -80,13 +43,32 @@ u_1 = 0.01, \\quad
 \\mu = 0.01 .
 ```
 """
-module SymmetricSurface
+module GuidingCenter4dSymmetricQuadratic
 
-    using ElectromagneticFields
+    using ElectromagneticFields: load_equilibrium, periodicity, SymmetricQuadratic
 
     const μ  = 1E-2
 
-    load_equilibrium(SymmetricQuadratic(1.); target_module=SymmetricSurface)
+    equ = SymmetricQuadratic(1.)
+    load_equilibrium(equ; target_module=GuidingCenter4dSymmetricQuadratic)
+
+    function f_loop(s)
+        rx = 0.5
+        ry = 0.3
+        z0 = 0.0
+        z1 = 0.1
+        u0 = 5E-1
+        u1 = 5E-2
+
+        xs = rx*cos(2π*s)
+        ys = ry*sin(2π*s)
+        zs = z0 + z1 * sin(2π*s)
+        us = u0 + u1 * cos(2π*s)
+
+        qs = [xs, ys, zs, us]
+
+        return qs
+    end
 
     function f_surface(s,t)
         r0 = 0.5
@@ -107,6 +89,7 @@ module SymmetricSurface
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")
+    include("guiding_center_4d_loop.jl")
     include("guiding_center_4d_surface.jl")
 
 end

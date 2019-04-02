@@ -7,45 +7,22 @@ module GuidingCenter4d
     using LinearAlgebra
 
 
-    export SymmetricLoop,
-           SymmetricSurface,
-           UniformLoop
+    export GuidingCenter4dSolovevQuadratic,
+           GuidingCenter4dSymmetricQuadratic,
+           GuidingCenter4dThetaPinch
 
-    include("guiding_center_4d/guiding_center_4d_symmetric.jl")
-    include("guiding_center_4d/guiding_center_4d_uniform.jl")
-
-
-
+    include("guiding_center_4d/solovev_quadratic.jl")
+    include("guiding_center_4d/symmetric_quadratic.jl")
+    include("guiding_center_4d/theta_pinch.jl")
 
 
-    export TokamakCartesianFastBarelyPassing,
-           TokamakCartesianFastBarelyTrapped,
-           TokamakCartesianFastDeeplyPassing,
-           TokamakCartesianFastDeeplyTrapped,
-           TokamakCartesianFastLoop,
-           TokamakCartesianFastSurface
+    export TokamakMediumCartesian,
+           TokamakMediumCylindrical,
+           TokamakSmallCylindrical
 
-    include("guiding_center_4d/guiding_center_4d_tokamak_cartesian_fast.jl")
-
-
-    export TokamakCylindricalSlowBarelyPassing,
-           TokamakCylindricalSlowBarelyTrapped,
-           TokamakCylindricalSlowDeeplyPassing,
-           TokamakCylindricalSlowDeeplyTrapped,
-           TokamakCylindricalSlowLoop,
-           TokamakCylindricalSlowSurface
-
-    include("guiding_center_4d/guiding_center_4d_tokamak_cylindrical_slow.jl")
-
-
-    export TokamakCylindricalFastBarelyPassing,
-           TokamakCylindricalFastBarelyTrapped,
-           TokamakCylindricalFastDeeplyPassing,
-           TokamakCylindricalFastDeeplyTrapped,
-           TokamakCylindricalFastLoop,
-           TokamakCylindricalFastSurface
-
-    include("guiding_center_4d/guiding_center_4d_tokamak_cylindrical_fast.jl")
+    include("guiding_center_4d/tokamak_medium_cartesian.jl")
+    include("guiding_center_4d/tokamak_medium_cylindrical.jl")
+    include("guiding_center_4d/tokamak_small_cylindrical.jl")
 
 
     export convert_coordinates_RZphi_to_xyz,

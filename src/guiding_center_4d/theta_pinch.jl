@@ -1,10 +1,11 @@
-module UniformLoop
+module GuidingCenter4dThetaPinch
 
-    using ElectromagneticFields
+    using ElectromagneticFields: load_equilibrium, periodicity, ThetaPinch
 
     const μ  = 2.5E-6
 
-    load_equilibrium(ThetaPinch(1.); target_module=UniformLoop)
+    equ = ThetaPinch(1.)
+    load_equilibrium(equ; target_module=GuidingCenter4dThetaPinch)
 
     function f_loop(t)
         φ0 = 0.0

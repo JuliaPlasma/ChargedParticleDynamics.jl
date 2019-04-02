@@ -23,7 +23,7 @@ function guiding_center_4d_periodicity(q)
 end
 
 
-function guiding_center_4d_ode(qᵢ=qᵢ; periodic=true)
+function guiding_center_4d_ode(qᵢ; periodic=true)
     if periodic
         ODE(guiding_center_4d_v, qᵢ; periodicity=guiding_center_4d_periodicity(qᵢ))
     else
@@ -32,7 +32,7 @@ function guiding_center_4d_ode(qᵢ=qᵢ; periodic=true)
 end
 
 
-function guiding_center_4d_iode(qᵢ=qᵢ; periodic=true)
+function guiding_center_4d_iode(qᵢ; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
     if periodic
         IODE(guiding_center_4d_ϑ, guiding_center_4d_f,
@@ -45,11 +45,11 @@ function guiding_center_4d_iode(qᵢ=qᵢ; periodic=true)
     end
 end
 
-function guiding_center_4d_iode_dec128(qᵢ=qᵢ; periodic=true)
+function guiding_center_4d_iode_dec128(qᵢ; periodic=true)
     guiding_center_4d_iode(Dec128.(qᵢ); periodic=periodic)
 end
 
-function guiding_center_4d_iode_λ(qᵢ=qᵢ; periodic=true)
+function guiding_center_4d_iode_λ(qᵢ; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
     λ₀ = guiding_center_4d_λ₀(qᵢ)
     if periodic
@@ -63,7 +63,7 @@ function guiding_center_4d_iode_λ(qᵢ=qᵢ; periodic=true)
     end
 end
 
-function guiding_center_4d_vode(qᵢ=qᵢ; periodic=true)
+function guiding_center_4d_vode(qᵢ; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
     if periodic
         VODE(guiding_center_4d_ϑ, guiding_center_4d_f,
@@ -76,7 +76,7 @@ function guiding_center_4d_vode(qᵢ=qᵢ; periodic=true)
     end
 end
 
-function guiding_center_4d_dg(qᵢ=qᵢ; κ=0.0, periodic=true)
+function guiding_center_4d_dg(qᵢ; κ=0.0, periodic=true)
     if periodic
         periodicity = []
     else
@@ -92,7 +92,7 @@ function guiding_center_4d_dg(qᵢ=qᵢ; κ=0.0, periodic=true)
          qᵢ, qᵢ; periodicity=periodicity)
 end
 
-function guiding_center_4d_formal_lagrangian(qᵢ=qᵢ; periodic=true)
+function guiding_center_4d_formal_lagrangian(qᵢ; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
     if periodic
         VODE(guiding_center_4d_ϑ, guiding_center_4d_f, guiding_center_4d_g, guiding_center_4d_v,
