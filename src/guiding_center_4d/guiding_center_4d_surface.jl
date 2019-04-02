@@ -16,7 +16,7 @@ function f_surface(i, j, nx, ny)
     f_surface(i/nx, j/ny)
 end
 
-function get_initial_conditions(nx, ny)
+function initial_conditions_surface(nx, ny)
     q₀ = zeros(4, nx*ny)
 
     for j in 1:ny
@@ -29,24 +29,22 @@ function get_initial_conditions(nx, ny)
 end
 
 
+guiding_center_4d_ode_init(q₀) = guiding_center_4d_ode(q₀; periodic=false)
+guiding_center_4d_iode_init(q₀) = guiding_center_4d_iode(q₀; periodic=false)
+guiding_center_4d_iode_λ_init(q₀) = guiding_center_4d_iode_λ(q₀; periodic=false)
+
+
 function guiding_center_4d_surface_ode(nx, ny)
-    q₀ = get_initial_conditions(nx, ny)
-    guiding_center_4d_ode(q₀; periodic=false)
+    guiding_center_4d_ode_init(initial_conditions_surface(nx, ny))
 end
 
 function guiding_center_4d_surface_iode(nx, ny)
-    q₀ = get_initial_conditions(nx, ny)
-    guiding_center_4d_iode(q₀; periodic=false)
+    guiding_center_4d_iode_init(initial_conditions_surface(nx, ny))
 end
 
 function guiding_center_4d_surface_iode_λ(nx, ny)
-    q₀ = get_initial_conditions(nx, ny)
-    guiding_center_4d_iode_λ(q₀; periodic=false)
+    guiding_center_4d_iode_λ_init(initial_conditions_surface(nx, ny))
 end
-
-
-guiding_center_4d_ode_init(q₀) = guiding_center_4d_ode(q₀; periodic=false)
-guiding_center_4d_iode_init(q₀) = guiding_center_4d_iode(q₀; periodic=false)
 
 
 function guiding_center_4d_ode_poincare_invariant_2nd(Δt, nx, ny, ntime, nsave, DT=Float64)
