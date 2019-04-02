@@ -29,40 +29,40 @@ function initial_conditions_surface(nx, ny)
 end
 
 
-guiding_center_4d_ode_init(q₀) = guiding_center_4d_ode(q₀; periodic=false)
-guiding_center_4d_iode_init(q₀) = guiding_center_4d_iode(q₀; periodic=false)
-guiding_center_4d_iode_λ_init(q₀) = guiding_center_4d_iode_λ(q₀; periodic=false)
+guiding_center_4d_surface_ode_init(q₀) = guiding_center_4d_ode(q₀; periodic=false)
+guiding_center_4d_surface_iode_init(q₀) = guiding_center_4d_iode(q₀; periodic=false)
+guiding_center_4d_surface_iode_λ_init(q₀) = guiding_center_4d_iode_λ(q₀; periodic=false)
 
 
 function guiding_center_4d_surface_ode(nx, ny)
-    guiding_center_4d_ode_init(initial_conditions_surface(nx, ny))
+    guiding_center_4d_surface_ode_init(initial_conditions_surface(nx, ny))
 end
 
 function guiding_center_4d_surface_iode(nx, ny)
-    guiding_center_4d_iode_init(initial_conditions_surface(nx, ny))
+    guiding_center_4d_surface_iode_init(initial_conditions_surface(nx, ny))
 end
 
 function guiding_center_4d_surface_iode_λ(nx, ny)
-    guiding_center_4d_iode_λ_init(initial_conditions_surface(nx, ny))
+    guiding_center_4d_surface_iode_λ_init(initial_conditions_surface(nx, ny))
 end
 
 
 function guiding_center_4d_ode_poincare_invariant_2nd(Δt, nx, ny, ntime, nsave, DT=Float64)
-    PoincareInvariant2nd(guiding_center_4d_ode_init, f_surface, ω, Δt, 4, nx, ny, ntime, nsave, DT)
+    PoincareInvariant2nd(guiding_center_4d_surface_ode_init, f_surface, ω, Δt, 4, nx, ny, ntime, nsave, DT)
 end
 
 function guiding_center_4d_ode_poincare_invariant_2nd_trapezoidal(Δt, nx, ny, ntime, nsave, DT=Float64)
-    PoincareInvariant2ndTrapezoidal(guiding_center_4d_ode_init, f_surface, ω, Δt, 4, nx, ny, ntime, nsave, DT)
+    PoincareInvariant2ndTrapezoidal(guiding_center_4d_surface_ode_init, f_surface, ω, Δt, 4, nx, ny, ntime, nsave, DT)
 end
 
 function guiding_center_4d_iode_poincare_invariant_2nd(Δt, nx, ny, ntime, nsave, DT=Float64)
-    PoincareInvariant2nd(guiding_center_4d_iode_init, f_surface, ω, Δt, 4, nx, ny, ntime, nsave, DT)
+    PoincareInvariant2nd(guiding_center_4d_surface_iode_init, f_surface, ω, Δt, 4, nx, ny, ntime, nsave, DT)
 end
 
 function guiding_center_4d_iode_poincare_invariant_2nd_trapezoidal(Δt, nx, ny, ntime, nsave, DT=Float64)
-    PoincareInvariant2ndTrapezoidal(guiding_center_4d_iode_init, f_surface, ω, (D²ϑ₁, D²ϑ₂, D²ϑ₃, D²ϑ₄), Δt, 4, nx, ny, ntime, nsave)
+    PoincareInvariant2ndTrapezoidal(guiding_center_4d_surface_iode_init, f_surface, ω, (D²ϑ₁, D²ϑ₂, D²ϑ₃, D²ϑ₄), Δt, 4, nx, ny, ntime, nsave)
 end
 
 function guiding_center_4d_iode_poincare_invariant_2nd_λ(Δt, nx, ny, ntime, nsave, DT=Float64)
-    PoincareInvariant2nd(guiding_center_4d_iode_init, f_surface, ω, (D²ϑ₁, D²ϑ₂, D²ϑ₃, D²ϑ₄), Δt, 4, nx, ny, ntime, nsave, DT)
+    PoincareInvariant2nd(guiding_center_4d_surface_iode_init, f_surface, ω, (D²ϑ₁, D²ϑ₂, D²ϑ₃, D²ϑ₄), Δt, 4, nx, ny, ntime, nsave, DT)
 end
