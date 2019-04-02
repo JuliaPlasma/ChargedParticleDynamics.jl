@@ -12,7 +12,6 @@ export guiding_center_4d_ode, guiding_center_4d_iode, guiding_center_4d_iode_λ,
 
 function guiding_center_4d_periodicity(q)
     p = zero(q)
-    p .= periodicity(q, equ)
 
     try
         p .= periodicity(q, equ)
