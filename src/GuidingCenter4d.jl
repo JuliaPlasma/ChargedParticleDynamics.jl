@@ -16,22 +16,34 @@ module GuidingCenter4d
 
 
 
-    export TokamakSlowBarelyPassing,
-           TokamakSlowBarelyTrapped,
-           TokamakSlowDeeplyPassing,
-           TokamakSlowDeeplyTrapped,
-           TokamakSlowLoop,
-           TokamakSlowSurface
+
+
+    export TokamakCartesianFastBarelyPassing,
+           TokamakCartesianFastBarelyTrapped,
+           TokamakCartesianFastDeeplyPassing,
+           TokamakCartesianFastDeeplyTrapped,
+           TokamakCartesianFastLoop,
+           TokamakCartesianFastSurface
+
+    include("guiding_center_4d/guiding_center_4d_tokamak_cartesian_fast.jl")
+
+
+    export TokamakCylindricalSlowBarelyPassing,
+           TokamakCylindricalSlowBarelyTrapped,
+           TokamakCylindricalSlowDeeplyPassing,
+           TokamakCylindricalSlowDeeplyTrapped,
+           TokamakCylindricalSlowLoop,
+           TokamakCylindricalSlowSurface
 
     include("guiding_center_4d/guiding_center_4d_tokamak_cylindrical_slow.jl")
 
 
-    export TokamakFastBarelyPassing,
-           TokamakFastBarelyTrapped,
-           TokamakFastDeeplyPassing,
-           TokamakFastDeeplyTrapped,
-           TokamakFastLoop,
-           TokamakFastSurface
+    export TokamakCylindricalFastBarelyPassing,
+           TokamakCylindricalFastBarelyTrapped,
+           TokamakCylindricalFastDeeplyPassing,
+           TokamakCylindricalFastDeeplyTrapped,
+           TokamakCylindricalFastLoop,
+           TokamakCylindricalFastSurface
 
     include("guiding_center_4d/guiding_center_4d_tokamak_cylindrical_fast.jl")
 

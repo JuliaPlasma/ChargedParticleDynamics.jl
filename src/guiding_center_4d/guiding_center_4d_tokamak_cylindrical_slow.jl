@@ -1,7 +1,7 @@
 """
 Slow barely passing particle in analytic, axisymmetric tokamak equilibrium.
 """
-module TokamakSlowBarelyPassing
+module TokamakCylindricalSlowBarelyPassing
 
     using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
     export toroidal_momentum
@@ -10,7 +10,7 @@ module TokamakSlowBarelyPassing
     const qᵢ = [1.05, 0., 0., 8.117E-4]
 
     equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
-    load_equilibrium(equ; target_module=TokamakSlowBarelyPassing)
+    load_equilibrium(equ; target_module=TokamakCylindricalSlowBarelyPassing)
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")
@@ -25,7 +25,7 @@ end
 """
 Slow barely trapped particle in analytic, axisymmetric tokamak equilibrium.
 """
-module TokamakSlowBarelyTrapped
+module TokamakCylindricalSlowBarelyTrapped
 
     using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
     export toroidal_momentum
@@ -34,7 +34,7 @@ module TokamakSlowBarelyTrapped
     const qᵢ = [1.05, 0., 0., 7.610E-4]
 
     equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
-    load_equilibrium(equ; target_module=TokamakSlowBarelyTrapped)
+    load_equilibrium(equ; target_module=TokamakCylindricalSlowBarelyTrapped)
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")
@@ -49,7 +49,7 @@ end
 """
 Slow deeply passing particle in analytic, axisymmetric tokamak equilibrium.
 """
-module TokamakSlowDeeplyPassing
+module TokamakCylindricalSlowDeeplyPassing
 
     using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
     export toroidal_momentum
@@ -58,7 +58,7 @@ module TokamakSlowDeeplyPassing
     const qᵢ = [1.05, 0., 0., 1.623E-3]
 
     equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
-    load_equilibrium(equ; target_module=TokamakSlowDeeplyPassing)
+    load_equilibrium(equ; target_module=TokamakCylindricalSlowDeeplyPassing)
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")
@@ -73,7 +73,7 @@ end
 """
 Slow deeply trapped particle in analytic, axisymmetric tokamak equilibrium.
 """
-module TokamakSlowDeeplyTrapped
+module TokamakCylindricalSlowDeeplyTrapped
 
     using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
     export toroidal_momentum
@@ -82,7 +82,7 @@ module TokamakSlowDeeplyTrapped
     const qᵢ = [1.05, 0., 0., 4.306E-4]
 
     equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
-    load_equilibrium(equ; target_module=TokamakSlowDeeplyTrapped)
+    load_equilibrium(equ; target_module=TokamakCylindricalSlowDeeplyTrapped)
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")
@@ -97,14 +97,14 @@ end
 """
 Slow particles on a phasespace loop in analytic, axisymmetric tokamak equilibrium.
 """
-module TokamakSlowLoop
+module TokamakCylindricalSlowLoop
 
     using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
 
     const μ  = 2.5E-6
 
     equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
-    load_equilibrium(equ; target_module=TokamakSlowLoop)
+    load_equilibrium(equ; target_module=TokamakCylindricalSlowLoop)
 
     function f_loop(t)
         R0 = 1.0
@@ -131,14 +131,14 @@ end
 """
 Slow particles on a phasespace surface in analytic, axisymmetric tokamak equilibrium.
 """
-module TokamakSlowSurface
+module TokamakCylindricalSlowSurface
 
     using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
 
     const μ  = 2.5E-6
 
     equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
-    load_equilibrium(equ; target_module=TokamakSlowSurface)
+    load_equilibrium(equ; target_module=TokamakCylindricalSlowSurface)
 
     function f_surface(s,t)
         R0 = 1.0
