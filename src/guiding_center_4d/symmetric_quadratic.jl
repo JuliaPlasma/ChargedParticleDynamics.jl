@@ -47,10 +47,12 @@ module GuidingCenter4dSymmetricQuadratic
 
     using ElectromagneticFields: load_equilibrium, periodicity, SymmetricQuadratic
 
-    const μ  = 1E-2
 
     equ = SymmetricQuadratic(1.)
     load_equilibrium(equ; target_module=GuidingCenter4dSymmetricQuadratic)
+
+    μ_loop() = 1E-2
+    μ_surface() = 1E-2
 
     function f_loop(s)
         rx = 0.5

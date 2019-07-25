@@ -2,10 +2,11 @@ module GuidingCenter4dThetaPinch
 
     using ElectromagneticFields: load_equilibrium, periodicity, ThetaPinch
 
-    const μ  = 2.5E-6
 
     equ = ThetaPinch(1.)
     load_equilibrium(equ; target_module=GuidingCenter4dThetaPinch)
+
+    μ_loop() = 2.5E-6
 
     function f_loop(t)
         φ0 = 0.0

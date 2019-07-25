@@ -10,31 +10,17 @@ module TokamakSmallCylindrical
 
     export toroidal_momentum
 
-    μ = 2.5E-6
-
     equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
     load_equilibrium(equ; target_module=TokamakSmallCylindrical)
 
 
-    function initial_conditions_barely_passing()
-        μ  = 2.448E-6
-        return [1.05, 0., 0., 8.117E-4]
-    end
+    initial_conditions_barely_passing() = ([1.05, 0., 0., 8.117E-4], 2.448E-6)
+    initial_conditions_barely_trapped() = ([1.05, 0., 0., 7.610E-4], 2.250E-6)
+    initial_conditions_deeply_passing() = ([1.05, 0., 0., 1.623E-3], 2.448E-6)
+    initial_conditions_deeply_trapped() = ([1.05, 0., 0., 4.306E-4], 2.250E-6)
 
-    function initial_conditions_barely_trapped()
-        μ  = 2.250E-6
-        return [1.05, 0., 0., 7.610E-4]
-    end
-
-    function initial_conditions_deeply_passing()
-        μ  = 2.448E-6
-        return [1.05, 0., 0., 1.623E-3]
-    end
-
-    function initial_conditions_deeply_trapped()
-        μ  = 2.250E-6
-        return [1.05, 0., 0., 4.306E-4]
-    end
+    μ_loop() = 2.5E-6
+    μ_surface() = 2.5E-6
 
     function f_loop(t)
         R0 = 1.0

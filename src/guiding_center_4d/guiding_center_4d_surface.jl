@@ -29,9 +29,9 @@ function initial_conditions_surface(nx, ny)
 end
 
 
-guiding_center_4d_surface_ode_init(q₀) = guiding_center_4d_ode(q₀; periodic=false)
-guiding_center_4d_surface_iode_init(q₀) = guiding_center_4d_iode(q₀; periodic=false)
-guiding_center_4d_surface_iode_λ_init(q₀) = guiding_center_4d_iode_λ(q₀; periodic=false)
+guiding_center_4d_surface_ode_init(q₀) = guiding_center_4d_ode(q₀, μ_surface(); periodic=false)
+guiding_center_4d_surface_iode_init(q₀) = guiding_center_4d_iode(q₀, μ_surface(); periodic=false)
+guiding_center_4d_surface_iode_λ_init(q₀) = guiding_center_4d_iode_λ(q₀, μ_surface(); periodic=false)
 
 
 function guiding_center_4d_surface_ode(nx, ny)

@@ -25,9 +25,9 @@ function initial_conditions_loop(n)
 end
 
 
-guiding_center_4d_loop_ode_init(q₀) = guiding_center_4d_ode(q₀; periodic=false)
-guiding_center_4d_loop_iode_init(q₀) = guiding_center_4d_iode(q₀; periodic=false)
-guiding_center_4d_loop_vode_init(q₀) = guiding_center_4d_vode_formal_lagrangian(q₀; periodic=false)
+guiding_center_4d_loop_ode_init(q₀) = guiding_center_4d_ode(q₀, μ_loop(); periodic=false)
+guiding_center_4d_loop_iode_init(q₀) = guiding_center_4d_iode(q₀, μ_loop(); periodic=false)
+guiding_center_4d_loop_vode_init(q₀) = guiding_center_4d_vode_formal_lagrangian(q₀, μ_loop(); periodic=false)
 
 
 function guiding_center_4d_loop_ode(n)
