@@ -1,3 +1,25 @@
+@doc raw"""
+First Poincaré invariant for a guiding center particle in an θ-pinch magnetic
+field of the form ``B(x,y,z) = B_0 \, e_z``.
+
+The loop for the first Poincaré invariant is initialized by
+```math
+q (\tau) = \begin{pmatrix}
+r_x \cos (2\pi \tau) \\
+y_0 \\
+r_z \sin (2\pi \tau) \\
+\end{pmatrix}
+```
+with parameters
+```math
+B_0 = 1, \quad
+r_x = 0.5, \quad
+r_z = 0.3, \quad
+y_0 = 0.0, \quad
+u_0 = 0.5, \quad
+\mu = 2.5 \times 10^{-6} .
+```
+"""
 module GuidingCenter4dThetaPinch
 
     using ElectromagneticFields: load_equilibrium, periodicity, ThetaPinch

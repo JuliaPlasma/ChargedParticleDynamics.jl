@@ -1,46 +1,46 @@
-"""
+@doc raw"""
 First and second Poincaré invariant for a guiding center particle in an
 axisymmetric magnetic field of the form ``B(x,y,z) = B_0 (1 + x^2 + y^2) e_z``.
 
 The loop for the first invariant is initialized by
 ```math
-q (\\tau) = \\begin{pmatrix}
-r_x \\cos (2\\pi \\tau) \\\\
-r_y \\sin (2\\pi \\tau) \\\\
-z_0 + z_1 \\sin (2\\pi \\tau) \\\\
-u_0 + u_1 \\cos (2\\pi \\tau) \\\\
-\\end{pmatrix}
+q (\tau) = \begin{pmatrix}
+r_x \cos (2\pi \tau) \\
+r_y \sin (2\pi \tau) \\
+z_0 + z_1 \sin (2\pi \tau) \\
+u_0 + u_1 \cos (2\pi \tau) \\
+\end{pmatrix}
 ```
 with parameters
 ```math
-B_0 = 1, \\quad
-r_x = 0.5, \\quad
-r_y = 0.3, \\quad
-z_0 = 0.0, \\quad
-z_1 = 0.1, \\quad
-u_0 = 0.5, \\quad
-u_1 = 0.05, \\quad
-\\mu = 0.01 .
+B_0 = 1, \quad
+r_x = 0.5, \quad
+r_y = 0.3, \quad
+z_0 = 0.0, \quad
+z_1 = 0.1, \quad
+u_0 = 0.5, \quad
+u_1 = 0.05, \quad
+\mu = 0.01 .
 ```
 
 The surface for the second invariant is initialized by
 ```math
-q (\\tau) = \\begin{pmatrix}
-r_0 (\\sigma - 0.5) \\\\
-r_0 (\\tau   - 0.5) \\\\
-z_0 + z_1 \\cos (2\\pi \\sigma) \\cos (2\\pi \\tau) \\\\
-u_0 + u_1 \\sin (2\\pi \\sigma) \\sin (2\\pi \\tau) \\\\
-\\end{pmatrix}
+q (\tau) = \begin{pmatrix}
+r_0 (\sigma - 0.5) \\
+r_0 (\tau   - 0.5) \\
+z_0 + z_1 \cos (2\pi \sigma) \cos (2\pi \tau) \\
+u_0 + u_1 \sin (2\pi \sigma) \sin (2\pi \tau) \\
+\end{pmatrix}
 ```
 with parameters
 ```math
-B_0 = 1, \\quad
-r_0 = 0.5, \\quad
-z_0 = 0.0, \\quad
-z_1 = 0.1, \\quad
-u_0 = 0.5, \\quad
-u_1 = 0.01, \\quad
-\\mu = 0.01 .
+B_0 = 1, \quad
+r_0 = 0.5, \quad
+z_0 = 0.0, \quad
+z_1 = 0.1, \quad
+u_0 = 0.5, \quad
+u_1 = 0.01, \quad
+\mu = 0.01 .
 ```
 """
 module GuidingCenter4dSymmetricQuadratic
