@@ -3,4 +3,5 @@ ElectromagneticFields
 GeometricIntegrators
 PoincareInvariants
 DecFP
+Documenter
 PyPlot
