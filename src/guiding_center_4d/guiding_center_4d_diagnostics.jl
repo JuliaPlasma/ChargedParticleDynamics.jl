@@ -15,6 +15,10 @@ function convert_coordinates_RZphi_to_xyz(q::DataSeries{DT,2}) where {DT}
     return x
 end
 
+function compute_energy(sol::Solution, hamiltonian::Function)
+    compute_energy(solt.t, sol.q, hamiltonian)
+end
+
 function compute_energy(t::TimeSeries{DT}, q::DataSeries{DT,2}, hamiltonian::Function) where {DT}
     h = SDataSeries(DT, 2, q.nt, 1)
     for i in 0:q.nt
