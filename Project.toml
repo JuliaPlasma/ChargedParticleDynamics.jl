@@ -23,7 +23,7 @@ ElectromagneticFields = "0.1"
 GeometricIntegrators = "0.2"
 PlotlyJS = "^0.13"
 Plots = "^0.28"
-PoincareInvariants = "0.1"
+PoincareInvariants = "0.2"
 RecipesBase = "^0.7"
 julia = "^1.1"
 
