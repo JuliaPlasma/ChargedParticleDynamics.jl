@@ -15,17 +15,17 @@ julia:
 env:
   - PYTHON=""
 
-matrix:
+jobs:
   allow_failures:
     - julia: nightly
   fast_finish: true
-
-jobs:
   include:
     - stage: "Documentation"
       julia: 1.1
       os: linux
-      script: bash ./docs/travis.sh
+      script:
+        - julia --color=yes --project=. -e 'using Pkg; Pkg.instantiate()'
+        - julia --color=yes --project=. docs/make.jl
       after_success: skip
 
 notifications:
