@@ -7,10 +7,12 @@ module GuidingCenter4d
     using LinearAlgebra
 
 
-    export GuidingCenter4dSolovevQuadratic,
+    export GuidingCenter4dSolovevIterXpoint,
+           GuidingCenter4dSolovevQuadratic,
            GuidingCenter4dSymmetricQuadratic,
            GuidingCenter4dThetaPinch
 
+    include("guiding_center_4d/solovev_iter_xpoint.jl")
     include("guiding_center_4d/solovev_quadratic.jl")
     include("guiding_center_4d/symmetric_quadratic.jl")
     include("guiding_center_4d/theta_pinch.jl")
