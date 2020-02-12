@@ -44,13 +44,13 @@ end
 
 
 function guiding_center_4d_ode_poincare_invariant_1st(Δt, nloop, ntime, nsave, DT=Float64)
-   PoincareInvariant1st(guiding_center_4d_loop_ode_init, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
+   PoincareInvariant1st(guiding_center_4d_loop_ode_init, f_loop, ϑ, Δt, 4, nloop, ntime, nsave, DT)
 end
 
 function guiding_center_4d_iode_poincare_invariant_1st(Δt, nloop, ntime, nsave, DT=Float64)
-   PoincareInvariant1st(guiding_center_4d_loop_iode_init, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
+   PoincareInvariant1st(guiding_center_4d_loop_iode_init, f_loop, ϑ, Δt, 4, nloop, ntime, nsave, DT)
 end
 
 function guiding_center_4d_vode_poincare_invariant_1st(Δt, nloop, ntime, nsave, DT=Float64)
-   PoincareInvariant1st(guiding_center_4d_loop_vode_init, f_loop, α, Δt, 4, nloop, ntime, nsave, DT)
+   PoincareInvariant1st(guiding_center_4d_loop_vode_init, f_loop, ϑ, Δt, 4, nloop, ntime, nsave, DT)
 end

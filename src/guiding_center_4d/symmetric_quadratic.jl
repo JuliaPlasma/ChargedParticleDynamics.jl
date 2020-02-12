@@ -45,7 +45,7 @@ u_1 = 0.01, \quad
 """
 module GuidingCenter4dSymmetricQuadratic
 
-    using ElectromagneticFields: load_equilibrium, periodicity, SymmetricQuadratic
+    using ElectromagneticFields: load_equilibrium, SymmetricQuadratic
 
 
     equ = SymmetricQuadratic(1.)

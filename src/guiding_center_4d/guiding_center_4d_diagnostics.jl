@@ -1,4 +1,6 @@
 
+export compute_energy, compute_toroidal_momentum, compute_momentum_error, compute_one_form, compute_error_drift
+
 
 function convert_coordinates_RZphi_to_xyz(q::DataSeries{DT,2}) where {DT}
     x = SDataSeries(DT, q.nd, q.nt, q.ni)
@@ -16,7 +18,7 @@ function convert_coordinates_RZphi_to_xyz(q::DataSeries{DT,2}) where {DT}
 end
 
 function compute_energy(sol::Solution, hamiltonian::Function)
-    compute_energy(solt.t, sol.q, hamiltonian)
+    compute_energy(sol.t, sol.q, hamiltonian)
 end
 
 function compute_energy(t::TimeSeries{DT}, q::DataSeries{DT,2}, hamiltonian::Function) where {DT}

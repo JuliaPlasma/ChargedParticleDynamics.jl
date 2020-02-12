@@ -1,5 +1,6 @@
 
 import DecFP
+import ElectromagneticFields
 
 using GeometricIntegrators.Equations
 
@@ -14,7 +15,7 @@ function guiding_center_4d_periodicity(q)
     p = zero(q)
 
     try
-        p .= periodicity(q, equ)
+        p .= ElectromagneticFields.periodicity(q, equ)
     catch
         @warn "No equilibrium found to determine periodicity."
     end
@@ -42,12 +43,12 @@ function guiding_center_4d_iode(qᵢ, μ; periodic=true)
 
     if periodic
         IODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ,
-             guiding_center_4d_g, guiding_center_4d_v_μ,
-             qᵢ, pᵢ; periodicity=guiding_center_4d_periodicity(qᵢ))
+             guiding_center_4d_g, qᵢ, pᵢ;
+             v=guiding_center_4d_v_μ, periodicity=guiding_center_4d_periodicity(qᵢ))
     else
         IODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ,
-             guiding_center_4d_g, guiding_center_4d_v_μ,
-             qᵢ, pᵢ)
+             guiding_center_4d_g, qᵢ, pᵢ;
+             v = guiding_center_4d_v_μ)
     end
 end
 
@@ -64,12 +65,12 @@ function guiding_center_4d_iode_λ(qᵢ, μ; periodic=true)
 
     if periodic
         IODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ,
-             guiding_center_4d_g, guiding_center_4d_v_μ,
-             qᵢ, pᵢ, λ₀; periodicity=guiding_center_4d_periodicity(qᵢ))
+             guiding_center_4d_g, qᵢ, pᵢ, λ₀;
+             v=guiding_center_4d_v_μ, periodicity=guiding_center_4d_periodicity(qᵢ))
     else
         IODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ,
-             guiding_center_4d_g, guiding_center_4d_v_μ,
-             qᵢ, pᵢ, λ₀)
+             guiding_center_4d_g, qᵢ, pᵢ, λ₀;
+             v=guiding_center_4d_v_μ)
     end
 end
 

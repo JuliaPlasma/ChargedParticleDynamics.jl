@@ -3,12 +3,12 @@ Analytic axisymmetric medium-size tokamak equilibrium in cartesian coordinates.
 """
 module TokamakMediumCylindrical
 
-    using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCylindrical
+    using ElectromagneticFields: load_equilibrium, AxisymmetricTokamakCylindrical
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
-    export toroidal_momentum
+    export hamiltonian, toroidal_momentum
 
 
     equ = AxisymmetricTokamakCylindrical(2., 5., 2.)
@@ -59,7 +59,7 @@ module TokamakMediumCylindrical
     include("guiding_center_4d_surface.jl")
 
     function toroidal_momentum(t,q)
-        R(t,q) * ϑ3(t,q)
+        R(t,q) * ϑ₃(t,q)
     end
 
 end

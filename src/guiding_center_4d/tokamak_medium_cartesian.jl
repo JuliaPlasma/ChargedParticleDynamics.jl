@@ -3,7 +3,7 @@ Analytic axisymmetric medium-size tokamak equilibrium in cartesian coordinates.
 """
 module TokamakMediumCartesian
 
-    using ElectromagneticFields: load_equilibrium, periodicity, AxisymmetricTokamakCartesian
+    using ElectromagneticFields: load_equilibrium, AxisymmetricTokamakCartesian
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped

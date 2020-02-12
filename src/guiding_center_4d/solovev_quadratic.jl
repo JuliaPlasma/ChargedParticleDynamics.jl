@@ -3,7 +3,7 @@ Analytic, quadratic Solov'ev equilibrium.
 """
 module GuidingCenter4dSolovevQuadratic
 
-    using ElectromagneticFields: load_equilibrium, periodicity, SolovevQuadratic
+    using ElectromagneticFields: load_equilibrium, SolovevQuadratic
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped

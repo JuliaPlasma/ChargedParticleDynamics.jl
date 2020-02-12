@@ -22,7 +22,7 @@ u_0 = 0.5, \quad
 """
 module GuidingCenter4dThetaPinch
 
-    using ElectromagneticFields: load_equilibrium, periodicity, ThetaPinch
+    using ElectromagneticFields: load_equilibrium, ThetaPinch
 
 
     equ = ThetaPinch(1.)
