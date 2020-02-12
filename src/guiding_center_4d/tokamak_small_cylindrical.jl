@@ -8,11 +8,11 @@ module TokamakSmallCylindrical
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
-    export toroidal_momentum
+    export hamiltonian, toroidal_momentum
+
 
     equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
     load_equilibrium(equ; target_module=TokamakSmallCylindrical)
-
 
     initial_conditions_barely_passing() = ([1.05, 0., 0., 8.117E-4], 2.448E-6)
     initial_conditions_barely_trapped() = ([1.05, 0., 0., 7.610E-4], 2.250E-6)

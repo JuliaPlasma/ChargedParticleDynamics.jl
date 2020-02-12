@@ -8,7 +8,7 @@ module GuidingCenter4dSolovevQuadratic
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
-    export toroidal_momentum
+    export hamiltonian, toroidal_momentum
 
 
     equ = SolovevQuadratic(2., 5., 1., 1.)

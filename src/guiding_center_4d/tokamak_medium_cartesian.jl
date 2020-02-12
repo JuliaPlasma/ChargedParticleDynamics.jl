@@ -8,6 +8,8 @@ module TokamakMediumCartesian
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
+    export hamiltonian, toroidal_momentum
+
 
     equ = AxisymmetricTokamakCartesian(2., 5., 2.)
     load_equilibrium(equ; target_module=TokamakMediumCartesian)
