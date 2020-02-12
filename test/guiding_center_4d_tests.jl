@@ -73,8 +73,8 @@ test_guiding_center_4d_vpglrk(TokamakMediumCartesian.guiding_center_4d_iode(Toka
 test_guiding_center_4d_vpglrk(TokamakMediumCartesian.guiding_center_4d_iode(TokamakMediumCartesian.initial_conditions_barely_trapped()...), Δt=1.)
 test_guiding_center_4d_vpglrk(TokamakMediumCartesian.guiding_center_4d_iode(TokamakMediumCartesian.initial_conditions_deeply_passing()...), Δt=1.)
 test_guiding_center_4d_vpglrk(TokamakMediumCartesian.guiding_center_4d_iode(TokamakMediumCartesian.initial_conditions_deeply_trapped()...), Δt=1.)
-test_guiding_center_4d_vpglrk(TokamakMediumCartesian.guiding_center_4d_loop_iode(nl), Δt=1.)
-test_guiding_center_4d_vpglrk(TokamakMediumCartesian.guiding_center_4d_surface_iode(nx, ny), Δt=1.)
+# test_guiding_center_4d_vpglrk(TokamakMediumCartesian.guiding_center_4d_loop_iode(nl), Δt=1.)
+# test_guiding_center_4d_vpglrk(TokamakMediumCartesian.guiding_center_4d_surface_iode(nx, ny), Δt=1.)
 
 test_guiding_center_4d_vpglrk(TokamakMediumCylindrical.guiding_center_4d_iode(TokamakMediumCylindrical.initial_conditions_barely_passing()...), Δt=1.)
 test_guiding_center_4d_vpglrk(TokamakMediumCylindrical.guiding_center_4d_iode(TokamakMediumCylindrical.initial_conditions_barely_trapped()...), Δt=1.)
