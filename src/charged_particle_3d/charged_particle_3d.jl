@@ -106,6 +106,6 @@ function charged_particle_3d_iode(q₀=q₀)
     end
 
     IODE(charged_particle_3d_iode_α, charged_particle_3d_iode_f,
-         charged_particle_3d_iode_g, charged_particle_3d_iode_v,
-         q₀, p₀)
+         charged_particle_3d_iode_g, q₀, p₀;
+         v=charged_particle_3d_iode_v)
 end
