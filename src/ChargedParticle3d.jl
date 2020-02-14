@@ -1,5 +1,3 @@
-__precompile__()
-
 module ChargedParticle3d
 
     using GeometricIntegrators

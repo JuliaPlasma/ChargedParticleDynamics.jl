@@ -1,5 +1,3 @@
-__precompile__(false)
-
 module GuidingCenter4d
 
     using GeometricIntegrators
