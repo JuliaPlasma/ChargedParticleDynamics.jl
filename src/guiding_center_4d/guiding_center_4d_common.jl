@@ -90,12 +90,26 @@ function dϑ₄dx₄(t, q)
 end
 
 
-function ϑ(t, q, Θ)
+function ϑ(t::Number, q::AbstractVector, Θ::AbstractVector)
     Θ[1] = ϑ₁(t,q)
     Θ[2] = ϑ₂(t,q)
     Θ[3] = ϑ₃(t,q)
     Θ[4] = ϑ₄(t,q)
     nothing
+end
+
+function ϑ(t::Number, q::AbstractVector, k::Int)
+    if k == 1
+        ϑ₁(t, q)
+    elseif k == 2
+        ϑ₂(t, q)
+    elseif k == 3
+        ϑ₃(t, q)
+    elseif k == 4
+        ϑ₄(t, q)
+    else
+        nothing
+    end
 end
 
 
