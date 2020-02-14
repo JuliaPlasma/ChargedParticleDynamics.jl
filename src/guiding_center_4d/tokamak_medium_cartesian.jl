@@ -57,5 +57,6 @@ module TokamakMediumCartesian
     include("guiding_center_4d_equations.jl")
     include("guiding_center_4d_loop.jl")
     include("guiding_center_4d_surface.jl")
+    include("guiding_center_4d_diagnostics.jl")
 
 end

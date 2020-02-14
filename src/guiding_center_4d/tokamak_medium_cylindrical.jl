@@ -62,4 +62,6 @@ module TokamakMediumCylindrical
         R(t,q) * ϑ₃(t,q)
     end
 
+    include("guiding_center_4d_diagnostics.jl")
+
 end

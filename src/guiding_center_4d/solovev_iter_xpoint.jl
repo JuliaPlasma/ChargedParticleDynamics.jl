@@ -26,4 +26,6 @@ module GuidingCenter4dSolovevIterXpoint
         R(t,q) * ϑ₃(t,q)
     end
 
+    include("guiding_center_4d_diagnostics.jl")
+
 end

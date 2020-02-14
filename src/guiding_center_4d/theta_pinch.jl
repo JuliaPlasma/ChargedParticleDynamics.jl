@@ -48,5 +48,6 @@ module GuidingCenter4dThetaPinch
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")
     include("guiding_center_4d_loop.jl")
+    include("guiding_center_4d_diagnostics.jl")
 
 end
