@@ -1,5 +1,4 @@
 
-
 module ChargedParticle3dTests
 
     using GeometricIntegrators
