@@ -18,6 +18,9 @@ jobs:
     - julia: nightly
   fast_finish: true
 
+before_install:
+  - julia --project --color=yes -e 'using Pkg; Pkg.add("https://github.com/DDMGNI/GeometricProblems.jl");'
+
 notifications:
   email: false
 
