@@ -11,113 +11,73 @@ export guiding_center_4d_ode, guiding_center_4d_iode, guiding_center_4d_iode_λ,
 
 
 
-function guiding_center_4d_periodicity(q)
-    p = zero(q)
-
-    try
-        p .= ElectromagneticFields.periodicity(q, equ)
-    catch
-        @warn "No equilibrium found to determine periodicity."
-    end
-
-    return p
-end
-
-
-function guiding_center_4d_ode(qᵢ, μ; periodic=true)
-    guiding_center_4d_v_μ(t, q, v) = guiding_center_4d_v(t, q, μ, v)
+function guiding_center_4d_periodicity(q, periodic=true)
+    periodicity = zeros(eltype(q), size(q,1))
 
     if periodic
-        ODE(guiding_center_4d_v_μ, qᵢ; periodicity=guiding_center_4d_periodicity(qᵢ))
-    else
-        ODE(guiding_center_4d_v_μ, qᵢ)
+        try
+            periodicity .= ElectromagneticFields.periodicity(q, equ)
+        catch
+            @warn "No equilibrium found to determine periodicity."
+        end
     end
+
+    return periodicity
 end
 
 
-function guiding_center_4d_iode(qᵢ, μ; periodic=true)
+function guiding_center_4d_ode(qᵢ, params; periodic=true)
+    ODE(guiding_center_4d_v, qᵢ;
+            parameters=params, h=hamiltonian,
+            periodicity=guiding_center_4d_periodicity(qᵢ, periodic))
+end
+
+
+function guiding_center_4d_iode(qᵢ, params; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
 
-    guiding_center_4d_v_μ(t, q, p, v) = guiding_center_4d_v(t, q, p, μ, v)
-    guiding_center_4d_f_μ(t, q, p, v) = guiding_center_4d_f(t, q, p, μ, v)
-
-    if periodic
-        IODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ,
-             guiding_center_4d_g, qᵢ, pᵢ;
-             v=guiding_center_4d_v_μ, periodicity=guiding_center_4d_periodicity(qᵢ))
-    else
-        IODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ,
-             guiding_center_4d_g, qᵢ, pᵢ;
-             v = guiding_center_4d_v_μ)
-    end
+    IODE(guiding_center_4d_ϑ, guiding_center_4d_f, guiding_center_4d_g, qᵢ, pᵢ;
+            parameters=params, h=hamiltonian, v=guiding_center_4d_v,
+            periodicity=guiding_center_4d_periodicity(qᵢ, periodic))
 end
 
-function guiding_center_4d_iode_dec128(qᵢ, μ; periodic=true)
+function guiding_center_4d_iode_dec128(qᵢ, params; periodic=true)
     guiding_center_4d_iode(Dec128.(qᵢ), Dec128.(μ); periodic=periodic)
 end
 
-function guiding_center_4d_iode_λ(qᵢ, μ; periodic=true)
+function guiding_center_4d_iode_λ(qᵢ, params; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
     λ₀ = guiding_center_4d_λ₀(qᵢ)
 
-    guiding_center_4d_v_μ(t, q, p, v) = guiding_center_4d_v(t, q, p, μ, v)
-    guiding_center_4d_f_μ(t, q, p, v) = guiding_center_4d_f(t, q, p, μ, v)
-
-    if periodic
-        IODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ,
-             guiding_center_4d_g, qᵢ, pᵢ, λ₀;
-             v=guiding_center_4d_v_μ, periodicity=guiding_center_4d_periodicity(qᵢ))
-    else
-        IODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ,
-             guiding_center_4d_g, qᵢ, pᵢ, λ₀;
-             v=guiding_center_4d_v_μ)
-    end
+    IODE(guiding_center_4d_ϑ, guiding_center_4d_f, guiding_center_4d_g, qᵢ, pᵢ, λ₀;
+            parameters=params, h=hamiltonian, v=guiding_center_4d_v,
+            periodicity=guiding_center_4d_periodicity(qᵢ, periodic))
 end
 
-function guiding_center_4d_vode(qᵢ, μ; periodic=true)
+function guiding_center_4d_vode(qᵢ, params; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
 
-    guiding_center_4d_v_μ(t, q, p, v) = guiding_center_4d_v(t, q, p, μ, v)
-    guiding_center_4d_f_μ(t, q, p, v) = guiding_center_4d_f(t, q, p, μ, v)
-
-    if periodic
-        VODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ,
-             guiding_center_4d_g, guiding_center_4d_v_μ,
-             ω, dH, qᵢ, pᵢ; periodicity=guiding_center_4d_periodicity(qᵢ))
-    else
-        VODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ,
-             guiding_center_4d_g, guiding_center_4d_v_μ,
-             ω, dH, qᵢ, pᵢ)
-    end
+    VODE(guiding_center_4d_ϑ, guiding_center_4d_f, guiding_center_4d_g, qᵢ, pᵢ;
+            parameters=params, h=hamiltonian, v=guiding_center_4d_v,
+            Ω=guiding_center_4d_ω, ∇H=guiding_center_4d_dH,
+            periodicity=guiding_center_4d_periodicity(qᵢ, periodic))
 end
 
-function guiding_center_4d_dg(qᵢ, μ; κ=0.0, periodic=true)
-    if periodic
-        periodicity = []
-    else
-        periodicity=guiding_center_4d_periodicity(qᵢ)
-    end
+function guiding_center_4d_dg(qᵢ, params; κ=0.0, periodic=true)
+    guiding_center_4d_ϑ_κ(t, q, v, p, params) = guiding_center_4d_ϑ(t, q, v, p, params, κ)
+    guiding_center_4d_f_κ(t, q, v, f, params) = guiding_center_4d_f(t, q, v, f, params, κ)
+    guiding_center_4d_g_κ(t, q, λ, g, params) = guiding_center_4d_g(t, q, λ, g, params, κ)
 
-    guiding_center_4d_ϑ_κ(t, q, v, p) = guiding_center_4d_ϑ(κ, t, q, v, p)
-    guiding_center_4d_f_κ(t, q, v, f) = guiding_center_4d_f(κ, t, q, v, μ, f)
-    guiding_center_4d_g_κ(t, q, λ, g) = guiding_center_4d_g(κ, t, q, λ, g)
-
-    IODE(guiding_center_4d_ϑ_κ, guiding_center_4d_f_κ,
-         guiding_center_4d_g_κ, guiding_center_4d_v,
-         qᵢ, qᵢ; periodicity=periodicity)
+    IODE(guiding_center_4d_ϑ_κ, guiding_center_4d_f_κ, guiding_center_4d_g_κ, qᵢ, qᵢ;
+            parameters=params, h=hamiltonian, v=guiding_center_4d_v,
+            periodicity=guiding_center_4d_periodicity(qᵢ, periodic))
 end
 
-function guiding_center_4d_formal_lagrangian(qᵢ, μ; periodic=true)
+function guiding_center_4d_formal_lagrangian(qᵢ, params; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
 
-    guiding_center_4d_v_μ(t, q, p, v) = guiding_center_4d_v(t, q, p, μ, v)
-    guiding_center_4d_f_μ(t, q, p, v) = guiding_center_4d_f(t, q, p, μ, v)
-
-    if periodic
-        VODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ, guiding_center_4d_g, guiding_center_4d_v_μ,
-             ω, dH, qᵢ, pᵢ; periodicity=guiding_center_4d_periodicity(qᵢ))
-    else
-        VODE(guiding_center_4d_ϑ, guiding_center_4d_f_μ, guiding_center_4d_g, guiding_center_4d_v_μ,
-             ω, dH, qᵢ, pᵢ)
-    end
+    VODE(guiding_center_4d_ϑ, guiding_center_4d_f, guiding_center_4d_g, qᵢ, pᵢ;
+            parameters=params, h=hamiltonian, v=guiding_center_4d_v,
+            Ω=guiding_center_4d_ω, ∇H=guiding_center_4d_dH,
+            periodicity=guiding_center_4d_periodicity(qᵢ, periodic))
 end

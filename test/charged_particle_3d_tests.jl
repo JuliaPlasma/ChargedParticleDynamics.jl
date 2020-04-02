@@ -1,4 +1,6 @@
 
+using Test
+
 module ChargedParticle3dTests
 
     using GeometricIntegrators
@@ -10,7 +12,7 @@ module ChargedParticle3dTests
 
     function test_charged_particle_3d(ode)
         int = Integrator(ode, getTableauVPGLRK(1), Δt)
-        sol = integrate(int, nt)
+        sol = integrate(ode, int, nt)
     end
 
 end

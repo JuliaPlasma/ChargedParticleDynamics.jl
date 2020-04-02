@@ -2,23 +2,23 @@
 using GeometricIntegrators.Equations
 
 
-function α1(t, q)
+function ϑ1(t, q)
     q[4] + A1(t,q)
 end
 
-function α2(t, q)
+function ϑ2(t, q)
     q[5] + A2(t,q)
 end
 
-function α3(t, q)
+function ϑ3(t, q)
     q[6] + A3(t,q)
 end
 
 
-function α(t, q, p)
-    p[1] = α1(t,q)
-    p[2] = α2(t,q)
-    p[3] = α3(t,q)
+function ϑ(t, q, p)
+    p[1] = ϑ1(t,q)
+    p[2] = ϑ2(t,q)
+    p[3] = ϑ3(t,q)
     p[4] = zero(eltype(q))
     p[5] = zero(eltype(q))
     p[6] = zero(eltype(q))
@@ -52,12 +52,12 @@ function hamiltonian(t,q)
 end
 
 function angular_momentum(t,q)
-    q[1] * α2(t,q) - q[2] * α1(t,q)
+    q[1] * ϑ2(t,q) - q[2] * ϑ1(t,q)
 end
 
 
-function charged_particle_3d_iode_α(t, q, v, p)
-    α(t, q, p)
+function charged_particle_3d_iode_ϑ(t, q, v, p)
+    ϑ(t, q, p)
 end
 
 function charged_particle_3d_iode_f(t, q, v, f)
@@ -80,7 +80,7 @@ function charged_particle_3d_iode_g(t, q, λ, g)
     nothing
 end
 
-function charged_particle_3d_iode_v(t, q, p, v)
+function charged_particle_3d_iode_v(t, q, v)
     v[1] = q[4]
     v[2] = q[5]
     v[3] = q[6]
@@ -94,18 +94,18 @@ function charged_particle_3d_iode(q₀=q₀)
     p₀ = zero(q₀)
 
     if ndims(q₀) == 1
-        α(0, q₀, p₀)
+        ϑ(0, q₀, p₀)
     else
         for i in 1:size(q₀,2)
             tq = zeros(eltype(q₀), size(q₀,1))
             tp = zeros(eltype(p₀), size(p₀,1))
-            simd_copy_xy_first!(tq, q₀, i)
-            α(0, tq, tp)
-            simd_copy_yx_first!(tp, p₀, i)
+            tq .= q₀[:,i]
+            ϑ(0, tq, tp)
+            p₀[:,i] .= tp
         end
     end
 
-    IODE(charged_particle_3d_iode_α, charged_particle_3d_iode_f,
+    IODE(charged_particle_3d_iode_ϑ, charged_particle_3d_iode_f,
          charged_particle_3d_iode_g, q₀, p₀;
-         v=charged_particle_3d_iode_v)
+         h=hamiltonian, v=charged_particle_3d_iode_v)
 end

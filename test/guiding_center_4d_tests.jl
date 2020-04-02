@@ -1,4 +1,5 @@
 
+using Test
 
 module GuidingCenter4dTests
 
@@ -11,12 +12,12 @@ module GuidingCenter4dTests
 
     function test_guiding_center_4d_glrk(ode; Δt = Δt)
         int = Integrator(ode, getTableauGLRK(1), Δt)
-        sol = integrate(int, nt)
+        sol = integrate(ode, int, nt)
     end
 
     function test_guiding_center_4d_vpglrk(ode; Δt = Δt)
         int = Integrator(ode, getTableauVPGLRK(1), Δt)
-        sol = integrate(int, nt)
+        sol = integrate(ode, int, nt)
     end
 
 end
