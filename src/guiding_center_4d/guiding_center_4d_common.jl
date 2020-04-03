@@ -513,7 +513,7 @@ function guiding_center_4d_f(t, q::Vector{DT}, v::Vector{DT}, f::Vector{DT}, par
     nothing
 end
 
-function guiding_center_4d_g(t::Number, q::Vector, λ::Vector, g::Vector)
+function guiding_center_4d_g(t::Number, q::Vector, λ::Vector, g::Vector, params)
     g[1] = f₁(t,q,λ)
     g[2] = f₂(t,q,λ)
     g[3] = f₃(t,q,λ)
@@ -529,7 +529,7 @@ end
 #     nothing
 # end
 
-function guiding_center_4d_g(t, q::Vector{DT}, λ::Vector{DT}, g::Vector{DT}, params, κ::DT=0) where {DT}
+function guiding_center_4d_g(t, q::Vector{DT}, λ::Vector{DT}, g::Vector{DT}, params, κ::DT) where {DT}
     g[1] = (1-κ) * f₁(t,q,λ) - κ * (g₁(t,q,λ) + g̅₁(t,q,λ))
     g[2] = (1-κ) * f₂(t,q,λ) - κ * (g₂(t,q,λ) + g̅₂(t,q,λ))
     g[3] = (1-κ) * f₃(t,q,λ) - κ * (g₃(t,q,λ) + g̅₃(t,q,λ))
