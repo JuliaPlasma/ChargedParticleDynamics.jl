@@ -4,91 +4,32 @@ using Parameters
 export hamiltonian, u, ω, ϑ, ϑ₁, ϑ₂, ϑ₃, ϑ₄, dϑ, β₁, β₂, β₃, B, B₁, B₂, B₃, b₁, b₂, b₃, dH
 
 
-@inline function u(t, q)
-    q[4]
-end
+@inline u(t,q) = q[4]
 
+ϑ₁(t,q) = A₁(t,q) + u(t,q) * b₁(t,q)
+ϑ₂(t,q) = A₂(t,q) + u(t,q) * b₂(t,q)
+ϑ₃(t,q) = A₃(t,q) + u(t,q) * b₃(t,q)
+ϑ₄(t,q) = zero(eltype(q))
 
-function ϑ₁(t, q)
-    A₁(t,q) + u(t,q) * b₁(t,q)
-end
+dϑ₁dx₁(t,q) = dA₁dx₁(t,q) + u(t,q) * db₁dx₁(t,q)
+dϑ₁dx₂(t,q) = dA₁dx₂(t,q) + u(t,q) * db₁dx₂(t,q)
+dϑ₁dx₃(t,q) = dA₁dx₃(t,q) + u(t,q) * db₁dx₃(t,q)
+dϑ₁dx₄(t,q) = b₁(t,q)
 
-function ϑ₂(t, q)
-    A₂(t,q) + u(t,q) * b₂(t,q)
-end
+dϑ₂dx₁(t,q) = dA₂dx₁(t,q) + u(t,q) * db₂dx₁(t,q)
+dϑ₂dx₂(t,q) = dA₂dx₂(t,q) + u(t,q) * db₂dx₂(t,q)
+dϑ₂dx₃(t,q) = dA₂dx₃(t,q) + u(t,q) * db₂dx₃(t,q)
+dϑ₂dx₄(t,q) = b₂(t,q)
 
-function ϑ₃(t, q)
-    A₃(t,q) + u(t,q) * b₃(t,q)
-end
+dϑ₃dx₁(t,q) = dA₃dx₁(t,q) + u(t,q) * db₃dx₁(t,q)
+dϑ₃dx₂(t,q) = dA₃dx₂(t,q) + u(t,q) * db₃dx₂(t,q)
+dϑ₃dx₃(t,q) = dA₃dx₃(t,q) + u(t,q) * db₃dx₃(t,q)
+dϑ₃dx₄(t,q) = b₃(t,q)
 
-function ϑ₄(t, q)
-    zero(eltype(q))
-end
-
-
-function dϑ₁dx₁(t, q)
-    dA₁dx₁(t,q) + u(t,q) * db₁dx₁(t,q)
-end
-
-function dϑ₁dx₂(t, q)
-    dA₁dx₂(t,q) + u(t,q) * db₁dx₂(t,q)
-end
-
-function dϑ₁dx₃(t, q)
-    dA₁dx₃(t,q) + u(t,q) * db₁dx₃(t,q)
-end
-
-function dϑ₁dx₄(t, q)
-    b₁(t,q)
-end
-
-function dϑ₂dx₁(t, q)
-    dA₂dx₁(t,q) + u(t,q) * db₂dx₁(t,q)
-end
-
-function dϑ₂dx₂(t, q)
-    dA₂dx₂(t,q) + u(t,q) * db₂dx₂(t,q)
-end
-
-function dϑ₂dx₃(t, q)
-    dA₂dx₃(t,q) + u(t,q) * db₂dx₃(t,q)
-end
-
-function dϑ₂dx₄(t, q)
-    b₂(t,q)
-end
-
-function dϑ₃dx₁(t, q)
-    dA₃dx₁(t,q) + u(t,q) * db₃dx₁(t,q)
-end
-
-function dϑ₃dx₂(t, q)
-    dA₃dx₂(t,q) + u(t,q) * db₃dx₂(t,q)
-end
-
-function dϑ₃dx₃(t, q)
-    dA₃dx₃(t,q) + u(t,q) * db₃dx₃(t,q)
-end
-
-function dϑ₃dx₄(t, q)
-    b₃(t,q)
-end
-
-function dϑ₄dx₁(t, q)
-    zero(eltype(q))
-end
-
-function dϑ₄dx₂(t, q)
-    zero(eltype(q))
-end
-
-function dϑ₄dx₃(t, q)
-    zero(eltype(q))
-end
-
-function dϑ₄dx₄(t, q)
-    zero(eltype(q))
-end
+dϑ₄dx₁(t,q) = zero(eltype(q))
+dϑ₄dx₂(t,q) = zero(eltype(q))
+dϑ₄dx₃(t,q) = zero(eltype(q))
+dϑ₄dx₄(t,q) = zero(eltype(q))
 
 
 function ϑ(t::Number, q::AbstractVector, Θ::AbstractVector)
@@ -339,18 +280,9 @@ function dϑ(t, q, dϑ)
 end
 
 
-function β₁(t,q)
-   return dϑ₃dx₂(t,q) - dϑ₂dx₃(t,q)
-end
-
-function β₂(t,q)
-   return dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
-end
-
-function β₃(t,q)
-   return dϑ₂dx₁(t,q) - dϑ₁dx₂(t,q)
-end
-
+β₁(t,q) = dϑ₃dx₂(t,q) - dϑ₂dx₃(t,q)
+β₂(t,q) = dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
+β₃(t,q) = dϑ₂dx₁(t,q) - dϑ₁dx₂(t,q)
 
 # function β(t,q)
 #    return sqrt(β1(t,q)^2 + β2(t,q)^2 + β3(t,q)^2)
@@ -363,22 +295,10 @@ function hamiltonian(t, q, params)
 end
 
 
-function dHdx₁(t, q, μ)
-    μ * dBdx₁(t,q)
-end
-
-function dHdx₂(t, q, μ)
-    μ * dBdx₂(t,q)
-end
-
-function dHdx₃(t, q, μ)
-    μ * dBdx₃(t,q)
-end
-
-function dHdx₄(t, q, μ)
-    u(t,q)
-end
-
+dHdx₁(t, q, μ) = μ * dBdx₁(t,q)
+dHdx₂(t, q, μ) = μ * dBdx₂(t,q)
+dHdx₃(t, q, μ) = μ * dBdx₃(t,q)
+dHdx₄(t, q, μ) = u(t,q)
 
 function dH(t, q, dH, params)
     @unpack μ = params
@@ -390,38 +310,15 @@ function dH(t, q, dH, params)
 end
 
 
-function f₁(t, q, v)
-    dϑ₁dx₁(t,q) * v[1] + dϑ₂dx₁(t,q) * v[2] + dϑ₃dx₁(t,q) * v[3] + dϑ₄dx₁(t,q) * v[4]
-end
+f₁(t,q,v) = dϑ₁dx₁(t,q) * v[1] + dϑ₂dx₁(t,q) * v[2] + dϑ₃dx₁(t,q) * v[3] + dϑ₄dx₁(t,q) * v[4]
+f₂(t,q,v) = dϑ₁dx₂(t,q) * v[1] + dϑ₂dx₂(t,q) * v[2] + dϑ₃dx₂(t,q) * v[3] + dϑ₄dx₂(t,q) * v[4]
+f₃(t,q,v) = dϑ₁dx₃(t,q) * v[1] + dϑ₂dx₃(t,q) * v[2] + dϑ₃dx₃(t,q) * v[3] + dϑ₄dx₃(t,q) * v[4]
+f₄(t,q,v) = dϑ₁dx₄(t,q) * v[1] + dϑ₂dx₄(t,q) * v[2] + dϑ₃dx₄(t,q) * v[3] + dϑ₄dx₄(t,q) * v[4]
 
-function f₂(t, q, v)
-    dϑ₁dx₂(t,q) * v[1] + dϑ₂dx₂(t,q) * v[2] + dϑ₃dx₂(t,q) * v[3] + dϑ₄dx₂(t,q) * v[4]
-end
-
-function f₃(t, q, v)
-    dϑ₁dx₃(t,q) * v[1] + dϑ₂dx₃(t,q) * v[2] + dϑ₃dx₃(t,q) * v[3] + dϑ₄dx₃(t,q) * v[4]
-end
-
-function f₄(t, q, v)
-    dϑ₁dx₄(t,q) * v[1] + dϑ₂dx₄(t,q) * v[2] + dϑ₃dx₄(t,q) * v[3] + dϑ₄dx₄(t,q) * v[4]
-end
-
-
-function g₁(t, q, v)
-    dϑ₁dx₁(t,q) * v[1] + dϑ₁dx₂(t,q) * v[2] + dϑ₁dx₃(t,q) * v[3] + dϑ₁dx₄(t,q) * v[4]
-end
-
-function g₂(t, q, v)
-    dϑ₂dx₁(t,q) * v[1] + dϑ₂dx₂(t,q) * v[2] + dϑ₂dx₃(t,q) * v[3] + dϑ₂dx₄(t,q) * v[4]
-end
-
-function g₃(t, q, v)
-    dϑ₃dx₁(t,q) * v[1] + dϑ₃dx₂(t,q) * v[2] + dϑ₃dx₃(t,q) * v[3] + dϑ₃dx₄(t,q) * v[4]
-end
-
-function g₄(t, q, v)
-    dϑ₄dx₁(t,q) * v[1] + dϑ₄dx₂(t,q) * v[2] + dϑ₄dx₃(t,q) * v[3] + dϑ₄dx₄(t,q) * v[4]
-end
+g₁(t,q,v) = dϑ₁dx₁(t,q) * v[1] + dϑ₁dx₂(t,q) * v[2] + dϑ₁dx₃(t,q) * v[3] + dϑ₁dx₄(t,q) * v[4]
+g₂(t,q,v) = dϑ₂dx₁(t,q) * v[1] + dϑ₂dx₂(t,q) * v[2] + dϑ₂dx₃(t,q) * v[3] + dϑ₂dx₄(t,q) * v[4]
+g₃(t,q,v) = dϑ₃dx₁(t,q) * v[1] + dϑ₃dx₂(t,q) * v[2] + dϑ₃dx₃(t,q) * v[3] + dϑ₃dx₄(t,q) * v[4]
+g₄(t,q,v) = dϑ₄dx₁(t,q) * v[1] + dϑ₄dx₂(t,q) * v[2] + dϑ₄dx₃(t,q) * v[3] + dϑ₄dx₄(t,q) * v[4]
 
 
 function g̅₁(t, q, v)
@@ -465,12 +362,10 @@ function guiding_center_4d_v(t, q::Vector{DT}, v::Vector{DT}, params) where {DT}
     local ∇₂B = dBdx₂(t,q)
     local ∇₃B = dBdx₃(t,q)
 
-    v[1] = + ( u(t,q) * lβ₁ - μ * ( ∇₂B * dϑ₃dx₄(t,q) - ∇₃B * dϑ₂dx₄(t,q) ) ) / lβ
-    v[2] = + ( u(t,q) * lβ₂ - μ * ( ∇₃B * dϑ₁dx₄(t,q) - ∇₁B * dϑ₃dx₄(t,q) ) ) / lβ
-    v[3] = + ( u(t,q) * lβ₃ - μ * ( ∇₁B * dϑ₂dx₄(t,q) - ∇₂B * dϑ₁dx₄(t,q) ) ) / lβ
-    v[4] = - μ * ( ∇₁B * lβ₁
-                 + ∇₂B * lβ₂
-                 + ∇₃B * lβ₃ ) / lβ
+    v[1] = ( u(t,q) * lβ₁ - μ * ( ∇₂B * dϑ₃dx₄(t,q) - ∇₃B * dϑ₂dx₄(t,q) ) ) / lβ
+    v[2] = ( u(t,q) * lβ₂ - μ * ( ∇₃B * dϑ₁dx₄(t,q) - ∇₁B * dϑ₃dx₄(t,q) ) ) / lβ
+    v[3] = ( u(t,q) * lβ₃ - μ * ( ∇₁B * dϑ₂dx₄(t,q) - ∇₂B * dϑ₁dx₄(t,q) ) ) / lβ
+    v[4] = - μ * ( ∇₁B * lβ₁ + ∇₂B * lβ₂ + ∇₃B * lβ₃ ) / lβ
 
     nothing
 end
