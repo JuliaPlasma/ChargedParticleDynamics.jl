@@ -1,7 +1,7 @@
 
 using Parameters
 
-export hamiltonian
+export hamiltonian, ϑ, ω, ωabs
 
 
 @inline function u(t, q)
@@ -44,6 +44,44 @@ function ϑ(t, q, ϑ, params)
 end
 
 
+ω₁(t,q) = dϑ₃dx₂(t,q) - dϑ₂dx₃(t,q)
+ω₂(t,q) = dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
+ω₃(t,q) = dϑ₂dx₁(t,q) - dϑ₁dx₂(t,q)
+
+function ω(t, q, ω::Vector, params)
+    ω[1] = ω₁(t,q)
+    ω[2] = ω₂(t,q)
+    ω[3] = ω₃(t,q)
+    nothing
+end
+
+function ω(t, q, Ω::Matrix, params)
+    Ω[1,1] = 0
+    Ω[1,2] = dϑ₁dx₂(t,q) - dϑ₂dx₁(t,q)
+    Ω[1,3] = dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
+    Ω[1,4] = dϑ₁dx₄(t,q) - dϑ₄dx₁(t,q)
+
+    Ω[2,1] = dϑ₂dx₁(t,q) - dϑ₁dx₂(t,q)
+    Ω[2,2] = 0
+    Ω[2,3] = dϑ₂dx₃(t,q) - dϑ₃dx₂(t,q)
+    Ω[2,4] = dϑ₂dx₄(t,q) - dϑ₄dx₂(t,q)
+
+    Ω[3,1] = dϑ₃dx₁(t,q) - dϑ₁dx₃(t,q)
+    Ω[3,2] = dϑ₃dx₂(t,q) - dϑ₂dx₃(t,q)
+    Ω[3,3] = 0
+    Ω[3,4] = dϑ₃dx₄(t,q) - dϑ₄dx₃(t,q)
+
+    Ω[4,1] = dϑ₄dx₁(t,q) - dϑ₁dx₄(t,q)
+    Ω[4,2] = dϑ₄dx₂(t,q) - dϑ₂dx₄(t,q)
+    Ω[4,3] = dϑ₄dx₃(t,q) - dϑ₃dx₄(t,q)
+    Ω[4,4] = 0
+
+    nothing
+end
+
+function ωabs(t, q, params)
+    ω₁(t,q) * b₁(t,q) + ω₂(t,q) * b₂(t,q) + ω₃(t,q) * b₃(t,q)
+end
 β₁(t, q) = u(t,q) * ϑ₁(t,q)
 β₂(t, q) = u(t,q) * ϑ₂(t,q)
 β₃(t, q) = u(t,q) * ϑ₃(t,q)
