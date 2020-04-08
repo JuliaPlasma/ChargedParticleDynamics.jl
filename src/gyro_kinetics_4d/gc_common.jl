@@ -2,6 +2,8 @@
 using Parameters
 
 export hamiltonian, ϑ, ω, ωabs
+export transform_x_to_x̃!, transform_x_to_x̃,
+       transform_q_to_q̃!, transform_q_to_q̃
 
 
 @inline function u(t, q)
@@ -82,6 +84,27 @@ end
 function ωabs(t, q, params)
     ω₁(t,q) * b₁(t,q) + ω₂(t,q) * b₂(t,q) + ω₃(t,q) * b₃(t,q)
 end
+
+
+function transform_x_to_x̃!(x, x̃, u)
+    x̃ .= ωabs(0.0, [x..., u], params) .* x₀
+end
+
+function transform_x_to_x̃(x, u)
+    transform_x_to_x̃!(x, zero(x), u)
+end
+
+function transform_q_to_q̃!(q, q̃)
+    transform_x_to_x̃!(q[1:3], q̃[1:3], q[4])
+    q̃[4] = q[4]
+    q̃
+end
+
+function transform_q_to_q̃(q)
+    transform_q_to_q̃!(q, zero(q))
+end
+
+
 β₁(t, q) = u(t,q) * ϑ₁(t,q)
 β₂(t, q) = u(t,q) * ϑ₂(t,q)
 β₃(t, q) = u(t,q) * ϑ₃(t,q)
