@@ -1,6 +1,4 @@
 
-using Test
-
 module ChargedParticle3dTests
 
     using Test
@@ -20,12 +18,32 @@ module ChargedParticle3dTests
 end
 
 
-using .ChargedParticle3dTests
 
-import ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dUniform
-import ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dSymmetric
-import ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dSingular
+@safetestset "Charged Particle Dynamics in 3D in Uniform Magnetic Field                                           " begin
 
-test_charged_particle_3d(ChargedParticle3dUniform.charged_particle_3d_iode())
-test_charged_particle_3d(ChargedParticle3dSymmetric.charged_particle_3d_iode())
-test_charged_particle_3d(ChargedParticle3dSingular.charged_particle_3d_iode())
+    using ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dUniform
+    using ..ChargedParticle3dTests
+
+    test_charged_particle_3d(ChargedParticle3dUniform.charged_particle_3d_iode())
+
+end
+
+
+@safetestset "Charged Particle Dynamics in 3D in Symmetric Magnetic Field                                         " begin
+
+    using ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dSymmetric
+    using ..ChargedParticle3dTests
+
+    test_charged_particle_3d(ChargedParticle3dSymmetric.charged_particle_3d_iode())
+
+end
+
+
+@safetestset "Charged Particle Dynamics in 3D in Singular Magnetic Field                                          " begin
+
+    using ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dSingular
+    using ..ChargedParticle3dTests
+
+    test_charged_particle_3d(ChargedParticle3dSingular.charged_particle_3d_iode())
+
+end
