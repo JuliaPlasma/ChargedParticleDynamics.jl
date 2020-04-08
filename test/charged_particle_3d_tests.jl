@@ -1,4 +1,6 @@
 
+using SafeTestsets
+
 module ChargedParticle3dTests
 
     using Test

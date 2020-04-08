@@ -1,4 +1,6 @@
 
+using SafeTestsets
+
 module GuidingCenter4dTests
 
     using Test
@@ -28,6 +30,30 @@ module GuidingCenter4dTests
 
 end
 
+
+
+@safetestset "Guiding Centre Dynamics in 4D with ITER-like Solov'ev Equilibrium with X-Point                      " begin
+
+    using ChargedParticleDynamics.GuidingCenter4d.GuidingCenter4dSolovevIterXpoint
+    using ..GuidingCenter4dTests
+
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_trapped()...), Δt=10000.)
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_passing()...), Δt=1.)
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_trapped()...), Δt=1.)
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_passing()...), Δt=1.)
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_trapped()...), Δt=1.)
+    # test_guiding_center_4d_glrk(guiding_center_4d_loop_ode(nl), Δt=1.)
+    # test_guiding_center_4d_glrk(guiding_center_4d_surface_ode(nx, ny), Δt=1.)
+
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_trapped()...), Δt=10000.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_passing()...), Δt=1.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_trapped()...), Δt=1.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_passing()...), Δt=1.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_trapped()...), Δt=1.)
+    # test_guiding_center_4d_vpglrk(guiding_center_4d_loop_iode(nl), Δt=1.)
+    # test_guiding_center_4d_vpglrk(guiding_center_4d_surface_iode(nx, ny), Δt=1.)
+
+end
 
 
 @safetestset "Guiding Centre Dynamics in 4D with medium-size Tokamak Equilibrium in Cartesian Coordinates         " begin
