@@ -2,8 +2,6 @@
 using Parameters
 
 export hamiltonian, ϑ, ω, ωabs
-export transform_x_to_x̃!, transform_x_to_x̃,
-       transform_q_to_q̃!, transform_q_to_q̃
 
 
 @inline function u(t, q)
@@ -32,6 +30,17 @@ function dH(t, q, dH, params)
 end
 
 
+d²Hdx₁dx₁(t, q, μ) = μ * d²Bdx₁dx₁(t,q)
+d²Hdx₁dx₂(t, q, μ) = μ * d²Bdx₁dx₂(t,q)
+d²Hdx₁dx₃(t, q, μ) = μ * d²Bdx₁dx₃(t,q)
+d²Hdx₂dx₁(t, q, μ) = μ * d²Bdx₂dx₁(t,q)
+d²Hdx₂dx₂(t, q, μ) = μ * d²Bdx₂dx₂(t,q)
+d²Hdx₂dx₃(t, q, μ) = μ * d²Bdx₂dx₃(t,q)
+d²Hdx₃dx₁(t, q, μ) = μ * d²Bdx₃dx₁(t,q)
+d²Hdx₃dx₂(t, q, μ) = μ * d²Bdx₃dx₂(t,q)
+d²Hdx₃dx₃(t, q, μ) = μ * d²Bdx₃dx₃(t,q)
+
+
 ϑ₁(t,q) = A₁(t,q) + u(t,q) * b₁(t,q)
 ϑ₂(t,q) = A₂(t,q) + u(t,q) * b₂(t,q)
 ϑ₃(t,q) = A₃(t,q) + u(t,q) * b₃(t,q)
@@ -44,6 +53,108 @@ function ϑ(t, q, ϑ, params)
     ϑ[4] = ϑ₄(t,q)
     nothing
 end
+
+
+dϑ₁dx₁(t,q) = dA₁dx₁(t,q) + u(t,q) * db₁dx₁(t,q)
+dϑ₁dx₂(t,q) = dA₁dx₂(t,q) + u(t,q) * db₁dx₂(t,q)
+dϑ₁dx₃(t,q) = dA₁dx₃(t,q) + u(t,q) * db₁dx₃(t,q)
+dϑ₁dx₄(t,q) = b₁(t,q)
+dϑ₂dx₁(t,q) = dA₂dx₁(t,q) + u(t,q) * db₂dx₁(t,q)
+dϑ₂dx₂(t,q) = dA₂dx₂(t,q) + u(t,q) * db₂dx₂(t,q)
+dϑ₂dx₃(t,q) = dA₂dx₃(t,q) + u(t,q) * db₂dx₃(t,q)
+dϑ₂dx₄(t,q) = b₂(t,q)
+dϑ₃dx₁(t,q) = dA₃dx₁(t,q) + u(t,q) * db₃dx₁(t,q)
+dϑ₃dx₂(t,q) = dA₃dx₂(t,q) + u(t,q) * db₃dx₂(t,q)
+dϑ₃dx₃(t,q) = dA₃dx₃(t,q) + u(t,q) * db₃dx₃(t,q)
+dϑ₃dx₄(t,q) = b₃(t,q)
+dϑ₄dx₁(t,q) = zero(eltype(q))
+dϑ₄dx₂(t,q) = zero(eltype(q))
+dϑ₄dx₃(t,q) = zero(eltype(q))
+dϑ₄dx₄(t,q) = zero(eltype(q))
+
+
+d²ϑ₁dx₁dx₁(t,q) = d²A₁dx₁dx₁(t,q) + u(t,q) * d²b₁dx₁dx₁(t,q)
+d²ϑ₁dx₁dx₂(t,q) = d²A₁dx₁dx₂(t,q) + u(t,q) * d²b₁dx₁dx₂(t,q)
+d²ϑ₁dx₁dx₃(t,q) = d²A₁dx₁dx₃(t,q) + u(t,q) * d²b₁dx₁dx₃(t,q)
+d²ϑ₁dx₁dx₄(t,q) = db₁dx₁(t,q)
+
+d²ϑ₁dx₂dx₁(t,q) = d²A₁dx₂dx₁(t,q) + u(t,q) * d²b₁dx₂dx₁(t,q)
+d²ϑ₁dx₂dx₂(t,q) = d²A₁dx₂dx₂(t,q) + u(t,q) * d²b₁dx₂dx₂(t,q)
+d²ϑ₁dx₂dx₃(t,q) = d²A₁dx₂dx₃(t,q) + u(t,q) * d²b₁dx₂dx₃(t,q)
+d²ϑ₁dx₂dx₄(t,q) = db₁dx₂(t,q)
+
+d²ϑ₁dx₃dx₁(t,q) = d²A₁dx₃dx₁(t,q) + u(t,q) * d²b₁dx₃dx₁(t,q)
+d²ϑ₁dx₃dx₂(t,q) = d²A₁dx₃dx₂(t,q) + u(t,q) * d²b₁dx₃dx₂(t,q)
+d²ϑ₁dx₃dx₃(t,q) = d²A₁dx₃dx₃(t,q) + u(t,q) * d²b₁dx₃dx₃(t,q)
+d²ϑ₁dx₃dx₄(t,q) = db₁dx₃(t,q)
+
+d²ϑ₁dx₄dx₁(t,q) = db₁dx₁(t,q)
+d²ϑ₁dx₄dx₂(t,q) = db₁dx₂(t,q)
+d²ϑ₁dx₄dx₃(t,q) = db₁dx₃(t,q)
+d²ϑ₁dx₄dx₄(t,q) = 0
+
+
+d²ϑ₂dx₁dx₁(t,q) = d²A₂dx₁dx₁(t,q) + u(t,q) * d²b₂dx₁dx₁(t,q)
+d²ϑ₂dx₁dx₂(t,q) = d²A₂dx₁dx₂(t,q) + u(t,q) * d²b₂dx₁dx₂(t,q)
+d²ϑ₂dx₁dx₃(t,q) = d²A₂dx₁dx₃(t,q) + u(t,q) * d²b₂dx₁dx₃(t,q)
+d²ϑ₂dx₁dx₄(t,q) = db₂dx₁(t,q)
+
+d²ϑ₂dx₂dx₁(t,q) = d²A₂dx₂dx₁(t,q) + u(t,q) * d²b₂dx₂dx₁(t,q)
+d²ϑ₂dx₂dx₂(t,q) = d²A₂dx₂dx₂(t,q) + u(t,q) * d²b₂dx₂dx₂(t,q)
+d²ϑ₂dx₂dx₃(t,q) = d²A₂dx₂dx₃(t,q) + u(t,q) * d²b₂dx₂dx₃(t,q)
+d²ϑ₂dx₂dx₄(t,q) = db₂dx₂(t,q)
+
+d²ϑ₂dx₃dx₁(t,q) = d²A₂dx₃dx₁(t,q) + u(t,q) * d²b₂dx₃dx₁(t,q)
+d²ϑ₂dx₃dx₂(t,q) = d²A₂dx₃dx₂(t,q) + u(t,q) * d²b₂dx₃dx₂(t,q)
+d²ϑ₂dx₃dx₃(t,q) = d²A₂dx₃dx₃(t,q) + u(t,q) * d²b₂dx₃dx₃(t,q)
+d²ϑ₂dx₃dx₄(t,q) = db₂dx₃(t,q)
+
+d²ϑ₂dx₄dx₁(t,q) = db₂dx₁(t,q)
+d²ϑ₂dx₄dx₂(t,q) = db₂dx₂(t,q)
+d²ϑ₂dx₄dx₃(t,q) = db₂dx₃(t,q)
+d²ϑ₂dx₄dx₄(t,q) = 0
+
+
+d²ϑ₃dx₁dx₁(t,q) = d²A₃dx₁dx₁(t,q) + u(t,q) * d²b₃dx₁dx₁(t,q)
+d²ϑ₃dx₁dx₂(t,q) = d²A₃dx₁dx₂(t,q) + u(t,q) * d²b₃dx₁dx₂(t,q)
+d²ϑ₃dx₁dx₃(t,q) = d²A₃dx₁dx₃(t,q) + u(t,q) * d²b₃dx₁dx₃(t,q)
+d²ϑ₃dx₁dx₄(t,q) = db₃dx₁(t,q)
+
+d²ϑ₃dx₂dx₁(t,q) = d²A₃dx₂dx₁(t,q) + u(t,q) * d²b₃dx₂dx₁(t,q)
+d²ϑ₃dx₂dx₂(t,q) = d²A₃dx₂dx₂(t,q) + u(t,q) * d²b₃dx₂dx₂(t,q)
+d²ϑ₃dx₂dx₃(t,q) = d²A₃dx₂dx₃(t,q) + u(t,q) * d²b₃dx₂dx₃(t,q)
+d²ϑ₃dx₂dx₄(t,q) = db₃dx₂(t,q)
+
+d²ϑ₃dx₃dx₁(t,q) = d²A₃dx₃dx₁(t,q) + u(t,q) * d²b₃dx₃dx₁(t,q)
+d²ϑ₃dx₃dx₂(t,q) = d²A₃dx₃dx₂(t,q) + u(t,q) * d²b₃dx₃dx₂(t,q)
+d²ϑ₃dx₃dx₃(t,q) = d²A₃dx₃dx₃(t,q) + u(t,q) * d²b₃dx₃dx₃(t,q)
+d²ϑ₃dx₃dx₄(t,q) = db₃dx₃(t,q)
+
+d²ϑ₃dx₄dx₁(t,q) = db₃dx₁(t,q)
+d²ϑ₃dx₄dx₂(t,q) = db₃dx₂(t,q)
+d²ϑ₃dx₄dx₃(t,q) = db₃dx₃(t,q)
+d²ϑ₃dx₄dx₄(t,q) = 0
+
+
+d²ϑ₄dx₁dx₁(t,q) = zero(eltype(q))
+d²ϑ₄dx₁dx₂(t,q) = zero(eltype(q))
+d²ϑ₄dx₁dx₃(t,q) = zero(eltype(q))
+d²ϑ₄dx₁dx₄(t,q) = zero(eltype(q))
+
+d²ϑ₄dx₂dx₁(t,q) = zero(eltype(q))
+d²ϑ₄dx₂dx₂(t,q) = zero(eltype(q))
+d²ϑ₄dx₂dx₃(t,q) = zero(eltype(q))
+d²ϑ₄dx₂dx₄(t,q) = zero(eltype(q))
+
+d²ϑ₄dx₃dx₁(t,q) = zero(eltype(q))
+d²ϑ₄dx₃dx₂(t,q) = zero(eltype(q))
+d²ϑ₄dx₃dx₃(t,q) = zero(eltype(q))
+d²ϑ₄dx₃dx₄(t,q) = zero(eltype(q))
+
+d²ϑ₄dx₄dx₁(t,q) = zero(eltype(q))
+d²ϑ₄dx₄dx₂(t,q) = zero(eltype(q))
+d²ϑ₄dx₄dx₃(t,q) = zero(eltype(q))
+d²ϑ₄dx₄dx₄(t,q) = zero(eltype(q))
 
 
 ω₁(t,q) = dϑ₃dx₂(t,q) - dϑ₂dx₃(t,q)
@@ -86,23 +197,18 @@ function ωabs(t, q, params)
 end
 
 
-function transform_x_to_x̃!(x, x̃, u)
-    x̃ .= ωabs(0.0, [x..., u], params) .* x₀
-end
-
-function transform_x_to_x̃(x, u)
-    transform_x_to_x̃!(x, zero(x), u)
-end
-
-function transform_q_to_q̃!(q, q̃)
-    transform_x_to_x̃!(q[1:3], q̃[1:3], q[4])
-    q̃[4] = q[4]
-    q̃
-end
-
-function transform_q_to_q̃(q)
-    transform_q_to_q̃!(q, zero(q))
-end
+dω₁dx₁(t,q) = d²ϑ₃dx₂dx₁(t,q) - d²ϑ₂dx₃dx₁(t,q)
+dω₁dx₂(t,q) = d²ϑ₃dx₂dx₂(t,q) - d²ϑ₂dx₃dx₂(t,q)
+dω₁dx₃(t,q) = d²ϑ₃dx₂dx₃(t,q) - d²ϑ₂dx₃dx₃(t,q)
+dω₁dx₄(t,q) = d²ϑ₃dx₂dx₄(t,q) - d²ϑ₂dx₃dx₄(t,q)
+dω₂dx₁(t,q) = d²ϑ₁dx₃dx₁(t,q) - d²ϑ₃dx₁dx₁(t,q)
+dω₂dx₂(t,q) = d²ϑ₁dx₃dx₂(t,q) - d²ϑ₃dx₁dx₂(t,q)
+dω₂dx₃(t,q) = d²ϑ₁dx₃dx₃(t,q) - d²ϑ₃dx₁dx₃(t,q)
+dω₂dx₄(t,q) = d²ϑ₁dx₃dx₄(t,q) - d²ϑ₃dx₁dx₄(t,q)
+dω₃dx₁(t,q) = d²ϑ₂dx₁dx₁(t,q) - d²ϑ₁dx₂dx₁(t,q)
+dω₃dx₂(t,q) = d²ϑ₂dx₁dx₂(t,q) - d²ϑ₁dx₂dx₂(t,q)
+dω₃dx₃(t,q) = d²ϑ₂dx₁dx₃(t,q) - d²ϑ₁dx₂dx₃(t,q)
+dω₃dx₄(t,q) = d²ϑ₂dx₁dx₄(t,q) - d²ϑ₁dx₂dx₄(t,q)
 
 
 β₁(t, q) = u(t,q) * ϑ₁(t,q)
@@ -130,33 +236,6 @@ function γ(t, q, γ, params)
 end
 
 
-d²Hdx₁dx₁(t, q, μ) = μ * d²Bdx₁dx₁(t,q)
-d²Hdx₁dx₂(t, q, μ) = μ * d²Bdx₁dx₂(t,q)
-d²Hdx₁dx₃(t, q, μ) = μ * d²Bdx₁dx₃(t,q)
-d²Hdx₂dx₁(t, q, μ) = μ * d²Bdx₂dx₁(t,q)
-d²Hdx₂dx₂(t, q, μ) = μ * d²Bdx₂dx₂(t,q)
-d²Hdx₂dx₃(t, q, μ) = μ * d²Bdx₂dx₃(t,q)
-d²Hdx₃dx₁(t, q, μ) = μ * d²Bdx₃dx₁(t,q)
-d²Hdx₃dx₂(t, q, μ) = μ * d²Bdx₃dx₂(t,q)
-d²Hdx₃dx₃(t, q, μ) = μ * d²Bdx₃dx₃(t,q)
-
-dϑ₁dx₁(t, q) = dA₁dx₁(t,q) + u(t,q) * db₁dx₁(t,q)
-dϑ₁dx₂(t, q) = dA₁dx₂(t,q) + u(t,q) * db₁dx₂(t,q)
-dϑ₁dx₃(t, q) = dA₁dx₃(t,q) + u(t,q) * db₁dx₃(t,q)
-dϑ₁dx₄(t, q) = b₁(t,q)
-dϑ₂dx₁(t, q) = dA₂dx₁(t,q) + u(t,q) * db₂dx₁(t,q)
-dϑ₂dx₂(t, q) = dA₂dx₂(t,q) + u(t,q) * db₂dx₂(t,q)
-dϑ₂dx₃(t, q) = dA₂dx₃(t,q) + u(t,q) * db₂dx₃(t,q)
-dϑ₂dx₄(t, q) = b₂(t,q)
-dϑ₃dx₁(t, q) = dA₃dx₁(t,q) + u(t,q) * db₃dx₁(t,q)
-dϑ₃dx₂(t, q) = dA₃dx₂(t,q) + u(t,q) * db₃dx₂(t,q)
-dϑ₃dx₃(t, q) = dA₃dx₃(t,q) + u(t,q) * db₃dx₃(t,q)
-dϑ₃dx₄(t, q) = b₃(t,q)
-dϑ₄dx₁(t, q) = zero(eltype(q))
-dϑ₄dx₂(t, q) = zero(eltype(q))
-dϑ₄dx₃(t, q) = zero(eltype(q))
-dϑ₄dx₄(t, q) = zero(eltype(q))
-
 dβ₁dx₁(t, q) = u(t,q) * dϑ₁dx₁(t,q)
 dβ₁dx₂(t, q) = u(t,q) * dϑ₁dx₂(t,q)
 dβ₁dx₃(t, q) = u(t,q) * dϑ₁dx₃(t,q)
@@ -182,7 +261,6 @@ dγ₃dx₁(t, q, μ) = dϑ₁dx₁(t,q) * dHdx₂(t,q,μ) + ϑ₁(t,q) * d²Hdx
 dγ₃dx₂(t, q, μ) = dϑ₁dx₂(t,q) * dHdx₂(t,q,μ) + ϑ₁(t,q) * d²Hdx₂dx₂(t,q,μ) - d²Hdx₁dx₂(t,q,μ) * ϑ₂(t,q) - dHdx₁(t,q,μ) * dϑ₂dx₂(t,q)
 dγ₃dx₃(t, q, μ) = dϑ₁dx₃(t,q) * dHdx₂(t,q,μ) + ϑ₁(t,q) * d²Hdx₂dx₃(t,q,μ) - d²Hdx₁dx₃(t,q,μ) * ϑ₂(t,q) - dHdx₁(t,q,μ) * dϑ₂dx₃(t,q)
 dγ₃dx₄(t, q, μ) = b₁(t,q) * dHdx₂(t,q,μ) - dHdx₁(t,q,μ) * b₂(t,q)
-
 
 
 function v₁(t, q, v, params)
