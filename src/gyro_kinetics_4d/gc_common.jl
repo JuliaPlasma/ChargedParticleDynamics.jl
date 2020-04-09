@@ -201,7 +201,7 @@ function ω(t, q, Ω::Matrix, params=NamedTuple())
 end
 
 function ωabs(t, q, params=NamedTuple())
-    ω₁(t,q) * b₁(t,q) + ω₂(t,q) * b₂(t,q) + ω₃(t,q) * b₃(t,q)
+    ω₁(t,q) * dϑ₁dx₄(t,q) + ω₂(t,q) * dϑ₂dx₄(t,q) + ω₃(t,q) * dϑ₃dx₄(t,q)
 end
 
 
