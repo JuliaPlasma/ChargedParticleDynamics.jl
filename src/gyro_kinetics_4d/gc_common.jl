@@ -98,7 +98,7 @@ d²ϑ₁dx₃dx₄(t,q) = db₁dx₃(t,q)
 d²ϑ₁dx₄dx₁(t,q) = db₁dx₁(t,q)
 d²ϑ₁dx₄dx₂(t,q) = db₁dx₂(t,q)
 d²ϑ₁dx₄dx₃(t,q) = db₁dx₃(t,q)
-d²ϑ₁dx₄dx₄(t,q) = 0
+d²ϑ₁dx₄dx₄(t,q) = zero(eltype(q))
 
 
 d²ϑ₂dx₁dx₁(t,q) = d²A₂dx₁dx₁(t,q) + u(t,q) * d²b₂dx₁dx₁(t,q)
@@ -119,7 +119,7 @@ d²ϑ₂dx₃dx₄(t,q) = db₂dx₃(t,q)
 d²ϑ₂dx₄dx₁(t,q) = db₂dx₁(t,q)
 d²ϑ₂dx₄dx₂(t,q) = db₂dx₂(t,q)
 d²ϑ₂dx₄dx₃(t,q) = db₂dx₃(t,q)
-d²ϑ₂dx₄dx₄(t,q) = 0
+d²ϑ₂dx₄dx₄(t,q) = zero(eltype(q))
 
 
 d²ϑ₃dx₁dx₁(t,q) = d²A₃dx₁dx₁(t,q) + u(t,q) * d²b₃dx₁dx₁(t,q)
@@ -140,7 +140,7 @@ d²ϑ₃dx₃dx₄(t,q) = db₃dx₃(t,q)
 d²ϑ₃dx₄dx₁(t,q) = db₃dx₁(t,q)
 d²ϑ₃dx₄dx₂(t,q) = db₃dx₂(t,q)
 d²ϑ₃dx₄dx₃(t,q) = db₃dx₃(t,q)
-d²ϑ₃dx₄dx₄(t,q) = 0
+d²ϑ₃dx₄dx₄(t,q) = zero(eltype(q))
 
 
 d²ϑ₄dx₁dx₁(t,q) = zero(eltype(q))

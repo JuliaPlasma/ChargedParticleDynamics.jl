@@ -19,7 +19,7 @@ module GuidingCenter4dSolovevIterXpoint
 
     function solovev_xpoint_iter_initial_conditions(t₀, q₀, μ)
         local ω₀ = ωabs(t₀, q₀)
-        local params = (μ=μ, x₀=[1., 0., 0.], R₀=equ.R₀, scaling_factor=[ω₀ * equ.R₀, ω₀ * equ.R₀, ω₀ , ω₀])
+        local params = (μ=μ, R₀=equ.R₀, ω₀=ω₀, scaling_factor=[ω₀ * equ.R₀, ω₀ * equ.R₀, ω₀ , ω₀])
         (transform_q_to_q̃(t₀, q₀, params), params)
     end
 
