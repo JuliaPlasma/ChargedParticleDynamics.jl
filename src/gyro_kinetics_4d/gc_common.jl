@@ -161,14 +161,14 @@ d²ϑ₄dx₄dx₄(t,q) = zero(eltype(q))
 ω₂(t,q) = dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
 ω₃(t,q) = dϑ₂dx₁(t,q) - dϑ₁dx₂(t,q)
 
-function ω(t, q, ω::Vector, params)
+function ω(t, q, ω::Vector, params=NamedTuple())
     ω[1] = ω₁(t,q)
     ω[2] = ω₂(t,q)
     ω[3] = ω₃(t,q)
     nothing
 end
 
-function ω(t, q, Ω::Matrix, params)
+function ω(t, q, Ω::Matrix, params=NamedTuple())
     Ω[1,1] = 0
     Ω[1,2] = dϑ₁dx₂(t,q) - dϑ₂dx₁(t,q)
     Ω[1,3] = dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
@@ -192,7 +192,7 @@ function ω(t, q, Ω::Matrix, params)
     nothing
 end
 
-function ωabs(t, q, params)
+function ωabs(t, q, params=NamedTuple())
     ω₁(t,q) * b₁(t,q) + ω₂(t,q) * b₂(t,q) + ω₃(t,q) * b₃(t,q)
 end
 
