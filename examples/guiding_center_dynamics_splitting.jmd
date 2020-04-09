@@ -1,0 +1,99 @@
+
+```julia
+using GeometricIntegrators
+
+using Plots
+using GeometricProblems.PlotRecipes
+
+using ChargedParticleDynamics.GyroKinetics4d
+using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
+using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint: equ
+```
+
+```julia
+#plotlyjs()
+gr()
+```
+
+### Load Initial Conditions
+
+```julia
+nt  = 10000
+Δt  = 10000.
+
+q0, params = initial_conditions_trapped()
+#q0, params = initial_conditions_barely_passing()
+#q0, params = initial_conditions_barely_trapped()
+#q0, params = initial_conditions_deeply_passing()
+#q0, params = initial_conditions_deeply_trapped()
+```
+
+### Reference Integrator: Explicit 4th-order Runge-Kutta
+
+```julia
+ref = getTableauERK4()
+ode = guiding_center_4d_ode(q0, params)
+sol = Solution(ode, Δt, nt)
+int = Integrator(ode, ref, Δt)
+integrate!(int, sol)
+```
+
+```julia
+for i in 0:nt
+    sol.q[:,i] .= transform_q̃_to_q(sol.t[i], sol.q[:,i], params)
+end
+plot(sol.q[1,:].*equ.R₀, sol.q[2,:].*equ.R₀, xlabel="R", ylabel="Z", xlim=(4,9), ylim=(-3,+3), aspect_ratio=:equal, legend=:none)
+```
+
+```julia
+plotenergyerror(sol, energy = (t,q) -> hamiltonian(t,q,params))
+```
+
+### Reference Integrator: Implicit Midpoint
+
+```julia
+set_config(:nls_stol_break, Inf);
+
+ref = getTableauGLRK(1)
+ode = guiding_center_4d_ode(q0, params)
+sol = Solution(ode, Δt, nt)
+int = Integrator(ode, ref, Δt)
+integrate!(int, sol)
+```
+
+```julia
+for i in 0:nt
+    sol.q[:,i] .= transform_q̃_to_q(sol.t[i], sol.q[:,i], params)
+end
+plot(sol.q[1,:].*equ.R₀, sol.q[2,:].*equ.R₀, xlabel="R", ylabel="Z", xlim=(4,9), ylim=(-3,+3), aspect_ratio=:equal, legend=:none)
+```
+
+```julia
+plotenergyerror(sol, energy = (t,q) -> hamiltonian(t,q,params))
+```
+
+### Splitting Integrator: Strang Splitting with Implicit Midpoint
+
+```julia
+set_config(:nls_atol, 1E-15)
+set_config(:nls_rtol, 1E-14)
+set_config(:nls_nmax, 20);
+
+stab = getTableauStrang()
+sode = guiding_center_4d_sode(q0, params)
+ssol = Solution(sode, Δt, nt)
+ints = Tuple(IntegratorConstructor(eltype(q0), ndims(sode), ref) for i in 1:6)
+sint = IntegratorComposition(sode, ints, stab, Δt)
+integrate!(sint, ssol)
+```
+
+```julia
+for i in 0:nt
+    ssol.q[:,i] .= transform_q̃_to_q(sol.t[i], ssol.q[:,i], params)
+end
+plot(ssol.q[1,:].*equ.R₀, ssol.q[2,:].*equ.R₀, xlabel="R", ylabel="Z", xlim=(4,9), ylim=(-3,+3), aspect_ratio=:equal, legend=:none)
+```
+
+```julia
+plotenergyerror(ssol, energy = (t,q) -> hamiltonian(t,q,params))
+```
