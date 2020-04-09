@@ -20,7 +20,7 @@ gr()
 ### Load Initial Conditions
 
 ```julia
-nt  = 10000
+nt  = 100000
 Δt  = 10000.
 
 q0, params = initial_conditions_trapped()
