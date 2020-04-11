@@ -1,12 +1,9 @@
 
-using GeometricIntegrators
-using Test
-
 # solver settings
-# set_config(:nls_atol_break, 1E-3)
-# set_config(:nls_rtol_break, 1E-3)
-set_config(:nls_stol_break, 1E3)
+using GeometricIntegrators.Config
+set_config(:nls_stol_break, Inf)
 
 
 include("charged_particle_3d_tests.jl")
 include("guiding_center_4d_tests.jl")
+include("gyro_kinetics_4d_tests.jl")
