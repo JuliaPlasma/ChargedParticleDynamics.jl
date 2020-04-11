@@ -14,10 +14,10 @@ module TokamakSmallCylindrical
     equ = AxisymmetricTokamakCylindrical(1., 1., 2.)
     load_equilibrium(equ; target_module=TokamakSmallCylindrical)
 
-    initial_conditions_barely_passing() = ([1.05, 0., 0., 8.117E-4], 2.448E-6)
-    initial_conditions_barely_trapped() = ([1.05, 0., 0., 7.610E-4], 2.250E-6)
-    initial_conditions_deeply_passing() = ([1.05, 0., 0., 1.623E-3], 2.448E-6)
-    initial_conditions_deeply_trapped() = ([1.05, 0., 0., 4.306E-4], 2.250E-6)
+    initial_conditions_barely_passing() = ([1.05, 0., 0., 8.117E-4], (μ = 2.448E-6,))
+    initial_conditions_barely_trapped() = ([1.05, 0., 0., 7.610E-4], (μ = 2.250E-6,))
+    initial_conditions_deeply_passing() = ([1.05, 0., 0., 1.623E-3], (μ = 2.448E-6,))
+    initial_conditions_deeply_trapped() = ([1.05, 0., 0., 4.306E-4], (μ = 2.250E-6,))
 
     μ_loop() = 2.5E-6
     μ_surface() = 2.5E-6

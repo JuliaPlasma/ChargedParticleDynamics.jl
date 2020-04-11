@@ -21,7 +21,7 @@ function initial_conditions_surface(nx, ny)
 
     for j in 1:ny
         for i in 1:nx
-            q₀[:,nx*(j-1)+i] = f_surface(i, j, nx, ny)
+            q₀[:,nx*(j-1)+i] .= f_surface(i, j, nx, ny)
         end
     end
 
@@ -29,9 +29,9 @@ function initial_conditions_surface(nx, ny)
 end
 
 
-guiding_center_4d_surface_ode_init(q₀) = guiding_center_4d_ode(q₀, μ_surface(); periodic=false)
-guiding_center_4d_surface_iode_init(q₀) = guiding_center_4d_iode(q₀, μ_surface(); periodic=false)
-guiding_center_4d_surface_iode_λ_init(q₀) = guiding_center_4d_iode_λ(q₀, μ_surface(); periodic=false)
+guiding_center_4d_surface_ode_init(q₀) = guiding_center_4d_ode(q₀, (μ = μ_surface(),); periodic=false)
+guiding_center_4d_surface_iode_init(q₀) = guiding_center_4d_iode(q₀, (μ = μ_surface(),); periodic=false)
+guiding_center_4d_surface_iode_λ_init(q₀) = guiding_center_4d_iode_λ(q₀, (μ = μ_surface(),); periodic=false)
 
 
 function guiding_center_4d_surface_ode(nx, ny)

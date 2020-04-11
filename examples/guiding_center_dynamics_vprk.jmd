@@ -1,0 +1,91 @@
+
+```julia
+using GeometricIntegrators
+using GeometricIntegrators.Integrators.VPRK
+
+using Plots
+using GeometricProblems.PlotRecipes
+
+using ChargedParticleDynamics.GuidingCenter4d.GuidingCenter4dSolovevIterXpoint
+using ChargedParticleDynamics.GuidingCenter4d.GuidingCenter4dSolovevIterXpoint: equ
+```
+
+```julia
+set_config(:nls_stol_break, Inf);
+
+#plotlyjs()
+gr()
+```
+
+### Load Initial Conditions
+
+```julia
+nt  = 100000
+Δt  = 10000.
+
+q0, params = initial_conditions_trapped()
+#q0, params = initial_conditions_barely_passing()
+#q0, params = initial_conditions_barely_trapped()
+#q0, params = initial_conditions_deeply_passing()
+#q0, params = initial_conditions_deeply_trapped()
+```
+
+### Reference Integrator: Explicit 4th-order Runge-Kutta
+
+```julia
+ref = getTableauERK4()
+ode = guiding_center_4d_ode(q0, params)
+sol = Solution(ode, Δt, nt)
+int = Integrator(ode, ref, Δt)
+integrate!(int, sol)
+```
+
+```julia
+plot(sol.q[1,:].*equ.R₀, sol.q[2,:].*equ.R₀, xlabel="R", ylabel="Z", xlim=(4,9), ylim=(-3,+3), aspect_ratio=:equal, legend=:none)
+```
+
+```julia
+plotenergyerror(sol, energy = (t,q) -> hamiltonian(t,q,params))
+```
+
+### Reference Integrator: Implicit Midpoint
+
+```julia
+ref = getTableauGLRK(1)
+ode = guiding_center_4d_ode(q0, params)
+sol = Solution(ode, Δt, nt)
+int = Integrator(ode, ref, Δt)
+integrate!(int, sol)
+```
+
+```julia
+plot(sol.q[1,:].*equ.R₀, sol.q[2,:].*equ.R₀, xlabel="R", ylabel="Z", xlim=(4,9), ylim=(-3,+3), aspect_ratio=:equal, legend=:none)
+```
+
+```julia
+plotenergyerror(sol, energy = (t,q) -> hamiltonian(t,q,params))
+```
+
+### Variational Integrator: Symmetric Projection with Implicit Midpoint
+
+```julia
+set_config(:nls_atol, 1E-15)
+set_config(:nls_rtol, 1E-14)
+set_config(:nls_nmax, 20);
+```
+
+```julia
+vtab = getTableauVPGLRK(1)
+iode = guiding_center_4d_iode(q0, params)
+vsol = Solution(iode, Δt, nt)
+vint = IntegratorVPRKpSymmetric(iode, vtab, Δt)
+integrate!(vint, vsol)
+```
+
+```julia
+plot(vsol.q[1,:].*equ.R₀, vsol.q[2,:].*equ.R₀, xlabel="R", ylabel="Z", xlim=(4,9), ylim=(-3,+3), aspect_ratio=:equal, legend=:none)
+```
+
+```julia
+plotenergyerror(vsol, energy = (t,q) -> hamiltonian(t,q,params))
+```

@@ -1,0 +1,3 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+"ChargedParticleDynamics" = "209b3593-7183-5600-9f8f-df5ce7fddd64"

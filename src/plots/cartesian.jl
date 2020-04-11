@@ -17,6 +17,12 @@ module Cartesian
 
         sol = p.args[1]
 
+        if sol.nt ≤ 200
+            markersize=5
+        else
+            markersize=1
+        end
+
         seriestype := :scatter
         legend := :none
 
