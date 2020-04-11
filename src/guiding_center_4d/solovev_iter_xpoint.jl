@@ -6,7 +6,8 @@ module GuidingCenter4dSolovevIterXpoint
     using ElectromagneticFields: load_equilibrium, SolovevXpointITER
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
-           initial_conditions_deeply_passing, initial_conditions_deeply_trapped
+           initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
+           initial_conditions_trapped
 
     export hamiltonian, toroidal_momentum
 
@@ -14,10 +15,12 @@ module GuidingCenter4dSolovevIterXpoint
     equ = SolovevXpointITER()
     load_equilibrium(equ; target_module=GuidingCenter4dSolovevIterXpoint)
 
-    initial_conditions_barely_passing() = ([2.5, 0., 0., 3.425E-1], (μ = 1E-2,))
-    initial_conditions_barely_trapped() = ([2.5, 0., 0., 3.375E-1], (μ = 1E-2,))
-    initial_conditions_deeply_passing() = ([2.5, 0., 0., 5E-1], (μ = 1E-2,))
-    initial_conditions_deeply_trapped() = ([2.5, 0., 0., 1E-1], (μ = 1E-2,))
+    initial_conditions_barely_passing() = ([2.5 / equ.R₀, 0., 0., 3.425E-1], (μ = 1E-2,))
+    initial_conditions_barely_trapped() = ([2.5 / equ.R₀, 0., 0., 3.375E-1], (μ = 1E-2,))
+    initial_conditions_deeply_passing() = ([2.5 / equ.R₀, 0., 0., 5E-1], (μ = 1E-2,))
+    initial_conditions_deeply_trapped() = ([2.5 / equ.R₀, 0., 0., 1E-1], (μ = 1E-2,))
+    
+    initial_conditions_trapped() = ([7.0 / equ.R₀, 0., 0., -2E-3], (μ=1.88E-7,))
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")

@@ -16,10 +16,8 @@ env:
 jobs:
   allow_failures:
     - julia: nightly
+    - os: windows
   fast_finish: true
-
-before_install:
-  - julia --project --color=yes -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/DDMGNI/GeometricProblems.jl"));'
 
 notifications:
   email: false
