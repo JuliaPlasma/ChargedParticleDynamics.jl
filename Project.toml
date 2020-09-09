@@ -21,8 +21,8 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Showoff = "992d4aef-0814-514b-bc4d-f2e9a6c4116f"
 
 [compat]
-DecFP = "^0.4.9"
-Documenter = "0.23, 0.24"
+DecFP = "^0.4.9, 1.0"
+Documenter = "0.23, 0.24, 0.25"
 ElectromagneticFields = "0.2, 0.3"
 ForwardDiff = "0.10"
 GeometricIntegrators = "^0.3.1, 0.4"
