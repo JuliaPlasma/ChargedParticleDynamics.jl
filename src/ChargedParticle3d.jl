@@ -14,4 +14,12 @@ module ChargedParticle3d
     include("charged_particle_3d/charged_particle_3d_uniform.jl")
 
 
+    export ChargedParticle3dThetaPinchNoncanonical,
+           ChargedParticle3dTokamakCanonical,
+           ChargedParticle3dTokamakNoncanonical
+
+    include("charged_particle_3d/charged_particle_3d_theta_pinch_noncanonical.jl")
+    include("charged_particle_3d/charged_particle_3d_tokamak_canonical.jl")
+    include("charged_particle_3d/charged_particle_3d_tokamak_noncanonical.jl")
+
 end
