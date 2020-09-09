@@ -1,6 +1,11 @@
+.ipynb_checkpoints
+*/.ipynb_checkpoints
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
 *.jl.*.mem
+*.pdf
+*.png
+*.h5
 docs/build/
 docs/site/
