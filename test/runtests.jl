@@ -1,6 +1,8 @@
 
 # solver settings
 using GeometricIntegrators.Config
+set_config(:nls_atol_break, Inf)
+set_config(:nls_rtol_break, Inf)
 set_config(:nls_stol_break, Inf)
 
 
