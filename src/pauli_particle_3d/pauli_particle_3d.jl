@@ -1,9 +1,18 @@
 
 using Parameters
+using GeometricIntegrators.Equations
+
 
 ϑ₁(t, q, v) = v[1] + A₁(t, q)
 ϑ₂(t, q, v) = v[2] + A₂(t, q)
 ϑ₃(t, q, v) = v[3] + A₃(t, q)
+
+function ϑ(t, q, v, θ)
+    θ[1] = ϑ₁(t,q,v)
+    θ[2] = ϑ₂(t,q,v)
+    θ[3] = ϑ₃(t,q,v)
+    nothing
+end
 
 v₁(t, q, p) = p[1] - A₁(t, q)
 v₂(t, q, p) = p[2] - A₂(t, q)

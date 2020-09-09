@@ -1,8 +1,9 @@
 
 using GeometricIntegrators.Solutions
 
+import GeometricProblems.Diagnostics
 import GeometricProblems.Diagnostics: compute_invariant, compute_one_form,
-       compute_invariant_error, compute_momentum_error, compute_error_drift
+       compute_invariant_error, compute_error_drift
 
 export compute_energy, compute_toroidal_momentum,
        compute_energy_error, compute_toroidal_momentum_error,
@@ -37,5 +38,5 @@ compute_toroidal_momentum(sol::Solution) = compute_toroidal_momentum(sol.t, sol.
 compute_toroidal_momentum_error(t::TimeSeries, q::DataSeries) = compute_invariant_error(t, q, toroidal_momentum)
 compute_toroidal_momentum_error(sol::Solution) = compute_toroidal_momentum_error(sol.t, sol.q)
 
-compute_momentum_error(t::TimeSeries, q::DataSeries, p::DataSeries) = compute_momentum_error(t, q, p, ϑ)
+compute_momentum_error(t::TimeSeries, q::DataSeries, p::DataSeries) = GeometricProblems.Diagnostics.compute_momentum_error(t, q, p, ϑ)
 compute_momentum_error(sol::Solution) = compute_momentum_error(sol.t, sol.q, sol.p)

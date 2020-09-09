@@ -1,8 +1,6 @@
 
 module PauliParticle3dTokamak
 
-    using GeometricIntegrators.Equations
-
     import ElectromagneticFields
 
     export pauli_particle_3d_pode, hamiltonian, toroidal_momentum

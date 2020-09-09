@@ -29,6 +29,8 @@ b₁(t,x) = zero(eltype(x))
 b₂(t,x) = zero(eltype(x))
 b₃(t,x) = one(eltype(x))
 
+b(t,x) = [b₁(t,x), b₂(t,x), b₃(t,x)]
+
 R(t,x) = one(eltype(x))
 Z(t,x) = zero(eltype(x))
 phi(t,x) = zero(eltype(x))
