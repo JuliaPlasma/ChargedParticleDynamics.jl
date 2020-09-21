@@ -1,7 +1,7 @@
 
-ϑ₁(t, q) = q[4] + A₁(t,q)
-ϑ₂(t, q) = q[5] + A₂(t,q)
-ϑ₃(t, q) = q[6] + A₃(t,q)
+ϑ₁(t, q) = g₁₁(t,q) * q[4] + A₁(t,q)
+ϑ₂(t, q) = g₂₂(t,q) * q[5] + A₂(t,q)
+ϑ₃(t, q) = g₃₃(t,q) * q[6] + A₃(t,q)
 
 
 function ϑ(t, q, θ)
@@ -116,7 +116,8 @@ end
 β(t,q) = sqrt(β₁(t,q)^2 + β₂(t,q)^2 + β₃(t,q)^2)
 
 
-hamiltonian(t,q) = 0.5 * (q[4]^2 + q[5]^2 + q[6]^2)
+hamiltonian(t,q) = 0.5 * (g₁₁(t,q) * q[4]^2 + g₂₂(t,q) * q[5]^2 + g₃₃(t,q) * q[6]^2)
+hamiltonian(t,q,p) = hamiltonian(t,q)
 
 toroidal_momentum(t,q) = ϑ₃(t,q)
 
@@ -142,9 +143,9 @@ end
 f₁(t, q, v) = q[4]
 f₂(t, q, v) = q[5]
 f₃(t, q, v) = q[6]
-f₄(t, q, v) = q[5] * B₃(t,q) / q[1] - q[6] * B₂(t,q) * q[1]
-f₅(t, q, v) = q[6] * B₁(t,q) * q[1] - q[4] * B₃(t,q) / q[1]
-f₆(t, q, v) = q[4] * B₂(t,q) * q[1] - q[5] * B₁(t,q) * q[1]
+f₄(t, q, v) = q[5] * B₃(t,q) - q[6] * B₂(t,q)
+f₅(t, q, v) = q[6] * B₁(t,q) - q[4] * B₃(t,q)
+f₆(t, q, v) = q[4] * B₂(t,q) - q[5] * B₁(t,q)
 
 
 function charged_particle_3d_periodicity(qᵢ)

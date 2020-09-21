@@ -26,14 +26,14 @@ function guiding_center_4d_periodicity(q, periodic=true)
 end
 
 
-function guiding_center_4d_ode(qᵢ, params; periodic=true)
+function guiding_center_4d_ode(qᵢ=qᵢ, params=parameters; periodic=true)
     ODE(guiding_center_4d_v, qᵢ;
             parameters=params, h=hamiltonian,
             periodicity=guiding_center_4d_periodicity(qᵢ, periodic))
 end
 
 
-function guiding_center_4d_iode(qᵢ, params; periodic=true)
+function guiding_center_4d_iode(qᵢ=qᵢ, params=parameters; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
 
     IODE(guiding_center_4d_ϑ, guiding_center_4d_f, guiding_center_4d_g, qᵢ, pᵢ;
@@ -41,11 +41,11 @@ function guiding_center_4d_iode(qᵢ, params; periodic=true)
             periodicity=guiding_center_4d_periodicity(qᵢ, periodic))
 end
 
-function guiding_center_4d_iode_dec128(qᵢ, params; periodic=true)
+function guiding_center_4d_iode_dec128(qᵢ=qᵢ, params=parameters; periodic=true)
     guiding_center_4d_iode(Dec128.(qᵢ), Dec128.(μ); periodic=periodic)
 end
 
-function guiding_center_4d_iode_λ(qᵢ, params; periodic=true)
+function guiding_center_4d_iode_λ(qᵢ=qᵢ, params=parameters; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
     λ₀ = guiding_center_4d_λ₀(qᵢ)
 
@@ -54,7 +54,7 @@ function guiding_center_4d_iode_λ(qᵢ, params; periodic=true)
             periodicity=guiding_center_4d_periodicity(qᵢ, periodic))
 end
 
-function guiding_center_4d_vode(qᵢ, params; periodic=true)
+function guiding_center_4d_vode(qᵢ=qᵢ, params=parameters; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
 
     VODE(guiding_center_4d_ϑ, guiding_center_4d_f, guiding_center_4d_g, qᵢ, pᵢ;
@@ -63,7 +63,7 @@ function guiding_center_4d_vode(qᵢ, params; periodic=true)
             periodicity=guiding_center_4d_periodicity(qᵢ, periodic))
 end
 
-function guiding_center_4d_dg(qᵢ, params; κ=0.0, periodic=true)
+function guiding_center_4d_dg(qᵢ=qᵢ, params=parameters; κ=0.0, periodic=true)
     guiding_center_4d_ϑ_κ(t, q, v, p, params) = guiding_center_4d_ϑ(t, q, v, p, params, κ)
     guiding_center_4d_f_κ(t, q, v, f, params) = guiding_center_4d_f(t, q, v, f, params, κ)
     guiding_center_4d_g_κ(t, q, λ, g, params) = guiding_center_4d_g(t, q, λ, g, params, κ)
@@ -73,7 +73,7 @@ function guiding_center_4d_dg(qᵢ, params; κ=0.0, periodic=true)
             periodicity=guiding_center_4d_periodicity(qᵢ, periodic))
 end
 
-function guiding_center_4d_formal_lagrangian(qᵢ, params; periodic=true)
+function guiding_center_4d_formal_lagrangian(qᵢ=qᵢ, params=parameters; periodic=true)
     pᵢ = guiding_center_4d_pᵢ(qᵢ)
 
     VODE(guiding_center_4d_ϑ, guiding_center_4d_f, guiding_center_4d_g, qᵢ, pᵢ;

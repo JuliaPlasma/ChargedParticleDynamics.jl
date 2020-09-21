@@ -3,7 +3,7 @@ Analytic ITER-like Solov'ev equilibrium with X-point.
 """
 module GuidingCenter4dSolovevIterXpoint
 
-    using ElectromagneticFields: load_equilibrium, SolovevXpointITER
+    using ElectromagneticFields: load_equilibrium, SolovevXpointITER, AxisymmetricTokamakCylindrical
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,16 +11,16 @@ module GuidingCenter4dSolovevIterXpoint
 
     export hamiltonian, toroidal_momentum
 
+    const R₀ = 6.2
+    const B₀ = 5.3
+    const q  = 2.
 
-    equ = SolovevXpointITER()
+    const qᵢ = [7.0-1.4, 0.0, 0.0, 2.8166280889939737]
+    const parameters = (μ = 4.607782183567846,)
+
+    equ = AxisymmetricTokamakCylindrical(R₀, B₀, q)
+    # equ = SolovevXpointITER()
     load_equilibrium(equ; target_module=GuidingCenter4dSolovevIterXpoint)
-
-    initial_conditions_barely_passing() = ([2.5 / equ.R₀, 0., 0., 3.425E-1], (μ = 1E-2,))
-    initial_conditions_barely_trapped() = ([2.5 / equ.R₀, 0., 0., 3.375E-1], (μ = 1E-2,))
-    initial_conditions_deeply_passing() = ([2.5 / equ.R₀, 0., 0., 5E-1], (μ = 1E-2,))
-    initial_conditions_deeply_trapped() = ([2.5 / equ.R₀, 0., 0., 1E-1], (μ = 1E-2,))
-    
-    initial_conditions_trapped() = ([7.0 / equ.R₀, 0., 0., -2E-3], (μ=1.88E-7,))
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")
@@ -30,5 +30,11 @@ module GuidingCenter4dSolovevIterXpoint
     end
 
     include("guiding_center_4d_diagnostics.jl")
+
+    initial_conditions_barely_passing() = ([2.5 / equ.R₀, 0., 0., 3.425E-1], (μ = 1E-2,))
+    initial_conditions_barely_trapped() = ([2.5 / equ.R₀, 0., 0., 3.375E-1], (μ = 1E-2,))
+    initial_conditions_deeply_passing() = ([2.5 / equ.R₀, 0., 0.,  5E-1],    (μ = 1E-2,))
+    initial_conditions_deeply_trapped() = ([2.5 / equ.R₀, 0., 0.,  1E-1],    (μ = 1E-2,))
+    initial_conditions_trapped()        = ([7.0 / equ.R₀, 0., 0., -2E-3],    (μ = 1.88E-7,))
 
 end

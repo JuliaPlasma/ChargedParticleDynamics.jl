@@ -6,7 +6,7 @@ module ChargedParticle3dSymmetric
 
     export charged_particle_3d_iode, hamiltonian, angular_momentum
 
-    const E₀ = 2
+    const E₀ = 0#2
     const q₀ = [1., 0., 0., 0., 1., 1.]
 
     include("../electromagneticfields/symmetric.jl")

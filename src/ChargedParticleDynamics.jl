@@ -1,4 +1,3 @@
-
 module ChargedParticleDynamics
 
     include("ChargedParticle3d.jl")
