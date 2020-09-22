@@ -29,15 +29,11 @@ b₁(t,x) = zero(eltype(x))
 b₂(t,x) = zero(eltype(x))
 b₃(t,x) = one(eltype(x))
 
+b¹(t,x) = zero(eltype(x))
+b²(t,x) = zero(eltype(x))
+b³(t,x) = one(eltype(x))
+
 b(t,x) = [b₁(t,x), b₂(t,x), b₃(t,x)]
-
-R(t,x) = one(eltype(x))
-Z(t,x) = zero(eltype(x))
-phi(t,x) = zero(eltype(x))
-
-dRdx₁(t,x) = zero(eltype(x))
-dRdx₂(t,x) = zero(eltype(x))
-dRdx₃(t,x) = zero(eltype(x))
 
 db₁dx₁(t,x) = zero(eltype(x))
 db₁dx₂(t,x) = zero(eltype(x))
@@ -62,3 +58,19 @@ dB₃dx₃(t,x) = zero(eltype(x))
 dBdx₁(t,x) = 2*x[1]
 dBdx₂(t,x) = 2*x[2]
 dBdx₃(t,x) = zero(eltype(x))
+
+R(t,x) = one(eltype(x))
+Z(t,x) = zero(eltype(x))
+phi(t,x) = zero(eltype(x))
+
+dRdx₁(t,x) = zero(eltype(x))
+dRdx₂(t,x) = zero(eltype(x))
+dRdx₃(t,x) = zero(eltype(x))
+
+g₁₁(t,x) = one(eltype(x))
+g₂₂(t,x) = one(eltype(x))
+g₃₃(t,x) = one(eltype(x))
+
+g¹¹(t,x) = one(eltype(x))
+g²²(t,x) = one(eltype(x))
+g³³(t,x) = one(eltype(x))

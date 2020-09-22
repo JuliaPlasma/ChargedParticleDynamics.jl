@@ -3,16 +3,18 @@ Analytic axisymmetric medium-size tokamak equilibrium in cartesian coordinates.
 """
 module TokamakMediumCylindrical
 
-    using ElectromagneticFields: load_equilibrium, AxisymmetricTokamakCylindrical
+    using ElectromagneticFields.AxisymmetricTokamakCylindrical
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
     export hamiltonian, toroidal_momentum
 
+    const R₀ = 2.
+    const B₀ = 5.
+    const q  = 2.
 
-    equ = AxisymmetricTokamakCylindrical(2., 5., 2.)
-    load_equilibrium(equ; target_module=TokamakMediumCylindrical)
+    const equ = AxisymmetricTokamakCylindrical.init(R₀, B₀, q)
 
     initial_conditions_barely_passing() = ([2.5, 0., 0., 3.425E-1], (μ = 1E-2,)) # Δt=2.5, nt=50
     initial_conditions_barely_trapped() = ([2.5, 0., 0., 3.375E-1], (μ = 1E-2,)) # Δt=3.0, nt=100

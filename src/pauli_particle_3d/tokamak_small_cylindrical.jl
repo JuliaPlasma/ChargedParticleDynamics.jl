@@ -1,18 +1,18 @@
-
 module TokamakSmallCylindrical
 
-    import ElectromagneticFields: load_equilibrium, TokamakSmallCylindrical
+    using ElectromagneticFields.AxisymmetricTokamakCylindrical
 
     export pauli_particle_3d_pode, hamiltonian, toroidal_momentum
 
-    const R0 = 1.
-    const B0 = 1.
+    const R₀ = 1.
+    const B₀ = 1.
+    const E₀ = 0.
     const q  = 2.
+
+    const equ = AxisymmetricTokamakCylindrical.init(R₀, B₀, q)
 
     const qᵢ = [1.05, 0., 0.]
     const vᵢ = [2.1E-3, 0., -4.3E-4]
-
-    load_equilibrium(AxisymmetricTokamakCylindrical(R0, B0, q); target_module=TokamakSmallCylindrical)
 
     include("pauli_particle_3d.jl")
 

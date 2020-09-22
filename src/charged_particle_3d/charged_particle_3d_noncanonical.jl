@@ -1,4 +1,7 @@
 
+using GeometricIntegrators.Equations
+
+
 ϑ₁(t, q) = g₁₁(t,q) * q[4] + A₁(t,q)
 ϑ₂(t, q) = g₂₂(t,q) * q[5] + A₂(t,q)
 ϑ₃(t, q) = g₃₃(t,q) * q[6] + A₃(t,q)

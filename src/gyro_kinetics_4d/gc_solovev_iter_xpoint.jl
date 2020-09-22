@@ -3,15 +3,15 @@ Analytic ITER-like Solov'ev equilibrium with X-point.
 """
 module GuidingCenter4dSolovevIterXpoint
 
-    using ElectromagneticFields: load_equilibrium, SolovevXpointITER
+    using ElectromagneticFields.SolovevXpoint
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
            initial_conditions_trapped
 
+    # export toroidal_momentum
 
-    equ = SolovevXpointITER()
-    load_equilibrium(equ; target_module=GuidingCenter4dSolovevIterXpoint)
+    const equ = SolovevXpoint.ITER()
 
     include("coordinate_transformations.jl")
     include("gc_common.jl")

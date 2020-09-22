@@ -22,11 +22,9 @@ u_0 = 0.5, \quad
 """
 module GuidingCenter4dThetaPinch
 
-    using ElectromagneticFields: load_equilibrium, ThetaPinch
+    using ElectromagneticFields.ThetaPinch
 
-
-    equ = ThetaPinch(1.)
-    load_equilibrium(equ; target_module=GuidingCenter4dThetaPinch)
+    const equ = ThetaPinch.init(1.)
 
     μ_loop() = 2.5E-6
 

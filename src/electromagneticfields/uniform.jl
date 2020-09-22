@@ -35,6 +35,10 @@ b₁(t,q) = zero(eltype(q))
 b₂(t,q) = zero(eltype(q))
 b₃(t,q) = one(eltype(q))
 
+b¹(t,q) = zero(eltype(q))
+b²(t,q) = zero(eltype(q))
+b³(t,q) = one(eltype(q))
+
 db₁dx₁(t,q) = zero(eltype(q))
 db₁dx₂(t,q) = zero(eltype(q))
 db₁dx₃(t,q) = zero(eltype(q))
@@ -52,3 +56,11 @@ R(t,x) = one(eltype(x))
 dRdx₁(t,x) = zero(eltype(x))
 dRdx₂(t,x) = zero(eltype(x))
 dRdx₃(t,x) = zero(eltype(x))
+
+g₁₁(t,x) = one(eltype(x))
+g₂₂(t,x) = one(eltype(x))
+g₃₃(t,x) = one(eltype(x))
+
+g¹¹(t,x) = one(eltype(x))
+g²²(t,x) = one(eltype(x))
+g³³(t,x) = one(eltype(x))

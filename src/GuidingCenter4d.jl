@@ -10,7 +10,9 @@ module GuidingCenter4d
 
     include("guiding_center_4d/tokamak_medium_cartesian.jl")
     include("guiding_center_4d/tokamak_medium_cylindrical.jl")
+    include("guiding_center_4d/tokamak_small_cartesian.jl")
     include("guiding_center_4d/tokamak_small_cylindrical.jl")
+    include("guiding_center_4d/tokamak_small_toroidal.jl")
 
 
 

@@ -34,7 +34,7 @@ end
 
 @safetestset "Guiding Centre Dynamics in 4D with ITER-like Solov'ev Equilibrium with X-Point                      " begin
 
-    using ChargedParticleDynamics.GuidingCenter4d.GuidingCenter4dSolovevIterXpoint
+    using ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint
     using ..GuidingCenter4dTests
 
     test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_trapped()...), Δt=10000.)
@@ -72,8 +72,8 @@ end
     test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_trapped()...), Δt=1.)
     test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_passing()...), Δt=1.)
     test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_trapped()...), Δt=1.)
-    # test_guiding_center_4d_vpglrk(guiding_center_4d_loop_iode(nl), Δt=1.)
-    # test_guiding_center_4d_vpglrk(guiding_center_4d_surface_iode(nx, ny), Δt=1.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_loop_iode(nl), Δt=.1)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_surface_iode(nx, ny), Δt=.1)
 
 end
 
@@ -94,8 +94,30 @@ end
     test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_trapped()...), Δt=1.)
     test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_passing()...), Δt=1.)
     test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_trapped()...), Δt=1.)
-    test_guiding_center_4d_vpglrk(guiding_center_4d_loop_iode(nl), Δt=1.)
-    test_guiding_center_4d_vpglrk(guiding_center_4d_surface_iode(nx, ny), Δt=1.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_loop_iode(nl), Δt=.1)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_surface_iode(nx, ny), Δt=.1)
+
+end
+
+
+@safetestset "Guiding Centre Dynamics in 4D with small-size Tokamak Equilibrium in Cartesian Coordinates          " begin
+
+    using ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian
+    using ..GuidingCenter4dTests
+
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_passing()...), Δt=400.)
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_trapped()...), Δt=400.)
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_passing()...), Δt=400.)
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_trapped()...), Δt=400.)
+    test_guiding_center_4d_glrk(guiding_center_4d_loop_ode(nl), Δt=400.)
+    test_guiding_center_4d_glrk(guiding_center_4d_surface_ode(nx, ny), Δt=400.)
+
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_passing()...), Δt=10.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_trapped()...), Δt=10.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_passing()...), Δt=10.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_trapped()...), Δt=10.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_loop_iode(nl), Δt=10.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_surface_iode(nx, ny), Δt=10.)
 
 end
 
@@ -103,6 +125,28 @@ end
 @safetestset "Guiding Centre Dynamics in 4D with small-size Tokamak Equilibrium in Cylindrical Coordinates        " begin
 
     using ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical
+    using ..GuidingCenter4dTests
+
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_passing()...), Δt=400.)
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_trapped()...), Δt=400.)
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_passing()...), Δt=400.)
+    test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_trapped()...), Δt=400.)
+    test_guiding_center_4d_glrk(guiding_center_4d_loop_ode(nl), Δt=400.)
+    test_guiding_center_4d_glrk(guiding_center_4d_surface_ode(nx, ny), Δt=400.)
+
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_passing()...), Δt=10.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_trapped()...), Δt=10.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_passing()...), Δt=10.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_trapped()...), Δt=10.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_loop_iode(nl), Δt=10.)
+    test_guiding_center_4d_vpglrk(guiding_center_4d_surface_iode(nx, ny), Δt=10.)
+
+end
+
+
+@safetestset "Guiding Centre Dynamics in 4D with small-size Tokamak Equilibrium in Toroidal Coordinates           " begin
+
+    using ChargedParticleDynamics.GuidingCenter4d.TokamakSmallToroidal
     using ..GuidingCenter4dTests
 
     test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_passing()...), Δt=400.)

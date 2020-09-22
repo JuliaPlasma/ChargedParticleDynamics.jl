@@ -3,7 +3,7 @@ Analytic axisymmetric small tokamak equilibrium in cartesian coordinates.
 """
 module TokamakSmallCartesian
 
-    using ElectromagneticFields: load_equilibrium, AxisymmetricTokamakCartesian
+    using ElectromagneticFields.AxisymmetricTokamakCartesian
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,11 +11,14 @@ module TokamakSmallCartesian
 
     export hamiltonian, toroidal_momentum
 
+    const R₀ = 1.
+    const B₀ = 1.
+    const q  = 2.
+
+    const equ = AxisymmetricTokamakCartesian.init(R₀, B₀, q)
+
     const qᵢ = [1.05, 0., 0., 0.00045135897235326736]
     const parameters = (μ = 2.314593645825811e-6,)
-
-    equ = AxisymmetricTokamakCartesian(1., 1., 2.)
-    load_equilibrium(equ; target_module=TokamakSmallCartesian)
 
     initial_conditions_barely_passing() = ([1.05, 0., 0., 8.117E-4], (μ = 2.448E-6,))
     initial_conditions_barely_trapped() = ([1.05, 0., 0., 7.610E-4], (μ = 2.250E-6,))

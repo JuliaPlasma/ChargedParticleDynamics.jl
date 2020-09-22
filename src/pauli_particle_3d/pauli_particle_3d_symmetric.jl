@@ -6,7 +6,7 @@ module PauliParticle3dSymmetric
 
     export pauli_particle_3d_pode, hamiltonian, angular_momentum
 
-    const E₀ = 0#2
+    const E₀ = 2
     const qᵢ = [1., 0., 0.]
     const vᵢ = [0., 1., 1.]
     const parameters = (μ = 1E-2,)

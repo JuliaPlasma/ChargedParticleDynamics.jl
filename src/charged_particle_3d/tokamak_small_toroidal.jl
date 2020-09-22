@@ -1,6 +1,6 @@
 module TokamakSmallToroidal
 
-    import ElectromagneticFields: load_equilibrium, AxisymmetricTokamakToroidal
+    using ElectromagneticFields.AxisymmetricTokamakToroidal
 
     export charged_particle_3d_pode, charged_particle_3d_iode,
            hamiltonian, toroidal_momentum
@@ -9,7 +9,7 @@ module TokamakSmallToroidal
     const B₀ = 1.
     const q  = 2.
 
-    load_equilibrium(AxisymmetricTokamakToroidal(R₀, B₀, q); target_module=TokamakSmallToroidal)
+    const equ = AxisymmetricTokamakToroidal.init(R₀, B₀, q)
 
     include("charged_particle_3d_canonical.jl")
 

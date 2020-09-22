@@ -41,11 +41,38 @@ end
 end
 
 
-@safetestset "Pauli Particle in 3D in Tokamak                                                                     " begin
+@safetestset "Pauli Particle in 3D in ITER Equilibrium in Cylindrical Coordinates                                 " begin
 
-    using ChargedParticleDynamics.PauliParticle3d.PauliParticle3dTokamak
+    using ChargedParticleDynamics.PauliParticle3d.TokamakIterCylindrical
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(PauliParticle3dTokamak.pauli_particle_3d_pode())
+    test_pauli_particle_3d(TokamakIterCylindrical.pauli_particle_3d_pode())
+
+end
+
+@safetestset "Pauli Particle in 3D in Tokamak Equilibrium in Cartesian Coordinates                                " begin
+
+    using ChargedParticleDynamics.PauliParticle3d.TokamakSmallCartesian
+    using ..PauliParticle3dTests
+
+    test_pauli_particle_3d(TokamakSmallCartesian.pauli_particle_3d_pode())
+
+end
+
+@safetestset "Pauli Particle in 3D in Tokamak Equilibrium in Cylindrical Coordinates                              " begin
+
+    using ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical
+    using ..PauliParticle3dTests
+
+    test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_pode())
+
+end
+
+@safetestset "Pauli Particle in 3D in Tokamak Equilibrium in Toroidal Coordinates                                 " begin
+
+    using ChargedParticleDynamics.PauliParticle3d.TokamakSmallToroidal
+    using ..PauliParticle3dTests
+
+    test_pauli_particle_3d(TokamakSmallToroidal.pauli_particle_3d_pode())
 
 end

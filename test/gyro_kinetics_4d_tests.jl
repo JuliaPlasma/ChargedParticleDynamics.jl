@@ -7,8 +7,6 @@ module GyroKinetics4dTests
     using GeometricIntegrators
     using ChargedParticleDynamics.GyroKinetics4d
 
-    set_config(:nls_stol_break, Inf)
-
     const Δt = 1.
     const nt = 1
 

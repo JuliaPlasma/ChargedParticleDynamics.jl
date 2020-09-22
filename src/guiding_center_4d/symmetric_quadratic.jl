@@ -45,11 +45,9 @@ u_1 = 0.01, \quad
 """
 module GuidingCenter4dSymmetricQuadratic
 
-    using ElectromagneticFields: load_equilibrium, SymmetricQuadratic
+    using ElectromagneticFields.SymmetricQuadratic
 
-
-    equ = SymmetricQuadratic(1.)
-    load_equilibrium(equ; target_module=GuidingCenter4dSymmetricQuadratic)
+    const equ = SymmetricQuadratic.init(1.)
 
     μ_loop() = 1E-2
     μ_surface() = 1E-2

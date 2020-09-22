@@ -1,20 +1,19 @@
-module PauliParticle3dSolovevIterXpoint
+module SolovevIterXpoint
 
-    using ElectromagneticFields: load_equilibrium, SolovevXpointITER, AxisymmetricTokamakCylindrical
+    using ElectromagneticFields.SolovevXpoint
 
     export pauli_particle_3d_pode, hamiltonian, toroidal_momentum
 
     const R₀ = 6.2
     const B₀ = 5.3
+    const E₀ = 0.
     const q  = 2.
+
+    const equ = SolovevXpoint.ITER()
 
     const qᵢ = [7.0-1.4, 0.0, 0.0]
     const vᵢ = [3.43E-3, 6.75, -3.41E-1]
     
-    equ = AxisymmetricTokamakCylindrical(R₀, B₀, q)
-    # equ = SolovevXpointITER()
-    load_equilibrium(equ; target_module=PauliParticle3dSolovevIterXpoint)
-
     include("pauli_particle_3d.jl")
 
     function initial_conditions(x₀, u₀, μ)

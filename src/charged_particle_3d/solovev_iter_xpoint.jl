@@ -1,17 +1,11 @@
 module ChargedParticle3dSolovevIterXpoint
 
-    using ElectromagneticFields: load_equilibrium, SolovevXpointITER, AxisymmetricTokamakCylindrical
+    using ElectromagneticFields.SolovevXpoint
 
     export charged_particle_3d_pode, charged_particle_3d_iode,
            hamiltonian, toroidal_momentum
 
-    const R₀ = 6.2
-    const B₀ = 5.3
-    const q  = 2.
-
-    equ = AxisymmetricTokamakCylindrical(R₀, B₀, q)
-    # equ = SolovevXpointITER()
-    load_equilibrium(equ; target_module=ChargedParticle3dSolovevIterXpoint)
+    const equ = SolovevXpoint.ITER()
 
     include("charged_particle_3d_canonical.jl")
 
