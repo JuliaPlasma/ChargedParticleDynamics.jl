@@ -59,20 +59,20 @@ end
 
 end
 
+@safetestset "Pauli Particle in 3D in Tokamak Equilibrium in Circular Coordinates                                 " begin
+
+    using ChargedParticleDynamics.PauliParticle3d.TokamakSmallCircular
+    using ..PauliParticle3dTests
+
+    test_pauli_particle_3d(TokamakSmallCircular.pauli_particle_3d_pode())
+
+end
+
 @safetestset "Pauli Particle in 3D in Tokamak Equilibrium in Cylindrical Coordinates                              " begin
 
     using ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical
     using ..PauliParticle3dTests
 
     test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_pode())
-
-end
-
-@safetestset "Pauli Particle in 3D in Tokamak Equilibrium in Toroidal Coordinates                                 " begin
-
-    using ChargedParticleDynamics.PauliParticle3d.TokamakSmallToroidal
-    using ..PauliParticle3dTests
-
-    test_pauli_particle_3d(TokamakSmallToroidal.pauli_particle_3d_pode())
 
 end

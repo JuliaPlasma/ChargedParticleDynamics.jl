@@ -83,22 +83,22 @@ end
 end
 
 
+@safetestset "Charged Particle Dynamics in 3D in Tokamak (circular coordinates)                                   " begin
+
+    using ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCircular
+    using ..ChargedParticle3dTests
+
+    test_charged_particle_3d(TokamakSmallCircular.charged_particle_3d_pode())
+
+end
+
+
 @safetestset "Charged Particle Dynamics in 3D in Tokamak (cylindrical coordinates)                                " begin
 
     using ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCylindrical
     using ..ChargedParticle3dTests
 
     test_charged_particle_3d(TokamakSmallCylindrical.charged_particle_3d_pode())
-
-end
-
-
-@safetestset "Charged Particle Dynamics in 3D in Tokamak (toroidal coordinates)                                   " begin
-
-    using ChargedParticleDynamics.ChargedParticle3d.TokamakSmallToroidal
-    using ..ChargedParticle3dTests
-
-    test_charged_particle_3d(TokamakSmallToroidal.charged_particle_3d_pode())
 
 end
 

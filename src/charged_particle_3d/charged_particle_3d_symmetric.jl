@@ -4,12 +4,17 @@ Charged Particle in an axisymmetric magnetic field of the form
 """
 module ChargedParticle3dSymmetric
 
+    using ElectromagneticFields.SymmetricQuadratic
+
     export charged_particle_3d_iode, hamiltonian, angular_momentum
 
-    const E₀ = 0#2
+    const B₀ = 1.
+    const E₀ = 2.
+
+    const equ = SymmetricQuadratic.init(B₀)
+
     const q₀ = [1., 0., 0., 0., 1., 1.]
 
-    include("../electromagneticfields/symmetric.jl")
     include("charged_particle_3d.jl")
 
 end

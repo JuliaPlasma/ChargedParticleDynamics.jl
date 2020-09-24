@@ -1,9 +1,9 @@
 """
-Analytic axisymmetric small tokamak equilibrium in toroidal coordinates.
+Analytic axisymmetric small tokamak equilibrium in circular coordinates.
 """
-module TokamakSmallToroidal
+module TokamakSmallCircular
 
-    using ElectromagneticFields.AxisymmetricTokamakToroidal
+    using ElectromagneticFields.AxisymmetricTokamakCircular
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -15,7 +15,7 @@ module TokamakSmallToroidal
     const B₀ = 1.
     const q  = 2.
 
-    const equ = AxisymmetricTokamakToroidal.init(R₀, B₀, q)
+    const equ = AxisymmetricTokamakCircular.init(R₀, B₀, q)
 
     const xᵢ = [1.05, 0., 0.]
     const uᵢ = -0.00045135897235326736

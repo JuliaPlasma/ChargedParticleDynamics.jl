@@ -4,12 +4,17 @@ Charged Particle in an uniform magnetic field of the form
 """
 module ChargedParticle3dUniform
 
+    using ElectromagneticFields.ThetaPinch
+
     export charged_particle_3d_iode, hamiltonian, angular_momentum
 
-    const E₀ = 2
-    const q₀ = [1., 0., 0., 0., 1., 1.]
+    const B₀ = 2.
+    const E₀ = 2.
 
-    include("../electromagneticfields/uniform.jl")
+    const equ = ThetaPinch.init(B₀)
+
+    const q₀ = [2.5, 0.0, 0.0, 0.0, 0.2, 0.1]
+
     include("charged_particle_3d.jl")
 
 end

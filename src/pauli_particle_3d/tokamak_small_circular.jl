@@ -1,6 +1,6 @@
-module TokamakSmallToroidal
+module TokamakSmallCircular
 
-    using ElectromagneticFields.AxisymmetricTokamakToroidal
+    using ElectromagneticFields.AxisymmetricTokamakCircular
 
     export pauli_particle_3d_pode, hamiltonian, toroidal_momentum
 
@@ -9,7 +9,7 @@ module TokamakSmallToroidal
     const E₀ = 0.
     const q  = 2.
 
-    const equ = AxisymmetricTokamakToroidal.init(R₀, B₀, q)
+    const equ = AxisymmetricTokamakCircular.init(R₀, B₀, q)
 
     const xᵢ = [1.05, 0.0, 0.0]
     const qᵢ = from_cartesian(0, xᵢ)

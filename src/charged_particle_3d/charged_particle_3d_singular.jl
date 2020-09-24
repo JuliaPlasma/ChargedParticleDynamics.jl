@@ -4,12 +4,17 @@ Charged Particle in a singular magnetic field of the form
 """
 module ChargedParticle3dSingular
 
+    using ElectromagneticFields.Singular
+
     export charged_particle_3d_iode, hamiltonian, angular_momentum
 
-    const E₀ = 0
+    const B₀ = 1.
+    const E₀ = 2.
+
+    const equ = Singular.init(B₀)
+
     const q₀ = [1., 0., 0., 0., -1., 0.]
 
-    include("../electromagneticfields/singular.jl")
     include("charged_particle_3d.jl")
 
 end
