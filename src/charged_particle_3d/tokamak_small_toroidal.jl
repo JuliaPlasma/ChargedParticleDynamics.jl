@@ -1,6 +1,7 @@
 module TokamakSmallToroidal
 
     using ElectromagneticFields.AxisymmetricTokamakToroidal
+    using LinearAlgebra
 
     export charged_particle_3d_pode, charged_particle_3d_iode,
            hamiltonian, toroidal_momentum
@@ -13,8 +14,9 @@ module TokamakSmallToroidal
 
     include("charged_particle_3d_canonical.jl")
 
-    const qᵢ = from_cartesian(0, [1.05,   0.0,    0.0])
-    const vᵢ = from_cartesian(0, [2.1E-3, 4.3E-4, 0.0])
+    const xᵢ = [1.05, 0.0, 0.0]
+    const qᵢ = from_cartesian(0, xᵢ)
+    const vᵢ = DFinv(0, xᵢ) * [2.1E-3, 4.3E-4, 0.0]
     const pᵢ = charged_particle_3d_pᵢ(qᵢ, vᵢ)
 
 end

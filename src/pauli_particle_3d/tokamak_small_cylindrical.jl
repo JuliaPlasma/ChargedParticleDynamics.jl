@@ -11,8 +11,9 @@ module TokamakSmallCylindrical
 
     const equ = AxisymmetricTokamakCylindrical.init(R₀, B₀, q)
 
-    const qᵢ = [1.05, 0., 0.]
-    const vᵢ = [2.1E-3, 0., -4.3E-4]
+    const xᵢ = [1.05, 0.0, 0.0]
+    const qᵢ = from_cartesian(0, xᵢ)
+    const vᵢ = DFinv(0, xᵢ) * [2.1E-3, 4.3E-4, 0.0]
 
     include("pauli_particle_3d.jl")
 

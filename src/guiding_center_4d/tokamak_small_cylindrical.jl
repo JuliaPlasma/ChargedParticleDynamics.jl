@@ -17,7 +17,10 @@ module TokamakSmallCylindrical
 
     const equ = AxisymmetricTokamakCylindrical.init(R₀, B₀, q)
 
-    const qᵢ = [1.05, 0., 0., 0.00045135897235326736]
+    const xᵢ = [1.05, 0., 0.]
+    const uᵢ = -0.00045135897235326736
+    const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
+    
     const parameters = (μ = 2.314593645825811e-6,)
 
     initial_conditions_barely_passing() = ([1.05, 0., 0., 8.117E-4], (μ = 2.448E-6,))
