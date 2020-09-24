@@ -23,7 +23,7 @@ Showoff = "992d4aef-0814-514b-bc4d-f2e9a6c4116f"
 [compat]
 DecFP = "^0.4.9, 1.0"
 Documenter = "0.23, 0.24, 0.25"
-ElectromagneticFields = "0.4"
+ElectromagneticFields = "^0.4.2"
 ForwardDiff = "0.10"
 GeometricIntegrators = "^0.3.1, 0.4"
 GeometricProblems = "^0.1"
