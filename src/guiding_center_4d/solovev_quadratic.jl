@@ -1,7 +1,7 @@
 """
 Analytic, quadratic Solov'ev equilibrium.
 """
-module GuidingCenter4dSolovevQuadratic
+module SolovevQuadraticField
 
     using ElectromagneticFields.SolovevQuadratic
 

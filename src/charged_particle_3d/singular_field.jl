@@ -2,7 +2,7 @@
 Charged Particle in a singular magnetic field of the form
 ``B(x,y,z) = (x^2 + y^2)^{-3/2} e_z``.
 """
-module ChargedParticle3dSingular
+module SingularField
 
     using ElectromagneticFields.Singular
 

@@ -20,7 +20,7 @@ u_0 = 0.5, \quad
 \mu = 2.5 \times 10^{-6} .
 ```
 """
-module GuidingCenter4dThetaPinch
+module ThetaPinchField
 
     using ElectromagneticFields.ThetaPinch
 

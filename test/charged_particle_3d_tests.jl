@@ -33,37 +33,37 @@ end
 
 
 
-@safetestset "Charged Particle Dynamics in 3D in Uniform Magnetic Field                                           " begin
-
-    using ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dUniform
-    using ..ChargedParticle3dTests
-
-    test_charged_particle_3d(ChargedParticle3dUniform.charged_particle_3d_iode())
-
-end
-
-
 @safetestset "Charged Particle Dynamics in 3D in Symmetric Magnetic Field                                         " begin
 
-    using ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dSymmetric
+    using ChargedParticleDynamics.ChargedParticle3d.SymmetricField
     using ..ChargedParticle3dTests
 
-    test_charged_particle_3d(ChargedParticle3dSymmetric.charged_particle_3d_iode())
+    test_charged_particle_3d(SymmetricField.charged_particle_3d_iode())
 
 end
 
 
 @safetestset "Charged Particle Dynamics in 3D in Singular Magnetic Field                                          " begin
 
-    using ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dSingular
+    using ChargedParticleDynamics.ChargedParticle3d.SingularField
     using ..ChargedParticle3dTests
 
-    test_charged_particle_3d(ChargedParticle3dSingular.charged_particle_3d_iode())
+    test_charged_particle_3d(SingularField.charged_particle_3d_iode())
 
 end
 
 
 @safetestset "Charged Particle Dynamics in 3D in Theta Pinch                                                      " begin
+
+    using ChargedParticleDynamics.ChargedParticle3d.ThetaPinchCanonical
+    using ..ChargedParticle3dTests
+
+    test_charged_particle_3d(ThetaPinchCanonical.charged_particle_3d_iode())
+
+end
+
+
+@safetestset "Charged Particle Dynamics in 3D in Theta Pinch (noncanonical formulation)                           " begin
 
     using ChargedParticleDynamics.ChargedParticle3d.ThetaPinchNoncanonical
     using ..ChargedParticle3dTests

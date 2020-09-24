@@ -2,7 +2,7 @@
 Charged Particle in an uniform magnetic field of the form
 ``B(x,y,z) = B_0 e_z``.
 """
-module PauliParticle3dUniform
+module ThetaPinchField
 
     using ElectromagneticFields.ThetaPinch
 

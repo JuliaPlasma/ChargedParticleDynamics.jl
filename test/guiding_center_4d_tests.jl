@@ -168,7 +168,7 @@ end
 
 @safetestset "Guiding Centre Dynamics in 4D with quadratic Solov'ev Equilibrium                                   " begin
 
-    using ChargedParticleDynamics.GuidingCenter4d.GuidingCenter4dSolovevQuadratic
+    using ChargedParticleDynamics.GuidingCenter4d.SolovevQuadraticField
     using ..GuidingCenter4dTests
 
     test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_passing()...), Δt=1.)
@@ -186,7 +186,7 @@ end
 
 @safetestset "Guiding Centre Dynamics in 4D with symmetric quadratic Equlibrium                                   " begin
 
-    using ChargedParticleDynamics.GuidingCenter4d.GuidingCenter4dSymmetricQuadratic
+    using ChargedParticleDynamics.GuidingCenter4d.SymmetricField
     using ..GuidingCenter4dTests
 
     test_guiding_center_4d_glrk(guiding_center_4d_loop_ode(nl), Δt=1.)
@@ -200,7 +200,7 @@ end
 
 @safetestset "Guiding Centre Dynamics in 4D with Theta Pinch Equilibrium                                          " begin
 
-    using ChargedParticleDynamics.GuidingCenter4d.GuidingCenter4dThetaPinch
+    using ChargedParticleDynamics.GuidingCenter4d.ThetaPinchField
     using ..GuidingCenter4dTests
 
     test_guiding_center_4d_glrk(guiding_center_4d_loop_ode(nl), Δt=1.)

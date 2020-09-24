@@ -21,22 +21,22 @@ end
 
 
 
-@safetestset "Pauli Particle in 3D in Uniform Magnetic Field                                                      " begin
+@safetestset "Pauli Particle in 3D in Symmetric Magnetic Field                                                    " begin
 
-    using ChargedParticleDynamics.PauliParticle3d.PauliParticle3dUniform
+    using ChargedParticleDynamics.PauliParticle3d.SymmetricField
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(PauliParticle3dUniform.pauli_particle_3d_pode())
+    test_pauli_particle_3d(SymmetricField.pauli_particle_3d_pode())
 
 end
 
 
-@safetestset "Pauli Particle in 3D in Symmetric Magnetic Field                                                    " begin
+@safetestset "Pauli Particle in 3D in Theta Pinch                                                                 " begin
 
-    using ChargedParticleDynamics.PauliParticle3d.PauliParticle3dSymmetric
+    using ChargedParticleDynamics.PauliParticle3d.ThetaPinchField
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(PauliParticle3dSymmetric.pauli_particle_3d_pode())
+    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_pode())
 
 end
 

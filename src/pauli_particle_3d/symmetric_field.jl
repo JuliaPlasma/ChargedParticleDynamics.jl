@@ -2,7 +2,7 @@
 Charged Particle in an axisymmetric magnetic field of the form
 ``B(x,y,z) = (1 + x^2 + y^2) e_z``.
 """
-module PauliParticle3dSymmetric
+module SymmetricField
 
     using ElectromagneticFields.SymmetricQuadratic
 

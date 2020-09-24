@@ -43,7 +43,7 @@ u_1 = 0.01, \quad
 \mu = 0.01 .
 ```
 """
-module GuidingCenter4dSymmetricQuadratic
+module SymmetricField
 
     using ElectromagneticFields.SymmetricQuadratic
 
