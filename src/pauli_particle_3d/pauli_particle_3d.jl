@@ -27,14 +27,11 @@ E₃(t,q) = - 2π*E₀*cos(2π*q[3])
 
 function hamiltonian(t, q, p, params)
     @unpack μ = params
-    0.5 * (g₁₁(t,q) * v¹(t,q,p)^2 + g₂₂(t,q) * v²(t,q,p)^2 + g₃₃(t,q) * v³(t,q,p)^2) + μ*B(t,q)
+    0.5 * (g₁₁(t,q) * v¹(t,q,p)^2 + g₂₂(t,q) * v²(t,q,p)^2 + g₃₃(t,q) * v³(t,q,p)^2) + μ*B(t,q) + φ(t,q)
 end
 
 
 function initial_conditions(x₀, v₀)
-    b(t,x) = [b₁(t,x), b₂(t,x), b₃(t,x)]
-    b⃗(t,x) = [b¹(t,x), b²(t,x), b³(t,x)]
-
     u₀ = v₀' * b(0, x₀)
     vpar = u₀ .* b⃗(0, x₀)
     vper = v₀ .- vpar
@@ -67,9 +64,12 @@ end
 
 function pauli_particle_3d_pode_f(t, q, p, f, params)
     @unpack μ = params
-    f[1] = dA₁dx₁(t,q) * v¹(t,q,p) + dA₂dx₁(t,q) * v²(t,q,p) + dA₃dx₁(t,q) * v³(t,q,p) + E₁(t,q) - μ * dBdx₁(t,q)
-    f[2] = dA₁dx₂(t,q) * v¹(t,q,p) + dA₂dx₂(t,q) * v²(t,q,p) + dA₃dx₂(t,q) * v³(t,q,p) + E₂(t,q) - μ * dBdx₂(t,q)
-    f[3] = dA₁dx₃(t,q) * v¹(t,q,p) + dA₂dx₃(t,q) * v²(t,q,p) + dA₃dx₃(t,q) * v³(t,q,p) + E₃(t,q) - μ * dBdx₃(t,q)
+    f[1] = dA₁dx₁(t,q) * v¹(t,q,p) + dA₂dx₁(t,q) * v²(t,q,p) + dA₃dx₁(t,q) * v³(t,q,p) + E₁(t,q) - μ * dBdx₁(t,q) +
+           (dg₁₁dx₁(t,q) * v¹(t,q,p)^2 + dg₂₂dx₁(t,q) * v²(t,q,p)^2 + dg₃₃dx₁(t,q) * v³(t,q,p)^2) / 2
+    f[2] = dA₁dx₂(t,q) * v¹(t,q,p) + dA₂dx₂(t,q) * v²(t,q,p) + dA₃dx₂(t,q) * v³(t,q,p) + E₂(t,q) - μ * dBdx₂(t,q) +
+           (dg₁₁dx₂(t,q) * v¹(t,q,p)^2 + dg₂₂dx₂(t,q) * v²(t,q,p)^2 + dg₃₃dx₂(t,q) * v³(t,q,p)^2) / 2
+    f[3] = dA₁dx₃(t,q) * v¹(t,q,p) + dA₂dx₃(t,q) * v²(t,q,p) + dA₃dx₃(t,q) * v³(t,q,p) + E₃(t,q) - μ * dBdx₃(t,q) +
+           (dg₁₁dx₃(t,q) * v¹(t,q,p)^2 + dg₂₂dx₃(t,q) * v²(t,q,p)^2 + dg₃₃dx₃(t,q) * v³(t,q,p)^2) / 2
     nothing
 end
 
@@ -78,16 +78,22 @@ pauli_particle_3d_iode_ϑ(t, q, v, θ, params) = ϑ(t, q, v, θ)
 
 function pauli_particle_3d_iode_f(t, q, v, f, params)
     @unpack μ = params
-    f[1] = dA₁dx₁(t,q) * v[1] + dA₂dx₁(t,q) * v[2] + dA₃dx₁(t,q) * v[3] + E₁(t,q) - μ * dBdx₁(t,q)
-    f[2] = dA₁dx₂(t,q) * v[1] + dA₂dx₂(t,q) * v[2] + dA₃dx₂(t,q) * v[3] + E₂(t,q) - μ * dBdx₂(t,q)
-    f[3] = dA₁dx₃(t,q) * v[1] + dA₂dx₃(t,q) * v[2] + dA₃dx₃(t,q) * v[3] + E₃(t,q) - μ * dBdx₃(t,q)
+    f[1] = dA₁dx₁(t,q) * v[1] + dA₂dx₁(t,q) * v[2] + dA₃dx₁(t,q) * v[3] + E₁(t,q) - μ * dBdx₁(t,q) +
+           (dg₁₁dx₁(t,q) * v[1]^2 + dg₂₂dx₁(t,q) * v[2]^2 + dg₃₃dx₁(t,q) * v[3]^2) / 2
+    f[2] = dA₁dx₂(t,q) * v[1] + dA₂dx₂(t,q) * v[2] + dA₃dx₂(t,q) * v[3] + E₂(t,q) - μ * dBdx₂(t,q) +
+           (dg₁₁dx₂(t,q) * v[1]^2 + dg₂₂dx₂(t,q) * v[2]^2 + dg₃₃dx₂(t,q) * v[3]^2) / 2
+    f[3] = dA₁dx₃(t,q) * v[1] + dA₂dx₃(t,q) * v[2] + dA₃dx₃(t,q) * v[3] + E₃(t,q) - μ * dBdx₃(t,q) +
+           (dg₁₁dx₃(t,q) * v[1]^2 + dg₂₂dx₃(t,q) * v[2]^2 + dg₃₃dx₃(t,q) * v[3]^2) / 2
     nothing
 end
 
 function pauli_particle_3d_iode_g(t, q, v, f, params)
-    f[1] = dA₁dx₁(t,q) * v[1] + dA₂dx₁(t,q) * v[2] + dA₃dx₁(t,q) * v[3]
-    f[2] = dA₁dx₂(t,q) * v[1] + dA₂dx₂(t,q) * v[2] + dA₃dx₂(t,q) * v[3]
-    f[3] = dA₁dx₃(t,q) * v[1] + dA₂dx₃(t,q) * v[2] + dA₃dx₃(t,q) * v[3]
+    f[1] = dA₁dx₁(t,q) * v[1] + dA₂dx₁(t,q) * v[2] + dA₃dx₁(t,q) * v[3] +
+           (dg₁₁dx₁(t,q) * v[1]^2 + dg₂₂dx₁(t,q) * v[2]^2 + dg₃₃dx₁(t,q) * v[3]^2) / 2
+    f[2] = dA₁dx₂(t,q) * v[1] + dA₂dx₂(t,q) * v[2] + dA₃dx₂(t,q) * v[3] +
+           (dg₁₁dx₂(t,q) * v[1]^2 + dg₂₂dx₂(t,q) * v[2]^2 + dg₃₃dx₂(t,q) * v[3]^2) / 2
+    f[3] = dA₁dx₃(t,q) * v[1] + dA₂dx₃(t,q) * v[2] + dA₃dx₃(t,q) * v[3] +
+           (dg₁₁dx₃(t,q) * v[1]^2 + dg₂₂dx₃(t,q) * v[2]^2 + dg₃₃dx₃(t,q) * v[3]^2) / 2
     nothing
 end
 
