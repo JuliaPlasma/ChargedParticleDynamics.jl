@@ -18,7 +18,7 @@ module ChargedParticle3dTests
     end
 
     function test_charged_particle_3d(ode::PODE)
-        int = Integrator(ode, TableauIPRK(:pglrk, 2, getCoefficientsGLRK(1)), Δt)
+        int = Integrator(ode, getTableauIPGLRK(1), Δt)
         sol = integrate(ode, int, nt)
         @test true
     end
@@ -79,6 +79,7 @@ end
     using ..ChargedParticle3dTests
 
     test_charged_particle_3d(TokamakSmallCartesian.charged_particle_3d_pode())
+    test_charged_particle_3d(TokamakSmallCartesian.charged_particle_3d_iode())
 
 end
 
@@ -89,6 +90,7 @@ end
     using ..ChargedParticle3dTests
 
     test_charged_particle_3d(TokamakSmallCircular.charged_particle_3d_pode())
+    test_charged_particle_3d(TokamakSmallCircular.charged_particle_3d_iode())
 
 end
 
@@ -99,6 +101,7 @@ end
     using ..ChargedParticle3dTests
 
     test_charged_particle_3d(TokamakSmallCylindrical.charged_particle_3d_pode())
+    test_charged_particle_3d(TokamakSmallCylindrical.charged_particle_3d_iode())
 
 end
 

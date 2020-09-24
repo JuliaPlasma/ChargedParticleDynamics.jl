@@ -6,13 +6,19 @@ module PauliParticle3dTests
     using Test
     using GeometricIntegrators
 
-    const Δt = 0.1
+    const Δt = 1.
     const nt = 1
 
     export test_pauli_particle_3d
 
     function test_pauli_particle_3d(ode::PODE)
-        int = Integrator(ode, TableauIPRK(:pglrk, 2, getCoefficientsGLRK(1)), Δt)
+        int = Integrator(ode, getTableauIPGLRK(1), Δt)
+        sol = integrate(ode, int, nt)
+        @test true
+    end
+
+    function test_pauli_particle_3d(ode::IODE)
+        int = Integrator(ode, getTableauVPGLRK(1), Δt)
         sol = integrate(ode, int, nt)
         @test true
     end
@@ -27,6 +33,7 @@ end
     using ..PauliParticle3dTests
 
     test_pauli_particle_3d(SymmetricField.pauli_particle_3d_pode())
+    test_pauli_particle_3d(SymmetricField.pauli_particle_3d_iode())
 
 end
 
@@ -37,6 +44,7 @@ end
     using ..PauliParticle3dTests
 
     test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_pode())
+    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_iode())
 
 end
 
@@ -47,6 +55,7 @@ end
     using ..PauliParticle3dTests
 
     test_pauli_particle_3d(TokamakIterCylindrical.pauli_particle_3d_pode())
+    test_pauli_particle_3d(TokamakIterCylindrical.pauli_particle_3d_iode())
 
 end
 
@@ -56,6 +65,7 @@ end
     using ..PauliParticle3dTests
 
     test_pauli_particle_3d(TokamakSmallCartesian.pauli_particle_3d_pode())
+    test_pauli_particle_3d(TokamakSmallCartesian.pauli_particle_3d_iode())
 
 end
 
@@ -65,6 +75,7 @@ end
     using ..PauliParticle3dTests
 
     test_pauli_particle_3d(TokamakSmallCircular.pauli_particle_3d_pode())
+    test_pauli_particle_3d(TokamakSmallCircular.pauli_particle_3d_iode())
 
 end
 
@@ -74,5 +85,6 @@ end
     using ..PauliParticle3dTests
 
     test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_pode())
+    test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_iode())
 
 end
