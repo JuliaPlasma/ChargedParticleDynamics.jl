@@ -1,6 +1,6 @@
-module TokamakSmallCircular
+module TokamakSmallToroidal
 
-    using ElectromagneticFields.AxisymmetricTokamakCircular
+    using ElectromagneticFields.AxisymmetricTokamakToroidal
     using LinearAlgebra
 
     export charged_particle_3d_pode, charged_particle_3d_iode,
@@ -10,13 +10,13 @@ module TokamakSmallCircular
     const B₀ = 1.
     const q  = 2.
 
-    const equ = AxisymmetricTokamakCircular.init(R₀, B₀, q)
+    const equ = AxisymmetricTokamakToroidal.init(R₀, B₀, q)
 
     include("charged_particle_3d_canonical.jl")
 
     const xᵢ = [1.05, 0.0, 0.0]
     const qᵢ = from_cartesian(0, xᵢ)
-    const vᵢ = DFinv(0, xᵢ) * [2.1E-3, 4.3E-4, 0.0]
+    const vᵢ = DF̄(0, xᵢ) * [2.1E-3, 4.3E-4, 0.0]
     const pᵢ = charged_particle_3d_pᵢ(qᵢ, vᵢ)
 
 end

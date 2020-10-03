@@ -11,10 +11,10 @@ module SolovevIterXpoint
 
     export hamiltonian, toroidal_momentum
 
-    const qᵢ = [7.0-1.4, 0.0, 0.0, 2.8166280889939737]
-    const parameters = (μ = 4.607782183567846,)
-
     const equ = SolovevXpoint.ITER()
+
+    const qᵢ = [(7.0-1.4) / equ.R₀, 0.0, 0.0, 2.8166280889939737]
+    const parameters = (μ = 4.607782183567846,)
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")

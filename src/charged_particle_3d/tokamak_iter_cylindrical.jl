@@ -1,4 +1,4 @@
-module TokamakSmallCylindrical
+module TokamakIterCylindrical
 
     using ElectromagneticFields.AxisymmetricTokamakCylindrical
 

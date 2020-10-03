@@ -1,9 +1,9 @@
 """
-Analytic ITER-like Solov'ev equilibrium with X-point.
+Analytic ITER-like Solov'ev equilibrium.
 """
-module TokamakIterCylindrical
+module SolovevIter
 
-    using ElectromagneticFields.AxisymmetricTokamakCylindrical
+    using ElectromagneticFields.Solovev
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,13 +11,9 @@ module TokamakIterCylindrical
 
     export hamiltonian, toroidal_momentum
 
-    const R₀ = 6.2
-    const B₀ = 5.3
-    const q  = 2.
+    const equ = Solovev.ITER()
 
-    const equ = AxisymmetricTokamakCylindrical.init(R₀, B₀, q)
-
-    const qᵢ = [7.0-1.4, 0.0, 0.0, 2.8166280889939737]
+    const qᵢ = [(7.0-1.4) / equ.R₀, 0.0, 0.0, 2.8166280889939737]
     const parameters = (μ = 4.607782183567846,)
 
     include("guiding_center_4d_common.jl")

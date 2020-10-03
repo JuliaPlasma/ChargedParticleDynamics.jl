@@ -16,7 +16,7 @@ module TokamakSmallCylindrical
 
     const xᵢ = [1.05, 0.0, 0.0]
     const qᵢ = from_cartesian(0, xᵢ)
-    const vᵢ = DFinv(0, xᵢ) * [2.1E-3, 4.3E-4, 0.0]
+    const vᵢ = DF̄(0, xᵢ) * [2.1E-3, 4.3E-4, 0.0]
     const pᵢ = charged_particle_3d_pᵢ(qᵢ, vᵢ)
 
 end

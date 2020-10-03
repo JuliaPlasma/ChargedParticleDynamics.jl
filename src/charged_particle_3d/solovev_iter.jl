@@ -1,11 +1,11 @@
-module SolovevIterXpoint
+module SolovevIter
 
-    using ElectromagneticFields.SolovevXpoint
+    using ElectromagneticFields.Solovev
 
     export charged_particle_3d_pode, charged_particle_3d_iode,
            hamiltonian, toroidal_momentum
 
-    const equ = SolovevXpoint.ITER()
+    const equ = Solovev.ITER()
 
     include("charged_particle_3d_canonical.jl")
 
