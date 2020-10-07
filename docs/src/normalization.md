@@ -52,7 +52,7 @@ This suggests to set
 \hat{v} &= \frac{\hat{x}}{\hat{t}} = \hat{l} \hat{\omega}_c ,
 \end{aligned}
 ```
-such that
+so that
 ```math
 L' = ( v' + A' ) \cdot \dot{x}' - \frac{\vert v' \vert^2}{2} - \phi' .
 ```
