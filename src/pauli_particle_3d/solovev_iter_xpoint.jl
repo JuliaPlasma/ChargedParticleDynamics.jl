@@ -1,6 +1,6 @@
 module SolovevIterXpoint
 
-    using ElectromagneticFields.SolovevXpoint
+    using ElectromagneticFields.Solovev
 
     export pauli_particle_3d_pode, hamiltonian, toroidal_momentum
 
@@ -9,7 +9,7 @@ module SolovevIterXpoint
     const E₀ = 0.
     const q  = 2.
 
-    const equ = SolovevXpoint.ITER()
+    const equ = Solovev.ITER(xpoint=true)
 
     const qᵢ = [(7.0-1.4) / equ.R₀, 0.0, 0.0]
     const vᵢ = [3.43E-3, 6.75, -3.41E-1]

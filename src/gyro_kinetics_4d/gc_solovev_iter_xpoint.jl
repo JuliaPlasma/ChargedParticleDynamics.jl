@@ -3,7 +3,7 @@ Analytic ITER-like Solov'ev equilibrium with X-point.
 """
 module GuidingCenter4dSolovevIterXpoint
 
-    using ElectromagneticFields.SolovevXpoint
+    using ElectromagneticFields.Solovev
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,7 +11,7 @@ module GuidingCenter4dSolovevIterXpoint
 
     # export toroidal_momentum
 
-    const equ = SolovevXpoint.ITER()
+    const equ = Solovev.ITER(xpoint=true)
 
     include("coordinate_transformations.jl")
     include("gc_common.jl")

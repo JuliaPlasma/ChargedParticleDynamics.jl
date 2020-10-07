@@ -3,7 +3,7 @@ Analytic ITER-like Solov'ev equilibrium with X-point.
 """
 module SolovevIterXpoint
 
-    using ElectromagneticFields.SolovevXpoint
+    using ElectromagneticFields.Solovev
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,7 +11,7 @@ module SolovevIterXpoint
 
     export hamiltonian, toroidal_momentum
 
-    const equ = SolovevXpoint.ITER()
+    const equ = Solovev.ITER(xpoint=true)
 
     const qᵢ = [(7.0-1.4) / equ.R₀, 0.0, 0.0, 2.8166280889939737]
     const parameters = (μ = 4.607782183567846,)
