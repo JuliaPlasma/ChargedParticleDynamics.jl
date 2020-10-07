@@ -27,7 +27,7 @@ This leads us to
 ```math
 L'
 = \frac{L}{\hat{L}}
-= \frac{1}{\hat{L}} \, \big( m \hat{v} v' + e \hat{A} A' \big) \cdot \frac{\hat{x}}{\hat{t}} \dot{x}' - \frac{m \hat{v}}{\hat{L}} \frac{\vert v' \vert^2}{2} - e \frac{\hat{\phi}}{\hat{L}} \phi' .
+= \frac{1}{\hat{L}} \, \big( m \hat{v} v' + e \hat{A} A' \big) \cdot \frac{\hat{x}}{\hat{t}} \dot{x}' - \frac{m \hat{v}}{\hat{L}} \frac{\vert v' \vert^2}{2} - \frac{e \hat{\phi}}{\hat{L}} \phi' .
 ```
 
 Let us choose the following normalizations (and note that others are possible and may be more appropriate, depending on the problem at hand):
@@ -72,7 +72,7 @@ Often, especially when simulating an ensemble of particles, it is more appropria
 \hat{L} &= m \hat{v}^2 = e \hat{\phi} = \hat{W} ,
 \end{aligned}
 ```
-where $W = k_B T$ now denotes the thermal energy.
+where $W = k_B T$ now denotes the thermal energy and $v_{\mathrm{th}} = \sqrt{ 2 W / m}$.
 Consequently,
 ```math
 \begin{aligned}

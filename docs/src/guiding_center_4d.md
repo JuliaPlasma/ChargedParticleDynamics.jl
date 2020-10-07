@@ -9,18 +9,18 @@ The dynamics of the guiding centre can be described in terms of only four coordi
 
 The simplest form of the guiding centre equations can be obtained from the Lagrangian
 ```math
-\begin{align*}
+\begin{aligned}
 L &= (A (r) + u b (r)) \cdot \dot{r} - H(r,u) , &
 H &= \tfrac{1}{2} u^{2} + \mu \vert B (r) \vert ,
-\end{align*}
+\end{aligned}
 ```
 where ``b = B / \vert B \vert`` is the unit vector of the magnetic field ``B = \nabla \times A`` with ``A`` the magnetic vector potential and ``\mu`` is the magnetic moment.
 The Euler-Lagrange equations are computed as
 ```math
-\begin{align*}
+\begin{aligned}
 \nabla \vartheta^{T} ( r(t), u(t) ) \cdot \dot{r} (t) - \dot{\vartheta} ( r(t), u(t) ) &= \nabla H ( r(t), u(t) ) , \\
 b ( r(t) ) \cdot \dot{r} (t) &= u (t) ,
-\end{align*}
+\end{aligned}
 ```
 with ``\vartheta(r,u) = A (r) + u \, b (r)`` and the gradient ``\nabla`` denoting the derivative with respect to ``r``.
 
@@ -29,10 +29,10 @@ with ``\vartheta(r,u) = A (r) + u \, b (r)`` and the gradient ``\nabla`` denotin
 
 Computing the time derivative of ``\vartheta``, the Euler-Lagrange equations can be rewritten in an explicit form as
 ```math
-\begin{align*}
+\begin{aligned}
 \dot{r} (t) &= \dfrac{u (t) \, \beta (r (t))}{b (r (t)) \cdot \beta (r (t))} + \dfrac{B (r (t))}{B (r (t)) \cdot \beta (r (t))} \times \nabla H (r (t),u (t)) , \\
 \dot{u} (t) &= - \dfrac{\beta (r (t))}{b (r (t)) \cdot \beta (r (t))} \cdot \nabla H (r (t), u (t)) ,
-\end{align*}
+\end{aligned}
 ```
 where ``\beta = \nabla \times \vartheta``.
 This constitutes a noncanonical Hamiltonian system of the form
@@ -48,25 +48,14 @@ with ``q = (x,y,z,u)`` and the symplectic matrix ``\Omega`` given by
 ## Modules
 
 ```@autodocs
-Modules = [ChargedParticleDynamics.GuidingCenter4d.TokamakCartesianFastBarelyPassing,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCartesianFastBarelyTrapped,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCartesianFastDeeplyPassing,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCartesianFastDeeplyTrapped,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCartesianFastLoop,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCartesianFastSurface,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalFastBarelyPassing,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalFastBarelyTrapped,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalFastDeeplyPassing,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalFastDeeplyTrapped,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalFastLoop,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalFastSurface,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalSlowBarelyPassing,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalSlowBarelyTrapped,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalSlowDeeplyPassing,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalSlowDeeplyTrapped,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalSlowLoop,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakCylindricalSlowSurface,
-           ChargedParticleDynamics.GuidingCenter4d.SymmetricLoop,
-           ChargedParticleDynamics.GuidingCenter4d.SymmetricSurface,
-           ChargedParticleDynamics.GuidingCenter4d.UniformLoop]
+Modules = [ChargedParticleDynamics.GuidingCenter4d.SymmetricField,
+           ChargedParticleDynamics.GuidingCenter4d.ThetaPinchField,
+           ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian,
+           ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical,
+           ChargedParticleDynamics.GuidingCenter4d.TokamakSmallToroidal,
+           ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCartesian,
+           ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCylindrical,
+           ChargedParticleDynamics.GuidingCenter4d.TokamakIterCylindrical,
+           ChargedParticleDynamics.GuidingCenter4d.SolovevIter,
+           ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint]
 ```

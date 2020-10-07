@@ -17,17 +17,17 @@ H (x,p) = \frac{1}{2m} (p-A(x))^2 + e \phi(x),
 ```
 as
 ```math
-\begin{align*}
+\begin{aligned}
 \dot{x} (t) &= \frac{\partial H}{\partial p} (x(t),p(t)) = \frac{1}{m} (p(t) - A(x(t))), \\
 \dot{p} (t) &= - \frac{\partial H}{\partial x} (x(t),p(t)) = \frac{1}{m} \nabla A(x(t)) \cdot (p(t)-A(x(t))) - \nabla \phi(x(t)) ,
-\end{align*}
+\end{aligned}
 ```
 where the fields ``(E,B)`` are related to the potentials ``(\phi, A)`` by
 ```math
-\begin{align*}
+\begin{aligned}
 E (x) &= - \nabla \phi (x) , &
 B (x) &= \nabla \times A (x) .
-\end{align*}
+\end{aligned}
 ```
 
 
@@ -35,24 +35,24 @@ B (x) &= \nabla \times A (x) .
 
 The noncanonical form of the equations can be obtained from the phasespace Lagrangian
 ```math
-\begin{align*}
+\begin{aligned}
 L (x,\dot{x},v,\dot{v}) &= (e A(x) + mv) \cdot \dot{x} - H(x,v) , &
 H(x,v) &= \frac{m}{2} v^2 + e \phi(x),
-\end{align*}
+\end{aligned}
 ```
 as
 ```math
-\begin{align*}
+\begin{aligned}
 \dot{x} (t) &= v (t) , &
 \dot{v} (t) &= \frac{e}{m} \big[ \nabla A (x(t)) \cdot \dot{x}(t) - \dot{A} (x(t)) - \nabla \phi(x(t)) \big] .
-\end{align*}
+\end{aligned}
 ```
 Computing the time derivative of ``A`` and using the relation between the potentials ``(\phi, A)`` and the fields ``(E,B)``, this can be rewritten as
 ```math
-\begin{align*}
+\begin{aligned}
 \dot{x} (t) &= v (t) , &
 \dot{v} (t) &= \frac{e}{m} \big[ E(x(t)) + v (t) \times B(x(t)) \big] .
-\end{align*}
+\end{aligned}
 ```
 This constitutes a noncanonical Hamiltonian system of the form
 ```math
@@ -78,7 +78,15 @@ B_3 & 0 & - B_1 \\
 ## Modules
 
 ```@autodocs
-Modules = [ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dSingular,
-           ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dSymmetric,
-           ChargedParticleDynamics.ChargedParticle3d.ChargedParticle3dUniform]
+Modules = [ChargedParticleDynamics.ChargedParticle3d.SingularField,
+           ChargedParticleDynamics.ChargedParticle3d.SymmetricField,
+           ChargedParticleDynamics.ChargedParticle3d.ThetaPinchCanonical,
+           ChargedParticleDynamics.ChargedParticle3d.ThetaPinchNoncanonical,
+           ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCartesian,
+           ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCylindrical,
+           ChargedParticleDynamics.ChargedParticle3d.TokamakSmallToroidal,
+           ChargedParticleDynamics.ChargedParticle3d.TokamakSmallNoncanonical,
+           ChargedParticleDynamics.ChargedParticle3d.TokamakIterCylindrical,
+           ChargedParticleDynamics.ChargedParticle3d.SolovevIter,
+           ChargedParticleDynamics.ChargedParticle3d.SolovevIterXpoint]
 ```
