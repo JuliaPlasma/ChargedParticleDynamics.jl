@@ -59,39 +59,7 @@ L' = ( v' + A' ) \cdot \dot{x}' - \frac{\vert v' \vert^2}{2} - \phi' .
 We thus have obtained the normalized Lagrangian.
 
 
-## Alternative Normalization I
-
-Alternatively, we could choose the following normalizations:
-```math
-\begin{aligned}
-\hat{v} &= \sqrt{\frac{W}{m}} , &
-\hat{A} &= \hat{l} \hat{B} , &
-\hat{\phi} &= \hat{l} \hat{E} , &
-\hat{L} &= m \hat{v}^2 = e \hat{\phi} = \hat{W} ,
-\end{aligned}
-```
-with the particle energy $W$.
-The normalized Lagrangian becomes
-```math
-L' = \bigg( \frac{\hat{x}}{\hat{t} \hat{v}} \, v' + \underbrace{\frac{e \hat{B}}{m}}_{\hat{\omega}_c} \frac{\hat{x} \hat{l}}{ \hat{t} \hat{v}^2} \ A' \bigg) \cdot \dot{x}' - \frac{\vert v' \vert^2}{2} - \frac{\hat{l}}{\hat{x}} \, \phi' ,
-```
-where $\omega_c = e B / m$ is the gyration frequency.
-This suggests to set
-```math
-\begin{aligned}
-\hat{t} &= \hat{\omega}_c^{-1} , &
-\hat{x} &= \hat{t} \hat{v} , &
-\hat{l} &= \hat{x} ,
-\end{aligned}
-```
-such that
-```math
-L' = ( v' + A' ) \cdot \dot{x}' - \frac{\vert v' \vert^2}{2} - \phi' .
-```
-We thus have obtained the normalized Lagrangian.
-
-
-## Alternative Normalization II 
+## Alternative Normalization
 
 Often, especially when simulating an ensemble of particles, it is more appropriate to normalize the velocity to the thermal velocity and to choose different normalizations for $v$ and $\dot{x}$, specifically
 ```math
@@ -103,7 +71,7 @@ Often, especially when simulating an ensemble of particles, it is more appropria
 \hat{L} &= m \hat{v}^2 = e \hat{\phi} = \hat{W} ,
 \end{aligned}
 ```
-where $W = k_B T$ now denotes the thermal energy and $v_{\mathrm{th}} = \sqrt{ 2 W / m}$.
+where $W = k_B T$ denotes the thermal energy and $v_{\mathrm{th}} = \sqrt{ 2 W / m}$.
 Consequently,
 ```math
 \begin{aligned}
