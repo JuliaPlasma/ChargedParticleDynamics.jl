@@ -71,10 +71,10 @@ Often, especially when simulating an ensemble of particles, it is more appropria
 \hat{L} &= m v_{\mathrm{th}}^2 ,
 \end{aligned}
 ```
-where $v_{\mathrm{th}} = \sqrt{ 2 W / m}$ denotes the thermal velocity and $W = k_B T$ the thermal energy.
+where $v_{\mathrm{th}} = \sqrt{ W / m}$ denotes the thermal velocity and $W = k_B T$ the thermal energy.
 Consequently,
 ```math
-L' = \bigg( \frac{\hat{x}}{\hat{t}} \frac{m \hat{v}}{m v_{\mathrm{th}}^2} \, v' + \frac{\hat{\omega}_c^2}{v_{\mathrm{th}}^2} \, \hat{x} \hat{l} \, A' \bigg) \cdot \dot{x}' - \frac{m \hat{v}}{m v_{\mathrm{th}}^2} \frac{\vert v' \vert^2}{2} - \frac{e \hat{\phi}}{m v_{\mathrm{th}}^2} \phi' ,
+L' = \bigg( \frac{\hat{x}}{\hat{t}} \frac{m \hat{v}}{m v_{\mathrm{th}}^2} \, v' + \frac{\hat{\omega}_c^2}{v_{\mathrm{th}}^2} \, \hat{x} \hat{l} \, A' \bigg) \cdot \dot{x}' - \frac{m \hat{v}}{m v_{\mathrm{th}}^2} \frac{\vert v' \vert^2}{2} - \frac{e \hat{\phi}}{m v_{\mathrm{th}}^2} \phi' .
 ```
 Further, set
 ```math
