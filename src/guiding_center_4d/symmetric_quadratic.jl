@@ -45,9 +45,9 @@ u_1 = 0.01, \quad
 """
 module SymmetricField
 
-    using ElectromagneticFields.SymmetricQuadratic
+    import ElectromagneticFields.SymmetricQuadratic
 
-    const equ = SymmetricQuadratic.init(1.)
+    SymmetricQuadratic.@code() # inject magnetic field code
 
     μ_loop() = 1E-2
     μ_surface() = 1E-2

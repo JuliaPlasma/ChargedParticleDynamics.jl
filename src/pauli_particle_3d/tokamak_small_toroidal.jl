@@ -1,15 +1,10 @@
 module TokamakSmallToroidal
 
-    using ElectromagneticFields.AxisymmetricTokamakToroidal
+    import ElectromagneticFields.AxisymmetricTokamakToroidal
 
     export pauli_particle_3d_pode, hamiltonian, toroidal_momentum
 
-    const R₀ = 1.
-    const B₀ = 1.
-    const E₀ = 0.
-    const q  = 2.
-
-    const equ = AxisymmetricTokamakToroidal.init(R₀, B₀, q)
+    AxisymmetricTokamakToroidal.@code() # inject magnetic field code
 
     const xᵢ = [1.05, 0.0, 0.0]
     const qᵢ = from_cartesian(0, xᵢ)

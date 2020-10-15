@@ -1,15 +1,11 @@
 module TokamakIterCylindrical
 
-    using ElectromagneticFields.AxisymmetricTokamakCylindrical
+    import ElectromagneticFields.AxisymmetricTokamakCylindrical
 
     export charged_particle_3d_pode, charged_particle_3d_iode,
            hamiltonian, toroidal_momentum
 
-    const R₀ = 6.2
-    const B₀ = 5.3
-    const q  = 2.
-
-    const equ = AxisymmetricTokamakCylindrical.init(R₀, B₀, q)
+    AxisymmetricTokamakCylindrical.@code_iter() # inject magnetic field code
 
     include("charged_particle_3d_canonical.jl")
 

@@ -4,14 +4,11 @@ Charged Particle in a singular magnetic field of the form
 """
 module SingularField
 
-    using ElectromagneticFields.Singular
+    import ElectromagneticFields.Singular
 
     export charged_particle_3d_iode, hamiltonian, angular_momentum
 
-    const B₀ = 1.
-    const E₀ = 2.
-
-    const equ = Singular.init(B₀)
+    Singular.@code() # inject magnetic field code
 
     const q₀ = [1., 0., 0., 0., -1., 0.]
 

@@ -11,7 +11,7 @@ module GuidingCenter4dSolovevIterXpoint
 
     # export toroidal_momentum
 
-    const equ = Solovev.ITER(xpoint=true)
+    Solovev.@code_iter_xpoint() # inject magnetic field code
 
     include("coordinate_transformations.jl")
     include("gc_common.jl")
@@ -19,19 +19,19 @@ module GuidingCenter4dSolovevIterXpoint
 
     function solovev_xpoint_iter_initial_conditions(t₀, q₀, μ)
         local ω₀ = ωabs(t₀, q₀)
-        local params = (μ=μ, R₀=equ.R₀, ω₀=ω₀)
+        local params = (μ=μ, R₀=R₀, ω₀=ω₀)
         (transform_q_to_q̃(t₀, q₀, params), params)
     end
 
-    const x₀ = [2.5/equ.R₀, 0., 0.]
+    const x₀ = from_cartesian(0, [2.5, 0., 0.])
     const μ₀ = 1E-2
 
-    initial_conditions_barely_passing() = solovev_xpoint_iter_initial_conditions(0., [x₀..., 3.425E-1], μ₀)
-    initial_conditions_barely_trapped() = solovev_xpoint_iter_initial_conditions(0., [x₀..., 3.375E-1], μ₀)
-    initial_conditions_deeply_passing() = solovev_xpoint_iter_initial_conditions(0., [x₀..., 5.0E-1  ], μ₀)
-    initial_conditions_deeply_trapped() = solovev_xpoint_iter_initial_conditions(0., [x₀..., 1.0E-1  ], μ₀)
+    initial_conditions_barely_passing() = solovev_xpoint_iter_initial_conditions(0, [x₀..., 3.425E-1], μ₀)
+    initial_conditions_barely_trapped() = solovev_xpoint_iter_initial_conditions(0, [x₀..., 3.375E-1], μ₀)
+    initial_conditions_deeply_passing() = solovev_xpoint_iter_initial_conditions(0, [x₀..., 5.0E-1  ], μ₀)
+    initial_conditions_deeply_trapped() = solovev_xpoint_iter_initial_conditions(0, [x₀..., 1.0E-1  ], μ₀)
 
-    initial_conditions_trapped() = solovev_xpoint_iter_initial_conditions(0., [7.0 / equ.R₀, 0., 0., -2E-3], 1.88E-7)
+    initial_conditions_trapped() = solovev_xpoint_iter_initial_conditions(0, [from_cartesian(0, [7.0, 0., 0.])..., -2E-3], 1.88E-7)
 
     include("../guiding_center_4d/guiding_center_4d_diagnostics.jl")
 

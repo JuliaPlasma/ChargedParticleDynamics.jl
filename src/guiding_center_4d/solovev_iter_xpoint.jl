@@ -3,7 +3,7 @@ Analytic ITER-like Solov'ev equilibrium with X-point.
 """
 module SolovevIterXpoint
 
-    using ElectromagneticFields.Solovev
+    import ElectromagneticFields.Solovev
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,9 +11,10 @@ module SolovevIterXpoint
 
     export hamiltonian, toroidal_momentum
 
-    const equ = Solovev.ITER(xpoint=true)
+    Solovev.@code_iter_xpoint() # inject magnetic field code
 
-    const qᵢ = [(7.0-1.4) / equ.R₀, 0.0, 0.0, 2.8166280889939737]
+    const xᵢ = [7.0-1.4, 0.0, 0.0]
+    const qᵢ = [from_cartesian(0, xᵢ)..., 2.8166280889939737]
     const parameters = (μ = 4.607782183567846,)
 
     include("guiding_center_4d_common.jl")
@@ -25,10 +26,10 @@ module SolovevIterXpoint
 
     include("guiding_center_4d_diagnostics.jl")
 
-    initial_conditions_barely_passing() = ([2.5 / equ.R₀, 0., 0., 3.425E-1], (μ = 1E-2,))
-    initial_conditions_barely_trapped() = ([2.5 / equ.R₀, 0., 0., 3.375E-1], (μ = 1E-2,))
-    initial_conditions_deeply_passing() = ([2.5 / equ.R₀, 0., 0.,  5E-1],    (μ = 1E-2,))
-    initial_conditions_deeply_trapped() = ([2.5 / equ.R₀, 0., 0.,  1E-1],    (μ = 1E-2,))
-    initial_conditions_trapped()        = ([7.0 / equ.R₀, 0., 0., -2E-3],    (μ = 1.88E-7,))
+    initial_conditions_barely_passing() = ([from_cartesian(0, 2.5, 0., 0.)..., 3.425E-1], (μ = 1E-2,))
+    initial_conditions_barely_trapped() = ([from_cartesian(0, 2.5, 0., 0.)..., 3.375E-1], (μ = 1E-2,))
+    initial_conditions_deeply_passing() = ([from_cartesian(0, 2.5, 0., 0.)...,  5E-1],    (μ = 1E-2,))
+    initial_conditions_deeply_trapped() = ([from_cartesian(0, 2.5, 0., 0.)...,  1E-1],    (μ = 1E-2,))
+    initial_conditions_trapped()        = ([from_cartesian(0, 7.0, 0., 0.)..., -2E-3],    (μ = 1.88E-7,))
 
 end

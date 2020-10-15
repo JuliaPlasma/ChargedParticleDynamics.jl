@@ -4,14 +4,11 @@ Charged Particle in an uniform magnetic field of the form
 """
 module ThetaPinchCanonical
 
-    using ElectromagneticFields.ThetaPinch
+    import ElectromagneticFields.ThetaPinch
 
     export charged_particle_3d_iode, hamiltonian, angular_momentum
 
-    const B₀ = 2.
-    const E₀ = 2.
-
-    const equ = ThetaPinch.init(B₀)
+    ThetaPinch.@code() # inject magnetic field code
 
     const q₀ = [2.5, 0.0, 0.0, 0.0, 0.2, 0.1]
 

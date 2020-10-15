@@ -4,14 +4,11 @@ Charged Particle in an axisymmetric magnetic field of the form
 """
 module SymmetricField
 
-    using ElectromagneticFields.SymmetricQuadratic
+    import ElectromagneticFields.SymmetricQuadratic
 
     export pauli_particle_3d_pode, hamiltonian, toroidal_momentum
 
-    const B₀ = 1.
-    const E₀ = 2.
-
-    const equ = SymmetricQuadratic.init(B₀)
+    SymmetricQuadratic.@code() # inject magnetic field code
 
     const qᵢ = [1., 0., 0.]
     const vᵢ = [0., 1., 1.]

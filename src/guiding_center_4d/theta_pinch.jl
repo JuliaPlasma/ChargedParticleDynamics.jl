@@ -22,9 +22,9 @@ u_0 = 0.5, \quad
 """
 module ThetaPinchField
 
-    using ElectromagneticFields.ThetaPinch
+    import ElectromagneticFields.ThetaPinch
 
-    const equ = ThetaPinch.init(1.)
+    ThetaPinch.@code() # inject magnetic field code
 
     μ_loop() = 2.5E-6
 

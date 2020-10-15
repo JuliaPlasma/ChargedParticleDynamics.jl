@@ -1,16 +1,11 @@
 module TokamakSmallCylindrical
 
-    using ElectromagneticFields.AxisymmetricTokamakCylindrical
-    using LinearAlgebra
+    import ElectromagneticFields.AxisymmetricTokamakCylindrical
 
     export charged_particle_3d_pode, charged_particle_3d_iode,
            hamiltonian, toroidal_momentum
 
-    const R₀ = 1.
-    const B₀ = 1.
-    const q  = 2.
-
-    const equ = AxisymmetricTokamakCylindrical.init(R₀, B₀, q)
+    AxisymmetricTokamakCylindrical.@code() # inject magnetic field code
 
     include("charged_particle_3d_canonical.jl")
 

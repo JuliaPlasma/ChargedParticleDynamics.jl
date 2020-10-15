@@ -8,17 +8,13 @@ export guiding_center_4d_ode, guiding_center_4d_sode
 
 
 function guiding_center_4d_periodicity(q, periodic=true)
-    periodicity = zeros(eltype(q), size(q,1))
+    period = zeros(eltype(q), size(q,1))
 
     if periodic
-        try
-            periodicity .= ElectromagneticFields.periodicity(q, equ)
-        catch
-            @warn "No equilibrium found to determine periodicity."
-        end
+        period[1:3] .= periodicity(q)
     end
 
-    return periodicity
+    return period
 end
 
 

@@ -3,7 +3,7 @@ Analytic axisymmetric small tokamak equilibrium in cylindrical coordinates.
 """
 module TokamakSmallCylindrical
 
-    using ElectromagneticFields.AxisymmetricTokamakCylindrical
+    import ElectromagneticFields.AxisymmetricTokamakCylindrical
 
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,11 +11,7 @@ module TokamakSmallCylindrical
 
     export hamiltonian, toroidal_momentum
 
-    const R₀ = 1.
-    const B₀ = 1.
-    const q  = 2.
-
-    const equ = AxisymmetricTokamakCylindrical.init(R₀, B₀, q)
+    AxisymmetricTokamakCylindrical.@code() # inject magnetic field code
 
     const xᵢ = [1.05, 0., 0.]
     const uᵢ = -0.00045135897235326736

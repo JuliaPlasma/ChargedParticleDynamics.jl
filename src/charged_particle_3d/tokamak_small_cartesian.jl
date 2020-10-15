@@ -1,15 +1,11 @@
 module TokamakSmallCartesian
 
-    using ElectromagneticFields.AxisymmetricTokamakCartesian
+    import ElectromagneticFields.AxisymmetricTokamakCartesian
 
     export charged_particle_3d_pode, charged_particle_3d_iode,
            hamiltonian, toroidal_momentum
 
-    const R₀ = 1.
-    const B₀ = 1.
-    const q  = 2.
-
-    const equ = AxisymmetricTokamakCartesian.init(R₀, B₀, q)
+    AxisymmetricTokamakCartesian.@code() # inject magnetic field code
        
     include("charged_particle_3d_canonical.jl")
 
