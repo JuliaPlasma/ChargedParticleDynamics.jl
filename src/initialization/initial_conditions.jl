@@ -74,7 +74,7 @@ function InitialConditions(X::AbstractVector{T}, θ::T, α::T, E::T, M::T, C, a:
 
     ω = e * B(0,X) / M 
     ρ = b(0,X) × vvec
-    x = X .- ρ
+    x = X .+ ρ
 
     InitialConditions{T}(x, X, ρ, vvec, vpar, vper, v, u, μ, θ, α, ω, M, E, C)
 end

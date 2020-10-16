@@ -87,18 +87,108 @@ The gyro phase $\theta$ is defined as the angle, measured in the clockwise sense
 ```
 
 
+## Initial Conditions
 
-## Position
+ChargedParticleDynamics.jl provides the `InitialConditions` module for the computation of the above quantities.
+Three functions are provided that return the initial conditions for the different models.
+For charged particles the initial conditions are $(x', v')$, for the Pauli particle we have $(X', v_{\parallel}', \mu)$ and for the guiding center we use $(X', u', \mu)$ with $u' = \vert v_{\parallel}' \vert$.
 
-In order to compute the guiding centre position, we need to construct the gyro radius vector $\rho$, which is given by
-```math
-\rho = \frac{b \times v}{\omega_c} ,
+```@autodocs
+Modules = [ChargedParticleDynamics]
+Order   = [:type, :function]
 ```
-then the guiding center position is
-```math
-X = x - \rho .
+
+
+## Example
+
+As an example, let us consider a deuteron in an ITER-like analytical equilibrium (obtained from `ElectromagneticFields.SolovevITER`). The guiding center position is $[7, 0, 0]$, the energy is $1 \, \mathrm{MeV}$, and the pitch angle is $\pi / 2$.
+
+```@eval
+using LaTeXStrings
+using Markdown
+using Plots
+
+p = palette(:tab10)
+rectangle(x, y, w, h) = Shape(x .+ [-w/2,-w/2,+w/2,+w/2], y .+ [-h/2,+h/2,+h/2,-h/2])
+
+using ChargedParticleDynamics
+using ChargedParticleDynamics: md
+
+import ElectromagneticFields: code
+import ElectromagneticFields.Solovev: SolovevEquilibrium
+import ElectromagneticFields.SolovevITER: init
+equ = init()
+@eval $(code(equ))
+
+X₀ = from_cartesian(0, [7.0, 0, 0])
+E₀ = 1E6
+θ₀ = 0.
+α₀ = π/2
+m₀ = md
+
+ic0 = InitialConditions(X₀, θ₀, α₀, E₀, m₀, 1, a⃗, b⃗, c⃗, B; l=R₀)
+
+np = 12
+nr = 100
+nz = 120
+
+xgrid = LinRange( 0.5,   1.5, nr)
+ygrid = LinRange(-0.75, +0.75, nz)
+fieldlines = zeros((nr,nz))
+
+for i in 1:nr
+    for j in 1:nz
+        fieldlines[i,j] = A₃(0, xgrid[i], ygrid[j], 0.0) / xgrid[i]
+    end
+end
+
+px = zeros(np)
+py = zeros(np)
+
+for i in 1:np
+    ics = charged_particle(InitialConditions(X₀, 2π*i/np, α₀, E₀, m₀, 1, a⃗, b⃗, c⃗, B; l=R₀))
+    px[i] = ics[1][1]
+    py[i] = ics[1][2]
+end
+
+boxw=0.001
+boxh=0.001
+
+plot(aspectratio=1, layout=(1,2), legend=:none, size=(800,600), xguide=L"R/R_0", yguide=L"Z/R_0")
+plot!(subplot=1, rectangle(X₀[1], X₀[2], 0.1, 0.1), opacity=.5, color=:white)
+
+plot!(subplot=1, xlims=(0.5,1.5), ylims=(-0.75,+0.75))
+plot!(subplot=2, xlims=(X₀[1] .+ [-boxw,+boxw]), ylims=(X₀[2] .+ [-boxh,+boxh]))
+
+contour!(subplot=1, xgrid, ygrid, fieldlines', levels=50)
+scatter!(subplot=1, [X₀[1]], [X₀[2]], color=p[4])
+
+scatter!(subplot=2, px, py, color=p[1])
+scatter!(subplot=2, [X₀[1]], [X₀[2]], color=p[4])
+
+savefig("initial_conditions.png")
+
+Markdown.parse("""
+| Fields     | Value |
+|:-----------|:------|
+| `x`   | $(ic0.x)  |
+| `X`   | $(ic0.X)  |
+| `ρ`   | $(ic0.ρ)  |
+| `v⃗`   | $(ic0.vvec)  |
+| `v∥`  | $(ic0.vpar)  |
+| `v⟂`  | $(ic0.vper)  |
+| `v`   | $(ic0.v)  |
+| `u`   | $(ic0.u)  |
+| `μ`   | $(ic0.μ)  |
+| `θ`   | $(ic0.θ)  |
+| `α`   | $(ic0.α)  |
+| `ω`   | $(ic0.ω)  |
+| `M`   | $(ic0.mass)  |
+| `E`   | $(ic0.energy)  |
+| `C`   | $(ic0.charge)  |
+""")
 ```
-The gyro phase $\theta$ is then defined as the angle, measured in the clockwise sense, between $a$ and $\rho$, so that
-```math
-\frac{b \times v}{\vert v' \vert \, \sin \alpha} = a \, \cos \theta - c \, \sin \theta .
-```
+
+Below we plot the guiding center position (in blue) and the particle position (in red) in the poloidal plane for various gyro angles $\in [0, 2\pi]$.
+
+![](initial_conditions.png)
