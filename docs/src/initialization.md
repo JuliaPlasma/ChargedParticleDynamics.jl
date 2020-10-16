@@ -1,9 +1,10 @@
 # Initialization
 
 In the following, we will discuss how to initialise the various models from a common set of initial data, namely
-- the particle position $x$ in physical coordinates,
+- the guiding center position $X$ in physical coordinates,
 - the particle energy $W$ in eV,
 - the particle mass $m$ in kg,
+- the particle charge number,
 - the gyro angle $\theta \in [0, 2\pi]$,
 - the pitch angle $\alpha \in [0, \pi / 2]$.
 
@@ -13,8 +14,6 @@ For the guiding center, we need the same coordinate transformation as for the Pa
 
 Make sure to read about the [Normalization](@ref) before proceeding.
 
-
-## Velocity
 
 Set $e = e' \hat{e}$ with $e' = 1.602 176 634 \cdot 10^{-19}$ and $\hat{e} = \mathrm{C}$ and similarly $m = m' \hat{m}$ with $\hat{m} = \mathrm{kg}$. Some common values for the mass are
 
@@ -47,7 +46,13 @@ Thus for the absolute value of the velocity we have
 = \frac{1}{l_0} \sqrt{ 2 W' \, \frac{m'}{e'} } .
 ```
 
-The pitch angle $\alpha$ determines the distribution of the kinetic energy into the perpendicular and parallel components by $\vert v_{\perp}' \vert = \vert v' \vert \sin \alpha$ and $\vert v_{\parallel}' \vert = \vert v' \vert - \vert v_{\perp}' \vert = \vert v' \vert \, (1 - \sin \alpha)$.
+The pitch angle $\alpha$ determines the distribution of the kinetic energy into the perpendicular and parallel components by
+```math
+\begin{aligned}
+\vert v_{\perp}' \vert &= \vert v' \vert \sin \alpha , \\
+\vert v_{\parallel}' \vert &= \vert v' \vert - \vert v_{\perp}' \vert = \vert v' \vert \, (1 - \sin \alpha) .
+\end{aligned}
+```
 
 The ElectromagneticFields.jl package provides three functions `a⃗(t,x)`, `b⃗(t,x)`, `c⃗(t,x)` that can be used to construct the velocity vector $v$.
 The function `b⃗` returns the unit vector of the magnetic field, thus
@@ -59,17 +64,28 @@ The functions `a⃗` and `c⃗` return two unit vectors that span the plane perp
 v_{\perp}' = \vert v' \vert \, \sin \alpha ( - a \, \sin \theta - c \, \cos \theta ) ,
 ```
 where $\theta$ is the gyro angle.
-
-For the Pauli particle we have
-```math
-v_0' = v_{\parallel}' = \vert v' \vert \, (1 - \sin \alpha) \, b ,
-```
-and
+The magnetic moment is computed as
 ```math
 \mu = \frac{ \vert v_{\perp}' \vert^2 }{2 \vert B' \vert} = \frac{ \vert v' \vert^2 \sin \alpha }{2 \vert B' \vert} .
 ```
 
-And for the guiding centre we use the same $\mu$ but $u = \vert v_{\parallel}' \vert$.
+In order to compute the particle position, we need to construct the gyro radius vector $\rho$, which is given by
+```math
+\rho = \frac{b \times v}{\omega_c} = \frac{b \times \hat{v} v'}{\omega_c}  = l_{0} \, b \times v' ,
+```
+and the normalized gyro radius vector by
+```math
+\rho' = \frac{\rho}{l_0} = b \times v' ,
+```
+so that the normalised particle position is
+```math
+x' = X' + \rho' .
+```
+The gyro phase $\theta$ is defined as the angle, measured in the clockwise sense, between $a$ and $\rho$, so that
+```math
+\frac{b \times v'}{\vert v' \vert \, \sin \alpha} = a \, \cos \theta - c \, \sin \theta .
+```
+
 
 
 ## Position
