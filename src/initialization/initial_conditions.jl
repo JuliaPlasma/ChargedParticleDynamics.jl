@@ -13,20 +13,21 @@ const mα = 6.6446573357E-27   # α-particle mass
 Store initial conditions for charged particle, Pauli particle and guiding center models.
 
 Fields:
-* x: particle position
-* X: gyro center position
-* ρ: gyro radius vector
-* vvec: velocity vector
-* vpar: parallel velocity vector
-* vper: perpendicular velocity vector
-* v: absolute value of velocity
-* u: absolute value of parallel velocity
-* μ: magnetic moment
-* θ: gyro angle ∈ [0,2π]
-* α: pitch angle ∈ [0,π/2]
-* mass: mass in kg
-* energy: energy in eV
-* charge: charge number
+* `x`: particle position
+* `X`: gyro center position
+* `ρ`: gyro radius vector
+* `vvec`: velocity vector
+* `vpar`: parallel velocity vector
+* `vper`: perpendicular velocity vector
+* `v`: absolute value of velocity
+* `u`: absolute value of parallel velocity
+* `μ`: magnetic moment
+* `θ`: gyro angle ∈ [0,2π]
+* `α`: pitch angle ∈ [0,π/2]
+* `ω`: gyro frequency
+* `mass`: mass in kg
+* `energy`: energy in eV
+* `charge`: charge number
 """
 struct InitialConditions{T <: Real}
     x::Vector{T}
@@ -53,15 +54,15 @@ end
 
 """
 Compute initial conditions from the following arguments:
-* X: gyro center position
-* θ: gyro angle
-* α: pitch angle
-* E: energy
-* M: mass
-* C: charge number
-* a, b, c: magnetic field unit vectors
-* B: amplitude of magnetic field
-* l=1: length normalization
+* `X`: gyro center position
+* `θ`: gyro angle
+* `α`: pitch angle
+* `E`: energy
+* `M`: mass
+* `C`: charge number
+* `a`, b, c: magnetic field unit vectors
+* `B`: amplitude of magnetic field
+* `l=1`: length normalization
 """
 function InitialConditions(X::AbstractVector{T}, θ::T, α::T, E::T, M::T, C, a::Function, b::Function, c::Function, B::Function; l=1) where {T}
     v = sqrt(2 * E * M / e) / l
@@ -77,6 +78,26 @@ function InitialConditions(X::AbstractVector{T}, θ::T, α::T, E::T, M::T, C, a:
     x = X .+ ρ
 
     InitialConditions{T}(x, X, ρ, vvec, vpar, vper, v, u, μ, θ, α, ω, M, E, C)
+end
+
+
+function Base.show(io::IO, ics::InitialConditions)
+    print(io, "Charged Particle Initial Conditions with\n")
+    print(io, "  x   = ", ics.x, "\n")
+    print(io, "  X   = ", ics.X, "\n")
+    print(io, "  ρ   = ", ics.ρ, "\n")
+    print(io, "  v   = ", ics.vvec, "\n")
+    print(io, "  v∥  = ", ics.vpar, "\n")
+    print(io, "  v⟂  = ", ics.vper, "\n")
+    print(io, "  |v| = ", ics.v, "\n")
+    print(io, "  u   = ", ics.u, "\n")
+    print(io, "  μ   = ", ics.μ, "\n")
+    print(io, "  θ   = ", ics.θ, "\n")
+    print(io, "  α   = ", ics.α, "\n")
+    print(io, "  ω   = ", ics.ω, "\n")
+    print(io, "  M   = ", ics.mass, "\n")
+    print(io, "  E   = ", ics.energy, "\n")
+    print(io, "  C   = ", ics.charge)
 end
 
 
