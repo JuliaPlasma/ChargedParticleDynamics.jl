@@ -36,21 +36,26 @@ Let us compute the normalise kinetic energy,
 
 Usually, we have $\hat{B} = T = \mathrm{kg} / \mathrm{C} \mathrm{s}$. Recall that $\mathrm{V} = \mathrm{kg} \mathrm{m}^2 / \mathrm{C} \mathrm{s}^2$ and let us set $\hat{l} = l_0 \mathrm{m}$, then
 ```math
-\frac{\vert v' \vert^2}{2}
-= \frac{m' W'}{e' l_0^2} .
+\frac{\vert v' \vert^2}{2} = \frac{m' W'}{e' l_0^2} .
 ```
 
 Thus for the absolute value of the velocity we have
 ```math
-\vert v' \vert
-= \frac{1}{l_0} \sqrt{ 2 W' \, \frac{m'}{e'} } .
+\vert v' \vert = \frac{1}{l_0} \sqrt{ 2 W' \, \frac{m'}{e'} } .
 ```
 
 The pitch angle $\alpha$ determines the distribution of the kinetic energy into the perpendicular and parallel components by
 ```math
 \begin{aligned}
-\vert v_{\perp}' \vert &= \vert v' \vert \sin \alpha , \\
-\vert v_{\parallel}' \vert &= \vert v' \vert - \vert v_{\perp}' \vert = \vert v' \vert \, (1 - \sin \alpha) .
+W_{\perp}' &= W' \sin \alpha , \\
+W_{\parallel}' &= W' \, (1 - \sin \alpha) ,
+\end{aligned}
+```
+and accordingly
+```math
+\begin{aligned}
+\vert v_{\perp}' \vert &= \frac{1}{l_0} \sqrt{ 2 W_{\perp}' \, \frac{m'}{e'} } , \\
+\vert v_{\parallel}' \vert &= \frac{1}{l_0} \sqrt{ 2 W_{\parallel}' \, \frac{m'}{e'} } .
 \end{aligned}
 ```
 
@@ -123,10 +128,10 @@ equ = init()
 X₀ = from_cartesian(0, [7.0, 0, 0])
 E₀ = 1E6
 θ₀ = 0.
-α₀ = π/2
+α₀ = π/4
 m₀ = md
 
-ic0 = InitialConditions(X₀, θ₀, α₀, E₀, m₀, 1, a⃗, b⃗, c⃗, B; l=R₀)
+ic0 = InitialConditions(X₀, θ₀, α₀, E₀, m₀, 1, aₚ, bₚ, cₚ, b⃗, B, ḡ, DF̄, J; l₀=R₀)
 
 np = 12
 nr = 100
@@ -146,13 +151,13 @@ px = zeros(np)
 py = zeros(np)
 
 for i in 1:np
-    ics = charged_particle(InitialConditions(X₀, 2π*i/np, α₀, E₀, m₀, 1, a⃗, b⃗, c⃗, B; l=R₀))
+    ics = charged_particle(InitialConditions(X₀, 2π*i/np, α₀, E₀, m₀, 1, aₚ, bₚ, cₚ, b⃗, B, ḡ, DF̄, J; l₀=R₀))
     px[i] = ics[1][1]
     py[i] = ics[1][2]
 end
 
-boxw=0.001
-boxh=0.001
+boxw=0.008
+boxh=0.008
 
 plot(aspectratio=1, layout=(1,2), legend=:none, size=(800,600), xguide=L"R/R_0", yguide=L"Z/R_0")
 plot!(subplot=1, rectangle(X₀[1], X₀[2], 0.1, 0.1), opacity=.5, color=:white)
@@ -161,6 +166,7 @@ plot!(subplot=1, xlims=(0.5,1.5), ylims=(-0.75,+0.75))
 plot!(subplot=2, xlims=(X₀[1] .+ [-boxw,+boxw]), ylims=(X₀[2] .+ [-boxh,+boxh]))
 
 contour!(subplot=1, xgrid, ygrid, fieldlines', levels=50)
+scatter!(subplot=1, px, py, color=p[1])
 scatter!(subplot=1, [X₀[1]], [X₀[2]], color=p[4])
 
 scatter!(subplot=2, px, py, color=p[1])
