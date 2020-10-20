@@ -105,11 +105,13 @@ end
 
 pauli_particle_3d_pode(qᵢ=qᵢ, vᵢ=vᵢ) = pauli_particle_3d_pode(initial_conditions(qᵢ, vᵢ)...)
 
-function pauli_particle_3d_iode(q₀, v₀, params)
+function pauli_particle_3d_iode(q₀::AbstractVector, v₀::AbstractVector, params::NamedTuple)
     IODE(pauli_particle_3d_iode_ϑ, pauli_particle_3d_iode_f, pauli_particle_3d_iode_g,
             q₀, pauli_particle_3d_pᵢ(q₀, v₀);
             parameters=params, h=hamiltonian, v = (t, q, v, params) -> nothing)
 end
+
+pauli_particle_3d_iode(q₀::AbstractVector, v₀::AbstractVector, μ::Real) = pauli_particle_3d_iode(q₀, v₀, (μ=μ,))
 
 pauli_particle_3d_iode(qᵢ=qᵢ, vᵢ=vᵢ) = pauli_particle_3d_iode(initial_conditions(qᵢ, vᵢ)...)
 
