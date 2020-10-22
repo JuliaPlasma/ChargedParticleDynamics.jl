@@ -15,6 +15,8 @@ For the guiding center, we need the same coordinate transformation as for the Pa
 Make sure to read about the [Normalization](@ref) before proceeding.
 
 
+## Velocities
+
 Set $e = e' \hat{e}$ with $e' = 1.602 176 634 \cdot 10^{-19}$ and $\hat{e} = \mathrm{C}$ and similarly $m = m' \hat{m}$ with $\hat{m} = \mathrm{kg}$. Some common values for the mass are
 
 | Particle   | Normalised Mass $m'$          |
@@ -47,14 +49,14 @@ Thus for the absolute value of the velocity we have
 The pitch angle $\alpha$ determines the distribution of the kinetic energy into the perpendicular and parallel components by
 ```math
 \begin{aligned}
-W_{\perp}' &= W' \sin \alpha , \\
+W_{\perp}' &= W' \sin \alpha , \qquad
 W_{\parallel}' &= W' \, (1 - \sin \alpha) ,
 \end{aligned}
 ```
 and accordingly
 ```math
 \begin{aligned}
-\vert v_{\perp}' \vert &= \frac{1}{l_0} \sqrt{ 2 W_{\perp}' \, \frac{m'}{e'} } , \\
+\vert v_{\perp}' \vert &= \frac{1}{l_0} \sqrt{ 2 W_{\perp}' \, \frac{m'}{e'} } , \qquad
 \vert v_{\parallel}' \vert &= \frac{1}{l_0} \sqrt{ 2 W_{\parallel}' \, \frac{m'}{e'} } .
 \end{aligned}
 ```
@@ -74,13 +76,32 @@ The magnetic moment is computed as
 \mu = \frac{ \vert v_{\perp}' \vert^2 }{2 \vert B' \vert} = \frac{ \vert v' \vert^2 \sin \alpha }{2 \vert B' \vert} .
 ```
 
+
+## Gyro-radius Vector and Position
+
 In order to compute the particle position, we need to construct the gyro radius vector $\rho$, which is given by
 ```math
-\rho = \frac{b \times v}{\omega_c} = \frac{b \times \hat{v} v'}{\omega_c}  = l_{0} \, b \times v' ,
+\rho = \frac{b \times v}{\omega_c} = \frac{b \times \hat{v} v'}{\hat{\omega_c} \omega_c'}  = l_{0} \, \frac{b \times v'}{\vert B' \vert} .
 ```
-and the normalized gyro radius vector by
+Note that 
 ```math
-\rho' = \frac{\rho}{l_0} = b \times v' ,
+\omega_c
+= \frac{e \vert B \vert}{m}
+= \frac{e \vert \hat{B} B' \vert}{m}
+= \frac{e \vert \hat{B} \vert}{m} \vert B' \vert
+= \hat{\omega}_c \omega_c' ,
+```
+as
+```math
+\hat{\omega}_c = \frac{e \vert \hat{B} \vert}{m} ,
+```
+so that
+```math
+\omega_c' = \vert B' \vert .
+```
+The normalized gyro radius vector reads
+```math
+\rho' = \frac{\rho}{l_0} = \frac{b \times v'}{\vert B' \vert} ,
 ```
 so that the normalised particle position is
 ```math
@@ -90,6 +111,33 @@ The gyro phase $\theta$ is defined as the angle, measured in the clockwise sense
 ```math
 \frac{b \times v'}{\vert v' \vert \, \sin \alpha} = a \, \cos \theta - c \, \sin \theta .
 ```
+
+
+## Guiding Center Coordinates
+
+Instead of the particle energy $W$ and pitch angle $\alpha$, we can also compute all initial conditions from the guiding center initial data, i.e., parallel velocity $u = \vert v_{\parallel} \vert$, magnetic moment $\mu$ and gyro angle $\theta$.
+
+Start by computing the absolute value of the perpendicular velocity by
+```math
+\vert v_\perp \vert = \sqrt{ 2 \mu \vert B \vert } ,
+```
+and the total velocity by
+```math
+\vert v \vert = \sqrt{ \vert v_{\parallel} \vert^2 + \vert v_\perp \vert^2 } .
+```
+
+With that, we can compute the perpendicular and total energy,
+```math
+\begin{aligned}
+W_{\perp}' &= \frac{e l₀^2 \vert v_\perp \vert^2}{2m} , \qquad
+W' &= \frac{e l₀^2 \vert v \vert^2}{2m} .
+\end{aligned}
+```
+The pitch angle is obtained as
+```math
+\alpha = \arcsin \frac{W_{\perp}'}{W'} .
+```
+With that, the rest of the quantities can be computed in the same way as above.
 
 
 ## Initial Conditions
@@ -195,6 +243,6 @@ Markdown.parse("""
 """)
 ```
 
-Below we plot the guiding center position (in blue) and the particle position (in red) in the poloidal plane for various gyro angles $\in [0, 2\pi]$.
+Below we plot the guiding center position (in red) and the particle position (in blue) in the poloidal plane for various gyro angles $\in [0, 2\pi]$.
 
 ![](initial_conditions.png)

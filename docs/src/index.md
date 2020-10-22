@@ -2,15 +2,28 @@
 # ChargedParticleDynamics.jl
 
 
+## General
+
+```@contents
+Pages = ["normalization.md",
+         "initialization.md",
+]
+```
+
 
 ## Models
 
 ```@contents
 Pages = ["charged_particle_3d.md",
-         "guiding_center_4d.md"
+         "guiding_center_4d.md",
+         "pauli_particle_3d.md",
 ]
 ```
 
+
+## Acknowledgements
+
+Stefan Possaner contributed vitally to sorting out the appalling details of normalization and initialization.
 
 
 ## License
