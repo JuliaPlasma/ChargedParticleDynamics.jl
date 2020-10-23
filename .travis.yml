@@ -27,5 +27,5 @@ codecov: true
 coveralls: true
 
 script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - travis_wait 50 julia --project -e 'using Pkg; Pkg.build(; verbose = true); Pkg.precompile(); Pkg.test(; coverage=true)';
+  - julia --project --color=yes -e 'using Pkg; Pkg.add(name="ElectromagneticFields", rev="master"); Pkg.build(verbose=true); Pkg.precompile()';
+  - julia --project --color=yes -e 'using Pkg; Pkg.test(coverage=true)';
