@@ -18,12 +18,12 @@ v¹(t, q, p) = g¹¹(t, q) * (p[1] - A₁(t, q))
 v²(t, q, p) = g²²(t, q) * (p[2] - A₂(t, q))
 v³(t, q, p) = g³³(t, q) * (p[3] - A₃(t, q))
 
-ϕ₀(x) = E₀*sin(2π*x)
-ϕ(t,q) = ϕ₀(q[3])
+# ϕ₀(x) = E₀*sin(2π*x)
+# ϕ(t,q) = ϕ₀(q[3])
 
-E₁(t,q) = zero(eltype(q))
-E₂(t,q) = zero(eltype(q))
-E₃(t,q) = - 2π*E₀*cos(2π*q[3])
+# E₁(t,q) = zero(eltype(q))
+# E₂(t,q) = zero(eltype(q))
+# E₃(t,q) = - 2π*E₀*cos(2π*q[3])
 
 function hamiltonian(t, q, p, params)
     @unpack μ = params
