@@ -17,12 +17,12 @@ function ϑ(t, q, p)
 end
 
 
-ϕ₀(x) = E₀*sin(2π*x)
-ϕ(t,q) = ϕ₀(q[3])
+# ϕ₀(x) = E₀*sin(2π*x)
+# ϕ(t,q) = ϕ₀(q[3])
 
-E₁(t,q) = zero(eltype(q))
-E₂(t,q) = zero(eltype(q))
-E₃(t,q) = - 2π*E₀*cos(2π*q[3])
+# E₁(t,q) = zero(eltype(q))
+# E₂(t,q) = zero(eltype(q))
+# E₃(t,q) = - 2π*E₀*cos(2π*q[3])
 
 hamiltonian(t,q) = 0.5 * (q[4]^2 + q[5]^2 + q[6]^2) + ϕ(t, q)
 
