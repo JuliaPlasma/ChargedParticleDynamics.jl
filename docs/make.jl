@@ -16,5 +16,5 @@ makedocs(
 )
 
 deploydocs(
-    repo   = "github.com/DDMGNI/ChargedParticleDynamics.jl",
+    repo   = "github.com/JuliaPlasma/ChargedParticleDynamics.jl",
 )
