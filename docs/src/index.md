@@ -1,6 +1,11 @@
 
 # ChargedParticleDynamics.jl
 
+![CI](https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/workflows/CI/badge.svg)
+[![Build Status](https://travis-ci.org/JuliaPlasma/ChargedParticleDynamics.jl.svg?branch=master)](https://travis-ci.org/JuliaPlasma/ChargedParticleDynamics.jl)
+[![Coverage Status](https://coveralls.io/repos/github/JuliaPlasma/ChargedParticleDynamics.jl/badge.svg)](https://coveralls.io/github/JuliaPlasma/ChargedParticleDynamics.jl)
+[![codecov](https://codecov.io/gh/JuliaPlasma/ChargedParticleDynamics.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaPlasma/ChargedParticleDynamics.jl)
+
 
 ## General
 
