@@ -70,9 +70,13 @@ function charged_particle_3d_iode_v(t, q, v)
     v[2] = q[5]
     v[3] = q[6]
     v[4] = E₁(t,q) + q[5] * B₃(t,q) - q[6] * B₂(t,q)
-    v[5] = E₂(t,q) + q[6] * B₁(t,q) - q[4] * B₂(t,q)
+    v[5] = E₂(t,q) + q[6] * B₁(t,q) - q[4] * B₃(t,q)
     v[6] = E₃(t,q) + q[4] * B₂(t,q) - q[5] * B₁(t,q)
     nothing
+end
+
+function charged_particle_3d_ode(q₀=q₀)
+    ODE(charged_particle_3d_iode_v, q₀)
 end
 
 function charged_particle_3d_iode(q₀=q₀)
