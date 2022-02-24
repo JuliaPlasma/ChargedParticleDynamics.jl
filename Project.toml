@@ -22,18 +22,18 @@ Showoff = "992d4aef-0814-514b-bc4d-f2e9a6c4116f"
 
 [compat]
 DecFP = "^0.4.9, 1.0"
-Documenter = "0.23, 0.24, 0.25, 0.26"
+Documenter = "0.23, 0.24, 0.25, 0.26, 0.27"
 ElectromagneticFields = "0.5"
 ForwardDiff = "0.10"
 GeometricIntegrators = "^0.3.1, 0.4, 0.6, 0.9"
-GeometricProblems = "^0.1"
+GeometricProblems = "^0.1, 0.2"
 LaTeXStrings = "1.0, 1.1"
 Parameters = "0.12"
 Plots = "1"
 PoincareInvariants = "0.2, 0.3"
 RecipesBase = "1"
 SafeTestsets = "0.0.1"
-Showoff = "^0.3.1"
+Showoff = "^0.3.1, 1.0"
 julia = "^1.3"
 
 [extras]
