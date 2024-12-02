@@ -32,11 +32,11 @@ dϑ₄dx₃(t,q) = zero(eltype(q))
 dϑ₄dx₄(t,q) = zero(eltype(q))
 
 
-function ϑ(t::Number, q::AbstractVector, Θ::AbstractVector)
-    Θ[1] = ϑ₁(t,q)
-    Θ[2] = ϑ₂(t,q)
-    Θ[3] = ϑ₃(t,q)
-    Θ[4] = ϑ₄(t,q)
+function ϑ(θ::AbstractVector, t::Number, q::AbstractVector)
+    θ[1] = ϑ₁(t,q)
+    θ[2] = ϑ₂(t,q)
+    θ[3] = ϑ₃(t,q)
+    θ[4] = ϑ₄(t,q)
     nothing
 end
 
@@ -55,7 +55,7 @@ function ϑ(t::Number, q::AbstractVector, k::Int)
 end
 
 
-function ω(t, q, Ω)
+function ω(Ω, t, q)
     Ω[1,1] = 0
     Ω[1,2] = dϑ₁dx₂(t,q) - dϑ₂dx₁(t,q)
     Ω[1,3] = dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
@@ -80,7 +80,7 @@ function ω(t, q, Ω)
 end
 
 
-function D²ϑ₁(t, q, D²ϑ)
+function D²ϑ₁(D²ϑ, t, q)
     D²ϑ[1,1] = d²A₁dx₁dx₁(t,q) + u(t,q) * d²b₁dx₁dx₁(t,q)
     D²ϑ[1,2] = d²A₁dx₁dx₂(t,q) + u(t,q) * d²b₁dx₁dx₂(t,q)
     D²ϑ[1,3] = d²A₁dx₁dx₃(t,q) + u(t,q) * d²b₁dx₁dx₃(t,q)
@@ -104,7 +104,7 @@ function D²ϑ₁(t, q, D²ϑ)
     nothing
 end
 
-function D²ϑ₂(t, q, D²ϑ)
+function D²ϑ₂(D²ϑ, t, q)
     D²ϑ[1,1] = d²A₂dx₁dx₁(t,q) + u(t,q) * d²b₂dx₁dx₁(t,q)
     D²ϑ[1,2] = d²A₂dx₁dx₂(t,q) + u(t,q) * d²b₂dx₁dx₂(t,q)
     D²ϑ[1,3] = d²A₂dx₁dx₃(t,q) + u(t,q) * d²b₂dx₁dx₃(t,q)
@@ -128,7 +128,7 @@ function D²ϑ₂(t, q, D²ϑ)
     nothing
 end
 
-function D²ϑ₃(t, q, D²ϑ)
+function D²ϑ₃(D²ϑ, t, q)
     D²ϑ[1,1] = d²A₃dx₁dx₁(t,q) + u(t,q) * d²b₃dx₁dx₁(t,q)
     D²ϑ[1,2] = d²A₃dx₁dx₂(t,q) + u(t,q) * d²b₃dx₁dx₂(t,q)
     D²ϑ[1,3] = d²A₃dx₁dx₃(t,q) + u(t,q) * d²b₃dx₁dx₃(t,q)
@@ -152,13 +152,13 @@ function D²ϑ₃(t, q, D²ϑ)
     nothing
 end
 
-function D²ϑ₄(t, q, D²ϑ)
+function D²ϑ₄(D²ϑ, t, q)
     D²ϑ .= 0
     nothing
 end
 
 
-function D²ϑd₁(t, q, D²ϑ)
+function D²ϑd₁(D²ϑ, t, q)
     D²ϑ[1,1] = d²A₁dx₁dx₁(t,q) + u(t,q) * d²b₁dx₁dx₁(t,q)
     D²ϑ[1,2] = d²A₁dx₁dx₂(t,q) + u(t,q) * d²b₁dx₁dx₂(t,q)
     D²ϑ[1,3] = d²A₁dx₁dx₃(t,q) + u(t,q) * d²b₁dx₁dx₃(t,q)
@@ -182,7 +182,7 @@ function D²ϑd₁(t, q, D²ϑ)
     nothing
 end
 
-function D²ϑd₂(t, q, D²ϑ)
+function D²ϑd₂(D²ϑ, t, q)
     D²ϑ[2,1] = d²A₁dx₂dx₁(t,q) + u(t,q) * d²b₁dx₂dx₁(t,q)
     D²ϑ[2,2] = d²A₁dx₂dx₂(t,q) + u(t,q) * d²b₁dx₂dx₂(t,q)
     D²ϑ[2,3] = d²A₁dx₂dx₃(t,q) + u(t,q) * d²b₁dx₂dx₃(t,q)
@@ -206,7 +206,7 @@ function D²ϑd₂(t, q, D²ϑ)
     nothing
 end
 
-function D²ϑd₃(t, q, D²ϑ)
+function D²ϑd₃(D²ϑ, t, q)
     D²ϑ[2,1] = d²A₁dx₃dx₁(t,q) + u(t,q) * d²b₁dx₃dx₁(t,q)
     D²ϑ[2,2] = d²A₁dx₃dx₂(t,q) + u(t,q) * d²b₁dx₃dx₂(t,q)
     D²ϑ[2,3] = d²A₁dx₃dx₃(t,q) + u(t,q) * d²b₁dx₃dx₃(t,q)
@@ -230,7 +230,7 @@ function D²ϑd₃(t, q, D²ϑ)
     nothing
 end
 
-function D²ϑd₄(t, q, D²ϑ)
+function D²ϑd₄(D²ϑ, t, q)
     D²ϑ[1,1] = db₁dx₁(t,q)
     D²ϑ[1,2] = db₁dx₂(t,q)
     D²ϑ[1,3] = db₁dx₃(t,q)
@@ -255,7 +255,7 @@ function D²ϑd₄(t, q, D²ϑ)
 end
 
 
-function dϑ(t, q, dϑ)
+function dϑ(dϑ, t, q)
     dϑ[1,1] = dϑ₁dx₁(t,q)
     dϑ[1,2] = dϑ₁dx₂(t,q)
     dϑ[1,3] = dϑ₁dx₃(t,q)
@@ -294,13 +294,16 @@ function hamiltonian(t, q, params)
     0.5 * u(t,q)^2 + μ*B(t,q)
 end
 
+hamiltonian(t,q,p,params) = hamiltonian(t,q, params)
+lagrangian(t,q,v,params) = ϑ₁(t, q) * v[1] + ϑ₂(t, q) * v[2] + ϑ₃(t, q) * v[3] - hamiltonian(t,q,params)
+
 
 dHdx₁(t, q, μ) = μ * dBdx₁(t,q)
 dHdx₂(t, q, μ) = μ * dBdx₂(t,q)
 dHdx₃(t, q, μ) = μ * dBdx₃(t,q)
 dHdx₄(t, q, μ) = u(t,q)
 
-function dH(t, q, dH, params)
+function dH(dH, t, q, params)
     @unpack μ = params
     dH[1] = dHdx₁(t, q, μ)
     dH[2] = dHdx₂(t, q, μ)
@@ -346,7 +349,7 @@ function g̅₄(t, q, v)
 end
 
 
-function guiding_center_4d_v(t, q::Vector{DT}, v::Vector{DT}, params) where {DT}
+function guiding_center_4d_v(v::AbstractVector{DT}, t, q::AbstractVector{DT}, params) where {DT}
     @unpack μ = params
 
     local lB₁ = B₁(t,q)
@@ -370,27 +373,27 @@ function guiding_center_4d_v(t, q::Vector{DT}, v::Vector{DT}, params) where {DT}
     nothing
 end
 
-function guiding_center_4d_v(t, q::Vector{DT}, p::Vector{DT}, v::Vector{DT}, params) where {DT}
-    guiding_center_4d_v(t, q, v, params)
+function guiding_center_4d_v(v::AbstractVector{DT}, t, q::AbstractVector{DT}, p::AbstractVector{DT}, params) where {DT}
+    guiding_center_4d_v(v, t, q, params)
 end
 
-# function guiding_center_4d_ϑ(t, q::Vector{DT}, Θ::Vector{DT}) where {DT}
+# function guiding_center_4d_ϑ(θ::AbstractVector{DT}, t, q::AbstractVector{DT}) where {DT}
 #     ϑ(t, q, Θ)
 # end
 
-function guiding_center_4d_ϑ(t, q::Vector{DT}, v::Vector{DT}, Θ::Vector{DT}, params) where {DT}
-    ϑ(t, q, Θ)
+function guiding_center_4d_ϑ(θ::AbstractVector{DT}, t, q::AbstractVector{DT}, v::AbstractVector{DT}, params) where {DT}
+    ϑ(θ, t, q)
 end
 
-function guiding_center_4d_ϑ(t, q::Vector{DT}, v::Vector{DT}, Θ::Vector{DT}, params, κ) where {DT}
-    Θ[1] = (1-κ) * ϑ₁(t,q) - κ * f₁(t,q,q)
-    Θ[2] = (1-κ) * ϑ₂(t,q) - κ * f₂(t,q,q)
-    Θ[3] = (1-κ) * ϑ₃(t,q) - κ * f₃(t,q,q)
-    Θ[4] = (1-κ) * ϑ₄(t,q) - κ * f₄(t,q,q)
+function guiding_center_4d_ϑ(θ::AbstractVector{DT}, t, q::AbstractVector{DT}, v::AbstractVector{DT}, params, κ) where {DT}
+    θ[1] = (1-κ) * ϑ₁(t,q) - κ * f₁(t,q,q)
+    θ[2] = (1-κ) * ϑ₂(t,q) - κ * f₂(t,q,q)
+    θ[3] = (1-κ) * ϑ₃(t,q) - κ * f₃(t,q,q)
+    θ[4] = (1-κ) * ϑ₄(t,q) - κ * f₄(t,q,q)
     nothing
 end
 
-function guiding_center_4d_f(t, q::Vector{DT}, v::Vector{DT}, f::Vector{DT}, params) where {DT}
+function guiding_center_4d_f(f::AbstractVector{DT}, t, q::AbstractVector{DT}, v::AbstractVector{DT}, params) where {DT}
     @unpack μ = params
     f[1] = f₁(t,q,v) - dHdx₁(t,q,μ)
     f[2] = f₂(t,q,v) - dHdx₂(t,q,μ)
@@ -399,7 +402,7 @@ function guiding_center_4d_f(t, q::Vector{DT}, v::Vector{DT}, f::Vector{DT}, par
     nothing
 end
 
-function guiding_center_4d_f(t, q::Vector{DT}, v::Vector{DT}, f::Vector{DT}, params, κ) where {DT}
+function guiding_center_4d_f(f::AbstractVector{DT}, t, q::AbstractVector{DT}, v::AbstractVector{DT}, params, κ) where {DT}
     @unpack μ = params
     f[1] = (1-κ) * f₁(t,q,v) - κ * (g₁(t,q,v) + g̅₁(t,q,v)) - dHdx₁(t,q,μ)
     f[2] = (1-κ) * f₂(t,q,v) - κ * (g₂(t,q,v) + g̅₂(t,q,v)) - dHdx₂(t,q,μ)
@@ -408,7 +411,7 @@ function guiding_center_4d_f(t, q::Vector{DT}, v::Vector{DT}, f::Vector{DT}, par
     nothing
 end
 
-function guiding_center_4d_g(t::Number, q::Vector, λ::Vector, g::Vector, params)
+function guiding_center_4d_g(g::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, v::AbstractVector{DT}, λ::AbstractVector{DT}, params) where {DT}
     g[1] = f₁(t,q,λ)
     g[2] = f₂(t,q,λ)
     g[3] = f₃(t,q,λ)
@@ -416,7 +419,7 @@ function guiding_center_4d_g(t::Number, q::Vector, λ::Vector, g::Vector, params
     nothing
 end
 
-# function guiding_center_4d_g(t, q::Vector{DT}, λ::Vector{DT}, g::Vector{DT}, params, κ::DT=0) where {DT}
+# function guiding_center_4d_g(g::AbstractVector{DT}, t, q::AbstractVector{DT}, λ::AbstractVector{DT}, params, κ::DT=0) where {DT}
 #     g[1] = g₁(t,q,λ)
 #     g[2] = g₂(t,q,λ)
 #     g[3] = g₃(t,q,λ)
@@ -424,7 +427,7 @@ end
 #     nothing
 # end
 
-function guiding_center_4d_g(t, q::Vector{DT}, λ::Vector{DT}, g::Vector{DT}, params, κ::DT) where {DT}
+function guiding_center_4d_g(g::AbstractVector{DT}, t, q::AbstractVector{DT}, λ::AbstractVector{DT}, params, κ::DT) where {DT}
     g[1] = (1-κ) * f₁(t,q,λ) - κ * (g₁(t,q,λ) + g̅₁(t,q,λ))
     g[2] = (1-κ) * f₂(t,q,λ) - κ * (g₂(t,q,λ) + g̅₂(t,q,λ))
     g[3] = (1-κ) * f₃(t,q,λ) - κ * (g₃(t,q,λ) + g̅₃(t,q,λ))
@@ -432,7 +435,7 @@ function guiding_center_4d_g(t, q::Vector{DT}, λ::Vector{DT}, g::Vector{DT}, pa
     nothing
 end
 
-# function guiding_center_4d_g(t, q::Vector{DT}, λ::Vector{DT}, g::Vector{DT}, params, κ::DT=0) where {DT}
+# function guiding_center_4d_g(g::AbstractVector{DT}, t, q::AbstractVector{DT}, λ::AbstractVector{DT}, params, κ::DT=0) where {DT}
 #     g[1] = (1-κ) * g₁(t,q,λ) - κ * (f₁(t,q,λ) + g̅₁(t,q,λ))
 #     g[2] = (1-κ) * g₂(t,q,λ) - κ * (f₂(t,q,λ) + g̅₂(t,q,λ))
 #     g[3] = (1-κ) * g₃(t,q,λ) - κ * (f₃(t,q,λ) + g̅₃(t,q,λ))
@@ -440,55 +443,44 @@ end
 #     nothing
 # end
 
-function guiding_center_4d_dH(t::DT, q::Vector{DT}, ∇H::Vector{DT}, params) where {DT}
-    dH(t, q, ∇H, params)
+function guiding_center_4d_dH(∇H::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, params) where {DT}
+    dH(∇H, t, q, params)
 end
 
-function guiding_center_4d_ω(t::DT, q::Vector{DT}, Ω::Matrix{DT}, params) where {DT}
-    ω(t, q, Ω)
+function guiding_center_4d_ω(Ω::Matrix{DT}, t::Number, q::AbstractVector{DT}, v::AbstractVector{DT}, params) where {DT}
+    ω(Ω, t, q)
 end
     
 
-function guiding_center_4d_λ(t::DT, q::Vector{DT}, μ, λ::Vector{DT}, Ω::Matrix{DT}, dh::Vector{DT}) where {DT}
-    dH(t, q, μ, dh)
-    ω(t, q, Ω)
+function guiding_center_4d_λ(λ::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, μ, Ω::AbstractMatrix{DT}, dh::AbstractVector{DT}) where {DT}
+    dH(dh, t, q, μ)
+    ω(Ω, t, q)
     λ .= inv(Ω) * dh
     nothing
 end
 
-function guiding_center_4d_λ(t::DT, q::Vector{DT}, μ, λ::Vector{DT}) where {DT}
-    D  = size(q, 1)
-    guiding_center_4d_λ(t, q, μ, λ, zeros(DT,D,D), zeros(DT,D))
+function guiding_center_4d_λ(λ::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, μ) where {DT}
+    D = length(q)
+    guiding_center_4d_λ(λ, t, q, μ, zeros(DT,D,D), zeros(DT,D))
 end
 
 
-function guiding_center_4d_pᵢ(qᵢ, tᵢ=0)
+function guiding_center_4d_pᵢ(tᵢ, qᵢ::AbstractArray{T}) where {T <: Number}
     pᵢ = zero(qᵢ)
+    ϑ(pᵢ, tᵢ, qᵢ)
+    return pᵢ
+end
 
-    if ndims(qᵢ) == 1
-        ϑ(tᵢ, qᵢ, pᵢ)
-    else
-        for i in 1:size(qᵢ,2)
-            ϑ(tᵢ, (@view qᵢ[:,i]), (@view pᵢ[:,i]))
-        end
-    end
-    pᵢ
+function guiding_center_4d_pᵢ(tᵢ, qᵢ::AbstractVector{<:AbstractArray{T}}) where {T <: Number}
+    [guiding_center_4d_pᵢ(tᵢ, q) for q in qᵢ]
 end
 
 
-function guiding_center_4d_λᵢ(qᵢ::Array{DT}, μ, Δt::DT=1, tᵢ::DT=0) where {DT}
-    D  = size(qᵢ, 1)
+function guiding_center_4d_λᵢ(qᵢ::AbstractVector{DT}, μ, Δt::Number=1., tᵢ::Number=0.) where {DT}
+    D  = length(qᵢ)
     λᵢ = zero(qᵢ)
     Ω  = zeros(DT, D, D)
     dh = zeros(DT, D)
-
-    if ndims(qᵢ) == 1
-        guiding_center_4d_λ(qᵢ, μ, λᵢ, Ω, dh, Δt, tᵢ)
-    else
-        for i in 1:size(qᵢ,2)
-            guiding_center_4d_λ((@view qᵢ[:,i]), μ,  (@view λᵢ[:,i]), Ω, dh, Δt, tᵢ)
-        end
-    end
-
+    guiding_center_4d_λ(λᵢ, qᵢ, μ, Ω, dh, Δt, tᵢ)
     return λᵢ
 end

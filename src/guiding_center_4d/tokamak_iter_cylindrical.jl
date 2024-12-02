@@ -13,6 +13,9 @@ module TokamakIterCylindrical
 
     AxisymmetricTokamakCylindrical.@code_iter() # inject magnetic field code
 
+    const Δt = 1.0
+    const tspan = (0.0, 1000.0)
+
     const qᵢ = [7.0-1.4, 0.0, 0.0, 2.8166280889939737]
     const parameters = (μ = 4.607782183567846,)
 

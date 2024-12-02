@@ -1,3 +1,6 @@
 [deps]
+ChargedParticleDynamics = "209b3593-7183-5600-9f8f-df5ce7fddd64"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-"ChargedParticleDynamics" = "209b3593-7183-5600-9f8f-df5ce7fddd64"
+ElectromagneticFields = "d6c1ba6f-ee03-53af-b876-68cefeb88ec8"
+GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"

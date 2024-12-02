@@ -13,6 +13,9 @@ module TokamakSmallCylindrical
 
     AxisymmetricTokamakCylindrical.@code() # inject magnetic field code
 
+    const Δt = 400.0
+    const tspan = (0.0, 2E4)
+
     const xᵢ = [1.05, 0., 0.]
     const uᵢ = -0.00045135897235326736
     const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]

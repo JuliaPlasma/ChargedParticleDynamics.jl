@@ -272,7 +272,7 @@ dγ₃dx₃(t,q,μ) = dϑ₁dx₃(t,q) * dHdx₂(t,q,μ) + ϑ₁(t,q) * d²Hdx�
 dγ₃dx₄(t,q,μ) = dϑ₁dx₄(t,q) * dHdx₂(t,q,μ) + ϑ₁(t,q) * d²Hdx₂dx₄(t,q,μ) - d²Hdx₁dx₄(t,q,μ) * ϑ₂(t,q) - dHdx₁(t,q,μ) * dϑ₂dx₄(t,q)
 
 
-function v₁(t, q, v, params)
+function v₁(v, t, q, params)
     @unpack μ = params
     v[1] = + dβ₃dx₂(t,q,μ)
     v[2] = - dβ₃dx₁(t,q,μ)
@@ -280,7 +280,7 @@ function v₁(t, q, v, params)
     v[4] = 0
 end
 
-function v₂(t, q, v, params)
+function v₂(v, t, q, params)
     @unpack μ = params
     v[1] = - dβ₂dx₃(t,q,μ)
     v[2] = 0
@@ -288,7 +288,7 @@ function v₂(t, q, v, params)
     v[4] = 0
 end
 
-function v₃(t, q, v, params)
+function v₃(v, t, q, params)
     @unpack μ = params
     v[1] = 0
     v[2] = + dβ₁dx₃(t,q,μ)
@@ -296,7 +296,7 @@ function v₃(t, q, v, params)
     v[4] = 0
 end
 
-function v₄(t, q, v, params)
+function v₄(v, t, q, params)
     @unpack μ = params
     v[1] = + dγ₁dx₄(t,q,μ)
     v[2] = 0
@@ -304,7 +304,7 @@ function v₄(t, q, v, params)
     v[4] = - dγ₁dx₁(t,q,μ)
 end
 
-function v₅(t, q, v, params)
+function v₅(v, t, q, params)
     @unpack μ = params
     v[1] = 0
     v[2] = + dγ₂dx₄(t,q,μ)
@@ -312,7 +312,7 @@ function v₅(t, q, v, params)
     v[4] = - dγ₂dx₂(t,q,μ)
 end
 
-function v₆(t, q, v, params)
+function v₆(v, t, q, params)
     @unpack μ = params
     v[1] = 0
     v[2] = 0
@@ -320,7 +320,7 @@ function v₆(t, q, v, params)
     v[4] = - dγ₃dx₃(t,q,μ)
 end
 
-function v(t, q, v, params)
+function v(v, t, q, params)
     @unpack μ = params
     v[1] =   dγ₁dx₄(t,q,μ) + dβ₃dx₂(t,q,μ) - dβ₂dx₃(t,q,μ)
     v[2] =   dγ₂dx₄(t,q,μ) + dβ₁dx₃(t,q,μ) - dβ₃dx₁(t,q,μ)

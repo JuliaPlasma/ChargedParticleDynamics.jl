@@ -15,6 +15,9 @@ module SolovevIterXpoint
     const qᵢ = from_cartesian(0, xᵢ)
     const vᵢ = [3.43E-3, 6.75, -3.41E-1]
     
+    const Δt = 1.0
+    const tspan = (0.0, 1000.0)
+    
     include("pauli_particle_3d.jl")
 
     function initial_conditions(x₀, u₀, μ)

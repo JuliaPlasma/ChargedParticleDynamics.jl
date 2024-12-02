@@ -9,6 +9,8 @@ module ThetaPinchNoncanonical
 
     ThetaPinch.@code() # inject magnetic field code
 
+    toroidal_momentum(t,q) = ϑ₃(t,q)
+
     include("charged_particle_3d_noncanonical.jl")
     
 end

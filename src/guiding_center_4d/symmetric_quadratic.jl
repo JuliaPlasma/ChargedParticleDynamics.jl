@@ -49,6 +49,9 @@ module SymmetricField
 
     SymmetricQuadratic.@code() # inject magnetic field code
 
+    const Δt = 1.0
+    const tspan = (0.0, 1000.0)
+
     μ_loop() = 1E-2
     μ_surface() = 1E-2
 

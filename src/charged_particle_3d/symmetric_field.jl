@@ -6,12 +6,16 @@ module SymmetricField
 
     import ElectromagneticFields.SymmetricQuadratic
 
-    export charged_particle_3d_iode, hamiltonian, angular_momentum
+    export charged_particle_3d_ode, charged_particle_3d_iode
+    export hamiltonian, angular_momentum
+    export compute_energy, compute_energy_error
 
     SymmetricQuadratic.@code() # inject magnetic field code
 
-    const q₀ = [1., 0., 0., 0., 1., 1.]
+    const qᵢ = [1., 0., 0., 0., 1., 1.]
 
-    include("charged_particle_3d.jl")
+    angular_momentum(t,q) = q[1] * ϑ₂(t,q) - q[2] * ϑ₁(t,q)
+
+    include("charged_particle_3d_noncanonical.jl")
 
 end

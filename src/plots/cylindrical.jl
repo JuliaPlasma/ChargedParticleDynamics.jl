@@ -5,8 +5,8 @@ module Cylindrical
     using RecipesBase
     using LaTeXStrings
 
-    using GeometricIntegrators.Solutions: TimeSeries, DataSeries, Solution
-    using GeometricProblems.PlotRecipes: subscript
+    using GeometricSolutions: TimeSeries, DataSeries, GeometricSolution
+    # using GeometricProblems.PlotRecipes: subscript
 
     include("common.jl")
 

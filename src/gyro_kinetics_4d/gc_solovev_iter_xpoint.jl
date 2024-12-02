@@ -23,6 +23,9 @@ module GuidingCenter4dSolovevIterXpoint
         (transform_q_to_q̃(t₀, q₀, params), params)
     end
 
+    const Δt = 1.0
+    const tspan = (0.0, 1000.0)
+
     const x₀ = from_cartesian(0, [2.5, 0., 0.])
     const μ₀ = 1E-2
 

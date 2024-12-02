@@ -17,11 +17,11 @@ function f_surface(i, j, nx, ny)
 end
 
 function initial_conditions_surface(nx, ny)
-    q₀ = zeros(4, nx*ny)
+    q₀ = [zeros(4) for _ in 1:nx*ny]
 
     for j in 1:ny
         for i in 1:nx
-            q₀[:,nx*(j-1)+i] .= f_surface(i, j, nx, ny)
+            q₀[nx*(j-1)+i] = f_surface(i, j, nx, ny)
         end
     end
 

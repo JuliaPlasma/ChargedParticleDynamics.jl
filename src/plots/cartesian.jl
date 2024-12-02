@@ -5,7 +5,7 @@ module Cartesian
     using Plots.PlotMeasures
     using RecipesBase
 
-    using GeometricIntegrators.Solutions: Solution
+    using GeometricSolutions: GeometricSolution
 
     include("common.jl")
 

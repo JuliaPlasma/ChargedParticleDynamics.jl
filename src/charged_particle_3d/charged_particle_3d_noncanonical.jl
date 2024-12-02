@@ -1,13 +1,18 @@
+using GeometricEquations: ODEProblem, IODEProblem, LODEProblem, SODEProblem
+using GeometricSolutions: GeometricSolution, DataSeries, TimeSeries
 
-using GeometricIntegrators.Equations
+import GeometricProblems.Diagnostics: compute_invariant, compute_invariant_error
 
+
+const Δt = 0.01
+const tspan = (0.0, 10.0)
 
 ϑ₁(t, q) = g₁₁(t,q) * q[4] + A₁(t,q)
 ϑ₂(t, q) = g₂₂(t,q) * q[5] + A₂(t,q)
 ϑ₃(t, q) = g₃₃(t,q) * q[6] + A₃(t,q)
 
 
-function ϑ(t, q, θ)
+function ϑ(θ, t, q)
     θ[1] = ϑ₁(t,q)
     θ[2] = ϑ₂(t,q)
     θ[3] = ϑ₃(t,q)
@@ -119,20 +124,19 @@ end
 β(t,q) = sqrt(β₁(t,q)^2 + β₂(t,q)^2 + β₃(t,q)^2)
 
 
-hamiltonian(t,q) = 0.5 * (g₁₁(t,q) * q[4]^2 + g₂₂(t,q) * q[5]^2 + g₃₃(t,q) * q[6]^2)
-hamiltonian(t,q,p) = hamiltonian(t,q)
+hamiltonian(t,q) = 0.5 * ( g₁₁(t,q) * q[4]^2 + g₂₂(t,q) * q[5]^2 + g₃₃(t,q) * q[6]^2 ) + φ(t,q)
+hamiltonian(t,q,p,params) = hamiltonian(t,q)
+lagrangian(t,q,v,params) = ϑ₁(t, q) * v[1] + ϑ₂(t, q) * v[2] + ϑ₃(t, q) * v[3] - hamiltonian(t,q)
 
-toroidal_momentum(t,q) = ϑ₃(t,q)
 
-
-dHdx₁(t, q) = zero(eltype(q))
-dHdx₂(t, q) = zero(eltype(q))
-dHdx₃(t, q) = zero(eltype(q))
+dHdx₁(t, q) = dφdx₁(t,q)
+dHdx₂(t, q) = dφdx₂(t,q)
+dHdx₃(t, q) = dφdx₃(t,q)
 dHdx₄(t, q) = q[4]
 dHdx₅(t, q) = q[5]
 dHdx₆(t, q) = q[6]
 
-function dH(t, q, dH)
+function dH(dH, t, q)
     dH[1] = dHdx₁(t, q)
     dH[2] = dHdx₂(t, q)
     dH[3] = dHdx₃(t, q)
@@ -143,51 +147,46 @@ function dH(t, q, dH)
 end
 
 
-f₁(t, q, v) = q[4]
-f₂(t, q, v) = q[5]
-f₃(t, q, v) = q[6]
-f₄(t, q, v) = q[5] * B₃(t,q) - q[6] * B₂(t,q)
-f₅(t, q, v) = q[6] * B₁(t,q) - q[4] * B₃(t,q)
-f₆(t, q, v) = q[4] * B₂(t,q) - q[5] * B₁(t,q)
+v₁(t, q, v) = q[4]
+v₂(t, q, v) = q[5]
+v₃(t, q, v) = q[6]
+v₄(t, q, v) = E₁(t,q) + q[5] * B₃(t,q) - q[6] * B₂(t,q)
+v₅(t, q, v) = E₂(t,q) + q[6] * B₁(t,q) - q[4] * B₃(t,q)
+v₆(t, q, v) = E₃(t,q) + q[4] * B₂(t,q) - q[5] * B₁(t,q)
 
 
 function charged_particle_3d_periodicity(qᵢ)
-    periodicity = zeros(eltype(qᵢ), size(qᵢ,1))
-    periodicity[3] = 2π
-    return periodicity
+    period = zeros(eltype(qᵢ), size(qᵢ,1))
+    period[3] = 2π
+    return period
 end
 
 
-function charged_particle_3d_pᵢ(qᵢ, tᵢ=0)
+function charged_particle_3d_pᵢ(tᵢ, qᵢ)
     pᵢ = zero(qᵢ)
-
-    if ndims(qᵢ) == 1
-        ϑ(tᵢ, qᵢ, pᵢ)
-    else
-        for i in 1:size(qᵢ,2)
-            @views ϑ(tᵢ, qᵢ[:,i], pᵢ[:,i])
-        end
-    end
-    pᵢ
+    ϑ(pᵢ, tᵢ, qᵢ)
+    return pᵢ
 end
 
 
-function charged_particle_3d_v(t, q, v)
-    v[1] = f₁(t, q, v)
-    v[2] = f₂(t, q, v)
-    v[3] = f₃(t, q, v)
-    v[4] = f₄(t, q, v)
-    v[5] = f₅(t, q, v)
-    v[6] = f₅(t, q, v)
+function charged_particle_3d_v(v, t, q, params)
+    v[1] = v₁(t, q, v)
+    v[2] = v₂(t, q, v)
+    v[3] = v₃(t, q, v)
+    v[4] = v₄(t, q, v)
+    v[5] = v₅(t, q, v)
+    v[6] = v₆(t, q, v)
 
     nothing
 end
 
+charged_particle_3d_v(v, t, q, p, params) = charged_particle_3d_v(v, t, q, params)
 
-charged_particle_3d_iode_ϑ(t, q, v, p) = ϑ(t, q, p)
+
+charged_particle_3d_iode_ϑ(θ, t, q, v, params) = ϑ(θ, t, q)
 
 
-function charged_particle_3d_iode_f(t, q, v, f)
+function charged_particle_3d_iode_f(f, t, q, v, params)
     f[1] = dA₁dx₁(t,q) * v[1] + dA₂dx₁(t,q) * v[2] + dA₃dx₁(t,q) * v[3] + E₁(t,q)
     f[2] = dA₁dx₂(t,q) * v[1] + dA₂dx₂(t,q) * v[2] + dA₃dx₂(t,q) * v[3] + E₂(t,q)
     f[3] = dA₁dx₃(t,q) * v[1] + dA₂dx₃(t,q) * v[2] + dA₃dx₃(t,q) * v[3] + E₃(t,q)
@@ -197,7 +196,7 @@ function charged_particle_3d_iode_f(t, q, v, f)
     nothing
 end
 
-function charged_particle_3d_iode_g(t, q, λ, g)
+function charged_particle_3d_iode_g(g, t, q, v, λ, params)
     g[1] = dA₁dx₁(t,q) * λ[1] + dA₂dx₁(t,q) * λ[2] + dA₃dx₁(t,q) * λ[3]
     g[2] = dA₁dx₂(t,q) * λ[1] + dA₂dx₂(t,q) * λ[2] + dA₃dx₂(t,q) * λ[3]
     g[3] = dA₁dx₃(t,q) * λ[1] + dA₂dx₃(t,q) * λ[2] + dA₃dx₃(t,q) * λ[3]
@@ -208,19 +207,21 @@ function charged_particle_3d_iode_g(t, q, λ, g)
 end
 
 
-charged_particle_3d_v(t, q, p, v) = charged_particle_3d_v(t, q, v)
+function charged_particle_3d_sode_fx(q₁::AbstractArray{DT}, t₁, q₀::AbstractArray{DT}, t₀) where {DT}
+    @assert axes(q₁) == axes(q₀)
 
+    x = q₀[1:3]
+    v = q₀[4:6]
 
-function charged_particle_3d_sode_fx(t, q::Vector{DT}, f::Vector{DT}, Δt) where {DT}
-    x = q[1:3]
-    v = q[4:6]
-
-    f .= vcat(x .+ Δt .* v, v)
+    q₁[1:3] .= x .+ (t₁ - t₀) .* v
+    q₁[4:6] .= v
 
     nothing
 end
 
-function charged_particle_3d_sode_fv(t, q::Vector{DT}, f::Vector{DT}, Δt) where {DT}
+function charged_particle_3d_sode_fv(q₁::AbstractArray{DT}, t₁, q₀::AbstractArray{DT}, t₀) where {DT}
+    @assert axes(q₁) == axes(q₀)
+    
     x = q[1:3]
     v = q[4:6]
 
@@ -237,35 +238,59 @@ function charged_particle_3d_sode_fv(t, q::Vector{DT}, f::Vector{DT}, Δt) where
     Ω[3,1] = - lB₂
     Ω[3,2] = - lB₁
 
-    C1 = eye(DT,3) .+ (0.5*Δt) .* Ω
-    C2 = eye(DT,3) .- (0.5*Δt) .* Ω
+    C1 = eye(DT,3) .+ (t₁ - t₀) ./ 2 .* Ω
+    C2 = eye(DT,3) .- (t₁ - t₀) ./ 2 .* Ω
     R  = inv(C1) * C2
 
-    f .= vcat(x, R * v)
+    q₁[1:3] .= x
+    q₁[4:6] .= R * v
 
     nothing
 end
 
 
-function charged_particle_3d_ode(qᵢ=qᵢ; periodic=true)
+function charged_particle_3d_ode(qᵢ=qᵢ; tspan=tspan, tstep=Δt, periodic=true)
     if periodic
-        ODE(charged_particle_3d_v, qᵢ; periodicity=charged_particle_3d_periodicity(qᵢ))
+        ODEProblem(charged_particle_3d_v, tspan, tstep, qᵢ; invariants=(h=hamiltonian,), periodicity=charged_particle_3d_periodicity(qᵢ))
     else
-        ODE(charged_particle_3d_v, qᵢ)
+        ODEProblem(charged_particle_3d_v, tspan, tstep, qᵢ; invariants=(h=hamiltonian,))
     end
 end
 
-function charged_particle_3d_sode(qᵢ=qᵢ; periodic=true)
+function charged_particle_3d_sode(qᵢ=qᵢ; tspan=tspan, tstep=Δt, periodic=true)
     if periodic
-        SODE((charged_particle_3d_sode_fv, charged_particle_3d_sode_fx), qᵢ; periodicity=charged_particle_3d_periodicity(qᵢ))
+        SODEProblem(nothing, (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
+                    tspan, tstep, x₀, periodicity=charged_particle_3d_periodicity(qᵢ))
     else
-        SODE((charged_particle_3d_sode_fv, charged_particle_3d_sode_fx), qᵢ)
+        SODEProblem(nothing, (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
+                    tspan, tstep, x₀)
     end
 end
 
-function charged_particle_3d_iode(qᵢ=qᵢ)
-    IODE(charged_particle_3d_iode_ϑ, charged_particle_3d_iode_f,
-            charged_particle_3d_iode_g, qᵢ, charged_particle_3d_pᵢ(qᵢ);
-            v=charged_particle_3d_v, h=hamiltonian)
+function charged_particle_3d_iode(qᵢ=qᵢ; tspan=tspan, tstep=Δt)
+    IODEProblem(
+        charged_particle_3d_iode_ϑ,
+        charged_particle_3d_iode_f,
+        charged_particle_3d_iode_g,
+        tspan, tstep, qᵢ, charged_particle_3d_pᵢ(tspan[begin], qᵢ);
+        invariants = (h = hamiltonian,), 
+        v̄ = charged_particle_3d_v)
 end
 
+function charged_particle_3d_lode(qᵢ=qᵢ; tspan=tspan, tstep=Δt)
+    LODEProblem(
+        charged_particle_3d_iode_ϑ,
+        charged_particle_3d_iode_f,
+        charged_particle_3d_iode_g,
+        ω, lagrangian,
+        tspan, tstep, qᵢ, charged_particle_3d_pᵢ(tspan[begin], qᵢ);
+        invariants = (h = hamiltonian,), 
+        v̄ = charged_particle_3d_v)
+end
+
+
+compute_energy(t::TimeSeries, q::DataSeries) = compute_invariant(t, q, hamiltonian)
+compute_energy(sol::GeometricSolution) = compute_energy(sol.t, sol.q)
+
+compute_energy_error(t::TimeSeries, q::DataSeries) = compute_invariant_error(t, q, hamiltonian)
+compute_energy_error(sol::GeometricSolution) = compute_energy_error(sol.t, sol.q)

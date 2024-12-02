@@ -12,7 +12,7 @@ module SolovevIter
     const xᵢ = [7.0, 0.0, 0.0]
     const qᵢ = from_cartesian(0, xᵢ)
     const vᵢ = [3.43E-3, 6.75, -3.41E-1]
-    const pᵢ = charged_particle_3d_pᵢ(qᵢ, vᵢ)
+    const pᵢ = charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ)
 
     function initial_conditions(x₀, u₀, μ)
         vpar = u₀ * b⃗(0, x₀)
@@ -21,7 +21,7 @@ module SolovevIter
         v³ = - v¹ * b¹(0, x₀) / b³(0, x₀)
         v₀ = vpar .+ [v¹, 0, v³]
 
-        (x₀, charged_particle_3d_pᵢ(x₀, v₀))
+        (x₀, charged_particle_3d_pᵢ(tᵢ, x₀, v₀))
     end
 
     initial_conditions_barely_passing() = initial_conditions(from_cartesian(0, [2.5, 0., 0.]), 3.425E-1, 1E-2)

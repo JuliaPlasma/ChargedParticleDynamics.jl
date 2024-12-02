@@ -11,6 +11,6 @@ module TokamakSmallCartesian
 
     const qᵢ = [1.05,   0.0,    0.0]
     const vᵢ = [2.1E-3, 4.3E-4, 0.0]
-    const pᵢ = charged_particle_3d_pᵢ(qᵢ, vᵢ)
+    const pᵢ = charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ)
 
 end

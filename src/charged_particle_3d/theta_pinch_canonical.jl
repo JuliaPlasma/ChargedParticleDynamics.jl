@@ -10,8 +10,10 @@ module ThetaPinchCanonical
 
     ThetaPinch.@code() # inject magnetic field code
 
-    const q₀ = [2.5, 0.0, 0.0, 0.0, 0.2, 0.1]
+    include("charged_particle_3d_canonical.jl")
 
-    include("charged_particle_3d.jl")
+    const qᵢ = [2.5, 0.0, 0.0]
+    const vᵢ = [0.0, 0.2, 0.1]
+    const pᵢ = charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ)
 
 end

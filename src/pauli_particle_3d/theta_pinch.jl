@@ -14,6 +14,9 @@ module ThetaPinchField
     const vᵢ = [0., 1., 1.]
     const parameters = (μ = 1E-2,)
 
+    const Δt = 1.0
+    const tspan = (0.0, 1000.0)
+
     include("pauli_particle_3d.jl")
 
 end

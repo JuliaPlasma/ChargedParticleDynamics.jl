@@ -1,6 +1,6 @@
 module ChargedParticlePlots
 
-    using GeometricIntegrators
+    # using GeometricIntegrators
     using Plots
 
 

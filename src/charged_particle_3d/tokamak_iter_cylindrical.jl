@@ -11,6 +11,6 @@ module TokamakIterCylindrical
 
     const qᵢ = [7.0, 0.0, 0.0]
     const vᵢ = [3.43E-3, 6.75, -3.41E-1]
-    const pᵢ = charged_particle_3d_pᵢ(qᵢ, vᵢ)
+    const pᵢ = charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ)
 
 end

@@ -1,5 +1,5 @@
 
-using GeometricIntegrators.Solutions
+using GeometricSolutions
 
 import GeometricProblems.Diagnostics
 import GeometricProblems.Diagnostics: compute_invariant, compute_one_form,
@@ -10,7 +10,7 @@ export compute_energy, compute_toroidal_momentum,
        compute_momentum_error, compute_one_form, compute_error_drift
 
 
-function convert_coordinates_RZphi_to_xyz(q::DataSeries{DT,2}) where {DT}
+function convert_coordinates_RZphi_to_xyz(q::DataSeries{DT}) where {DT}
     x = SDataSeries(DT, q.nd, q.nt, q.ni)
     for k in 1:q.ni
         for j in 0:q.nt
@@ -27,16 +27,16 @@ end
 
 
 compute_energy(t::TimeSeries, q::DataSeries, params::NamedTuple) = compute_invariant(t, q, (t,q) -> hamiltonian(t, q, params))
-compute_energy(sol::Solution, params::NamedTuple) = compute_energy(sol.t, sol.q, params)
+compute_energy(sol::GeometricSolution, params::NamedTuple) = compute_energy(sol.t, sol.q, params)
 
 compute_energy_error(t::TimeSeries, q::DataSeries, params::NamedTuple) = compute_invariant_error(t, q, (t,q) -> hamiltonian(t, q, params))
-compute_energy_error(sol::Solution, params::NamedTuple) = compute_energy_error(sol.t, sol.q, params)
+compute_energy_error(sol::GeometricSolution, params::NamedTuple) = compute_energy_error(sol.t, sol.q, params)
 
 compute_toroidal_momentum(t::TimeSeries, q::DataSeries) = compute_invariant(t, q, toroidal_momentum)
-compute_toroidal_momentum(sol::Solution) = compute_toroidal_momentum(sol.t, sol.q)
+compute_toroidal_momentum(sol::GeometricSolution) = compute_toroidal_momentum(sol.t, sol.q)
 
 compute_toroidal_momentum_error(t::TimeSeries, q::DataSeries) = compute_invariant_error(t, q, toroidal_momentum)
-compute_toroidal_momentum_error(sol::Solution) = compute_toroidal_momentum_error(sol.t, sol.q)
+compute_toroidal_momentum_error(sol::GeometricSolution) = compute_toroidal_momentum_error(sol.t, sol.q)
 
 compute_momentum_error(t::TimeSeries, q::DataSeries, p::DataSeries) = GeometricProblems.Diagnostics.compute_momentum_error(t, q, p, ϑ)
-compute_momentum_error(sol::Solution) = compute_momentum_error(sol.t, sol.q, sol.p)
+compute_momentum_error(sol::GeometricSolution) = compute_momentum_error(sol.t, sol.q, sol.p)

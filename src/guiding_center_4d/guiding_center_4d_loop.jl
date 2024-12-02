@@ -15,19 +15,13 @@ function f_loop(i, n)
 end
 
 function initial_conditions_loop(n)
-   q₀ = zeros(4, n)
-
-   for i in axes(q₀,2)
-       q₀[:,i] .= f_loop(i, n)
-   end
-
-   return q₀
+   [f_loop(i,n) for i in 1:n]
 end
 
 
-guiding_center_4d_loop_ode_init(q₀) = guiding_center_4d_ode(q₀, (μ = μ_loop(),); periodic=false)
-guiding_center_4d_loop_iode_init(q₀) = guiding_center_4d_iode(q₀, (μ = μ_loop(),); periodic=false)
-guiding_center_4d_loop_vode_init(q₀) = guiding_center_4d_vode_formal_lagrangian(q₀, (μ = μ_loop(),); periodic=false)
+guiding_center_4d_loop_ode_init(q₀) = guiding_center_4d_ode(q₀; parameters = (μ = μ_loop(),), periodic=false)
+guiding_center_4d_loop_iode_init(q₀) = guiding_center_4d_iode(q₀; parameters = (μ = μ_loop(),), periodic=false)
+guiding_center_4d_loop_vode_init(q₀) = guiding_center_4d_vode_formal_lagrangian(q₀; parameters = (μ = μ_loop(),), periodic=false)
 
 
 function guiding_center_4d_loop_ode(n)

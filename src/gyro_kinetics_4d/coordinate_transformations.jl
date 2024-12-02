@@ -1,17 +1,15 @@
 
-using GeometricIntegrators.Config
-using GeometricIntegrators.Solvers
 
 export transform_q_to_q̃!, transform_q_to_q̃,
        transform_q̃_to_q!, transform_q̃_to_q
 
 
 function transform_q_to_q̃!(q̃, t, q, params)
-    q̃ .= q .* params[:ω₀]
+    q̃ .= q .* params.ω₀
 end
 
 function transform_q̃_to_q!(q, t, q̃, params)
-    q .= q̃ ./ params[:ω₀]
+    q .= q̃ ./ params.ω₀
 end
 
 transform_q_to_q̃(t, q, params) = transform_q_to_q̃!(zero(q), t, q, params)

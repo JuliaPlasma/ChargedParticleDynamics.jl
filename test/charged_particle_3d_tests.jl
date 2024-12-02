@@ -6,26 +6,20 @@ module ChargedParticle3dTests
     using Test
     using GeometricIntegrators
 
-    const Δt = 0.01
-    const nt = 1
-
     export test_charged_particle_3d
 
-    function test_charged_particle_3d(ode::ODE)
-        int = Integrator(ode, getTableauGLRK(1), Δt)
-        sol = integrate(ode, int, nt)
+    function test_charged_particle_3d(ode::ODEProblem)
+        sol = integrate(ode, Gauss(1))
         @test true
     end
 
-    function test_charged_particle_3d(ode::PODE)
-        int = Integrator(ode, getTableauIPGLRK(1), Δt)
-        sol = integrate(ode, int, nt)
+    function test_charged_particle_3d(ode::PODEProblem)
+        sol = integrate(ode, PartitionedGauss(1))
         @test true
     end
 
-    function test_charged_particle_3d(ode::IODE)
-        int = Integrator(ode, getTableauVPGLRK(1), Δt)
-        sol = integrate(ode, int, nt)
+    function test_charged_particle_3d(ode::IODEProblem)
+        sol = integrate(ode, VPRKGauss(1))
         @test true
     end
 

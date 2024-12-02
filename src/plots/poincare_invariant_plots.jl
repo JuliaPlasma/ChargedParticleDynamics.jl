@@ -53,7 +53,7 @@ end
 
 
 
-function plot_poincare_trajectories(sol::Solution, nplot, filename, dpi=100; xmin=-0.6, xmax=+0.6, ymin=-0.6, ymax=+0.6)
+function plot_poincare_trajectories(sol::GeometricSolution, nplot, filename, dpi=100; xmin=-0.6, xmax=+0.6, ymin=-0.6, ymax=+0.6)
     if nplot > 0
         fig = figure(figsize=(10,8))
         subplots_adjust(left=0.0, right=0.7, top=1.0, bottom=0.0)
@@ -81,7 +81,7 @@ end
 
 
 
-function plot_poincare_loop(sol::Solution, nplot, filename, dpi=100; xmin=-0.6, xmax=+0.6, ymin=-0.6, ymax=+0.6)
+function plot_poincare_loop(sol::GeometricSolution, nplot, filename, dpi=100; xmin=-0.6, xmax=+0.6, ymin=-0.6, ymax=+0.6)
     if nplot > 0
         fig = figure(figsize=(10,8))
         subplots_adjust(left=0.0, right=0.7, top=1.0, bottom=0.0)
@@ -116,7 +116,7 @@ end
 
 
 
-function plot_poincare_surface(sol::Solution, nplot, filename, dpi=100; xmin=-0.15, xmax=+0.15, ymin=-0.15, ymax=+0.15)
+function plot_poincare_surface(sol::GeometricSolution, nplot, filename, dpi=100; xmin=-0.15, xmax=+0.15, ymin=-0.15, ymax=+0.15)
     if nplot > 0
         fig = figure(figsize=(10,8))
         subplots_adjust(left=0.0, right=0.7, top=1.0, bottom=0.0)
