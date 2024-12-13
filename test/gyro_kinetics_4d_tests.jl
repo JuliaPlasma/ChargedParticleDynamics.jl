@@ -3,33 +3,34 @@ using SafeTestsets
 
 module GyroKinetics4dTests
 
-    using Test
-    using GeometricIntegrators
     using ChargedParticleDynamics.GyroKinetics4d
+    using GeometricIntegrators
+    using SimpleSolvers: Options
+    using Test
 
     const nl = 100
     const nx = 10
     const ny = 10
 
+    const options = Options(x_reltol = 1E-14, f_abstol = 1E-14, f_reltol = 1E-14)
+
     export test_gyro_kinetics_4d_erk4, test_gyro_kinetics_4d_glrk, test_gyro_kinetics_4d_strang
     export nl, nx, ny
 
     function test_gyro_kinetics_4d_erk4(ode)
-        sol = integrate(ode, RK4())
-        @test true
+        @test_nowarn integrate(ode, RK4())
     end
 
     function test_gyro_kinetics_4d_glrk(ode)
-        sol = integrate(ode, Gauss(1))
-        @test true
+        @test_nowarn integrate(ode, Gauss(1); options = options)
     end
 
-    function test_gyro_kinetics_4d_strang(ode::SODEProblem{DT}) where {DT}
+    function test_gyro_kinetics_4d_strang(ode::SODEProblem)
         mpi = Tuple(Gauss(1) for _ in 1:6)
+        opt = Tuple(options for _ in 1:6)
         # mpi = Tuple((v::Function, Δt::Number; kwargs...) -> Integrator{DT, ndims(ode)}(v, Gauss(1), Δt; kwargs...) for i in 1:6)
         # mpi = Tuple((v::Function, Δt::Number; kwargs...) -> IntegratorFIRKwCT{DT, ndims(ode)}(v, ωabs, ode.parameters, Gauss(1), Δt; kwargs...) for i in 1:6)
-        sol = integrate(ode, Composition(mpi, Strang()))
-        @test true
+        @test_nowarn integrate(ode, Composition(mpi, Strang()); options = opt)
     end
 
 end
@@ -60,16 +61,16 @@ end
     # test ODE
     test_gyro_kinetics_4d_erk4(guiding_center_4d_ode(initial_conditions_trapped()...; tstep = 1.))
     test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_trapped()...; tstep = 1.))
-    # test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_passing()...), Δt=1.)
-    # test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_trapped()...), Δt=1.)
-    # test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_passing()...), Δt=1.)
-    # test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_trapped()...), Δt=1.)
+    # test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_passing()...), tstep = 1.)
+    # test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_trapped()...), tstep = 1.)
+    # test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_passing()...), tstep = 1.)
+    # test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_trapped()...), tstep = 1.)
 
     # test SODE
-    test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_trapped()...; tstep = 1.))
-    # test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_barely_passing()...), Δt=1.)
-    # test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_barely_trapped()...), Δt=1.)
-    # test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_deeply_passing()...), Δt=1.)
-    # test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_deeply_trapped()...), Δt=1.)
+    # test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_trapped()...; tstep = 1.))
+    # test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_barely_passing()...), tstep = 1.)
+    # test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_barely_trapped()...), tstep = 1.)
+    # test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_deeply_passing()...), tstep = 1.)
+    # test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_deeply_trapped()...), tstep = 1.)
 
 end

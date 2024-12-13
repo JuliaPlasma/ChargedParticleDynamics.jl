@@ -92,7 +92,7 @@ function pauli_particle_3d_iode_g(g, t, q, v, λ, params)
 end
 
 
-function pauli_particle_3d_pode(q₀, v₀, parameters; tspan = tspan, tstep = Δt)
+function pauli_particle_3d_pode(q₀, v₀, parameters; tspan = tspan, tstep = Δt / 100)
     PODEProblem(
         pauli_particle_3d_pode_v,
         pauli_particle_3d_pode_f, 
@@ -105,7 +105,7 @@ end
 pauli_particle_3d_pode(qᵢ=qᵢ, vᵢ=vᵢ; kwargs...) = pauli_particle_3d_pode(initial_conditions(qᵢ, vᵢ)...; kwargs...)
 
 
-function pauli_particle_3d_hode(q₀, v₀, parameters; tspan = tspan, tstep = Δt)
+function pauli_particle_3d_hode(q₀, v₀, parameters; tspan = tspan, tstep = Δt / 100)
     HODEProblem(
         pauli_particle_3d_pode_v,
         pauli_particle_3d_pode_f,

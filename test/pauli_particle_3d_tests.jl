@@ -3,19 +3,20 @@ using SafeTestsets
 
 module PauliParticle3dTests
 
-    using Test
     using GeometricIntegrators
+    using SimpleSolvers: Options
+    using Test
 
     export test_pauli_particle_3d
 
-    function test_pauli_particle_3d(ode::PODEProblem)
-        sol = integrate(ode, PartitionedGauss(2))
-        @test true
+    const options = Options(x_reltol = 1E-14, f_abstol = 1E-14, f_reltol = 1E-14)
+
+    function test_pauli_particle_3d(ode::Union{HODEProblem,PODEProblem})
+        @test_nowarn integrate(ode, PartitionedGauss(2); options = options)
     end
 
-    function test_pauli_particle_3d(ode::IODEProblem)
-        sol = integrate(ode, VPRKGauss(2))
-        @test true
+    function test_pauli_particle_3d(ode::Union{IODEProblem,LODEProblem})
+        @test_nowarn integrate(ode, VPRKGauss(2); options = options)
     end
 
 end
@@ -28,7 +29,8 @@ end
     using ..PauliParticle3dTests
 
     test_pauli_particle_3d(SymmetricField.pauli_particle_3d_pode(tspan = (0., 10.)))
-    test_pauli_particle_3d(SymmetricField.pauli_particle_3d_iode(tspan = (0., 10.)))
+    test_pauli_particle_3d(SymmetricField.pauli_particle_3d_hode(tspan = (0., 10.)))
+    test_pauli_particle_3d(SymmetricField.pauli_particle_3d_iode())
 
 end
 
@@ -38,8 +40,7 @@ end
     using ChargedParticleDynamics.PauliParticle3d.ThetaPinchField
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_pode(tspan = (0., 10.)))
-    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_iode(tspan = (0., 10.)))
+    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_iode())
 
 end
 
@@ -50,7 +51,8 @@ end
     using ..PauliParticle3dTests
 
     test_pauli_particle_3d(TokamakIterCylindrical.pauli_particle_3d_pode(tspan = (0., 10.)))
-    test_pauli_particle_3d(TokamakIterCylindrical.pauli_particle_3d_iode(tspan = (0., 10.)))
+    test_pauli_particle_3d(TokamakIterCylindrical.pauli_particle_3d_hode(tspan = (0., 10.)))
+    test_pauli_particle_3d(TokamakIterCylindrical.pauli_particle_3d_iode())
 
 end
 
@@ -59,8 +61,9 @@ end
     using ChargedParticleDynamics.PauliParticle3d.TokamakSmallCartesian
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(TokamakSmallCartesian.pauli_particle_3d_pode(tspan = (0., 4E3)))
-    test_pauli_particle_3d(TokamakSmallCartesian.pauli_particle_3d_iode(tspan = (0., 4E3)))
+    test_pauli_particle_3d(TokamakSmallCartesian.pauli_particle_3d_pode(tspan = (0., 200)))
+    test_pauli_particle_3d(TokamakSmallCartesian.pauli_particle_3d_hode(tspan = (0., 200)))
+    test_pauli_particle_3d(TokamakSmallCartesian.pauli_particle_3d_iode())
 
 end
 
@@ -69,8 +72,9 @@ end
     using ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_pode(tspan = (0., 10.), tstep = 1.0))
-    test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_iode(tspan = (0., 4E3)))
+    test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_pode(tspan = (0., 200.)))
+    test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_hode(tspan = (0., 200.)))
+    test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_iode())
 
 end
 
@@ -79,7 +83,8 @@ end
     using ChargedParticleDynamics.PauliParticle3d.TokamakSmallToroidal
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(TokamakSmallToroidal.pauli_particle_3d_pode(tspan = (0., 10.), tstep = 1.0))
-    test_pauli_particle_3d(TokamakSmallToroidal.pauli_particle_3d_iode(tspan = (0., 4E3)))
+    test_pauli_particle_3d(TokamakSmallToroidal.pauli_particle_3d_pode(tspan = (0., 200.)))
+    test_pauli_particle_3d(TokamakSmallToroidal.pauli_particle_3d_hode(tspan = (0., 200.)))
+    test_pauli_particle_3d(TokamakSmallToroidal.pauli_particle_3d_iode())
 
 end

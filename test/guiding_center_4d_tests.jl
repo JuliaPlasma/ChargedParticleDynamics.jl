@@ -3,24 +3,25 @@ using SafeTestsets
 
 module GuidingCenter4dTests
 
-    using Test
     using GeometricIntegrators
+    using SimpleSolvers: Options
+    using Test
 
     const nl = 100
     const nx = 10
     const ny = 10
 
+    const options = Options(x_reltol = 1E-14, f_abstol = 1E-14, f_reltol = 1E-14)
+
     export test_guiding_center_4d_glrk, test_guiding_center_4d_vpglrk
     export nl, nx, ny
 
     function test_guiding_center_4d_glrk(ode)
-        sol = integrate(ode, Gauss(2))
-        @test true
+        @test_nowarn integrate(ode, Gauss(2); options = options)
     end
 
     function test_guiding_center_4d_vpglrk(ode)
-        sol = integrate(ode, VPRKGauss(2))
-        @test true
+        @test_nowarn integrate(ode, VPRKGauss(2); options = options)
     end
 
 end

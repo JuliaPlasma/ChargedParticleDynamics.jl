@@ -3,24 +3,21 @@ using SafeTestsets
 
 module ChargedParticle3dTests
 
-    using Test
     using GeometricIntegrators
+    using Test
 
     export test_charged_particle_3d
 
     function test_charged_particle_3d(ode::ODEProblem)
-        sol = integrate(ode, Gauss(1))
-        @test true
+        @test_nowarn integrate(ode, Gauss(1))
     end
 
     function test_charged_particle_3d(ode::PODEProblem)
-        sol = integrate(ode, PartitionedGauss(1))
-        @test true
+        @test_nowarn integrate(ode, PartitionedGauss(1))
     end
 
     function test_charged_particle_3d(ode::IODEProblem)
-        sol = integrate(ode, VPRKGauss(1))
-        @test true
+        @test_nowarn integrate(ode, VPRKGauss(1))
     end
 
 end
