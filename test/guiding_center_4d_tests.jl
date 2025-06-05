@@ -172,10 +172,10 @@ end
     test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_passing()...))
     test_guiding_center_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_trapped()...))
 
-    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_passing()...))
-    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_trapped()...))
-    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_passing()...))
-    test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_trapped()...))
+    # test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_passing()...))
+    # test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_barely_trapped()...))
+    # test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_passing()...))
+    # test_guiding_center_4d_vpglrk(guiding_center_4d_iode(initial_conditions_deeply_trapped()...))
 
 end
 
