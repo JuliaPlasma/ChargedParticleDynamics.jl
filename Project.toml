@@ -21,7 +21,7 @@ RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 [compat]
 Documenter = "1"
 ElectromagneticFields = "0.5"
-ForwardDiff = "0.10"
+ForwardDiff = "0.10, 1"
 GeometricEquations = "0.18"
 GeometricProblems = "0.6"
 GeometricSolutions = "0.3, 0.4"
