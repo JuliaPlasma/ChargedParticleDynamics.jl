@@ -1,8 +1,5 @@
 module GuidingCenter4d
 
-
-
-
     include("guiding_center_4d/solovev_iter.jl")
     include("guiding_center_4d/solovev_iter_xpoint.jl")
     include("guiding_center_4d/solovev_symmetric.jl")
@@ -15,7 +12,5 @@ module GuidingCenter4d
     include("guiding_center_4d/tokamak_small_cartesian.jl")
     include("guiding_center_4d/tokamak_small_cylindrical.jl")
     include("guiding_center_4d/tokamak_small_toroidal.jl")
-
-
 
 end
