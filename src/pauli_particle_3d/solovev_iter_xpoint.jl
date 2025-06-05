@@ -4,10 +4,10 @@ module SolovevIterXpoint
 
     export pauli_particle_3d_pode, hamiltonian, toroidal_momentum
 
-    const R₀ = 6.2
-    const B₀ = 5.3
-    const E₀ = 0.
-    const q  = 2.
+    # const R₀ = 6.2
+    # const B₀ = 5.3
+    # const E₀ = 0.
+    # const q  = 2.
 
     Solovev.@code_iter_xpoint() # inject magnetic field code
 
