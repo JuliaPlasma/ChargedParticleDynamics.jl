@@ -8,9 +8,9 @@ export hamiltonian
 export hode
 
 
-ϑ₁(t, Q) = A₁(t, Q[1:3]) + Q[4] * b₁(t, Q[1:3])
-ϑ₂(t, Q) = A₂(t, Q[1:3]) + Q[4] * b₂(t, Q[1:3])
-ϑ₃(t, Q) = A₃(t, Q[1:3]) + Q[4] * b₃(t, Q[1:3])
+@views ϑ₁(t, Q) = A₁(t, Q[1:3]) + Q[4] * b₁(t, Q[1:3])
+@views ϑ₂(t, Q) = A₂(t, Q[1:3]) + Q[4] * b₂(t, Q[1:3])
+@views ϑ₃(t, Q) = A₃(t, Q[1:3]) + Q[4] * b₃(t, Q[1:3])
 
 v₁(t, q, p) = p[1] - A₁(t, q)
 v₂(t, q, p) = p[2] - A₂(t, q)
@@ -63,14 +63,31 @@ function initial_momentum(tᵢ, Qᵢ::AbstractArray{T}) where {T<:Number}
 end
 
 function fix_initial_momentum(tᵢ, qᵢ::AbstractArray{T}, pᵢ::AbstractArray{T}) where {T<:Number}
-    u = ( pᵢ[1] + A₁(tᵢ, qᵢ) ) * b₁(tᵢ, qᵢ[1:3]) +
-        ( pᵢ[2] + A₂(tᵢ, qᵢ) ) * b₂(tᵢ, qᵢ[1:3]) +
-        ( pᵢ[3] + A₃(tᵢ, qᵢ) ) * b₃(tᵢ, qᵢ[1:3])
+    u = ( pᵢ[1] - A₁(tᵢ, qᵢ) ) * b₁(tᵢ, qᵢ[1:3]) +
+        ( pᵢ[2] - A₂(tᵢ, qᵢ) ) * b₂(tᵢ, qᵢ[1:3]) +
+        ( pᵢ[3] - A₃(tᵢ, qᵢ) ) * b₃(tᵢ, qᵢ[1:3])
     initial_momentum(tᵢ, [qᵢ..., u])
 end
 
+function initial_conditions(tᵢ, Qᵢ::AbstractArray{T}) where {T<:Number}
+    qᵢ = Qᵢ[1:3]
+    pᵢ = initial_momentum(tᵢ, Qᵢ)
+    (q = qᵢ, p = pᵢ)
+end
 
-guiding_center_3d_periodicity(::Type{T}, periodic=true) where {T} = periodicity(zeros(T, 3))
+
+function guiding_center_3d_periodicity(::Type{T}, periodic=true) where {T}
+    xmin = -Inf * ones(T, 3)
+    xmax = +Inf * ones(T, 3)
+
+    if periodic
+        xmin[1:3] .= rangemin(xmin[1:3])
+        xmax[1:3] .= rangemax(xmax[1:3])
+    end
+
+    return (xmin, xmax)
+end
+
 guiding_center_3d_periodicity(::AbstractVector{<:AbstractArray{T}}, periodic=true) where {T<:Number} = guiding_center_3d_periodicity(T, periodic)
 guiding_center_3d_periodicity(::AbstractArray{T}, periodic=true) where {T<:Number} = guiding_center_3d_periodicity(T, periodic)
 

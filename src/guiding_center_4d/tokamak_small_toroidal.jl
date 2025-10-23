@@ -13,20 +13,20 @@ module TokamakSmallToroidal
 
     AxisymmetricTokamakToroidal.@code() # inject magnetic field code
 
-    const Δt = 400.0
-    const tspan = (0.0, 2E4)
+    const Δt = 500.0
+    const tspan = (0.0, 5E4)
 
     const xᵢ = [1.05, 0., 0.]
     const uᵢ = -0.00045135897235326736
     const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
-    
+
     const parameters = (μ = 2.314593645825811e-6,)
 
-    initial_conditions_barely_passing() = ([1.05, 0., 0., 8.117E-4], (μ = 2.448E-6,))
-    initial_conditions_barely_trapped() = ([1.05, 0., 0., 7.610E-4], (μ = 2.250E-6,))
-    initial_conditions_deeply_passing() = ([1.05, 0., 0., 1.623E-3], (μ = 2.448E-6,))
-    initial_conditions_deeply_trapped() = ([1.05, 0., 0., 4.306E-4], (μ = 2.250E-6,))
-    initial_conditions_pauli() = ([1.05, 0., 0., 4.3E-4], (μ = 2.310E-6,))
+    initial_conditions_barely_passing() = ([from_cartesian(0, [1.05, 0., 0.])..., 8.117E-4], (μ = 2.448E-6,))
+    initial_conditions_barely_trapped() = ([from_cartesian(0, [1.05, 0., 0.])..., 7.610E-4], (μ = 2.250E-6,))
+    initial_conditions_deeply_passing() = ([from_cartesian(0, [1.05, 0., 0.])..., 1.623E-3], (μ = 2.448E-6,))
+    initial_conditions_deeply_trapped() = ([from_cartesian(0, [1.05, 0., 0.])..., 4.306E-4], (μ = 2.250E-6,))
+    initial_conditions_pauli() = ([from_cartesian(0, [1.05, 0., 0.])..., 4.3E-4], (μ = 2.310E-6,))
 
     u_loop() = 4.0E-4
     μ_loop() = 2.5E-6
@@ -73,5 +73,5 @@ module TokamakSmallToroidal
     end
 
     include("guiding_center_4d_diagnostics.jl")
-    
+
 end

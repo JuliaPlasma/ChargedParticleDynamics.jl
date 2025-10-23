@@ -15,10 +15,10 @@ module TokamakMediumCylindrical
     const Δt = 1.0
     const tspan = (0.0, 1000.0)
 
-    initial_conditions_barely_passing() = ([2.5, 0., 0., 3.425E-1], (μ = 1E-2,)) # Δt=2.5, nt=50
-    initial_conditions_barely_trapped() = ([2.5, 0., 0., 3.375E-1], (μ = 1E-2,)) # Δt=3.0, nt=100
-    initial_conditions_deeply_passing() = ([2.5, 0., 0., 5E-1], (μ = 1E-2,))     # Δt=2.5, nt=25
-    initial_conditions_deeply_trapped() = ([2.5, 0., 0., 1E-1], (μ = 1E-2,))     # Δt=5.0, nt=50
+    initial_conditions_barely_passing() = ([from_cartesian(0, [2.5, 0., 0.])..., 3.425E-1], (μ = 1E-2,)) # Δt=2.5, nt=50
+    initial_conditions_barely_trapped() = ([from_cartesian(0, [2.5, 0., 0.])..., 3.375E-1], (μ = 1E-2,)) # Δt=3.0, nt=100
+    initial_conditions_deeply_passing() = ([from_cartesian(0, [2.5, 0., 0.])..., 5E-1], (μ = 1E-2,))     # Δt=2.5, nt=25
+    initial_conditions_deeply_trapped() = ([from_cartesian(0, [2.5, 0., 0.])..., 1E-1], (μ = 1E-2,))     # Δt=5.0, nt=50
 
     μ_loop() = 1E-3
     μ_surface() = 1E-3

@@ -12,8 +12,8 @@ module SolovevSymmetricField
 
     SolovevSymmetric.@code(2., 5., 1., 1.) # inject magnetic field code
 
-    const Δt = 1.0
-    const tspan = (0.0, 1000.0)
+    const Δt = 5E3
+    const tspan = (0.0, 5E5)
 
     initial_conditions_barely_passing() = ([2.5, 0., 0., 3.425E-1], (μ = 1E-2,)) # Δt=2.5, nt=50
     initial_conditions_barely_trapped() = ([2.5, 0., 0., 3.375E-1], (μ = 1E-2,)) # Δt=3.0, nt=100

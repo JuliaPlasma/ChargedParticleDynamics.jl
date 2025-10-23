@@ -13,8 +13,8 @@ module TokamakSmallCartesian
 
     AxisymmetricTokamakCartesian.@code() # inject magnetic field code
 
-    const Δt = 400.0
-    const tspan = (0.0, 2E4)
+    const Δt = 500.0
+    const tspan = (0.0, 5E4)
 
     const qᵢ = [1.05, 0., 0., 0.00045135897235326736]
     const parameters = (μ = 2.314593645825811e-6,)
@@ -70,5 +70,5 @@ module TokamakSmallCartesian
     end
 
     include("guiding_center_4d_diagnostics.jl")
-    
+
 end

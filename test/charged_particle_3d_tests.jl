@@ -8,16 +8,16 @@ module ChargedParticle3dTests
 
     export test_charged_particle_3d
 
-    function test_charged_particle_3d(ode::ODEProblem)
-        @test_nowarn integrate(ode, Gauss(1))
+    function test_charged_particle_3d(equ::ODEProblem)
+        @test_nowarn integrate(equ, Gauss(1))
     end
 
-    function test_charged_particle_3d(ode::PODEProblem)
-        @test_nowarn integrate(ode, PartitionedGauss(1))
+    function test_charged_particle_3d(equ::Union{HODEProblem,PODEProblem})
+        @test_nowarn integrate(equ, PartitionedGauss(1))
     end
 
-    function test_charged_particle_3d(ode::IODEProblem)
-        @test_nowarn integrate(ode, VPRKGauss(1))
+    function test_charged_particle_3d(equ::Union{IODEProblem,LODEProblem})
+        @test_nowarn integrate(equ, VPRKGauss(1))
     end
 
 end

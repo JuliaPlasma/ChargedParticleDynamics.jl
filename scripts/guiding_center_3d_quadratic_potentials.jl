@@ -6,13 +6,13 @@ using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: hamiltonian
 using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: dg₁dq₁, dg₁dq₂, dg₁dq₃, dg₁dp₁, dg₁dp₂, dg₁dp₃
 using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: dg₂dp₁, dg₂dp₂, dg₂dp₃, dg₂dq₁, dg₂dq₂, dg₂dq₃
 
-include("rk3.jl")
+# include("rk3.jl")
 
 const options = (f_abstol=2eps(), verbosity=1)
 
 equ = hode(initial_conditions_quadratic()...)
 
-sol = integrate(equ, PartitionedGauss(1); options...)
+sol = integrate(equ, PartitionedGauss(2); initialguess = MidpointExtrapolation(5), options...)
 # sol = integrate(equ, RK3(); options...)
 
 h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
