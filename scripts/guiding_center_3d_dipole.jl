@@ -12,9 +12,8 @@ const options = (f_abstol=8eps(), verbosity=1)
 # initial_conditions_approx() = (q=[1.0, 2.0, 1.0], p=[136.0787, -68.0496, 0.00408], params=(μ=1E-2,))
 
 equ = hode(initial_conditions_dipole()...)
-# equ = hode(initial_conditions_approx()...)
 
-sol = integrate(equ, PartitionedGauss(2); initialguess = MidpointExtrapolation(5), options...)
+sol = integrate(equ, PartitionedGauss(2); initialguess=NoInitialGuess(), options...)
 # sol = integrate(equ, RK3(); options...)
 
 h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]

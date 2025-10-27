@@ -12,7 +12,7 @@ const options = (f_abstol=2eps(), verbosity=1)
 
 equ = hode(initial_conditions_quadratic()...)
 
-sol = integrate(equ, PartitionedGauss(2); initialguess = MidpointExtrapolation(5), options...)
+sol = integrate(equ, PartitionedGauss(2); initialguess=NoInitialGuess(), options...)
 # sol = integrate(equ, RK3(); options...)
 
 h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
