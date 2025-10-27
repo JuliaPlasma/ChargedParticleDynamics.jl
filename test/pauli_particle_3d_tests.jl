@@ -6,19 +6,16 @@ module PauliParticle3dTests
 using GeometricIntegrators
 using Test
 
-using GeometricIntegratorsBase: MidpointExtrapolation
-
 export test_pauli_particle_3d
 
 const options = (f_abstol=1E-15, f_reltol=1E-15)
 
 function test_pauli_particle_3d(equ::Union{HODEProblem,PODEProblem})
-    @test_nowarn integrate(equ, PartitionedGauss(2); initialguess=MidpointExtrapolation(5), options...)
+    @test_nowarn integrate(equ, PartitionedGauss(2); options...)
 end
 
 function test_pauli_particle_3d(equ::Union{IODEProblem,LODEProblem})
-    # @test_nowarn integrate(equ, Gauss(2); initialguess = MidpointExtrapolation(5), options...)
-    @test_nowarn integrate(equ, VPRKGauss(2); initialguess=MidpointExtrapolation(5), options...)
+    @test_nowarn integrate(equ, VPRKGauss(2); options...)
 end
 
 end

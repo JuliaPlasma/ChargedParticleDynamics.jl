@@ -17,7 +17,7 @@ const tspan = (0.0, 2.5E4)
 # const Δt = 0.35
 # const tspan = (0.0, 12250.)
 
-initial_conditions_quadratic() = merge(initial_conditions(0.0, [0.3, 0.2, -1.4, 0.3]), params=(μ=2.5E-3,))
+initial_conditions_quadratic() = merge(initial_conditions(0.0, [0.3, 0.2, -1.4, 0.3]), (params=(μ=2.5E-3,),))
 
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_diagnostics.jl")

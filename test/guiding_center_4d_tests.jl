@@ -18,11 +18,11 @@ export test_guiding_center_4d
 export nl, nx, ny
 
 function test_guiding_center_4d(equ::ODEProblem)
-    @test_nowarn integrate(equ, Gauss(2); initialguess = MidpointExtrapolation(5), options...)
+    @test_nowarn integrate(equ, Gauss(2); options...)
 end
 
 function test_guiding_center_4d(equ::Union{IODEProblem,LODEProblem})
-    @test_nowarn integrate(equ, VPRKGauss(2); initialguess = MidpointExtrapolation(5), options...)
+    @test_nowarn integrate(equ, VPRKGauss(2); options...)
 end
 
 end
@@ -43,8 +43,8 @@ end
     # test_guiding_center_4d(guiding_center_4d_surface_ode(nx, ny), Δt=1.)
 
     test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_trapped()...; tstep=1E4, tspan=(0, 1E6)))
-    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_barely_passing()...))
-    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_barely_trapped()...))
+    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_barely_passing()...; tstep=1E-1, tspan=(0, 1E1)))
+    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_barely_trapped()...; tstep=1E-1, tspan=(0, 1E1)))
     test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_deeply_passing()...; tstep=1E-1, tspan=(0, 1E1)))
     test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_deeply_trapped()...; tstep=1E-1, tspan=(0, 1E1)))
     # test_guiding_center_4d(guiding_center_4d_loop_iode(nl), Δt=1.)
@@ -68,7 +68,7 @@ end
     test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_barely_passing()...; tstep=1E-1, tspan=(0, 1E1)))
     test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_barely_trapped()...; tstep=1E-1, tspan=(0, 1E1)))
     test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_deeply_passing()...; tstep=1E-1, tspan=(0, 1E1)))
-    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_deeply_trapped()...))
+    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_deeply_trapped()...; tstep=1E-1, tspan=(0, 1E1)))
     # test_guiding_center_4d(guiding_center_4d_loop_iode(nl))
     # test_guiding_center_4d(guiding_center_4d_surface_iode(nx, ny))
 

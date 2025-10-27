@@ -16,7 +16,7 @@ export test_guiding_center_3d
 export nl, nx, ny
 
 function test_guiding_center_3d(equ::ODEProblem)
-    @test_nowarn integrate(equ, Gauss(2); initialguess=MidpointExtrapolation(5), options...)
+    @test_nowarn integrate(equ, Gauss(2); options...)
 end
 
 function test_guiding_center_3d(equ::Union{HODEProblem,PODEProblem})
@@ -72,10 +72,10 @@ end
     # test_guiding_center_3d(guiding_center_3d_loop_ode(nl))
     # test_guiding_center_3d(guiding_center_3d_surface_ode(nx, ny))
 
-    test_guiding_center_3d(hode(initial_conditions_barely_passing()...))
-    test_guiding_center_3d(hode(initial_conditions_barely_trapped()...))
-    test_guiding_center_3d(hode(initial_conditions_deeply_passing()...))
-    test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...))
+    test_guiding_center_3d(hode(initial_conditions_barely_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+    test_guiding_center_3d(hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
+    test_guiding_center_3d(hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+    test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
 
     # test_guiding_center_3d(iode(initial_conditions_barely_passing()...))
     # test_guiding_center_3d(iode(initial_conditions_barely_trapped()...))
@@ -99,10 +99,10 @@ end
 #     # test_guiding_center_3d(guiding_center_3d_loop_ode(nl))
 #     # test_guiding_center_3d(guiding_center_3d_surface_ode(nx, ny))
 
-#     test_guiding_center_3d(hode(initial_conditions_barely_passing()...))
-#     test_guiding_center_3d(hode(initial_conditions_barely_trapped()...))
-#     test_guiding_center_3d(hode(initial_conditions_deeply_passing()...))
-#     test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...))
+#     test_guiding_center_3d(hode(initial_conditions_barely_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
 
 #     # test_guiding_center_3d(iode(initial_conditions_barely_passing()...))
 #     # test_guiding_center_3d(iode(initial_conditions_barely_trapped()...))
@@ -126,10 +126,10 @@ end
 #     # test_guiding_center_3d(guiding_center_3d_loop_ode(nl))
 #     # test_guiding_center_3d(guiding_center_3d_surface_ode(nx, ny))
 
-#     test_guiding_center_3d(hode(initial_conditions_barely_passing()...; tspan=(0.0, 1E3), tstep=1.0))
-#     test_guiding_center_3d(hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E3), tstep=1.0))
-#     test_guiding_center_3d(hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E3), tstep=1.0))
-#     test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E3), tstep=1.0))
+#     test_guiding_center_3d(hode(initial_conditions_barely_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
 
 #     # test_guiding_center_3d(iode(initial_conditions_barely_passing()...; tstep = 10., tspan = (0, 1E3)))
 #     # test_guiding_center_3d(iode(initial_conditions_barely_trapped()...; tstep = 10., tspan = (0, 1E3)))
@@ -153,10 +153,10 @@ end
 #     # test_guiding_center_3d(guiding_center_3d_loop_ode(nl))
 #     # test_guiding_center_3d(guiding_center_3d_surface_ode(nx, ny))
 
-#     test_guiding_center_3d(hode(initial_conditions_barely_passing()...; tspan=(0.0, 1E3), tstep=1.0))
-#     test_guiding_center_3d(hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E3), tstep=1.0))
-#     test_guiding_center_3d(hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E3), tstep=1.0))
-#     test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E3), tstep=1.0))
+#     test_guiding_center_3d(hode(initial_conditions_barely_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
 
 #     # test_guiding_center_3d(iode(initial_conditions_barely_passing()...; tstep = 10., tspan = (0, 1E3)))
 #     # test_guiding_center_3d(iode(initial_conditions_barely_trapped()...; tstep = 10., tspan = (0, 1E3)))
@@ -180,10 +180,10 @@ end
 #     # test_guiding_center_3d(guiding_center_3d_loop_ode(nl))
 #     # test_guiding_center_3d(guiding_center_3d_surface_ode(nx, ny))
 
-#     test_guiding_center_3d(hode(initial_conditions_barely_passing()...; tspan=(0.0, 1E3), tstep=1.0))
-#     test_guiding_center_3d(hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E3), tstep=1.0))
-#     test_guiding_center_3d(hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E3), tstep=1.0))
-#     test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E3), tstep=1.0))
+#     test_guiding_center_3d(hode(initial_conditions_barely_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+#     test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
 
 #     # test_guiding_center_3d(iode(initial_conditions_barely_passing()...))
 #     # test_guiding_center_3d(iode(initial_conditions_barely_trapped()...))

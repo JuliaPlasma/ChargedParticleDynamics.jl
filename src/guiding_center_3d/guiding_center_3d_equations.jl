@@ -173,21 +173,217 @@ dg₂dp₃(t, q, p) = b₁(t, q) * dv₃dp₃(t, q, p) - b₃(t, q) * dv₁dp₃
               dg₁dp₂(t, q, p) * dg₂dq₂(t, q, p) -
               dg₁dp₃(t, q, p) * dg₂dq₃(t, q, p)
 
-λ₁(t, q, p, params) = +(dg₂dq₁(t, q, p) * dHdp₁(t, q, p, params) +
-                        dg₂dq₂(t, q, p) * dHdp₂(t, q, p, params) +
-                        dg₂dq₃(t, q, p) * dHdp₃(t, q, p, params) -
-                        dg₂dp₁(t, q, p) * dHdq₁(t, q, p, params) -
-                        dg₂dp₂(t, q, p) * dHdq₂(t, q, p, params) -
-                        dg₂dp₃(t, q, p) * dHdq₃(t, q, p, params)
+dλₒdq₁(t, q, p) = (
+    d²g₁dq₁dq₁(t, q, p) * dg₂dp₁(t, q, p) +
+    d²g₁dq₁dq₂(t, q, p) * dg₂dp₂(t, q, p) +
+    d²g₁dq₁dq₃(t, q, p) * dg₂dp₃(t, q, p) -
+    d²g₁dq₁dp₁(t, q, p) * dg₂dq₁(t, q, p) -
+    d²g₁dq₁dp₂(t, q, p) * dg₂dq₂(t, q, p) -
+    d²g₁dq₁dp₃(t, q, p) * dg₂dq₃(t, q, p) +
+    dg₁dq₁(t, q, p) * d²g₂dq₁dp₁(t, q, p) +
+    dg₁dq₂(t, q, p) * d²g₂dq₁dp₂(t, q, p) +
+    dg₁dq₃(t, q, p) * d²g₂dq₁dp₃(t, q, p) -
+    dg₁dp₁(t, q, p) * d²g₂dq₁dq₁(t, q, p) -
+    dg₁dp₂(t, q, p) * d²g₂dq₁dq₂(t, q, p) -
+    dg₁dp₃(t, q, p) * d²g₂dq₁dq₃(t, q, p)
+)
+
+dλₒdq₂(t, q, p) = (
+    d²g₁dq₁dq₂(t, q, p) * dg₂dp₁(t, q, p) +
+    d²g₁dq₂dq₂(t, q, p) * dg₂dp₂(t, q, p) +
+    d²g₁dq₂dq₃(t, q, p) * dg₂dp₃(t, q, p) -
+    d²g₁dq₂dp₁(t, q, p) * dg₂dq₁(t, q, p) -
+    d²g₁dq₂dp₂(t, q, p) * dg₂dq₂(t, q, p) -
+    d²g₁dq₂dp₃(t, q, p) * dg₂dq₃(t, q, p) +
+    dg₁dq₁(t, q, p) * d²g₂dq₂dp₁(t, q, p) +
+    dg₁dq₂(t, q, p) * d²g₂dq₂dp₂(t, q, p) +
+    dg₁dq₃(t, q, p) * d²g₂dq₂dp₃(t, q, p) -
+    dg₁dp₁(t, q, p) * d²g₂dq₁dq₂(t, q, p) -
+    dg₁dp₂(t, q, p) * d²g₂dq₂dq₂(t, q, p) -
+    dg₁dp₃(t, q, p) * d²g₂dq₂dq₃(t, q, p)
+)
+
+dλₒdq₃(t, q, p) = (
+    d²g₁dq₁dq₃(t, q, p) * dg₂dp₁(t, q, p) +
+    d²g₁dq₂dq₃(t, q, p) * dg₂dp₂(t, q, p) +
+    d²g₁dq₃dq₃(t, q, p) * dg₂dp₃(t, q, p) -
+    d²g₁dq₃dp₁(t, q, p) * dg₂dq₁(t, q, p) -
+    d²g₁dq₃dp₂(t, q, p) * dg₂dq₂(t, q, p) -
+    d²g₁dq₃dp₃(t, q, p) * dg₂dq₃(t, q, p) +
+    dg₁dq₁(t, q, p) * d²g₂dq₃dp₁(t, q, p) +
+    dg₁dq₂(t, q, p) * d²g₂dq₃dp₂(t, q, p) +
+    dg₁dq₃(t, q, p) * d²g₂dq₃dp₃(t, q, p) -
+    dg₁dp₁(t, q, p) * d²g₂dq₃dq₁(t, q, p) -
+    dg₁dp₂(t, q, p) * d²g₂dq₃dq₂(t, q, p) -
+    dg₁dp₃(t, q, p) * d²g₂dq₃dq₃(t, q, p)
+)
+
+dλₒdp₁(t, q, p) = (
+    d²g₁dq₁dq₁(t, q, p) * dg₂dp₁(t, q, p) +
+    d²g₁dq₁dq₂(t, q, p) * dg₂dp₂(t, q, p) +
+    d²g₁dq₁dq₃(t, q, p) * dg₂dp₃(t, q, p) -
+    d²g₁dq₁dp₁(t, q, p) * dg₂dq₁(t, q, p) -
+    d²g₁dq₁dp₂(t, q, p) * dg₂dq₂(t, q, p) -
+    d²g₁dq₁dp₃(t, q, p) * dg₂dq₃(t, q, p) +
+    dg₁dq₁(t, q, p) * d²g₂dq₁dp₁(t, q, p) +
+    dg₁dq₂(t, q, p) * d²g₂dq₁dp₂(t, q, p) +
+    dg₁dq₃(t, q, p) * d²g₂dq₁dp₃(t, q, p) -
+    dg₁dp₁(t, q, p) * d²g₂dq₁dq₁(t, q, p) -
+    dg₁dp₂(t, q, p) * d²g₂dq₁dq₂(t, q, p) -
+    dg₁dp₃(t, q, p) * d²g₂dq₁dq₃(t, q, p)
+)
+
+dλₒdp₁(t, q, p) = (
+    d²g₁dq₁dp₁(t, q, p) * dg₂dp₁(t, q, p) +
+    d²g₁dq₂dp₁(t, q, p) * dg₂dp₂(t, q, p) +
+    d²g₁dq₃dp₁(t, q, p) * dg₂dp₃(t, q, p) -
+    d²g₁dp₁dp₁(t, q, p) * dg₂dq₁(t, q, p) -
+    d²g₁dp₁dp₂(t, q, p) * dg₂dq₂(t, q, p) -
+    d²g₁dp₁dp₃(t, q, p) * dg₂dq₃(t, q, p) +
+    dg₁dq₁(t, q, p) * d²g₂dp₁dp₁(t, q, p) +
+    dg₁dq₂(t, q, p) * d²g₂dp₁dp₂(t, q, p) +
+    dg₁dq₃(t, q, p) * d²g₂dp₁dp₃(t, q, p) -
+    dg₁dp₁(t, q, p) * d²g₂dq₁dp₁(t, q, p) -
+    dg₁dp₂(t, q, p) * d²g₂dq₂dp₁(t, q, p) -
+    dg₁dp₃(t, q, p) * d²g₂dq₃dp₁(t, q, p)
+)
+
+dλₒdp₂(t, q, p) = (
+    d²g₁dq₁dp₂(t, q, p) * dg₂dp₁(t, q, p) +
+    d²g₁dq₂dp₂(t, q, p) * dg₂dp₂(t, q, p) +
+    d²g₁dq₃dp₂(t, q, p) * dg₂dp₃(t, q, p) -
+    d²g₁dp₁dp₂(t, q, p) * dg₂dq₁(t, q, p) -
+    d²g₁dp₂dp₂(t, q, p) * dg₂dq₂(t, q, p) -
+    d²g₁dp₂dp₃(t, q, p) * dg₂dq₃(t, q, p) +
+    dg₁dq₁(t, q, p) * d²g₂dp₁dp₂(t, q, p) +
+    dg₁dq₂(t, q, p) * d²g₂dp₂dp₂(t, q, p) +
+    dg₁dq₃(t, q, p) * d²g₂dp₂dp₃(t, q, p) -
+    dg₁dp₁(t, q, p) * d²g₂dq₁dp₂(t, q, p) -
+    dg₁dp₂(t, q, p) * d²g₂dq₂dp₂(t, q, p) -
+    dg₁dp₃(t, q, p) * d²g₂dq₃dp₂(t, q, p)
+)
+
+dλₒdp₃(t, q, p) = (
+    d²g₁dq₁dp₃(t, q, p) * dg₂dp₁(t, q, p) +
+    d²g₁dq₂dp₃(t, q, p) * dg₂dp₂(t, q, p) +
+    d²g₁dq₃dp₃(t, q, p) * dg₂dp₃(t, q, p) -
+    d²g₁dp₁dp₃(t, q, p) * dg₂dq₁(t, q, p) -
+    d²g₁dp₂dp₃(t, q, p) * dg₂dq₂(t, q, p) -
+    d²g₁dp₃dp₃(t, q, p) * dg₂dq₃(t, q, p) +
+    dg₁dq₁(t, q, p) * d²g₂dp₁dp₃(t, q, p) +
+    dg₁dq₂(t, q, p) * d²g₂dp₂dp₃(t, q, p) +
+    dg₁dq₃(t, q, p) * d²g₂dp₃dp₃(t, q, p) -
+    dg₁dp₁(t, q, p) * d²g₂dq₁dp₃(t, q, p) -
+    dg₁dp₂(t, q, p) * d²g₂dq₂dp₃(t, q, p) -
+    dg₁dp₃(t, q, p) * d²g₂dq₃dp₃(t, q, p)
+)
+
+dλ₁dq₁(t, q, p, params) = -dλₒdq₁(t, q, p) * λ₁(t, q, p, params) / λₒ(t, q, p) + (
+    d²g₂dq₁dq₁(t, q, p) * dHdp₁(t, q, p, params) +
+    d²g₂dq₁dq₂(t, q, p) * dHdp₂(t, q, p, params) +
+    d²g₂dq₁dq₃(t, q, p) * dHdp₃(t, q, p, params) -
+    d²g₂dq₁dp₁(t, q, p) * dHdq₁(t, q, p, params) -
+    d²g₂dq₁dp₂(t, q, p) * dHdq₂(t, q, p, params) -
+    d²g₂dq₁dp₃(t, q, p) * dHdq₃(t, q, p, params) +
+    dg₂dq₁(t, q, p) * d²Hdq₁dp₁(t, q, p, params) +
+    dg₂dq₂(t, q, p) * d²Hdq₁dp₂(t, q, p, params) +
+    dg₂dq₃(t, q, p) * d²Hdq₁dp₃(t, q, p, params) -
+    dg₂dp₁(t, q, p) * d²Hdq₁dq₁(t, q, p, params) -
+    dg₂dp₂(t, q, p) * d²Hdq₁dq₂(t, q, p, params) -
+    dg₂dp₃(t, q, p) * d²Hdq₁dq₃(t, q, p, params)
 ) / λₒ(t, q, p)
 
-λ₂(t, q, p, params) = -(dg₁dq₁(t, q, p) * dHdp₁(t, q, p, params) +
-                        dg₁dq₂(t, q, p) * dHdp₂(t, q, p, params) +
-                        dg₁dq₃(t, q, p) * dHdp₃(t, q, p, params) -
-                        dg₁dp₁(t, q, p) * dHdq₁(t, q, p, params) -
-                        dg₁dp₂(t, q, p) * dHdq₂(t, q, p, params) -
-                        dg₁dp₃(t, q, p) * dHdq₃(t, q, p, params)
+dλ₁dq₂(t, q, p, params) = -dλₒdq₂(t, q, p) * λ₁(t, q, p, params) / λₒ(t, q, p) + (
+    d²g₂dq₁dq₂(t, q, p) * dHdp₁(t, q, p, params) +
+    d²g₂dq₂dq₂(t, q, p) * dHdp₂(t, q, p, params) +
+    d²g₂dq₂dq₃(t, q, p) * dHdp₃(t, q, p, params) -
+    d²g₂dq₂dp₁(t, q, p) * dHdq₁(t, q, p, params) -
+    d²g₂dq₂dp₂(t, q, p) * dHdq₂(t, q, p, params) -
+    d²g₂dq₂dp₃(t, q, p) * dHdq₃(t, q, p, params) +
+    dg₂dq₁(t, q, p) * d²Hdq₂dp₁(t, q, p, params) +
+    dg₂dq₂(t, q, p) * d²Hdq₂dp₂(t, q, p, params) +
+    dg₂dq₃(t, q, p) * d²Hdq₂dp₃(t, q, p, params) -
+    dg₂dp₁(t, q, p) * d²Hdq₁dq₂(t, q, p, params) -
+    dg₂dp₂(t, q, p) * d²Hdq₂dq₂(t, q, p, params) -
+    dg₂dp₃(t, q, p) * d²Hdq₂dq₃(t, q, p, params)
 ) / λₒ(t, q, p)
+
+dλ₁dq₃(t, q, p, params) = -dλₒdq₃(t, q, p) * λ₁(t, q, p, params) / λₒ(t, q, p) + (
+    d²g₂dq₃dq₁(t, q, p) * dHdp₁(t, q, p, params) +
+    d²g₂dq₃dq₂(t, q, p) * dHdp₂(t, q, p, params) +
+    d²g₂dq₃dq₃(t, q, p) * dHdp₃(t, q, p, params) -
+    d²g₂dq₃dp₁(t, q, p) * dHdq₁(t, q, p, params) -
+    d²g₂dq₃dp₂(t, q, p) * dHdq₂(t, q, p, params) -
+    d²g₂dq₃dp₃(t, q, p) * dHdq₃(t, q, p, params) +
+    dg₂dq₁(t, q, p) * d²Hdq₃dp₁(t, q, p, params) +
+    dg₂dq₂(t, q, p) * d²Hdq₃dp₂(t, q, p, params) +
+    dg₂dq₃(t, q, p) * d²Hdq₃dp₃(t, q, p, params) -
+    dg₂dp₁(t, q, p) * d²Hdq₃dq₁(t, q, p, params) -
+    dg₂dp₂(t, q, p) * d²Hdq₃dq₂(t, q, p, params) -
+    dg₂dp₃(t, q, p) * d²Hdq₃dq₃(t, q, p, params)
+) / λₒ(t, q, p)
+
+dλ₁dp₁(t, q, p, params) = -dλₒdp₁(t, q, p) * λ₁(t, q, p, params) / λₒ(t, q, p) + (
+    d²g₂dp₁dq₁(t, q, p) * dHdp₁(t, q, p, params) +
+    d²g₂dp₁dq₂(t, q, p) * dHdp₂(t, q, p, params) +
+    d²g₂dp₁dq₃(t, q, p) * dHdp₃(t, q, p, params) -
+    d²g₂dp₁dp₁(t, q, p) * dHdq₁(t, q, p, params) -
+    d²g₂dp₁dp₂(t, q, p) * dHdq₂(t, q, p, params) -
+    d²g₂dp₁dp₃(t, q, p) * dHdq₃(t, q, p, params) +
+    dg₂dq₁(t, q, p) * d²Hdp₁dp₁(t, q, p, params) +
+    dg₂dq₂(t, q, p) * d²Hdp₁dp₂(t, q, p, params) +
+    dg₂dq₃(t, q, p) * d²Hdp₁dp₃(t, q, p, params) -
+    dg₂dp₁(t, q, p) * d²Hdp₁dq₁(t, q, p, params) -
+    dg₂dp₂(t, q, p) * d²Hdp₁dq₂(t, q, p, params) -
+    dg₂dp₃(t, q, p) * d²Hdp₁dq₃(t, q, p, params)
+) / λₒ(t, q, p)
+
+dλ₁dp₂(t, q, p, params) = -dλₒdp₂(t, q, p) * λ₁(t, q, p, params) / λₒ(t, q, p) + (
+    d²g₂dp₂dq₁(t, q, p) * dHdp₁(t, q, p, params) +
+    d²g₂dp₂dq₂(t, q, p) * dHdp₂(t, q, p, params) +
+    d²g₂dp₂dq₃(t, q, p) * dHdp₃(t, q, p, params) -
+    d²g₂dp₂dp₁(t, q, p) * dHdq₁(t, q, p, params) -
+    d²g₂dp₂dp₂(t, q, p) * dHdq₂(t, q, p, params) -
+    d²g₂dp₂dp₃(t, q, p) * dHdq₃(t, q, p, params) +
+    dg₂dq₁(t, q, p) * d²Hdp₂dp₁(t, q, p, params) +
+    dg₂dq₂(t, q, p) * d²Hdp₂dp₂(t, q, p, params) +
+    dg₂dq₃(t, q, p) * d²Hdp₂dp₃(t, q, p, params) -
+    dg₂dp₁(t, q, p) * d²Hdp₂dq₁(t, q, p, params) -
+    dg₂dp₂(t, q, p) * d²Hdp₂dq₂(t, q, p, params) -
+    dg₂dp₃(t, q, p) * d²Hdp₂dq₃(t, q, p, params)
+) / λₒ(t, q, p)
+
+dλ₁dp₃(t, q, p, params) = -dλₒdp₃(t, q, p) * λ₁(t, q, p, params) / λₒ(t, q, p) + (
+    d²g₂dp₃dq₁(t, q, p) * dHdp₁(t, q, p, params) +
+    d²g₂dp₃dq₂(t, q, p) * dHdp₂(t, q, p, params) +
+    d²g₂dp₃dq₃(t, q, p) * dHdp₃(t, q, p, params) -
+    d²g₂dp₃dp₁(t, q, p) * dHdq₁(t, q, p, params) -
+    d²g₂dp₃dp₂(t, q, p) * dHdq₂(t, q, p, params) -
+    d²g₂dp₃dp₃(t, q, p) * dHdq₃(t, q, p, params) +
+    dg₂dq₁(t, q, p) * d²Hdp₃dp₁(t, q, p, params) +
+    dg₂dq₂(t, q, p) * d²Hdp₃dp₂(t, q, p, params) +
+    dg₂dq₃(t, q, p) * d²Hdp₃dp₃(t, q, p, params) -
+    dg₂dp₁(t, q, p) * d²Hdp₃dq₁(t, q, p, params) -
+    dg₂dp₂(t, q, p) * d²Hdp₃dq₂(t, q, p, params) -
+    dg₂dp₃(t, q, p) * d²Hdp₃dq₃(t, q, p, params)
+) / λₒ(t, q, p)
+
+dλ₂dq₁(t, q, p, params) = +dλₒdq₁(t, q, p) * λ₂(t, q, p, params) / λₒ(t, q, p) - (
+    d²g₁dq₁dq₁(t, q, p) * dHdp₁(t, q, p, params) +
+    d²g₁dq₁dq₂(t, q, p) * dHdp₂(t, q, p, params) +
+    d²g₁dq₁dq₃(t, q, p) * dHdp₃(t, q, p, params) -
+    d²g₁dq₁dp₁(t, q, p) * dHdq₁(t, q, p, params) -
+    d²g₁dq₁dp₂(t, q, p) * dHdq₂(t, q, p, params) -
+    d²g₁dq₁dp₃(t, q, p) * dHdq₃(t, q, p, params) +
+    dg₁dq₁(t, q, p) * d²Hdq₁dp₁(t, q, p, params) +
+    dg₁dq₂(t, q, p) * d²Hdq₁dp₂(t, q, p, params) +
+    dg₁dq₃(t, q, p) * d²Hdq₁dp₃(t, q, p, params) -
+    dg₁dp₁(t, q, p) * d²Hdq₁dq₁(t, q, p, params) -
+    dg₁dp₂(t, q, p) * d²Hdq₁dq₂(t, q, p, params) -
+    dg₁dp₃(t, q, p) * d²Hdq₁dq₃(t, q, p, params)
+) / λₒ(t, q, p)
+
+
 
 
 function guiding_center_3d_v(v, t, q, p, params)

@@ -11,7 +11,7 @@ export hamiltonian
 
 Dipole.@code() # inject magnetic field code
 
-const Δt = 0.0035
+const Δt = 0.035
 const tspan = (0.0, 35.0)
 # const tspan = (0.0, 999.99)
 

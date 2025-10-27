@@ -19,6 +19,9 @@ v¹(t, q, p) = g¹¹(t, q) * (p[1] - A₁(t, q))
 v²(t, q, p) = g²²(t, q) * (p[2] - A₂(t, q))
 v³(t, q, p) = g³³(t, q) * (p[3] - A₃(t, q))
 
+v(t, q, p) = [v¹(t, q, p), v²(t, q, p), v³(t, q, p)]
+
+
 # ϕ₀(x) = E₀*sin(2π*x)
 # ϕ(t,q) = ϕ₀(q[3])
 

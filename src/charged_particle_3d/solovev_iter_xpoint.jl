@@ -9,7 +9,7 @@ module SolovevIterXpoint
 
     include("charged_particle_3d_canonical.jl")
 
-    const xᵢ = [7.0, 0.0, 0.0]
+    const xᵢ = [7.0 - 1.4, 0.0, 0.0]
     const qᵢ = from_cartesian(0, xᵢ)
     const vᵢ = [3.43E-3, 6.75, -3.41E-1]
     const pᵢ = charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ)
