@@ -263,9 +263,21 @@ end
     # so their magnitude is the drift off the manifold on which p = ϑ.
     mx(ds) = maximum(abs(ds[i]) for i in eachindex(ds))
 
+    # This block keeps its 1000 steps deliberately: it is where the long-time behaviour of the 3D
+    # model is checked, now that the integration tests in `guiding_center_3d_tests.jl` run 100. It
+    # also keeps the library's default tolerance, so that it measures the conservation an
+    # unconfigured `integrate` delivers — but it caps the iteration count, because a handful of steps
+    # otherwise run to the default limit of 1000 and account for most of the block's runtime (48 s of
+    # 49 s on the Solov'ev case). Capping to 50 leaves every error below bit-for-bit unchanged.
+    #
+    # `f_abstol` has to be restated even though it is the library default:
+    # `GeometricIntegratorsBase` replaces its whole `default_options` set as soon as the caller passes
+    # any option, and `SimpleSolvers`' own default is `f_abstol = 0`, which no residual can meet.
+    options = (f_abstol = 8eps(), max_iterations = 50, warn_iterations = 50)
+
     for M in (GuidingCenter3d.SolovevIterXpoint, GuidingCenter3d.TokamakMediumCartesian)
         prob = M.hode(M.initial_conditions_barely_passing()...; tstep = 0.1, tspan = (0.0, 1e2))
-        sol  = integrate(prob, PartitionedGauss(2); initialguess = MidpointExtrapolation(5))
+        sol  = integrate(prob, PartitionedGauss(2); initialguess = MidpointExtrapolation(5), options...)
 
         _, eerr = M.compute_energy_error(sol)
         @test mx(eerr) < 1e-8
