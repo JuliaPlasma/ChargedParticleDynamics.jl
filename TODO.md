@@ -36,10 +36,9 @@ renaming the constants removes that hazard as a side effect.
 
 ### Uniform `initial_conditions_*` return shape
 
-Currently a mix of `NamedTuple` (3D guiding centre), bare tuple (4D guiding centre, gyrokinetics)
-and splat-friendly triple (Pauli). Both `test/structure_tests.jl` and
-`scripts/study_guiding_center_3d_conditioning.jl` have to branch on `ics isa NamedTuple` to cope.
-Settle on the `NamedTuple`.
+Currently a mix of `NamedTuple` (3D guiding centre, now uniformly so) and bare tuple (4D guiding
+centre, gyrokinetics, Pauli). `test/structure_tests.jl` has to branch on `ics isa NamedTuple` to
+sweep across families. Settle on the `NamedTuple`.
 
 No deprecation shims — the package is pre-1.0 with no external users. Note the renames in the
 CHANGELOG.
@@ -50,20 +49,32 @@ CHANGELOG.
 The `PoincareInvariants` layer, the `Dec128` removal and the `GyroKinetics4d` equations of motion
 are done. What remains:
 
-### Port `firk_with_coordinate_transformation.jl`
+### A coordinate-transforming IRK integrator
 
-Untracked, 344 lines, included nowhere, written against a `GeometricIntegrators` API — `Parameters`,
-`ODEIntegratorCache`, `create_nonlinear_solver` — removed several major versions ago.
-
-**This integrator is the right home for the coordinate transformation.** The scaling
+**The integrator is the right home for the coordinate transformation.** The scaling
 ``\tilde q = \omega_0 q`` in `coordinate_transformations.jl` is a *preconditioner* for the nonlinear
 solver, not a change of variables in the model, which is why it is no longer applied by the problem
-constructors. It belongs here, applied inside the solver, and nowhere else.
+constructors. It belongs inside the solver, and nowhere else.
 
-Port it to mimic the current `IRK` integrator: `GeometricIntegrators/src/integrators/rk/
+Write it against the current `IRK` integrator: `GeometricIntegrators/src/integrators/rk/
 integrators_irk.jl` — `struct IRK{TT<:Tableau,ImplicitUpdate} <: IRKMethod`, `IRKCache`,
-`initmethod`, and the `components!`/`residual!` split. Note the rename: what the old file calls
-FIRK is now `IRK`.
+`initmethod`, and the `components!`/`residual!` split.
+
+There was a 0.x-era sketch of this, `firk_with_coordinate_transformation.jl`, written against a
+`GeometricIntegrators` API (`Parameters`, `ODEIntegratorCache`, `create_nonlinear_solver`,
+`function_stages!`) removed several major versions ago. It is not in the repository: nothing in it
+survived the API turnover, and the transformation itself was never finished — all three
+`coordinate_transformation_*` functions were commented out and the one that would have applied the
+transform was an empty stub. The one design decision worth carrying over is recorded here instead:
+
+* **The transformation is implicit.** The intended relation is ``\tilde q = B^{\star}_{\parallel}(q)
+  \, q``, with ``B^{\star}_{\parallel}`` evaluated at the *unknown* ``q``, so recovering ``q`` from
+  ``\tilde q`` needs its own nonlinear solve inside the step — it is not the explicit rescaling by a
+  frozen ``\omega_0`` that `coordinate_transformations.jl` provides. That is the same point the
+  audit makes about why freezing ``B^{\star}_{\parallel}`` at the initial condition does not
+  reproduce the substitution.
+* The stage vectors come in pairs, ``Q`` and ``\tilde Q``, with the vector field evaluated on the
+  untransformed stage and the solve carried out on the transformed one.
 
 Once it exists, add a test that it produces the same trajectory as plain `IRK` on the same problem
 — the transformation must not change the solution, only the conditioning of the solve — and
@@ -73,12 +84,6 @@ ideally one showing the iteration count it saves.
 
 Only the ITER-like Solov'ev equilibrium with X-point is provided, where the other families cover a
 dozen each. `gc_solovev_iter_xpoint.jl` is the template and the module structure now supports more.
-
-### Decide on `src/guiding_center_4d/guiding_center_4d_problem.jl`
-
-Untracked, four lines, an unused abstract type, included nowhere. Either build the type hierarchy
-out or delete it. Same call on `docs/src/analytic.md`, five lines of commented-out code that is not
-referenced from `docs/make.jl`.
 
 
 ---
@@ -131,12 +136,15 @@ Two lines, mirroring `guiding_center_3d_equations.jl`. What needs care:
 
 It pairs a metric one-form, Hamiltonian, two-form and Jacobian with a plain cartesian Lorentz force
 in `charged_particle_3d_v`, and a `dH` that does not differentiate the `hamiltonian` beside it.
-`TokamakSmallNoncanonical` and `SingularField` are cylindrical and therefore not self-consistent.
+Of the four equilibria that use the formulation, `SingularField`, `SymmetricField` and
+`ThetaPinchNoncanonical` are cartesian and so unaffected; only `TokamakSmallNoncanonical`, which is
+toroidal, is not self-consistent.
 
 Recommended: derive the vector field from `Ω q̇ = -∇H` using the (now correct) `ω`, and add the
 missing metric-derivative terms to `dH` and `charged_particle_3d_iode_f`. Restricting the
-formulation to cartesian equilibria instead would mean deleting two equilibria and is worse.
-`charged_particle_3d_sode_fv` is cartesian for the same reason and would follow.
+formulation to cartesian equilibria instead would mean deleting one equilibrium — cheaper than it
+looked while the caveat was thought to cover two, so it is now a real alternative.
+`charged_particle_3d_sode_fv`/`_vv` are cartesian for the same reason and would follow.
 
 
 ---
@@ -193,6 +201,37 @@ observed order of a few would be cheap and would validate the subsystem integrat
 
 ---
 
+# From the review of the audit branch
+
+Observations from reviewing the audit that were not defects and so were not fixed with it. Recorded
+here rather than lost in a pull request thread.
+
+* **`test/quiet_solver_warnings.jl` is described as a tripwire but cannot trip.** `runtests.jl`
+  reports the suppressed-warning count with `@info` and nothing asserts on it, so a tolerance
+  slipping back below a residual floor would show up only if somebody read the log. It would become
+  a real tripwire with an assertion — `@test suppressed_warning_count() < N` for some generous `N`
+  — but that needs a number that is stable across platforms first, and the count is
+  platform-dependent by construction, which is the whole reason the warnings are filtered. Worth
+  deciding: either pick a loose bound and assert it, or drop the word "tripwire" from the comment.
+* **Integration coverage of `GuidingCenter3d` is two equilibria of eleven**, and the structure
+  tests, which cover all of them, do not integrate. This is a consequence of the `b₁ = 0`
+  singularity rather than of anything the audit did — the other nine could not be started before it
+  either — but it means the 3D model's *dynamics* is exercised on `SolovevIterXpoint` and
+  `TokamakMediumCartesian` alone. Fixing the constraint pair fixes the coverage too; until then it
+  is worth knowing how thin it is.
+* **`plot_fieldlines` assumes an axisymmetric cylindrical equilibrium.** It contours
+  `equ.A₃(0, x, y, 0) / x`, i.e. the poloidal flux ψ = R A_φ, which is meaningless for the cartesian
+  and toroidal equilibria. Nothing stops it being called on them — `plot_trajectory_poloidal(R, Z,
+  equ)` forwards any `equ` — and it draws a plausible-looking wrong picture rather than failing.
+  Either restrict it or compute ψ from the coordinate system.
+* **The SciML reformat landed in the same commits as the semantic changes**, which makes several
+  equilibrium modules read as whole-file rewrites; `git diff -w` is the way to review them. Worth
+  keeping formatting sweeps to their own commit next time, now that `.JuliaFormatter.toml` exists
+  and the one-off reflow is behind us.
+
+
+---
+
 # Resolved
 
 Recorded so a future session does not re-open them.
@@ -201,8 +240,8 @@ Recorded so a future session does not re-open them.
 paper, and the others are simply missing. Generalising is a planned task; see above.
 
 **`GyroKinetics4d` coordinate transformation.** It was intended as preconditioning for the
-nonlinear solver. Removing it from the default problem constructors was correct; it belongs in
-`firk_with_coordinate_transformation.jl`, to be ported onto the current `IRK` integrator. See above.
+nonlinear solver. Removing it from the default problem constructors was correct; it belongs inside a
+coordinate-transforming `IRK` integrator. See above.
 
 **Normalisation.** The ε-ordered strongly-magnetised form in `docs/src/normalization.md` is for
 reference only; no model exposes the `(l̂/ρ̂_th)` and `(eφ̂/mv_th²)` prefactors and none is expected

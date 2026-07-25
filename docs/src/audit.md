@@ -78,8 +78,9 @@ the metric, but `charged_particle_3d_v` is the plain cartesian Lorentz force
 Hamiltonian without the metric derivative terms that `hamiltonian` actually has. The
 `charged_particle_3d_sode` splitting is cartesian for the same reason.
 
-**Only cartesian configurations of this formulation are self-consistent.**
-`TokamakSmallNoncanonical` and `SingularField` are cylindrical and therefore not.
+**Only cartesian configurations of this formulation are self-consistent.** Of the four equilibria
+that use it, `SingularField`, `SymmetricField` and `ThetaPinchNoncanonical` are cartesian and
+therefore fine; `TokamakSmallNoncanonical` is toroidal and is the one that is not.
 The canonical formulation (`charged_particle_3d_canonical.jl`) is fully curvilinear and correct.
 
 ### The magnetic moment is a fixed parameter
@@ -200,8 +201,7 @@ tuple, so that every problem in the package can be constructed the same way.
 * Make `charged_particle_3d_noncanonical` consistently curvilinear, or restrict it to cartesian
   equilibria.
 * Make the 3D guiding centre constraint pair selectable.
-* Provide more than the one equilibrium for `GyroKinetics4d`, and port
-  `firk_with_coordinate_transformation.jl` to the current `GeometricIntegrators` interface, or
-  drop it.
+* Provide more than the one equilibrium for `GyroKinetics4d`, and write the coordinate-transforming
+  `IRK` integrator that its `coordinate_transformations.jl` is waiting for.
 * Rename the problem constructors to the `GeometricProblems` scheme (`odeproblem`, `iodeproblem`,
   `lodeproblem`, …) and the keyword arguments to `timespan`/`timestep`.

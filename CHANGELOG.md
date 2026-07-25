@@ -67,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   antisymmetric. Every one of these corresponds to a bug listed under *Fixed* that no existing test
   would have caught.
 - References to the literature the models follow, on the index page and in the audit.
-- **A findings page** (`docs/src/findings.md`) and **`TODO.md`**, together with the five
+- **A findings page** (`docs/src/findings.md`) and **`TODO.md`**, together with the six
   `scripts/study_*.jl` that reproduce the former. The findings page records the numerical studies
   made during the audit that characterise the models rather than merely verify a line of code: the
   conditioning of the 3D guiding centre constraint pair, which expression is the conserved toroidal
@@ -87,6 +87,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Five 3D guiding centre integration testsets are commented out**, leaving two:
+  `TokamakMediumCylindrical`, `TokamakSmall{Cartesian,Cylindrical,Toroidal}` and
+  `SolovevSymmetricField`. All five have `b₁ = 0` exactly at their shipped initial condition, where
+  the multipliers of the `(g³, g¹)` constraint pair are infinite and `hode` cannot be started at
+  all — see *Known singularities* in the audit. They could not have run before this branch either:
+  `initial_conditions_*` raised a `MethodError` in three of them. The cross product of families and
+  equilibria is covered instead by `test/structure_tests.jl`, which does not integrate. Restoring
+  them is the top item in `TODO.md`. `test/guiding_center_3d_tests.jl`.
+- **`pauli_particle_3d_pode` and `pauli_particle_3d_hode` default to `tstep = Δt` rather than
+  `Δt / 100`**, matching `pauli_particle_3d_iode` and every other constructor in the package. Any
+  caller relying on the old default now takes a hundredfold larger step.
+- The test dependencies moved from `[extras]`/`[targets]` in the root `Project.toml` to
+  `test/Project.toml`, which Pkg uses in preference as soon as it exists; the old section was dead
+  and had drifted out of sync with it. The `GeometricIntegrators` compat bound moved with them.
+- `scripts/Project.toml` no longer sources `ElectromagneticFields` from `../../ElectromagneticFields`.
+  That path is outside the repository and does not exist, so `julia --project=scripts` — the command
+  `docs/src/findings.md` gives for reproducing every study — failed to instantiate. The registered
+  0.6 satisfies the bound.
 - The two 3D guiding centre integration blocks run 100 steps rather than 1000. They only assert that
   `integrate` returns a solution, which 100 steps exercises identically, and the 3D `hode` path is
   expensive per step: its second derivatives differentiate field functions that are themselves
@@ -241,19 +259,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   different system than `charged_particle_3d_pode`.
 - **`charged_particle_3d_lode` raised an `UndefVarError` in all eight canonical modules**: it
   passes `ω`, which was defined only in the noncanonical file. The canonical formulation now has
-  its own two-form — the Lagrangian is regular, so it is the canonical form on the six-dimensional
-  phase space.
+  its own two-form, `Ωᵢⱼ = ∂ϑᵢ/∂qʲ - ∂ϑⱼ/∂qⁱ` on the three-dimensional configuration space.
+  It is *not* the `6 × 6` canonical form on `(q,p)`: `GeometricEquations` sizes the buffer it hands
+  the `LODE` two-form from the problem dimension, `D = length(q) = 3`, so the canonical form does
+  not fit and would have raised a `BoundsError` at the first evaluation.
 - **`ω` and `dϑ` of the noncanonical charged particle referred to `dϑ₁dx₂` and siblings that are
   defined nowhere**, and both had their output argument in the wrong slot for the
   `GeometricEquations` convention, so the `LODEProblem` built from `ω` could never be evaluated.
   The derivatives are now defined, including the metric terms, and both functions take the output
   first. Their velocity block is `∂ϑᵢ/∂vʲ = gᵢⱼ`; it had been hard-coded to the identity in `ω` and
   to zero in `dϑ`.
+- **`charged_particle_3d_iode_g` of the noncanonical charged particle was written for a one-form
+  without the metric**, and so described a different `ϑ` than the `dϑ` and `ω` beside it: the
+  position block omitted the `∂gⱼⱼ/∂xⁱ vʲ` terms and the velocity block was the identity where
+  `∂ϑⱼ/∂vⁱ = gᵢᵢ δᵢⱼ`. Being linear in `λ`, it passed the linearity check that caught the other
+  two projection forces; it is now written as `dϑᵀ λ` through the same derivatives `dϑ` uses, and
+  the tests compare all three models' `g` against central differences of their own one-form.
 - **`charged_particle_3d_sode` could never have run**: its velocity map referred to undefined `q`,
   `t` and `Δt`, called `eye`, removed from Julia in 0.7, and built a rotation matrix whose signs
-  were not those of `v × B`; the constructor passed an undefined `x₀`. It is now the Cayley
-  transform of `v̇ = v × B`, which is the rotation the implicit midpoint rule produces and
-  preserves `|v|` exactly.
+  were not those of `v × B`; the constructor passed an undefined `x₀`. Three further breaks were
+  in the same constructor:
+    * it dropped the electric field — the splitting was `ẋ = v` and `v̇ = v × B`, while the model
+      is `v̇ = E + v × B`. `E` is now carried by the frozen-position half, which makes it the Boris
+      push, `(1 - h/2 B̂) v₁ = (1 + h/2 B̂) v₀ + h E`; for `E = 0` that is the Cayley transform as
+      before, an exact rotation preserving `|v|`. Every shipped equilibrium has `φ = 0`, so no
+      result changes, but the splitting now covers the whole vector field for any that does not;
+    * `SODEProblem(nothing, (fv, fx), …)` overflowed the stack. The typed constructor requires
+      `v::Tuple`, and the fallback `SODEProblem(v, args...) = SODEProblem(v, nothing, args...)`
+      recurses on itself when it does not match. The problem now supplies both the vector fields
+      and their exact solution maps, index by index, which is the form `SODE` is happiest with;
+    * the solution maps took `(q₁, t₁, q₀, t₀)`, one argument short of the
+      `(q₁, t₁, q₀, t₀, params)` that `GeometricEquations` calls them with.
+
+  The splitting is now covered by `test/structure_tests.jl`, which asserts that its two maps sum to
+  `charged_particle_3d_v` — the Lie-Trotter consistency condition, and the assertion that fails if
+  a term is ever dropped from one of them again.
 - **The `κ` wrappers of `guiding_center_4d_dg` all put the output array in the wrong slot** and so
   raised a `MethodError`, and the problem was built with `qᵢ` as its own initial momentum instead
   of the `κ`-modified one-form evaluated there.
@@ -285,6 +325,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The reference for the 3D guiding centre model was cited under the wrong title; both it and its
   companion paper are now cited in full, with DOIs.
 - The docstring of the dipole equilibrium was a copy of the one for the quadratic potentials.
+- The audit and `TODO.md` named the wrong equilibria as affected by the cartesian-only limitation of
+  `charged_particle_3d_noncanonical`. `SingularField` and `SymmetricField` are cartesian, as is
+  `ThetaPinchNoncanonical`; the only one of the four that is curvilinear is
+  `TokamakSmallNoncanonical`, which is toroidal rather than cylindrical. The caveat is narrower
+  than it was documented to be.
+- The audit, the findings page and `scripts/study_guiding_center_3d_conditioning.jl` all cited
+  `scripts/guiding_center_3d.jl`, which was untracked and so existed only in one working tree. It is
+  now part of the repository. The other dangling references were resolved by dropping the reference
+  rather than adding the file; see *Removed*.
+- `initial_conditions_dipole` returned a bare tuple where every other `GuidingCenter3d` module
+  returns a `NamedTuple`.
 - **`toroidal_momentum` was not conserved, because of a spurious factor of `R`.** Fifteen of the
   sixteen 3D and 4D guiding centre equilibria defined it as `R(t,q) * ϑ₃(t,q)`, but `ϑ₃` is already
   the covariant φ-component and is the canonical momentum on its own: over 10³ time units on the
@@ -327,10 +378,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   test dependency.
 - **`guiding_center_4d_iode_dec128` and the `DecFP` dependency of the examples.** Support for
   number types other than `Float64` will be handled uniformly rather than by a problem constructor
-  per precision. Note that `examples/guiding_center_4d_poincare_invariant_2nd_quad.jl` still uses
-  `Dec128`; it is an untracked 2017 script written against a `GeometricIntegrators` API
-  (`IntegratorVPRKpSymplectic`, `getTableauVPGLRK`, `set_config`) that no longer exists, and was
-  left in place rather than deleted.
+  per precision.
+- `src/guiding_center_4d/guiding_center_4d_problem.jl` and `docs/src/analytic.md`, both of which
+  `TODO.md` referred to while they existed only in one working tree. The first was a four-line stub
+  for a problem-type hierarchy that was never built; the second a handful of lines of commented-out
+  code. Neither had content worth keeping, so the references went instead of the files becoming
+  part of the repository.
+- The references to `src/gyro_kinetics_4d/firk_with_coordinate_transformation.jl`, from `TODO.md`,
+  the audit and the gyrokinetics page. That file is a 0.x-era sketch of a coordinate-transforming
+  Runge-Kutta integrator, written against a `GeometricIntegrators` API (`Parameters`,
+  `ODEIntegratorCache`, `create_nonlinear_solver`, `function_stages!`) removed several major
+  versions ago — and the transformation was never finished: all three `coordinate_transformation_*`
+  functions are commented out and the one that would apply the transform is an empty stub. Nothing
+  in it survives the API turnover, so the two design decisions worth keeping — that the
+  transformation is *implicit*, `q̃ = B*∥(q) q` solved for `q`, and that the stage vectors come in
+  `(Q, Q̃)` pairs — are recorded in `TODO.md` instead.
 - Fifteen unused transposed second derivatives of the 3D guiding centre Hamiltonian, two of which
   raised an `UndefVarError`, and the four `D²ϑ₁`–`D²ϑ₄` Hessians of the 4D guiding centre, whose
   only consumers were the `PoincareInvariants` trapezoidal variants that the 0.5 rewrite removed.

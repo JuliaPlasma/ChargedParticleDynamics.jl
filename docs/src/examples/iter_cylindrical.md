@@ -1,4 +1,4 @@
-# ITER Equilibrium im Cylindrical Coordinates
+# ITER Equilibrium in Cylindrical Coordinates
 
 ## Load Dependencies
 

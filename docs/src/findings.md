@@ -223,3 +223,64 @@ realistic integration lengths.
 
 Whether the energy error is *bounded* or *drifts* over long runs is the question this does not
 answer, and is the study most worth doing next. See `TODO.md` in the repository root.
+
+
+## The residual scale of the ITER-size equilibria
+
+`scripts/study_solver_tolerances.jl`
+
+An *absolute* solver tolerance has to sit above the round-off floor of the residual it is applied
+to, and that floor is a property of the equilibrium. The variational residuals carry the momentum
+equation `p = ϑ(q)`, so the floor is `‖ϑ‖ eps`, evaluated here at each equilibrium's shipped
+`initial_conditions_barely_passing`:
+
+| family | equilibrium | ‖ϑ‖ or ‖p‖ | `‖ϑ‖ eps` | `f_abstol = 1E-15` |
+|---|---|---|---|---|
+| GC4d    | SolovevIterXpoint      | 14.95   | 3.3e-15 | unreachable |
+| GC4d    | SolovevIter            | 14.95   | 3.3e-15 | unreachable |
+| GC4d    | SolovevSymmetricField  | 256.3   | 5.7e-14 | unreachable |
+| GC4d    | TokamakIterCylindrical | 29.07   | 6.5e-15 | unreachable |
+| GC4d    | TokamakMediumCartesian | 1.17    | 2.6e-16 | reachable |
+| GC4d    | TokamakSmallCartesian  | 0.0244  | 5.4e-18 | reachable |
+| Pauli3d | SolovevIter            | 0.137   | 3.0e-17 | reachable |
+
+`‖A‖ ~ B₀R₀²`, and ITER has `B₀ = 5.3`, `R₀ = 6.2`, which is why exactly the ITER-size 4D guiding
+centre equilibria are the unreachable ones. `SolovevSymmetricField` is the worst of them at
+`‖ϑ‖ ≈ 256`; it never showed up in CI only because its block runs `ode` rather than `iode`.
+
+Two knobs are involved, and they fail for different models. Cost per step at the ITER Solov'ev
+X-point, with the Newton iteration count behind it:
+
+| setting | GC4d `iode` ms/step | mean iters | Pauli3d `iode` ms/step | mean iters |
+|---|---|---|---|---|
+| `f_abstol=1E-15, f_reltol=1E-15` | 11.89 | 4.0 | 0.74 | 3.9 |
+| `f_abstol=1E-15`                 | 11.91 | 4.0 | 0.74 | 3.9 |
+| `f_abstol=1E-14`                 |  0.33 | 2.0 | 0.12 | 3.0 |
+| `f_abstol=1E-12`                 |  0.33 | 2.0 | 0.11 | 2.9 |
+
+The 4D guiding centre degrades from `f_abstol = 1E-15` alone and recovers between 1E-15 and 1E-14,
+exactly where its floor lies. The Pauli model has a small momentum and is untouched by `f_abstol`;
+it degrades only once `f_reltol` is pinned as well, i.e. what hurts it is the loss of the relative
+term `f_reltol ‖F(x₀)‖` that lets a large-magnitude solve converge at all. `f_abstol = 1E-12` with
+`f_reltol` left at its default is the only setting comfortable for both, and is what the test suite
+uses. **The final state is unchanged to ~1e-14 across every row** — the extra iterations buy
+nothing.
+
+Note this also rules out simply dropping the options: the library default is `f_abstol = 8 eps() =
+1.8e-15`, itself below the ITER floor.
+
+Once the tolerance is sound the remaining cost has nothing to do with ITER:
+
+| workload | ms/step | mean iters |
+|---|---|---|
+| GC3d SolovevIterXpoint `hode` + extrapolation      | 17.9 | 1.0 |
+| GC3d TokamakMediumCartesian `hode` + extrapolation | 23.8 | 1.0 |
+| GC4d SolovevIterXpoint `iode`                      |  0.3 | 2.0 |
+| Pauli3d SolovevIter `iode`                         |  0.1 | 2.9 |
+
+`TokamakMediumCartesian` is *slower* than the ITER Solov'ev, and the 3D `hode` path costs two
+orders of magnitude more per step than the Pauli one even though Newton converges in a single
+iteration. The cost is nested `ForwardDiff`: the second derivatives of the 3D Hamiltonian
+differentiate field functions that are themselves AD-generated, and `MidpointExtrapolation(5)`
+triples it. Making those derivatives cheaper is the real fix; cutting the two 3D blocks from 1000
+steps to 100 was the pragmatic one.
