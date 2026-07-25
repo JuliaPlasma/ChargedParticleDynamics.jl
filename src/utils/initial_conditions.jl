@@ -65,8 +65,8 @@ Compute initial conditions from the following arguments:
 * `E`: energy
 * `M`: mass
 * `C`: charge number
-* `a`, b, c: magnetic field unit vectors in physical coordinates
-* `b`: magnetic field unit vector in contravariant coordinates
+* `aₚ`, `bₚ`, `cₚ`: magnetic field unit vectors in physical coordinates
+* `b⃗`: magnetic field unit vector in contravariant coordinates
 * `B`: amplitude of magnetic field
 * `g̅`: inverse metric coefficients
 * `DF̄`: inverse Jacobian matrix
@@ -114,8 +114,8 @@ Compute initial conditions from the following arguments:
 * `μ`: magnetic moment
 * `M`: mass
 * `C`: charge number
-* `a`, b, c: magnetic field unit vectors in physical coordinates
-* `b`: magnetic field unit vector in contravariant coordinates
+* `aₚ`, `bₚ`, `cₚ`: magnetic field unit vectors in physical coordinates
+* `b⃗`: magnetic field unit vector in contravariant coordinates
 * `B`: amplitude of magnetic field
 * `g̅`: inverse metric coefficients
 * `DF̄`: inverse Jacobian matrix

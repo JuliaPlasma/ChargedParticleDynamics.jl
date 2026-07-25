@@ -29,14 +29,14 @@ Set $e = e' \hat{e}$ with $e' = 1.602 176 634 \cdot 10^{-19}$ and $\hat{e} = \ma
 The absolute value of the velocity is obtained from the particle energy by $\vert v \vert^2 = 2 W / m$.
 In normalised units, we have $W = W' \hat{W}$ and $v = v' \hat{v}$ where $\hat{W} = e \mathrm{V}$ and $\hat{v} = \hat{l} \hat{\omega}_c = \hat{l} \hat{B} e / m$.
 
-Let us compute the normalise kinetic energy,
+Let us compute the normalised kinetic energy,
 ```math
 \frac{\vert v' \vert^2}{2}
 = \frac{W' \hat{W}}{m \hat{v}^2}
 = \frac{W' e \mathrm{V} m^2}{m \hat{l}^2 \hat{B}^2 e^2} .
 ```
 
-Usually, we have $\hat{B} = T = \mathrm{kg} / \mathrm{C} \mathrm{s}$. Recall that $\mathrm{V} = \mathrm{kg} \mathrm{m}^2 / \mathrm{C} \mathrm{s}^2$ and let us set $\hat{l} = l_0 \mathrm{m}$, then
+Usually, we have $\hat{B} = T = \mathrm{kg} / \mathrm{C}\,\mathrm{s}$. Recall that $\mathrm{V} = \mathrm{kg}\,\mathrm{m}^2 / \mathrm{C}\,\mathrm{s}^2$ and let us set $\hat{l} = l_0 \mathrm{m}$, then
 ```math
 \frac{\vert v' \vert^2}{2} = \frac{m' W'}{e' l_0^2} .
 ```
@@ -65,12 +65,25 @@ and accordingly
 \end{aligned}
 ```
 
-The ElectromagneticFields.jl package provides three functions `a⃗(t,x)`, `b⃗(t,x)`, `c⃗(t,x)` that can be used to construct the velocity vector $v$.
-The function `b⃗` returns the unit vector of the magnetic field, thus
+For each equilibrium, the ElectromagneticFields.jl package generates an orthonormal triad
+$(a, b, c)$, where $b$ is the unit vector of the magnetic field and $a$ and $c$ span the plane
+perpendicular to it.
+The triad is exposed in three different component representations, which coincide only in
+Cartesian coordinates:
+
+| Functions | Components |
+| ------------------------------ | ---------------- |
+| `a(t,x)`, `b(t,x)`, `c(t,x)` | covariant |
+| `aₚ(t,x)`, `bₚ(t,x)`, `cₚ(t,x)` | physical |
+| `a⃗(t,x)`, `b⃗(t,x)`, `c⃗(t,x)` | contravariant |
+
+The velocity vector $v$ is assembled in physical coordinates, that is from `aₚ`, `bₚ` and `cₚ`, and
+subsequently transformed to contravariant coordinates with the inverse Jacobian `DF̄`.
+The function `bₚ` returns the unit vector of the magnetic field, thus
 ```math
 v_{\parallel}' = \vert v' \vert \, \sqrt{1 - \sin \alpha} \, b .
 ```
-The functions `a⃗` and `c⃗` return two unit vectors that span the plane perpendicular to the magnetic field, thus
+The functions `aₚ` and `cₚ` return two unit vectors that span the plane perpendicular to the magnetic field, thus
 ```math
 v_{\perp}' = \vert v' \vert \, \sqrt{\sin \alpha} \, ( - a \, \sin \theta - c \, \cos \theta ) ,
 ```
@@ -85,9 +98,10 @@ The magnetic moment is computed as
 
 In order to compute the particle position, we need to construct the gyro radius vector $\rho$, which is given by
 ```math
-\rho = \frac{b \times v}{\omega_c} = \frac{b \times \hat{v} v'}{\hat{\omega_c} \omega_c'}  = l_{0} \, \frac{b \times v'}{\vert B' \vert} .
+\rho = \frac{b \times v}{\omega_c} = \frac{b \times \hat{v} v'}{\hat{\omega}_c \omega_c'}  = \hat{l} \, \frac{b \times v'}{\vert B' \vert} .
 ```
-Note that 
+Here we used $\hat{v} / \hat{\omega}_c = \hat{l}$, which follows from $\hat{v} = \hat{l} \hat{\omega}_c$, and recall that $\hat{l} = l_0 \mathrm{m}$.
+Note that
 ```math
 \omega_c
 = \frac{e \vert B \vert}{m}
@@ -105,7 +119,7 @@ so that
 ```
 The normalized gyro radius vector reads
 ```math
-\rho' = \frac{\rho}{l_0} = \frac{b \times v'}{\vert B' \vert} ,
+\rho' = \frac{\rho}{\hat{l}} = \frac{b \times v'}{\vert B' \vert} ,
 ```
 so that the normalised particle position is
 ```math
@@ -133,8 +147,8 @@ and the total velocity by
 With that, we can compute the perpendicular and total energy,
 ```math
 \begin{aligned}
-W_{\perp}' &= \frac{e l₀^2 \vert v_\perp \vert^2}{2m} , \qquad
-W' &= \frac{e l₀^2 \vert v \vert^2}{2m} .
+W_{\perp}' &= \frac{e l_0^2 \vert v_\perp \vert^2}{2m} , \qquad
+W' &= \frac{e l_0^2 \vert v \vert^2}{2m} .
 \end{aligned}
 ```
 The pitch angle is obtained as
