@@ -14,7 +14,7 @@ Dipole.@code() # inject magnetic field code
 const Δt = 0.03
 const tspan = (0.0, 90_000.0)
 
-initial_conditions_dipole() = (initial_conditions(0.0, [1.0, 2.0, 1.0, 0.01])..., (μ=1E-2,))
+initial_conditions_dipole() = merge(initial_conditions(0.0, [1.0, 2.0, 1.0, 0.01]), (params=(μ=1E-2,),))
 
 export default_parameters
 

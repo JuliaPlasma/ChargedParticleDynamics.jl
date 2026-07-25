@@ -166,10 +166,10 @@ Two limitations are worth recording:
 * Only the ITER-like Solov'ev equilibrium with X-point is provided, where the other model families
   cover a dozen equilibria each.
 
-`src/gyro_kinetics_4d/firk_with_coordinate_transformation.jl` is not part of the module. It is a
-fully implicit Runge-Kutta integrator written against a `GeometricIntegrators` API — `Parameters`,
-`ODEIntegratorCache`, `create_nonlinear_solver` — removed several major versions ago, and porting
-it is a separate exercise.
+The coordinate transformation of `coordinate_transformations.jl` is not applied by the problem
+constructors, and is retained only as a utility: it is a preconditioner for the nonlinear solver
+rather than a change of variables in the model, so it belongs inside an integrator. No such
+integrator exists yet; see `TODO.md` in the repository root for the design.
 
 
 ## Module

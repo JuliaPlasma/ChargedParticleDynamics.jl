@@ -50,9 +50,9 @@ function main()
 
     for (name, coords, M, icsname) in CASES
         isdefined(M, icsname) || continue
-        # `initial_conditions_*` returns either a NamedTuple (q, p, params) or the bare triple
+        # every GuidingCenter3d `initial_conditions_*` returns a NamedTuple (q, p, params)
         ic = getfield(M, icsname)()
-        q, p, par = ic isa NamedTuple ? (ic.q, ic.p, ic.params) : ic
+        q, p, par = ic.q, ic.p, ic.params
         t = 0.0
 
         b₁ = M.b₁(t, q)
