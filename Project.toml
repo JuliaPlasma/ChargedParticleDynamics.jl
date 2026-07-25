@@ -21,7 +21,6 @@ ChargedParticlePlots = ["Makie", "LaTeXStrings"]
 [compat]
 ElectromagneticFields = "0.6"
 GeometricEquations = "0.21"
-GeometricIntegrators = "0.16"
 GeometricSolutions = "0.6"
 LaTeXStrings = "1"
 Makie = "0.24"
@@ -29,11 +28,5 @@ Parameters = "0.12, 0.13"
 PoincareInvariants = "0.5"
 julia = "1.10"
 
-[extras]
-GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
-Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
-SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["GeometricIntegrators", "Logging", "SafeTestsets", "Test"]
+# The test dependencies and their bounds live in `test/Project.toml`, which Pkg uses in preference
+# to an `[extras]`/`[targets]` section as soon as it exists.
