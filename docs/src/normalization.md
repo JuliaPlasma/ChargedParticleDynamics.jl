@@ -10,7 +10,7 @@ the guiding center system.
 
 Consider the phasespace Lagrangian
 ```math
-L (q, \dot{q}, v) = ( mv + A (x) ) \cdot \dot{x}  - \frac{m}{2} \vert v \vert^2  - e \phi (x) ,
+L (q, \dot{q}, v) = ( mv + e A (x) ) \cdot \dot{x}  - \frac{m}{2} \vert v \vert^2  - e \phi (x) ,
 ```
 
 and, in full generality, introduce the following normalizations:
@@ -38,7 +38,7 @@ Let us choose the following normalizations (and note that others are possible an
 \hat{L} &= m \hat{v}^2 = e \hat{\phi} ,
 \end{aligned}
 ```
-with the characteristic length $l$.
+with the characteristic length $\hat{l}$.
 The normalized Lagrangian becomes
 ```math
 L' = \bigg( \frac{\hat{x}}{\hat{t} \hat{v}} \, v' + \underbrace{\frac{e \hat{B}}{m}}_{\hat{\omega}_c} \frac{\hat{x} \hat{l}}{ \hat{t} \hat{v}^2} \, A' \bigg) \cdot \dot{x}' - \frac{\vert v' \vert^2}{2} - \phi' ,
@@ -86,11 +86,11 @@ where $\hat{\rho}_{\mathrm{th}}$ is the characteristic gyro radius, and the norm
 ```math
 L' = \bigg( v' + \frac{\hat{l}}{\hat{\rho}_{\mathrm{th}}} \, A' \bigg) \cdot \dot{x}' - \frac{\vert v' \vert^2}{2} - \frac{e \hat{\phi}}{m v_{\mathrm{th}}^2} \phi' .
 ```
-This leaves room for different orderings and consequently different normalizations. 
+This leaves room for different orderings and consequently different normalizations.
 For example, in drift kinetics, we have $\hat{\rho}_{\mathrm{th}} / \hat{l} \sim \epsilon$ and $e \hat{\phi} / m v_{\mathrm{th}}^2 \sim 1$, while in gyro kinetics, we have $\hat{\rho}_{\mathrm{th}} / \hat{l} \sim 1$ and $e \hat{\phi} / m v_{\mathrm{th}}^2 \sim \epsilon$.
 
 !!! note "This section is for reference"
     No model in this package exposes the two prefactors $\hat{l} / \hat{\rho}_{\mathrm{th}}$ and
     $e \hat{\phi} / m v_{\mathrm{th}}^{2}$. Every model implements the first normalization above,
     with $\hat{v} = \hat{l} \hat{\omega}_{c}$ and both prefactors equal to one; the ε-ordered form
-    is recorded here for reference, not as something that can currently be selected. 
+    is recorded here for reference, not as something that can currently be selected.

@@ -10,7 +10,7 @@ The dynamics of the guiding centre can be described in terms of only four coordi
 The simplest form of the guiding centre equations can be obtained from the Lagrangian
 ```math
 \begin{aligned}
-L &= (A (r) + u b (r)) \cdot \dot{r} - H(r,u) , &
+L &= \left( A (r) + u b (r) \right) \cdot \dot{r} - H(r,u) , &
 H &= \tfrac{1}{2} u^{2} + \mu \vert B (r) \vert ,
 \end{aligned}
 ```
