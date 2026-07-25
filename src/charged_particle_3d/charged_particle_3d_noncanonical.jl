@@ -199,18 +199,33 @@ function charged_particle_3d_iode_f(f, t, q, v, params)
     nothing
 end
 
+# The projection force is gᵢ = (∂ϑⱼ/∂zⁱ) λʲ on the phase space z = (x, v), i.e. the transpose of
+# `dϑ` above contracted with λ, evaluated at the same point — the velocities carried in `q[4:6]`.
+#
+# Both blocks used to be written for a one-form without the metric: the position block omitted the
+# ∂gⱼⱼ/∂xⁱ vʲ terms that `dϑⱼdxᵢ` carries, and the velocity block was the identity where
+# ∂ϑⱼ/∂vⁱ = gᵢᵢ δᵢⱼ. That is the same convention `dϑ` and `ω` were corrected away from, so `g` had
+# been left describing a different one-form than the two functions above it.
 function charged_particle_3d_iode_g(g, t, q, v, λ, params)
-    g[1] = dA₁dx₁(t,q) * λ[1] + dA₂dx₁(t,q) * λ[2] + dA₃dx₁(t,q) * λ[3]
-    g[2] = dA₁dx₂(t,q) * λ[1] + dA₂dx₂(t,q) * λ[2] + dA₃dx₂(t,q) * λ[3]
-    g[3] = dA₁dx₃(t,q) * λ[1] + dA₂dx₃(t,q) * λ[2] + dA₃dx₃(t,q) * λ[3]
-    g[4] = λ[1]
-    g[5] = λ[2]
-    g[6] = λ[3]
+    g[1] = dϑ₁dx₁(t,q) * λ[1] + dϑ₂dx₁(t,q) * λ[2] + dϑ₃dx₁(t,q) * λ[3]
+    g[2] = dϑ₁dx₂(t,q) * λ[1] + dϑ₂dx₂(t,q) * λ[2] + dϑ₃dx₂(t,q) * λ[3]
+    g[3] = dϑ₁dx₃(t,q) * λ[1] + dϑ₂dx₃(t,q) * λ[2] + dϑ₃dx₃(t,q) * λ[3]
+    g[4] = g₁₁(t,q) * λ[1]
+    g[5] = g₂₂(t,q) * λ[2]
+    g[6] = g₃₃(t,q) * λ[3]
     nothing
 end
 
 
-function charged_particle_3d_sode_fx(q₁::AbstractArray{DT}, t₁, q₀::AbstractArray{DT}, t₀) where {DT}
+@doc raw"""
+The drift half of the splitting, at frozen velocity: ``\dot{x} = v``, ``\dot{v} = 0``, whose flow
+is exact.
+
+`GeometricEquations` calls the solution map of an `SODE` substep as
+`q(q₁, t₁, q₀, t₀, params)`; the trailing `params` used to be missing from both maps here, so
+`check_methods` rejected the problem.
+"""
+function charged_particle_3d_sode_fx(q₁::AbstractArray{DT}, t₁, q₀::AbstractArray{DT}, t₀, params) where {DT}
     @assert axes(q₁) == axes(q₀)
 
     x = q₀[1:3]
@@ -222,19 +237,42 @@ function charged_particle_3d_sode_fx(q₁::AbstractArray{DT}, t₁, q₀::Abstra
     nothing
 end
 
-@doc raw"""
-The magnetic-rotation half of the splitting: ``\dot{x} = 0``, ``\dot{v} = v \times B(x)``, solved
-exactly in the sense of the Cayley transform, which is the rotation the implicit midpoint rule
-produces and which preserves ``\vert v \vert`` exactly.
+# The vector field of the substep above, for integrators that want it rather than the exact flow.
+function charged_particle_3d_sode_vx(v, t, q, params)
+    v[1] = q[4]
+    v[2] = q[5]
+    v[3] = q[6]
+    v[4] = zero(eltype(q))
+    v[5] = zero(eltype(q))
+    v[6] = zero(eltype(q))
 
-Writing ``\dot{v} = \hat{B} v`` with
-``\hat{B}_{ij} = - \varepsilon_{ijk} B_{k}``, the update is
-``v_{1} = (\mathbb{1} - \tfrac{h}{2} \hat{B})^{-1} (\mathbb{1} + \tfrac{h}{2} \hat{B}) \, v_{0}``.
+    nothing
+end
+
+@doc raw"""
+The velocity half of the splitting, at frozen position: ``\dot{x} = 0``,
+``\dot{v} = E(x) + v \times B(x)``.
+
+Writing ``\hat{B}_{ij} = - \varepsilon_{ijk} B_{k}``, so that ``\hat{B} v = v \times B``, the
+implicit midpoint rule applied to the frozen-position equation gives the update
+
+```math
+\bigg( \mathbb{1} - \frac{h}{2} \hat{B} \bigg) v_{1}
+    = \bigg( \mathbb{1} + \frac{h}{2} \hat{B} \bigg) v_{0} + h \, E(x) ,
+```
+
+which is the Boris push. For ``E = 0`` it reduces to the Cayley transform of ``\hat{B}``, an exact
+rotation, and then preserves ``\vert v \vert`` exactly; with ``E \neq 0`` the electric field does
+work on the particle and ``\vert v \vert`` is not conserved.
+
+Together with `charged_particle_3d_sode_fx`, which advances ``\dot{x} = v`` at frozen
+velocity, this covers the whole of `charged_particle_3d_v`. The electric field used to be missing
+from both halves, so the splitting integrated the ``E = 0`` system regardless of the equilibrium.
 
 As with `charged_particle_3d_v`, this is the cartesian Lorentz force; see the model audit for the
 note on curvilinear coordinates.
 """
-function charged_particle_3d_sode_fv(q₁::AbstractArray{DT}, t₁, q₀::AbstractArray{DT}, t₀) where {DT}
+function charged_particle_3d_sode_fv(q₁::AbstractArray{DT}, t₁, q₀::AbstractArray{DT}, t₀, params) where {DT}
     @assert axes(q₁) == axes(q₀)
 
     x = @view q₀[1:3]
@@ -254,11 +292,25 @@ function charged_particle_3d_sode_fv(q₁::AbstractArray{DT}, t₁, q₀::Abstra
     B̂[3,1] = + lB₂
     B̂[3,2] = - lB₁
 
+    local lE = DT[E₁(t₀, x), E₂(t₀, x), E₃(t₀, x)]
+
     local h = t₁ - t₀
-    R = (I - h / 2 .* B̂) \ (I + h / 2 .* B̂)
+    v₁ = (I - h / 2 .* B̂) \ ((I + h / 2 .* B̂) * v .+ h .* lE)
 
     q₁[1:3] .= x
-    q₁[4:6] .= R * v
+    q₁[4:6] .= v₁
+
+    nothing
+end
+
+# The vector field of the substep above, for integrators that want it rather than the exact flow.
+function charged_particle_3d_sode_vv(v, t, q, params)
+    v[1] = zero(eltype(q))
+    v[2] = zero(eltype(q))
+    v[3] = zero(eltype(q))
+    v[4] = v₄(t, q, v)
+    v[5] = v₅(t, q, v)
+    v[6] = v₆(t, q, v)
 
     nothing
 end
@@ -272,12 +324,21 @@ function charged_particle_3d_ode(qᵢ=qᵢ; tspan=tspan, tstep=Δt, periodic=tru
     end
 end
 
+# Both the vector fields and their exact solution maps are supplied, index by index, which is the
+# form `SODE` is happiest with: a composition method then uses the exact flows, while anything that
+# wants to sub-integrate a substep has the vector field available.
+#
+# Passing `nothing` for the vector fields, as this used to, does not work: the typed constructor
+# requires `v::Tuple`, and the fallback `SODEProblem(v, args...) = SODEProblem(v, nothing, args...)`
+# then recurses on itself forever, so the constructor overflowed the stack rather than building.
 function charged_particle_3d_sode(qᵢ=qᵢ; tspan=tspan, tstep=Δt, periodic=true)
     if periodic
-        SODEProblem(nothing, (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
+        SODEProblem((charged_particle_3d_sode_vv, charged_particle_3d_sode_vx),
+                    (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
                     tspan, tstep, qᵢ, periodicity=charged_particle_3d_periodicity(qᵢ))
     else
-        SODEProblem(nothing, (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
+        SODEProblem((charged_particle_3d_sode_vv, charged_particle_3d_sode_vx),
+                    (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
                     tspan, tstep, qᵢ)
     end
 end

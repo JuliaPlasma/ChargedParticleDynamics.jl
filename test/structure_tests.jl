@@ -134,6 +134,54 @@ end
 end
 
 
+@safetestset "Noncanonical charged particle: constructors build and the splitting is consistent                   " begin
+    using ChargedParticleDynamics.ChargedParticle3d
+    using GeometricIntegrators
+    using Test
+
+    # The noncanonical modules define no `initial_conditions_*`, so the constructor sweep above
+    # skips them entirely and none of their problems was covered. Every constructor here defaults
+    # its argument to the module's `qᵢ`.
+    for M in (ChargedParticle3d.SingularField,
+              ChargedParticle3d.SymmetricField,
+              ChargedParticle3d.ThetaPinchNoncanonical,
+              ChargedParticle3d.TokamakSmallNoncanonical)
+
+        @test (M.charged_particle_3d_ode(); true)
+        @test (M.charged_particle_3d_iode(); true)
+        @test (M.charged_particle_3d_lode(); true)
+        @test (M.charged_particle_3d_sode(); true)
+
+        # The two maps of the splitting must sum to the full vector field. To first order in h,
+        #     (fv(q₀) - q₀)/h + (fx(q₀) - q₀)/h  →  charged_particle_3d_v(q₀) ,
+        # which is the Lie-Trotter consistency condition, and is what pins the splitting to the
+        # model rather than to some subset of its terms. The electric field used to be absent from
+        # both maps; every shipped equilibrium has φ = 0, so this passes either way today, but it
+        # is the assertion that fails the moment a noncanonical equilibrium with a potential is
+        # added — which is how that omission should have been caught.
+        q₀ = collect(float.(M.qᵢ))
+        h = 1e-7
+        qv = zero(q₀); M.charged_particle_3d_sode_fv(qv, h, q₀, 0.0, NamedTuple())
+        qx = zero(q₀); M.charged_particle_3d_sode_fx(qx, h, q₀, 0.0, NamedTuple())
+        vfull = zero(q₀); M.charged_particle_3d_v(vfull, 0.0, q₀, NamedTuple())
+
+        @test isapprox((qv .- q₀) ./ h .+ (qx .- q₀) ./ h, vfull; rtol = 1e-5, atol = 1e-9)
+
+        # and each solution map must agree with the vector field of its own substep
+        vv = zero(q₀); M.charged_particle_3d_sode_vv(vv, 0.0, q₀, NamedTuple())
+        vx = zero(q₀); M.charged_particle_3d_sode_vx(vx, 0.0, q₀, NamedTuple())
+
+        @test isapprox((qv .- q₀) ./ h, vv; rtol = 1e-5, atol = 1e-9)
+        @test isapprox((qx .- q₀) ./ h, vx; rtol = 1e-5, atol = 1e-9)
+
+        # The SODE integrates through a composition of the two exact-solution maps.
+        sol = integrate(M.charged_particle_3d_sode(; tspan = (0.0, 1.0), tstep = 0.1),
+                        Composition(Strang()))
+        @test sol isa GeometricSolution
+    end
+end
+
+
 @safetestset "3D guiding centre: second derivatives of H match finite differences                                 " begin
     using ChargedParticleDynamics.GuidingCenter3d
     using ..StructureTestUtils
@@ -194,33 +242,63 @@ end
 end
 
 
-@safetestset "Projection forces are linear in the multiplier                                                      " begin
+@safetestset "Projection forces are the gradient of the one-form                                                  " begin
     using ChargedParticleDynamics.PauliParticle3d
     using ChargedParticleDynamics.ChargedParticle3d
+    using ..StructureTestUtils
     using Test
 
-    # g = λ ⋅ ∇ϑ must be linear in λ. The Pauli version was built from `v` and ignored `λ`
-    # entirely; the canonical charged particle version was quadratic in λ.
-    cases = ((PauliParticle3d.TokamakSmallCylindrical,
-              PauliParticle3d.TokamakSmallCylindrical.pauli_particle_3d_iode_g,
-              [1.05, 0.0, 0.0], (μ = 2.31e-6,)),
-             (ChargedParticle3d.SolovevIterXpoint,
-              ChargedParticle3d.SolovevIterXpoint.charged_particle_3d_iode_g,
-              [2.5, 0.0, 0.0], NamedTuple()))
+    # g must be gᵢ = (∂ϑⱼ/∂zⁱ) λʲ for the model's own one-form ϑ on its own state z. Three separate
+    # ways of getting that wrong have been found in this package, so all three are checked:
+    #
+    #   * the Pauli version was built from `v` and ignored `λ` entirely,
+    #   * the canonical charged particle version was quadratic in λ,
+    #   * the noncanonical charged particle version was linear in λ and *looked* fine, but was
+    #     written for a one-form without the metric — no ∂gⱼⱼ/∂xⁱ vʲ terms in the position block and
+    #     an identity velocity block where ∂ϑⱼ/∂vⁱ = gᵢᵢ δᵢⱼ. Linearity alone does not catch that,
+    #     which is why the finite-difference comparison below is the real assertion.
+    #
+    # `z` is the state g is indexed by and `oneform(z, v)` evaluates ϑ there, both of length `nz`.
+    # `λ` has the dimension of the state too — for the noncanonical model that is six, and its last
+    # three components multiply the identically vanishing ϑ₄₋₆.
+    let
+        Mp = PauliParticle3d.TokamakSmallCylindrical
+        Mc = ChargedParticle3d.SolovevIterXpoint
+        Mn = ChargedParticle3d.TokamakSmallNoncanonical
 
-    for (M, g, q, par) in cases
-        t = 0.0
         v = [1.3e-3, -4.0e-4, 7.0e-4]
-        λ = [0.31, -0.17, 0.42]
+        λ3 = [0.31, -0.17, 0.42]
+        λ6 = [0.31, -0.17, 0.42, 0.23, -0.51, 0.11]
 
-        g1 = zeros(3); g(g1, t, q, v, λ, par)
-        g2 = zeros(3); g(g2, t, q, v, 2 .* λ, par)
-        g0 = zeros(3); g(g0, t, q, v, zero(λ), par)
+        # (module, g, state, oneform, nz, λ, params)
+        cases = (
+            (Mp, Mp.pauli_particle_3d_iode_g, [1.05, 0.0, 0.0],
+             (z, vv) -> (θ = zeros(3); Mp.ϑ(θ, 0.0, z, vv); θ), 3, λ3, (μ = 2.31e-6,)),
+            (Mc, Mc.charged_particle_3d_iode_g, [2.5, 0.0, 0.0],
+             (z, vv) -> (θ = zeros(3); Mc.ϑ(θ, 0.0, z, vv); θ), 3, λ3, NamedTuple()),
+            (Mn, Mn.charged_particle_3d_iode_g, collect(float.(Mn.qᵢ)),
+             (z, vv) -> (θ = zeros(6); Mn.ϑ(θ, 0.0, z); θ), 6, λ6, NamedTuple()),
+        )
 
-        @test g2 ≈ 2 .* g1
-        @test all(iszero, g0)
-        # and it must actually depend on λ
-        @test !all(iszero, g1)
+        for (M, g, z, oneform, nz, λ, par) in cases
+            t = 0.0
+
+            ga = zeros(nz); g(ga, t, z, v, λ, par)
+
+            # gᵢ = ∂/∂zⁱ (ϑ ⋅ λ), by central differences
+            for i in 1:nz
+                num = central_difference(x -> sum(oneform(x, v) .* λ), z, i)
+                @test isapprox(ga[i], num; rtol = 1e-5, atol = 1e-9)
+            end
+
+            # and it must be linear in λ, which the finite difference cannot see
+            g2 = zeros(nz); g(g2, t, z, v, 2 .* λ, par)
+            g0 = zeros(nz); g(g0, t, z, v, zero(λ), par)
+
+            @test g2 ≈ 2 .* ga
+            @test all(iszero, g0)
+            @test !all(iszero, ga)
+        end
     end
 end
 
@@ -294,26 +372,42 @@ end
 end
 
 
-@safetestset "Symplectic two-forms are antisymmetric                                                              " begin
+@safetestset "Symplectic two-forms are antisymmetric and correctly sized                                          " begin
     using ChargedParticleDynamics.GuidingCenter4d
     using ChargedParticleDynamics.ChargedParticle3d
+    using ..StructureTestUtils
     using Test
 
+    # The buffer is sized from the state rather than hard-coded, because that is precisely what an
+    # integrator does: the `LODE` two-form is called with a `D × D` array, `D = length(q)`. The
+    # canonical charged particle used to return the 6 × 6 canonical form on (q,p) for a model whose
+    # `q` has three components, which a hard-coded `zeros(6, 6)` here hid.
     let M = GuidingCenter4d.TokamakSmallCylindrical
-        Ω = zeros(4, 4)
-        M.ω(Ω, 0.0, [1.05, 0.0, 0.0, 4.3e-4])
+        q = [1.05, 0.0, 0.0, 4.3e-4]
+        Ω = zeros(length(q), length(q))
+        M.ω(Ω, 0.0, q)
         @test Ω ≈ -transpose(Ω)
     end
 
     let M = ChargedParticle3d.TokamakSmallNoncanonical
-        Ω = zeros(6, 6)
-        M.ω(Ω, 0.0, [1.05, 0.0, 0.0, 1.0e-3, 0.0, -4.0e-4], NamedTuple())
+        q = collect(float.(M.qᵢ))
+        Ω = zeros(length(q), length(q))
+        M.ω(Ω, 0.0, q, NamedTuple())
         @test Ω ≈ -transpose(Ω)
     end
 
     let M = ChargedParticle3d.SolovevIterXpoint
-        Ω = zeros(6, 6)
-        M.ω(Ω, 0.0, [2.5, 0.0, 0.0], NamedTuple())
+        q = [2.5, 0.0, 0.0]
+        v = [1.3e-3, -4.0e-4, 7.0e-4]
+        Ω = zeros(length(q), length(q))
+        M.ω(Ω, 0.0, q, v, NamedTuple())
         @test Ω ≈ -transpose(Ω)
+
+        # Ωᵢⱼ = ∂ϑᵢ/∂qʲ - ∂ϑⱼ/∂qⁱ, against central differences of the one-form itself.
+        ϑi(x, i) = (θ = zeros(3); M.ϑ(θ, 0.0, x, v); θ[i])
+        for i in 1:3, j in 1:3
+            num = central_difference(x -> ϑi(x, i), q, j) - central_difference(x -> ϑi(x, j), q, i)
+            @test isapprox(Ω[i, j], num; rtol = 1e-5, atol = 1e-9)
+        end
     end
 end
