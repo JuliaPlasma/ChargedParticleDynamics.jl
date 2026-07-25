@@ -1,7 +1,7 @@
 
 using Parameters
 
-export hamiltonian, ϑ, ω, ωabs
+export hamiltonian, ϑ, ω, ωabs, β, γ, v
 
 
 @inline function u(t, q)
@@ -20,7 +20,7 @@ dHdx₂(t,q,μ) = μ * dBdx₂(t,q)
 dHdx₃(t,q,μ) = μ * dBdx₃(t,q)
 dHdx₄(t,q,μ) = u(t,q)
 
-function dH(t, q, dH, params)
+function dH(dH, t, q, params)
     @unpack μ = params
     dH[1] = dHdx₁(t,q,μ)
     dH[2] = dHdx₂(t,q,μ)
@@ -53,7 +53,7 @@ d²Hdx₄dx₄(t, q, μ) = one(eltype(q))
 ϑ₃(t,q) = A₃(t,q) + u(t,q) * b₃(t,q)
 ϑ₄(t,q) = zero(eltype(q))
 
-function ϑ(t, q, ϑ, params)
+function ϑ(ϑ, t, q, params)
     ϑ[1] = ϑ₁(t,q)
     ϑ[2] = ϑ₂(t,q)
     ϑ[3] = ϑ₃(t,q)
@@ -169,14 +169,14 @@ d²ϑ₄dx₄dx₄(t,q) = zero(eltype(q))
 ω₂(t,q) = dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
 ω₃(t,q) = dϑ₂dx₁(t,q) - dϑ₁dx₂(t,q)
 
-function ω(t, q, ω::Vector, params=NamedTuple())
+function ω(ω::Vector, t, q, params=NamedTuple())
     ω[1] = ω₁(t,q)
     ω[2] = ω₂(t,q)
     ω[3] = ω₃(t,q)
     nothing
 end
 
-function ω(t, q, Ω::Matrix, params=NamedTuple())
+function ω(Ω::Matrix, t, q, params=NamedTuple())
     Ω[1,1] = 0
     Ω[1,2] = dϑ₁dx₂(t,q) - dϑ₂dx₁(t,q)
     Ω[1,3] = dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
@@ -223,7 +223,20 @@ dω₃dx₄(t,q) = d²ϑ₂dx₁dx₄(t,q) - d²ϑ₁dx₂dx₄(t,q)
 β₂(t,q,μ) = dHdx₄(t,q,μ) * ϑ₂(t,q)
 β₃(t,q,μ) = dHdx₄(t,q,μ) * ϑ₃(t,q)
 
-function β(t, q, β, params)
+@doc raw"""
+    β(β, t, q, params)
+
+The first of the two vector potentials of the volume-preserving formulation,
+
+```math
+\beta = \frac{1}{m} \frac{\partial H}{\partial u} A^{\star} ,
+```
+
+which reduces to ``\beta = u \, A^{\star}`` for the equilibrium Hamiltonian implemented here.
+Together with [`γ`](@ref) it writes the equations of motion in the manifestly divergence-free form
+``\dot{R} = \partial_{u} \gamma + \nabla \times \beta``, ``\dot{u} = - \nabla \cdot \gamma``.
+"""
+function β(β, t, q, params)
     @unpack μ = params
     β[1] = β₁(t,q,μ)
     β[2] = β₂(t,q,μ)
@@ -236,7 +249,19 @@ end
 γ₂(t,q,μ) = ϑ₃(t,q) * dHdx₁(t,q,μ) - dHdx₃(t,q,μ) * ϑ₁(t,q)
 γ₃(t,q,μ) = ϑ₁(t,q) * dHdx₂(t,q,μ) - dHdx₁(t,q,μ) * ϑ₂(t,q)
 
-function γ(t, q, γ, params)
+@doc raw"""
+    γ(γ, t, q, params)
+
+The second vector potential of the volume-preserving formulation,
+
+```math
+\gamma = \frac{1}{m} A^{\star} \times \nabla H ,
+```
+
+which reduces to ``\gamma = (\mu/m) \, A^{\star} \times \nabla B_{0}`` for the equilibrium
+Hamiltonian implemented here. See [`β`](@ref).
+"""
+function γ(γ, t, q, params)
     @unpack μ = params
     γ[1] = γ₁(t,q,μ)
     γ[2] = γ₂(t,q,μ)
@@ -320,6 +345,23 @@ function v₆(v, t, q, params)
     v[4] = - dγ₃dx₃(t,q,μ)
 end
 
+@doc raw"""
+    v(v, t, q, params)
+
+The gyrokinetic guiding centre vector field in the rescaled time,
+
+```math
+\dfrac{dR}{ds} = \dfrac{\partial \gamma}{\partial u} + \nabla \times \beta ,
+\qquad
+\dfrac{du}{ds} = - \nabla \cdot \gamma ,
+```
+
+built from the potentials [`β`](@ref) and [`γ`](@ref). It is the guiding centre vector field
+multiplied by ``B^{\star}_{\parallel}``, so the independent variable is related to the physical
+time by ``dt = B^{\star}_{\parallel} ds``, and it is divergence-free.
+
+The sub-fields `v₁` … `v₆` are the six subsystems this splits into; they sum to `v`.
+"""
 function v(v, t, q, params)
     @unpack μ = params
     v[1] =   dγ₁dx₄(t,q,μ) + dβ₃dx₂(t,q,μ) - dβ₂dx₃(t,q,μ)

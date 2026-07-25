@@ -41,8 +41,12 @@ This constitutes a noncanonical Hamiltonian system of the form
 ```
 with ``q = (x,y,z,u)`` and the symplectic matrix ``\Omega`` given by
 ```math
-\Omega_{ij} = \dfrac{\partial \vartheta_{j}}{\partial q^{i}} - \dfrac{\partial \vartheta_{i}}{\partial q^{j}} .
+\Omega_{ij} = \dfrac{\partial \vartheta_{i}}{\partial q^{j}} - \dfrac{\partial \vartheta_{j}}{\partial q^{i}} ,
 ```
+which is the convention used throughout this package and shared with
+[GeometricProblems.jl](https://github.com/JuliaGNI/GeometricProblems.jl).
+With it the Euler-Lagrange equations of ``L = \vartheta \cdot \dot{q} - H`` read
+``\Omega (q) \, \dot{q} = - \nabla H (q)``.
 
 
 ## Modules

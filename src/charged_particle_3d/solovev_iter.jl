@@ -9,7 +9,18 @@ module SolovevIter
 
     include("charged_particle_3d_canonical.jl")
 
-    const xᵢ = [7.0, 0.0, 0.0]
+    export default_parameters
+
+    """
+    The charged particle models are parameter-free — the electromagnetic field is injected as
+    code rather than passed as parameters. The method exists so that every problem in this
+    package can be constructed the same way.
+    """
+    default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
+
+    const parameters = default_parameters()
+
+    const xᵢ = [7.0 - 1.4, 0.0, 0.0]
     const qᵢ = from_cartesian(0, xᵢ)
     const vᵢ = [3.43E-3, 6.75, -3.41E-1]
     const pᵢ = charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ)

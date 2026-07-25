@@ -22,31 +22,39 @@ u_0 = 0.5, \quad
 """
 module ThetaPinchField
 
-    import ElectromagneticFields.ThetaPinch
+import ElectromagneticFields.ThetaPinch
 
-    ThetaPinch.@code() # inject magnetic field code
+ThetaPinch.@code() # inject magnetic field code
 
-    const Δt = 1.0
-    const tspan = (0.0, 1000.0)
+const Δt = 1.0
+const tspan = (0.0, 1000.0)
 
-    μ_loop() = 2.5E-6
+μ_loop() = 2.5E-6
 
-    function f_loop(t)
-        μ  = 2.5E-6
-        Y0 = 0.0
-        u0 = 4E-4
-        r0 = 0.5
-        r1 = 0.3
+function f_loop(t)
+    μ = 2.5E-6
+    Y0 = 0.0
+    u0 = 4E-4
+    r0 = 0.5
+    r1 = 0.3
 
-        Xt = r0*cos(2π*t)
-        Zt = r1*sin(2π*t)
+    Xt = r0 * cos(2π * t)
+    Zt = r1 * sin(2π * t)
 
-        qt = [Xt, Y0, Zt, u0]
+    qt = [Xt, Y0, Zt, u0]
 
-        return qt
-    end
+    return qt
+end
 
-    include("guiding_center_3d_equations.jl")
-    include("guiding_center_3d_diagnostics.jl")
+export default_parameters
+
+"The magnetic moment μ this equilibrium is set up for."
+default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.5E-6),)
+
+const parameters = default_parameters()
+
+include("guiding_center_3d_equations.jl")
+include("guiding_center_3d_canonical.jl")
+include("guiding_center_3d_diagnostics.jl")
 
 end

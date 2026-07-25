@@ -50,9 +50,13 @@ The pitch angle $\alpha$ determines the distribution of the kinetic energy into 
 ```math
 \begin{aligned}
 W_{\perp}' &= W' \sin \alpha , \qquad
-W_{\parallel}' &= W' \, (1 - \sin \alpha) ,
+W_{\parallel}' &= W' \, (1 - \sin \alpha) .
 \end{aligned}
 ```
+Note that this is not the textbook pitch-angle convention
+``W_{\perp} = W \sin^{2} \alpha``, ``W_{\parallel} = W \cos^{2} \alpha``; it is however
+self-consistent with the inverse relation ``\alpha = \arcsin (W_{\perp}' / W')`` used by
+`InitialConditionsGC` to recover the pitch angle from ``(u, \mu)``.
 and accordingly
 ```math
 \begin{aligned}
@@ -64,11 +68,11 @@ and accordingly
 The ElectromagneticFields.jl package provides three functions `a⃗(t,x)`, `b⃗(t,x)`, `c⃗(t,x)` that can be used to construct the velocity vector $v$.
 The function `b⃗` returns the unit vector of the magnetic field, thus
 ```math
-v_{\parallel}' = \vert v' \vert \, (1 - \sin \alpha) \, b .
+v_{\parallel}' = \vert v' \vert \, \sqrt{1 - \sin \alpha} \, b .
 ```
 The functions `a⃗` and `c⃗` return two unit vectors that span the plane perpendicular to the magnetic field, thus
 ```math
-v_{\perp}' = \vert v' \vert \, \sin \alpha ( - a \, \sin \theta - c \, \cos \theta ) ,
+v_{\perp}' = \vert v' \vert \, \sqrt{\sin \alpha} \, ( - a \, \sin \theta - c \, \cos \theta ) ,
 ```
 where $\theta$ is the gyro angle.
 The magnetic moment is computed as
@@ -157,12 +161,9 @@ Order   = [:type, :function]
 As an example, let us consider a deuteron in an ITER-like analytical equilibrium (obtained from `ElectromagneticFields.SolovevITER`). The guiding center position is $[7, 0, 0]$, the energy is $1 \, \mathrm{MeV}$, and the pitch angle is $\pi / 2$.
 
 ```@eval
+using CairoMakie
 using LaTeXStrings
 using Markdown
-using Plots
-
-p = palette(:tab10)
-rectangle(x, y, w, h) = Shape(x .+ [-w/2,-w/2,+w/2,+w/2], y .+ [-h/2,+h/2,+h/2,-h/2])
 
 using ChargedParticleDynamics
 using ChargedParticleDynamics: md
@@ -187,13 +188,7 @@ nz = 120
 
 xgrid = LinRange( 0.5,   1.5, nr)
 ygrid = LinRange(-0.75, +0.75, nz)
-fieldlines = zeros((nr,nz))
-
-for i in 1:nr
-    for j in 1:nz
-        fieldlines[i,j] = A₃(0, xgrid[i], ygrid[j], 0.0) / xgrid[i]
-    end
-end
+fieldlines = [A₃(0, x, y, 0.0) / x for x in xgrid, y in ygrid]
 
 px = zeros(np)
 py = zeros(np)
@@ -204,23 +199,25 @@ for i in 1:np
     py[i] = ics[1][2]
 end
 
-boxw=0.008
-boxh=0.008
+boxw = 0.008
+boxh = 0.008
 
-plot(aspectratio=1, layout=(1,2), legend=:none, size=(800,600), xguide=L"R/R_0", yguide=L"Z/R_0")
-plot!(subplot=1, rectangle(X₀[1], X₀[2], 0.1, 0.1), opacity=.5, color=:white)
+fg = Figure(size=(800, 400))
 
-plot!(subplot=1, xlims=(0.5,1.5), ylims=(-0.75,+0.75))
-plot!(subplot=2, xlims=(X₀[1] .+ [-boxw,+boxw]), ylims=(X₀[2] .+ [-boxh,+boxh]))
+axl = Axis(fg[1, 1], aspect=1, xlabel=L"R/R_0", ylabel=L"Z/R_0",
+           limits=((0.5, 1.5), (-0.75, +0.75)))
+axr = Axis(fg[1, 2], aspect=1, xlabel=L"R/R_0", ylabel=L"Z/R_0",
+           limits=(X₀[1] .+ (-boxw, +boxw), X₀[2] .+ (-boxh, +boxh)))
 
-contour!(subplot=1, xgrid, ygrid, fieldlines', levels=50)
-scatter!(subplot=1, px, py, color=p[1])
-scatter!(subplot=1, [X₀[1]], [X₀[2]], color=p[4])
+contour!(axl, xgrid, ygrid, fieldlines, levels=50, colormap=:reds)
+poly!(axl, Rect(X₀[1] - 0.05, X₀[2] - 0.05, 0.1, 0.1), color=(:white, 0.5), strokecolor=:black, strokewidth=1)
 
-scatter!(subplot=2, px, py, color=p[1])
-scatter!(subplot=2, [X₀[1]], [X₀[2]], color=p[4])
+for ax in (axl, axr)
+    scatter!(ax, px, py, color=:blue)
+    scatter!(ax, [X₀[1]], [X₀[2]], color=:red)
+end
 
-savefig("initial_conditions.png")
+save("initial_conditions.png", fg)
 
 Markdown.parse("""
 | Fields     | Value |
@@ -243,6 +240,6 @@ Markdown.parse("""
 """)
 ```
 
-Below we plot the guiding center position (in red) and the particle position (in blue) in the poloidal plane for various gyro angles $\in [0, 2\pi]$.
+Below we plot the guiding center position (in red) and the particle position (in blue) in the poloidal plane for various gyro angles $\in [0, 2\pi]$. The right panel zooms into the white box around the guiding center.
 
 ![](initial_conditions.png)

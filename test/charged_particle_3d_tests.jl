@@ -8,16 +8,18 @@ module ChargedParticle3dTests
 
     export test_charged_particle_3d
 
-    function test_charged_particle_3d(ode::ODEProblem)
-        @test_nowarn integrate(ode, Gauss(1))
+    # Asserts that the integration returns a solution rather than `@test_nowarn`; see the comment
+    # on the corresponding functions in `guiding_center_3d_tests.jl` for why.
+    function test_charged_particle_3d(equ::ODEProblem)
+        @test integrate(equ, Gauss(1)) isa GeometricSolution
     end
 
-    function test_charged_particle_3d(ode::PODEProblem)
-        @test_nowarn integrate(ode, PartitionedGauss(1))
+    function test_charged_particle_3d(equ::Union{HODEProblem,PODEProblem})
+        @test integrate(equ, PartitionedGauss(1)) isa GeometricSolution
     end
 
-    function test_charged_particle_3d(ode::IODEProblem)
-        @test_nowarn integrate(ode, VPRKGauss(1))
+    function test_charged_particle_3d(equ::Union{IODEProblem,LODEProblem})
+        @test integrate(equ, VPRKGauss(1)) isa GeometricSolution
     end
 
 end

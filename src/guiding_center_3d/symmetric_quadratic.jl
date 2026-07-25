@@ -45,52 +45,60 @@ u_1 = 0.01, \quad
 """
 module SymmetricField
 
-    import ElectromagneticFields.SymmetricQuadratic
+import ElectromagneticFields.SymmetricQuadratic
 
-    SymmetricQuadratic.@code() # inject magnetic field code
+SymmetricQuadratic.@code() # inject magnetic field code
 
-    const Δt = 1.0
-    const tspan = (0.0, 1000.0)
+const Δt = 1.0
+const tspan = (0.0, 1000.0)
 
-    μ_loop() = 1E-2
-    μ_surface() = 1E-2
+μ_loop() = 1E-2
+μ_surface() = 1E-2
 
-    function f_loop(s)
-        rx = 0.5
-        ry = 0.3
-        z0 = 0.0
-        z1 = 0.1
-        u0 = 5E-1
-        u1 = 5E-2
+function f_loop(s)
+    rx = 0.5
+    ry = 0.3
+    z0 = 0.0
+    z1 = 0.1
+    u0 = 5E-1
+    u1 = 5E-2
 
-        xs = rx*cos(2π*s)
-        ys = ry*sin(2π*s)
-        zs = z0 + z1 * sin(2π*s)
-        us = u0 + u1 * cos(2π*s)
+    xs = rx * cos(2π * s)
+    ys = ry * sin(2π * s)
+    zs = z0 + z1 * sin(2π * s)
+    us = u0 + u1 * cos(2π * s)
 
-        qs = [xs, ys, zs, us]
+    qs = [xs, ys, zs, us]
 
-        return qs
-    end
+    return qs
+end
 
-    function f_surface(s,t)
-        r0 = 0.5
-        z0 = 0.0
-        z1 = 0.1
-        u0 = 5E-1
-        u1 = 1E-2
+function f_surface(s, t)
+    r0 = 0.5
+    z0 = 0.0
+    z1 = 0.1
+    u0 = 5E-1
+    u1 = 1E-2
 
-        x  = r0*(s-0.5)
-        y  = r0*(t-0.5)
-        z  = z0 + z1 * cos(2π*s) * cos(2π*t)
-        u  = u0 + u1 * sin(2π*s) * sin(2π*t)
+    x = r0 * (s - 0.5)
+    y = r0 * (t - 0.5)
+    z = z0 + z1 * cos(2π * s) * cos(2π * t)
+    u = u0 + u1 * sin(2π * s) * sin(2π * t)
 
-        q  = [x, y, z, u]
+    q = [x, y, z, u]
 
-        return q
-    end
+    return q
+end
 
-    include("guiding_center_3d_equations.jl")
-    include("guiding_center_3d_diagnostics.jl")
+export default_parameters
+
+"The magnetic moment μ this equilibrium is set up for."
+default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+
+const parameters = default_parameters()
+
+include("guiding_center_3d_equations.jl")
+include("guiding_center_3d_canonical.jl")
+include("guiding_center_3d_diagnostics.jl")
 
 end

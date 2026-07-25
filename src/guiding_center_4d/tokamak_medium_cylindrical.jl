@@ -15,10 +15,10 @@ module TokamakMediumCylindrical
     const Δt = 1.0
     const tspan = (0.0, 1000.0)
 
-    initial_conditions_barely_passing() = ([2.5, 0., 0., 3.425E-1], (μ = 1E-2,)) # Δt=2.5, nt=50
-    initial_conditions_barely_trapped() = ([2.5, 0., 0., 3.375E-1], (μ = 1E-2,)) # Δt=3.0, nt=100
-    initial_conditions_deeply_passing() = ([2.5, 0., 0., 5E-1], (μ = 1E-2,))     # Δt=2.5, nt=25
-    initial_conditions_deeply_trapped() = ([2.5, 0., 0., 1E-1], (μ = 1E-2,))     # Δt=5.0, nt=50
+    initial_conditions_barely_passing() = ([from_cartesian(0, [2.5, 0., 0.])..., 3.425E-1], (μ = 1E-2,)) # Δt=2.5, nt=50
+    initial_conditions_barely_trapped() = ([from_cartesian(0, [2.5, 0., 0.])..., 3.375E-1], (μ = 1E-2,)) # Δt=3.0, nt=100
+    initial_conditions_deeply_passing() = ([from_cartesian(0, [2.5, 0., 0.])..., 5E-1], (μ = 1E-2,))     # Δt=2.5, nt=25
+    initial_conditions_deeply_trapped() = ([from_cartesian(0, [2.5, 0., 0.])..., 1E-1], (μ = 1E-2,))     # Δt=5.0, nt=50
 
     μ_loop() = 1E-3
     μ_surface() = 1E-3
@@ -54,11 +54,21 @@ module TokamakMediumCylindrical
         return qt
     end
 
+    export default_parameters
+
+    "The magnetic moment μ this equilibrium is set up for."
+    default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+
+    const parameters = default_parameters()
+
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")
     include("guiding_center_4d_loop.jl")
     include("guiding_center_4d_surface.jl")
 
+    # The canonical toroidal momentum is the covariant φ-component of the one-form, ϑ₃. It was
+    # previously multiplied by R, which destroys the conservation: on the small tokamak the
+    # relative variation over 10³ time units is 2e-13 for ϑ₃ and 3e-3 for R ϑ₃.
     function toroidal_momentum(t,q)
         ϑ₃(t,q)
     end

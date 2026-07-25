@@ -1,0 +1,34 @@
+
+function plot_fieldlines_figure end
+function plot_fieldlines end
+function plot_invariant end
+function plot_invariant_error end
+function plot_poloidal_figure end
+function plot_components_figure end
+function plot_components end
+function plot_components! end
+function plot_trajectory_cartesian end
+function plot_trajectory_cylindrical end
+function plot_trajectory_poloidal end
+function plot_trajectory_poloidal! end
+function plot_trajectory_scatter! end
+function plot_trajectory_projection_figure end
+function plot_trajectory_projection end
+function plot_trajectory_projection! end
+function plot_trajectory_3d_figure end
+function plot_trajectory_3d end
+function plot_trajectory_3d! end
+function plot_poincare_invariant_error end
+function plot_poincare_loop end
+function plot_poincare_surface end
+function plot_poincare_trajectories end
+
+export plot_fieldlines
+export plot_invariant, plot_invariant_error
+export plot_components, plot_components!
+export plot_trajectory_cartesian, plot_trajectory_cylindrical
+export plot_trajectory_poloidal, plot_trajectory_poloidal!, plot_trajectory_scatter!
+export plot_trajectory_projection, plot_trajectory_projection!
+export plot_trajectory_3d, plot_trajectory_3d!
+export plot_poincare_invariant_error
+export plot_poincare_loop, plot_poincare_surface, plot_poincare_trajectories

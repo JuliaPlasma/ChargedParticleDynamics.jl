@@ -2,7 +2,6 @@
 # ChargedParticleDynamics.jl
 
 ![CI](https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/workflows/CI/badge.svg)
-[![Build Status](https://travis-ci.org/JuliaPlasma/ChargedParticleDynamics.jl.svg?branch=master)](https://travis-ci.org/JuliaPlasma/ChargedParticleDynamics.jl)
 [![Coverage Status](https://coveralls.io/repos/github/JuliaPlasma/ChargedParticleDynamics.jl/badge.svg)](https://coveralls.io/github/JuliaPlasma/ChargedParticleDynamics.jl)
 [![codecov](https://codecov.io/gh/JuliaPlasma/ChargedParticleDynamics.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaPlasma/ChargedParticleDynamics.jl)
 
@@ -20,10 +19,30 @@ Pages = ["normalization.md",
 
 ```@contents
 Pages = ["charged_particle_3d.md",
+         "guiding_center_3d.md",
          "guiding_center_4d.md",
          "pauli_particle_3d.md",
+         "gyro_kinetics_4d.md",
+         "audit.md",
+         "findings.md",
 ]
 ```
+
+
+## References
+
+- Xinjie Li, Ruili Zhang, Jian Liu, *Approximately symplectic Runge-Kutta methods for the guiding
+  center dynamics*, Journal of Computational Physics **563**, 115069 (2026),
+  [doi:10.1016/j.jcp.2026.115069](https://doi.org/10.1016/j.jcp.2026.115069).
+- Ruili Zhang, Jian Liu, Tong Liu, Wenxiang Li, Xiaogang Wang, *Canonical Hamiltonian guiding
+  center theory and classical intrinsic magnetic moment*, Frontiers of Physics **21**(2), 026200
+  (2026).
+- Jianyuan Xiao, Hong Qin, *Slow manifolds of classical Pauli particle enable structure-preserving
+  geometric algorithms for guiding center dynamics*,
+  [arXiv:2006.03818](https://arxiv.org/abs/2006.03818) (2020).
+- Joshua W. Burby, *Guiding center dynamics as motion on a formal slow manifold in loop space*,
+  Journal of Mathematical Physics **61**, 012703 (2020),
+  [doi:10.1063/1.5119801](https://doi.org/10.1063/1.5119801).
 
 
 ## Acknowledgements

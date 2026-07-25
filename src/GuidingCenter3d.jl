@@ -1,5 +1,16 @@
 module GuidingCenter3d
 
+    # Based on
+    #   Xinjie Li, Ruili Zhang, Jian Liu,
+    #   Approximately symplectic Runge-Kutta methods for the guiding center dynamics,
+    #   Journal of Computational Physics 563, 115069, 2026, doi:10.1016/j.jcp.2026.115069,
+    # and its companion
+    #   Ruili Zhang, Jian Liu, Tong Liu, Wenxiang Li, Xiaogang Wang,
+    #   Canonical Hamiltonian guiding center theory and classical intrinsic magnetic moment,
+    #   Frontiers of Physics 21(2), 026200, 2026, doi:10.15302/frontphys.2026.026200.
+
+    include("guiding_center_3d/dipole.jl")
+    include("guiding_center_3d/quadratic_potentials.jl")
     include("guiding_center_3d/solovev_iter.jl")
     include("guiding_center_3d/solovev_iter_xpoint.jl")
     include("guiding_center_3d/solovev_symmetric.jl")

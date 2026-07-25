@@ -8,7 +8,7 @@ module TokamakMediumCartesian
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
-    export hamiltonian, toroidal_momentum
+    export hamiltonian
 
     AxisymmetricTokamakCartesian.@code(2., 5., 2.) # inject magnetic field code
 
@@ -53,6 +53,13 @@ module TokamakMediumCartesian
 
         return qt
     end
+
+    export default_parameters
+
+    "The magnetic moment μ this equilibrium is set up for."
+    default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+
+    const parameters = default_parameters()
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")
