@@ -22,6 +22,16 @@ module SolovevIterXpoint
 
     include("pauli_particle_3d.jl")
 
+    export default_parameters
+
+    """
+    The magnetic moment μ of the default initial condition `(qᵢ, vᵢ)`, obtained by splitting
+    `vᵢ` into its parallel and perpendicular parts at `qᵢ`.
+    """
+    default_parameters(::Type{T}=Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ)[3].μ),)
+
+    const parameters = default_parameters()
+
     function initial_conditions(x₀, u₀, μ)
         v₀ = u₀ * [b¹(0, x₀), b²(0, x₀), b³(0, x₀)]
         (x₀, v₀, (μ = μ,))

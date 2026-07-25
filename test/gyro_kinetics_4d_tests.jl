@@ -16,12 +16,14 @@ const options = (f_abstol=1E-15, f_reltol=1E-15)
 export test_gyro_kinetics_4d_erk4, test_gyro_kinetics_4d_glrk, test_gyro_kinetics_4d_strang
 export nl, nx, ny
 
+# Assert that the integration returns a solution rather than `@test_nowarn`; see the comment on the
+# corresponding functions in `guiding_center_3d_tests.jl` for why.
 function test_gyro_kinetics_4d_erk4(equ::ODEProblem)
-    @test_nowarn integrate(equ, RK4())
+    @test integrate(equ, RK4()) isa GeometricSolution
 end
 
 function test_gyro_kinetics_4d_glrk(equ::ODEProblem)
-    @test_nowarn integrate(equ, Gauss(1); options...)
+    @test integrate(equ, Gauss(1); options...) isa GeometricSolution
 end
 
 function test_gyro_kinetics_4d_strang(ode::SODEProblem)
@@ -29,7 +31,7 @@ function test_gyro_kinetics_4d_strang(ode::SODEProblem)
     opt = Tuple(options for _ in 1:6)
     # mpi = Tuple((v::Function, Δt::Number; kwargs...) -> Integrator{DT, ndims(ode)}(v, Gauss(1), Δt; kwargs...) for i in 1:6)
     # mpi = Tuple((v::Function, Δt::Number; kwargs...) -> IntegratorFIRKwCT{DT, ndims(ode)}(v, ωabs, ode.parameters, Gauss(1), Δt; kwargs...) for i in 1:6)
-    @test_nowarn integrate(ode, Composition(mpi, Strang()); options=opt)
+    @test integrate(ode, Composition(mpi, Strang()); options=opt) isa GeometricSolution
 end
 
 end

@@ -29,6 +29,18 @@ module GuidingCenter4dSolovevIterXpoint
     const x₀ = from_cartesian(0, [2.5, 0., 0.])
     const μ₀ = 1E-2
 
+    export default_parameters
+
+    """
+    The parameters of the default initial condition: the magnetic moment `μ`, the major radius
+    `R₀` of the equilibrium, and the gyro frequency `ω₀` that sets the scaling of the transformed
+    coordinates `q̃`. `ω₀` is evaluated at the deeply passing initial condition.
+    """
+    default_parameters(::Type{T}=Float64) where {T} =
+        (μ = T(μ₀), R₀ = T(R₀), ω₀ = T(ωabs(0, [x₀..., 5.0E-1])))
+
+    const parameters = default_parameters()
+
     initial_conditions_barely_passing() = solovev_xpoint_iter_initial_conditions(0, [x₀..., 3.425E-1], μ₀)
     initial_conditions_barely_trapped() = solovev_xpoint_iter_initial_conditions(0, [x₀..., 3.375E-1], μ₀)
     initial_conditions_deeply_passing() = solovev_xpoint_iter_initial_conditions(0, [x₀..., 5.0E-1  ], μ₀)

@@ -6,7 +6,7 @@ using GeometricSolutions: GeometricSolution, DataSeries, TimeSeries
 
 
 export guiding_center_4d_ode, guiding_center_4d_iode, guiding_center_4d_iode_λ,
-    guiding_center_4d_iode_dec128, guiding_center_4d_lode,
+    guiding_center_4d_lode,
     guiding_center_4d_dg, guiding_center_4d_formal_lagrangian
 
 
@@ -52,25 +52,12 @@ function guiding_center_4d_iode(qᵢ=qᵢ, parameters=parameters; tspan=tspan, t
     )
 end
 
-function guiding_center_4d_iode_dec128(qᵢ=qᵢ, parameters=parameters; tspan=tspan, tstep=Δt, periodic=true)
-    IODEProblem(
-        guiding_center_4d_ϑ,
-        guiding_center_4d_f,
-        guiding_center_4d_g,
-        tspan, tstep, Dec128.(qᵢ), guiding_center_4d_pᵢ(tspan[begin], Dec128.(qᵢ));
-        parameters=parameters,
-        invariants=(h=hamiltonian,),
-        periodicity=guiding_center_4d_periodicity(qᵢ, periodic),
-        v̄=guiding_center_4d_v
-    )
-end
-
 function guiding_center_4d_iode_λ(qᵢ=qᵢ, parameters=parameters; tspan=tspan, tstep=Δt, periodic=true)
     IODEProblem(
         guiding_center_4d_ϑ,
         guiding_center_4d_f,
         guiding_center_4d_g,
-        tspan, tstep, qᵢ, guiding_center_4d_pᵢ(tspan[begin], qᵢ), guiding_center_4d_λ₀(qᵢ);
+        tspan, tstep, qᵢ, guiding_center_4d_pᵢ(tspan[begin], qᵢ), guiding_center_4d_λᵢ(tspan[begin], qᵢ, parameters);
         parameters=parameters,
         invariants=(h=hamiltonian,),
         periodicity=guiding_center_4d_periodicity(qᵢ, periodic),
@@ -93,15 +80,20 @@ function guiding_center_4d_lode(qᵢ=qᵢ, parameters=parameters; tspan=tspan, t
 end
 
 function guiding_center_4d_dg(qᵢ=qᵢ, parameters=parameters; tspan=tspan, tstep=Δt, periodic=true, κ=0.0)
-    guiding_center_4d_ϑ_κ(t, q, v, p, params) = guiding_center_4d_ϑ(t, q, v, p, params, κ)
-    guiding_center_4d_f_κ(t, q, v, f, params) = guiding_center_4d_f(t, q, v, f, params, κ)
-    guiding_center_4d_g_κ(t, q, λ, g, params) = guiding_center_4d_g(t, q, λ, g, params, κ)
+    # The output array comes first in every GeometricEquations callback, and `g` is called as
+    # `g(g, t, q, v, λ, params)`; the κ-form of `g` ignores `v`.
+    guiding_center_4d_ϑ_κ(θ, t, q, v, params) = guiding_center_4d_ϑ(θ, t, q, v, params, κ)
+    guiding_center_4d_f_κ(f, t, q, v, params) = guiding_center_4d_f(f, t, q, v, params, κ)
+    guiding_center_4d_g_κ(g, t, q, v, λ, params) = guiding_center_4d_g(g, t, q, λ, params, κ)
+
+    pᵢ = zero(qᵢ)
+    guiding_center_4d_ϑ_κ(pᵢ, tspan[begin], qᵢ, zero(qᵢ), parameters)
 
     IODEProblem(
         guiding_center_4d_ϑ_κ,
         guiding_center_4d_f_κ,
         guiding_center_4d_g_κ,
-        tspan, tstep, qᵢ, qᵢ;
+        tspan, tstep, qᵢ, pᵢ;
         parameters=parameters,
         invariants=(h=hamiltonian,),
         periodicity=guiding_center_4d_periodicity(qᵢ, periodic),

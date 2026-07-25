@@ -3,7 +3,14 @@ const poincare_loop_linewidth = 2
 const poincare_surface_markersize = 3
 
 
-plot_poincare_invariant_error(t, I; label = "I", kwargs...) = plot_error(t, compute_relative_error(I); label = label, kwargs...)
+# Relative error of an invariant series. Computed here rather than with
+# `GeometricSolutions.compute_relative_error`, which takes a `ScalarDataSeries`, because
+# `PoincareInvariants.compute!` returns a plain `Vector` — as does the corrected variant below,
+# which has always done this arithmetic inline.
+_relative_error(I) = (I .- I[begin]) ./ I[begin]
+
+plot_poincare_invariant_error(t, I; label = "I", kwargs...) =
+    plot_error(t, _relative_error(I); label = label, kwargs...)
 
 # Error of the Poincaré invariant `I` corrected by its `O(Δt²)` contribution `K`:
 #     [(I(t) - I(0)) - Δt² (K(t) - K(0))] / (I(0) - Δt² K(0))

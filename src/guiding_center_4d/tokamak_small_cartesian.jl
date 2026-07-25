@@ -17,7 +17,6 @@ module TokamakSmallCartesian
     const tspan = (0.0, 5E4)
 
     const qᵢ = [1.05, 0., 0., 0.00045135897235326736]
-    const parameters = (μ = 2.314593645825811e-6,)
 
     initial_conditions_barely_passing() = ([1.05, 0., 0., 8.117E-4], (μ = 2.448E-6,))
     initial_conditions_barely_trapped() = ([1.05, 0., 0., 7.610E-4], (μ = 2.250E-6,))
@@ -59,6 +58,13 @@ module TokamakSmallCartesian
 
         return qt
     end
+
+    export default_parameters
+
+    "The magnetic moment μ this equilibrium is set up for."
+    default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.314593645825811e-6),)
+
+    const parameters = default_parameters()
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")

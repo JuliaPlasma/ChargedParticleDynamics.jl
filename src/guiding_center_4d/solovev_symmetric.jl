@@ -20,6 +20,13 @@ module SolovevSymmetricField
     initial_conditions_deeply_passing() = ([2.5, 0., 0., 5E-1], (μ = 1E-2,))     # Δt=2.5, nt=25
     initial_conditions_deeply_trapped() = ([2.5, 0., 0., 1E-1], (μ = 1E-2,))     # Δt=5.0, nt=50
 
+    export default_parameters
+
+    "The magnetic moment μ this equilibrium is set up for."
+    default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+
+    const parameters = default_parameters()
+
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")
 

@@ -50,9 +50,13 @@ The pitch angle $\alpha$ determines the distribution of the kinetic energy into 
 ```math
 \begin{aligned}
 W_{\perp}' &= W' \sin \alpha , \qquad
-W_{\parallel}' &= W' \, (1 - \sin \alpha) ,
+W_{\parallel}' &= W' \, (1 - \sin \alpha) .
 \end{aligned}
 ```
+Note that this is not the textbook pitch-angle convention
+``W_{\perp} = W \sin^{2} \alpha``, ``W_{\parallel} = W \cos^{2} \alpha``; it is however
+self-consistent with the inverse relation ``\alpha = \arcsin (W_{\perp}' / W')`` used by
+`InitialConditionsGC` to recover the pitch angle from ``(u, \mu)``.
 and accordingly
 ```math
 \begin{aligned}
@@ -64,11 +68,11 @@ and accordingly
 The ElectromagneticFields.jl package provides three functions `a⃗(t,x)`, `b⃗(t,x)`, `c⃗(t,x)` that can be used to construct the velocity vector $v$.
 The function `b⃗` returns the unit vector of the magnetic field, thus
 ```math
-v_{\parallel}' = \vert v' \vert \, (1 - \sin \alpha) \, b .
+v_{\parallel}' = \vert v' \vert \, \sqrt{1 - \sin \alpha} \, b .
 ```
 The functions `a⃗` and `c⃗` return two unit vectors that span the plane perpendicular to the magnetic field, thus
 ```math
-v_{\perp}' = \vert v' \vert \, \sin \alpha ( - a \, \sin \theta - c \, \cos \theta ) ,
+v_{\perp}' = \vert v' \vert \, \sqrt{\sin \alpha} \, ( - a \, \sin \theta - c \, \cos \theta ) ,
 ```
 where $\theta$ is the gyro angle.
 The magnetic moment is computed as

@@ -3,7 +3,12 @@
 
 The [four-dimensional guiding centre model](guiding_center_4d.md) evolves the guiding centre position ``r = (x,y,z)`` together with the parallel velocity ``u``.
 The three-dimensional model instead treats the parallel velocity as a dependent variable and evolves only the position together with its canonically conjugate momentum, so that the guiding centre dynamics takes the form of a *constrained canonical* Hamiltonian system.
-The implementation follows Xinjie Li, Ruili Zhang and Jian Liu, *Symplectic Runge-Kutta methods for the guiding center dynamics*.
+The implementation follows Xinjie Li, Ruili Zhang and Jian Liu, *Approximately symplectic
+Runge-Kutta methods for the guiding center dynamics*, Journal of Computational Physics **563**,
+115069 (2026), [doi:10.1016/j.jcp.2026.115069](https://doi.org/10.1016/j.jcp.2026.115069), and its
+companion Ruili Zhang, Jian Liu, Tong Liu, Wenxiang Li and Xiaogang Wang, *Canonical Hamiltonian
+guiding center theory and classical intrinsic magnetic moment*, Frontiers of Physics **21**(2),
+026200 (2026).
 
 
 ## Canonical Formulation

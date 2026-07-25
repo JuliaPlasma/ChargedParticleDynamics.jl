@@ -10,12 +10,14 @@ export test_pauli_particle_3d
 
 const options = (f_abstol=1E-15, f_reltol=1E-15)
 
+# Asserts that the integration returns a solution rather than `@test_nowarn`; see the comment on
+# the corresponding functions in `guiding_center_3d_tests.jl` for why.
 function test_pauli_particle_3d(equ::Union{HODEProblem,PODEProblem}; kwargs...)
-    @test_nowarn integrate(equ, PartitionedGauss(2); options..., kwargs...)
+    @test integrate(equ, PartitionedGauss(2); options..., kwargs...) isa GeometricSolution
 end
 
 function test_pauli_particle_3d(equ::Union{IODEProblem,LODEProblem}; kwargs...)
-    @test_nowarn integrate(equ, VPRKGauss(2); options..., kwargs...)
+    @test integrate(equ, VPRKGauss(2); options..., kwargs...) isa GeometricSolution
 end
 
 end

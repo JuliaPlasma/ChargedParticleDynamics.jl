@@ -16,8 +16,9 @@ makedocs(
              "Pauli Particles in 3D"         => "pauli_particle_3d.md",
              "Guiding Center Dynamics in 3D" => "guiding_center_3d.md",
              "Guiding Center Dynamics in 4D" => "guiding_center_4d.md",
+             "Model Audit"                   => "audit.md",
              "Examples" => [
-                    "ITER Equilibrium im Cylindrical Coordinates"   => "examples/iter_cylindrical.md",
+                    "ITER Equilibrium in Cylindrical Coordinates"   => "examples/iter_cylindrical.md",
                  ],
             ]
 )

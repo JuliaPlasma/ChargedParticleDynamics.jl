@@ -15,12 +15,14 @@ const options = (f_abstol=1E-15, f_reltol=1E-15)
 export test_guiding_center_4d
 export nl, nx, ny
 
+# Asserts that the integration returns a solution rather than `@test_nowarn`; see the comment on
+# the corresponding functions in `guiding_center_3d_tests.jl` for why.
 function test_guiding_center_4d(equ::ODEProblem)
-    @test_nowarn integrate(equ, Gauss(2); options...)
+    @test integrate(equ, Gauss(2); options...) isa GeometricSolution
 end
 
 function test_guiding_center_4d(equ::Union{IODEProblem,LODEProblem})
-    @test_nowarn integrate(equ, VPRKGauss(2); options...)
+    @test integrate(equ, VPRKGauss(2); options...) isa GeometricSolution
 end
 
 end

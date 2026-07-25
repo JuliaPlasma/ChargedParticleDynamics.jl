@@ -18,4 +18,14 @@ module ThetaPinchField
 
     include("pauli_particle_3d.jl")
 
+    export default_parameters
+
+    """
+    The magnetic moment μ of the default initial condition `(qᵢ, vᵢ)`, obtained by splitting
+    `vᵢ` into its parallel and perpendicular parts at `qᵢ`.
+    """
+    default_parameters(::Type{T}=Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ)[3].μ),)
+
+    const parameters = default_parameters()
+
 end

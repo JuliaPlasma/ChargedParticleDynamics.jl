@@ -64,6 +64,13 @@ function f_surface(s, t)
     return qt
 end
 
+export default_parameters
+
+"The magnetic moment μ this equilibrium is set up for."
+default_parameters(::Type{T}=Float64) where {T} = (μ = T(3.2e-7),)
+
+const parameters = default_parameters()
+
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_canonical.jl")
 

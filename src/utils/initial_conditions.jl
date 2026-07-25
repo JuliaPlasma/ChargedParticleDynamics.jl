@@ -181,7 +181,9 @@ the vector `vcat(x,v)`.
 """
 function charged_particle(ics::InitialConditions{T}; noncanonical=false) where {T}
     if noncanonical
-        return vcat(ics.x, ics.v)
+        # `vvec`, not `v`: the noncanonical models carry the three velocity components in
+        # `q[4:6]`, whereas `ics.v` is the scalar |v|, which would make this a 4-vector.
+        return vcat(ics.x, ics.vvec)
     else
         return (ics.x, ics.vvec)
     end

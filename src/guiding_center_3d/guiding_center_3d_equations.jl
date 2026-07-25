@@ -64,10 +64,9 @@ function initial_momentum(tᵢ, Qᵢ::AbstractArray{T}) where {T<:Number}
 end
 
 function fix_initial_momentum(tᵢ, qᵢ::AbstractArray{T}, pᵢ::AbstractArray{T}) where {T<:Number}
-    u = (pᵢ[1] - A₁(tᵢ, qᵢ)) * b₁(tᵢ, qᵢ[1:3]) +
-        (pᵢ[2] - A₂(tᵢ, qᵢ)) * b₂(tᵢ, qᵢ[1:3]) +
-        (pᵢ[3] - A₃(tᵢ, qᵢ)) * b₃(tᵢ, qᵢ[1:3])
-    initial_momentum(tᵢ, [qᵢ..., u])
+    # `u` raises the index with the inverse metric; spelling the contraction out here without it
+    # made this disagree with `u(t, q, p)` above in every curvilinear coordinate system.
+    initial_momentum(tᵢ, [qᵢ..., u(tᵢ, qᵢ, pᵢ)])
 end
 
 function initial_conditions(tᵢ, Qᵢ::AbstractArray{T}) where {T<:Number}

@@ -40,6 +40,11 @@ function ϑ(θ::AbstractVector, t::Number, q::AbstractVector)
     nothing
 end
 
+# The one-form is built from the magnetic field alone, so it does not depend on the parameters.
+# This method exists so that `ϑ` can be handed to `PoincareInvariants` — and to anything else
+# following the `form(out, t, q, params)` convention of `GeometricEquations` — unwrapped.
+ϑ(θ::AbstractVector, t::Number, q::AbstractVector, params) = ϑ(θ, t, q)
+
 function ϑ(t::Number, q::AbstractVector, k::Int)
     if k == 1
         ϑ₁(t, q)
@@ -79,85 +84,14 @@ function ω(Ω, t, q)
     nothing
 end
 
-
-function D²ϑ₁(D²ϑ, t, q)
-    D²ϑ[1,1] = d²A₁dx₁dx₁(t,q) + u(t,q) * d²b₁dx₁dx₁(t,q)
-    D²ϑ[1,2] = d²A₁dx₁dx₂(t,q) + u(t,q) * d²b₁dx₁dx₂(t,q)
-    D²ϑ[1,3] = d²A₁dx₁dx₃(t,q) + u(t,q) * d²b₁dx₁dx₃(t,q)
-    D²ϑ[1,4] = db₁dx₁(t,q)
-
-    D²ϑ[2,1] = d²A₁dx₂dx₁(t,q) + u(t,q) * d²b₁dx₂dx₁(t,q)
-    D²ϑ[2,2] = d²A₁dx₂dx₂(t,q) + u(t,q) * d²b₁dx₂dx₂(t,q)
-    D²ϑ[2,3] = d²A₁dx₂dx₃(t,q) + u(t,q) * d²b₁dx₂dx₃(t,q)
-    D²ϑ[2,4] = db₁dx₂(t,q)
-
-    D²ϑ[3,1] = d²A₁dx₃dx₁(t,q) + u(t,q) * d²b₁dx₃dx₁(t,q)
-    D²ϑ[3,2] = d²A₁dx₃dx₂(t,q) + u(t,q) * d²b₁dx₃dx₂(t,q)
-    D²ϑ[3,3] = d²A₁dx₃dx₃(t,q) + u(t,q) * d²b₁dx₃dx₃(t,q)
-    D²ϑ[3,4] = db₁dx₃(t,q)
-
-    D²ϑ[4,1] = db₁dx₁(t,q)
-    D²ϑ[4,2] = db₁dx₂(t,q)
-    D²ϑ[4,3] = db₁dx₃(t,q)
-    D²ϑ[4,4] = 0
-
-    nothing
-end
-
-function D²ϑ₂(D²ϑ, t, q)
-    D²ϑ[1,1] = d²A₂dx₁dx₁(t,q) + u(t,q) * d²b₂dx₁dx₁(t,q)
-    D²ϑ[1,2] = d²A₂dx₁dx₂(t,q) + u(t,q) * d²b₂dx₁dx₂(t,q)
-    D²ϑ[1,3] = d²A₂dx₁dx₃(t,q) + u(t,q) * d²b₂dx₁dx₃(t,q)
-    D²ϑ[1,4] = db₂dx₁(t,q)
-
-    D²ϑ[2,1] = d²A₂dx₂dx₁(t,q) + u(t,q) * d²b₂dx₂dx₁(t,q)
-    D²ϑ[2,2] = d²A₂dx₂dx₂(t,q) + u(t,q) * d²b₂dx₂dx₂(t,q)
-    D²ϑ[2,3] = d²A₂dx₂dx₃(t,q) + u(t,q) * d²b₂dx₂dx₃(t,q)
-    D²ϑ[2,4] = db₂dx₂(t,q)
-
-    D²ϑ[3,1] = d²A₂dx₃dx₁(t,q) + u(t,q) * d²b₂dx₃dx₁(t,q)
-    D²ϑ[3,2] = d²A₂dx₃dx₂(t,q) + u(t,q) * d²b₂dx₃dx₂(t,q)
-    D²ϑ[3,3] = d²A₂dx₃dx₃(t,q) + u(t,q) * d²b₂dx₃dx₃(t,q)
-    D²ϑ[3,4] = db₂dx₃(t,q)
-
-    D²ϑ[4,1] = db₂dx₁(t,q)
-    D²ϑ[4,2] = db₂dx₂(t,q)
-    D²ϑ[4,3] = db₂dx₃(t,q)
-    D²ϑ[4,4] = 0
-
-    nothing
-end
-
-function D²ϑ₃(D²ϑ, t, q)
-    D²ϑ[1,1] = d²A₃dx₁dx₁(t,q) + u(t,q) * d²b₃dx₁dx₁(t,q)
-    D²ϑ[1,2] = d²A₃dx₁dx₂(t,q) + u(t,q) * d²b₃dx₁dx₂(t,q)
-    D²ϑ[1,3] = d²A₃dx₁dx₃(t,q) + u(t,q) * d²b₃dx₁dx₃(t,q)
-    D²ϑ[1,4] = db₃dx₁(t,q)
-
-    D²ϑ[2,1] = d²A₃dx₂dx₁(t,q) + u(t,q) * d²b₃dx₂dx₁(t,q)
-    D²ϑ[2,2] = d²A₃dx₂dx₂(t,q) + u(t,q) * d²b₃dx₂dx₂(t,q)
-    D²ϑ[2,3] = d²A₃dx₂dx₃(t,q) + u(t,q) * d²b₃dx₂dx₃(t,q)
-    D²ϑ[2,4] = db₃dx₂(t,q)
-
-    D²ϑ[3,1] = d²A₃dx₃dx₁(t,q) + u(t,q) * d²b₃dx₃dx₁(t,q)
-    D²ϑ[3,2] = d²A₃dx₃dx₂(t,q) + u(t,q) * d²b₃dx₃dx₂(t,q)
-    D²ϑ[3,3] = d²A₃dx₃dx₃(t,q) + u(t,q) * d²b₃dx₃dx₃(t,q)
-    D²ϑ[3,4] = db₃dx₃(t,q)
-
-    D²ϑ[4,1] = db₃dx₁(t,q)
-    D²ϑ[4,2] = db₃dx₂(t,q)
-    D²ϑ[4,3] = db₃dx₃(t,q)
-    D²ϑ[4,4] = 0
-
-    nothing
-end
-
-function D²ϑ₄(D²ϑ, t, q)
-    D²ϑ .= 0
-    nothing
-end
+# As for `ϑ` above: `ω = dϑ` does not depend on the parameters either, and this method lets it be
+# passed straight to `PoincareInvariants` as a `form(out, t, q, params)`.
+ω(Ω, t, q, params) = ω(Ω, t, q)
 
 
+# D²ϑd₁[l,j] = ∂²ϑ_l/∂x₁∂x_j: row l runs over the components of the one-form, column j
+# over the coordinate differentiated second. Contracted as qᵀ (D²ϑd_k v) this is the ḡ_k of the
+# κ-form below.
 function D²ϑd₁(D²ϑ, t, q)
     D²ϑ[1,1] = d²A₁dx₁dx₁(t,q) + u(t,q) * d²b₁dx₁dx₁(t,q)
     D²ϑ[1,2] = d²A₁dx₁dx₂(t,q) + u(t,q) * d²b₁dx₁dx₂(t,q)
@@ -182,21 +116,24 @@ function D²ϑd₁(D²ϑ, t, q)
     nothing
 end
 
+# D²ϑd₂[l,j] = ∂²ϑ_l/∂x₂∂x_j: row l runs over the components of the one-form, column j
+# over the coordinate differentiated second. Contracted as qᵀ (D²ϑd_k v) this is the ḡ_k of the
+# κ-form below.
 function D²ϑd₂(D²ϑ, t, q)
-    D²ϑ[2,1] = d²A₁dx₂dx₁(t,q) + u(t,q) * d²b₁dx₂dx₁(t,q)
-    D²ϑ[2,2] = d²A₁dx₂dx₂(t,q) + u(t,q) * d²b₁dx₂dx₂(t,q)
-    D²ϑ[2,3] = d²A₁dx₂dx₃(t,q) + u(t,q) * d²b₁dx₂dx₃(t,q)
-    D²ϑ[2,4] = db₁dx₂(t,q)
+    D²ϑ[1,1] = d²A₁dx₂dx₁(t,q) + u(t,q) * d²b₁dx₂dx₁(t,q)
+    D²ϑ[1,2] = d²A₁dx₂dx₂(t,q) + u(t,q) * d²b₁dx₂dx₂(t,q)
+    D²ϑ[1,3] = d²A₁dx₂dx₃(t,q) + u(t,q) * d²b₁dx₂dx₃(t,q)
+    D²ϑ[1,4] = db₁dx₂(t,q)
 
     D²ϑ[2,1] = d²A₂dx₂dx₁(t,q) + u(t,q) * d²b₂dx₂dx₁(t,q)
     D²ϑ[2,2] = d²A₂dx₂dx₂(t,q) + u(t,q) * d²b₂dx₂dx₂(t,q)
     D²ϑ[2,3] = d²A₂dx₂dx₃(t,q) + u(t,q) * d²b₂dx₂dx₃(t,q)
     D²ϑ[2,4] = db₂dx₂(t,q)
 
-    D²ϑ[3,1] = d²A₂dx₃dx₁(t,q) + u(t,q) * d²b₂dx₃dx₁(t,q)
-    D²ϑ[3,2] = d²A₂dx₃dx₂(t,q) + u(t,q) * d²b₂dx₃dx₂(t,q)
-    D²ϑ[3,3] = d²A₂dx₃dx₃(t,q) + u(t,q) * d²b₂dx₃dx₃(t,q)
-    D²ϑ[3,4] = db₂dx₃(t,q)
+    D²ϑ[3,1] = d²A₃dx₂dx₁(t,q) + u(t,q) * d²b₃dx₂dx₁(t,q)
+    D²ϑ[3,2] = d²A₃dx₂dx₂(t,q) + u(t,q) * d²b₃dx₂dx₂(t,q)
+    D²ϑ[3,3] = d²A₃dx₂dx₃(t,q) + u(t,q) * d²b₃dx₂dx₃(t,q)
+    D²ϑ[3,4] = db₃dx₂(t,q)
 
     D²ϑ[4,1] = 0
     D²ϑ[4,2] = 0
@@ -206,16 +143,19 @@ function D²ϑd₂(D²ϑ, t, q)
     nothing
 end
 
+# D²ϑd₃[l,j] = ∂²ϑ_l/∂x₃∂x_j: row l runs over the components of the one-form, column j
+# over the coordinate differentiated second. Contracted as qᵀ (D²ϑd_k v) this is the ḡ_k of the
+# κ-form below.
 function D²ϑd₃(D²ϑ, t, q)
-    D²ϑ[2,1] = d²A₁dx₃dx₁(t,q) + u(t,q) * d²b₁dx₃dx₁(t,q)
-    D²ϑ[2,2] = d²A₁dx₃dx₂(t,q) + u(t,q) * d²b₁dx₃dx₂(t,q)
-    D²ϑ[2,3] = d²A₁dx₃dx₃(t,q) + u(t,q) * d²b₁dx₃dx₃(t,q)
-    D²ϑ[2,4] = db₁dx₃(t,q)
+    D²ϑ[1,1] = d²A₁dx₃dx₁(t,q) + u(t,q) * d²b₁dx₃dx₁(t,q)
+    D²ϑ[1,2] = d²A₁dx₃dx₂(t,q) + u(t,q) * d²b₁dx₃dx₂(t,q)
+    D²ϑ[1,3] = d²A₁dx₃dx₃(t,q) + u(t,q) * d²b₁dx₃dx₃(t,q)
+    D²ϑ[1,4] = db₁dx₃(t,q)
 
-    D²ϑ[2,1] = d²A₃dx₂dx₁(t,q) + u(t,q) * d²b₃dx₂dx₁(t,q)
-    D²ϑ[2,2] = d²A₃dx₂dx₂(t,q) + u(t,q) * d²b₃dx₂dx₂(t,q)
-    D²ϑ[2,3] = d²A₃dx₂dx₃(t,q) + u(t,q) * d²b₃dx₂dx₃(t,q)
-    D²ϑ[2,4] = db₃dx₂(t,q)
+    D²ϑ[2,1] = d²A₂dx₃dx₁(t,q) + u(t,q) * d²b₂dx₃dx₁(t,q)
+    D²ϑ[2,2] = d²A₂dx₃dx₂(t,q) + u(t,q) * d²b₂dx₃dx₂(t,q)
+    D²ϑ[2,3] = d²A₂dx₃dx₃(t,q) + u(t,q) * d²b₂dx₃dx₃(t,q)
+    D²ϑ[2,4] = db₂dx₃(t,q)
 
     D²ϑ[3,1] = d²A₃dx₃dx₁(t,q) + u(t,q) * d²b₃dx₃dx₁(t,q)
     D²ϑ[3,2] = d²A₃dx₃dx₂(t,q) + u(t,q) * d²b₃dx₃dx₂(t,q)
@@ -230,6 +170,7 @@ function D²ϑd₃(D²ϑ, t, q)
     nothing
 end
 
+# D²ϑd₄[l,j] = ∂²ϑ_l/∂x₄∂x_j = ∂b_l/∂x_j, since ϑ_l = A_l + u b_l is linear in u = x₄.
 function D²ϑd₄(D²ϑ, t, q)
     D²ϑ[1,1] = db₁dx₁(t,q)
     D²ϑ[1,2] = db₁dx₂(t,q)
@@ -253,7 +194,6 @@ function D²ϑd₄(D²ϑ, t, q)
 
     nothing
 end
-
 
 function dϑ(dϑ, t, q)
     dϑ[1,1] = dϑ₁dx₁(t,q)
@@ -326,25 +266,25 @@ g₄(t,q,v) = dϑ₄dx₁(t,q) * v[1] + dϑ₄dx₂(t,q) * v[2] + dϑ₄dx₃(t,
 
 function g̅₁(t, q, v)
     D²ϑ = zeros(eltype(q), length(q), length(v))
-    D²ϑd₁(t, q, D²ϑ)
+    D²ϑd₁(D²ϑ, t, q)
     return transpose(q) * (D²ϑ * v)
 end
 
 function g̅₂(t, q, v)
     D²ϑ = zeros(eltype(q), length(q), length(v))
-    D²ϑd₂(t, q, D²ϑ)
+    D²ϑd₂(D²ϑ, t, q)
     return transpose(q) * (D²ϑ * v)
 end
 
 function g̅₃(t, q, v)
     D²ϑ = zeros(eltype(q), length(q), length(v))
-    D²ϑd₃(t, q, D²ϑ)
+    D²ϑd₃(D²ϑ, t, q)
     return transpose(q) * (D²ϑ * v)
 end
 
 function g̅₄(t, q, v)
     D²ϑ = zeros(eltype(q), length(q), length(v))
-    D²ϑd₄(t, q, D²ϑ)
+    D²ϑd₄(D²ϑ, t, q)
     return transpose(q) * (D²ϑ * v)
 end
 
@@ -452,16 +392,18 @@ function guiding_center_4d_ω(Ω::Matrix{DT}, t::Number, q::AbstractVector{DT}, 
 end
 
 
-function guiding_center_4d_λ(λ::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, μ, Ω::AbstractMatrix{DT}, dh::AbstractVector{DT}) where {DT}
-    dH(dh, t, q, μ)
+# Solve Ω(q) λ = ∇H(q) for λ. `params` is the parameter named tuple the model is built with —
+# it is forwarded to `dH`, which unpacks `μ` from it, so passing a bare `μ` here does not work.
+function guiding_center_4d_λ(λ::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, params, Ω::AbstractMatrix{DT}, dh::AbstractVector{DT}) where {DT}
+    dH(dh, t, q, params)
     ω(Ω, t, q)
-    λ .= inv(Ω) * dh
+    λ .= Ω \ dh
     nothing
 end
 
-function guiding_center_4d_λ(λ::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, μ) where {DT}
+function guiding_center_4d_λ(λ::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, params) where {DT}
     D = length(q)
-    guiding_center_4d_λ(λ, t, q, μ, zeros(DT,D,D), zeros(DT,D))
+    guiding_center_4d_λ(λ, t, q, params, zeros(DT,D,D), zeros(DT,D))
 end
 
 
@@ -476,11 +418,15 @@ function guiding_center_4d_pᵢ(tᵢ, qᵢ::AbstractVector{<:AbstractArray{T}}) 
 end
 
 
-function guiding_center_4d_λᵢ(qᵢ::AbstractVector{DT}, μ, Δt::Number=1., tᵢ::Number=0.) where {DT}
+function guiding_center_4d_λᵢ(tᵢ, qᵢ::AbstractVector{DT}, params) where {DT}
     D  = length(qᵢ)
     λᵢ = zero(qᵢ)
     Ω  = zeros(DT, D, D)
     dh = zeros(DT, D)
-    guiding_center_4d_λ(λᵢ, qᵢ, μ, Ω, dh, Δt, tᵢ)
+    guiding_center_4d_λ(λᵢ, tᵢ, qᵢ, params, Ω, dh)
     return λᵢ
+end
+
+function guiding_center_4d_λᵢ(tᵢ, qᵢ::AbstractVector{<:AbstractArray}, params)
+    [guiding_center_4d_λᵢ(tᵢ, q, params) for q in qᵢ]
 end

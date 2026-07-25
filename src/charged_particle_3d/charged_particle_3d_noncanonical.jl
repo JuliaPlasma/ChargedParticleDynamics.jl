@@ -1,6 +1,7 @@
 import GeometricEquations
+using LinearAlgebra: I
 using GeometricEquations: ODEProblem, IODEProblem, LODEProblem, SODEProblem
-using GeometricSolutions: GeometricSolution, DataSeries, TimeSeries
+using GeometricSolutions: GeometricSolution, DataSeries, ScalarDataSeries, TimeSeries
 using GeometricSolutions: compute_invariant, compute_invariant_error
 
 
@@ -10,6 +11,22 @@ const tspan = (0.0, 10.0)
 ϑ₁(t, q) = g₁₁(t,q) * q[4] + A₁(t,q)
 ϑ₂(t, q) = g₂₂(t,q) * q[5] + A₂(t,q)
 ϑ₃(t, q) = g₃₃(t,q) * q[6] + A₃(t,q)
+
+# Derivatives of the one-form with respect to the *position* coordinates. These were used by `ω`
+# and `dϑ` but defined nowhere, which stayed hidden only because neither function was reachable:
+# `ω` had its output argument in the wrong slot, so the `LODEProblem` built from it could never be
+# evaluated. The metric depends on position, hence the gᵢᵢ derivative terms.
+dϑ₁dx₁(t, q) = dg₁₁dx₁(t,q) * q[4] + dA₁dx₁(t,q)
+dϑ₁dx₂(t, q) = dg₁₁dx₂(t,q) * q[4] + dA₁dx₂(t,q)
+dϑ₁dx₃(t, q) = dg₁₁dx₃(t,q) * q[4] + dA₁dx₃(t,q)
+
+dϑ₂dx₁(t, q) = dg₂₂dx₁(t,q) * q[5] + dA₂dx₁(t,q)
+dϑ₂dx₂(t, q) = dg₂₂dx₂(t,q) * q[5] + dA₂dx₂(t,q)
+dϑ₂dx₃(t, q) = dg₂₂dx₃(t,q) * q[5] + dA₂dx₃(t,q)
+
+dϑ₃dx₁(t, q) = dg₃₃dx₁(t,q) * q[6] + dA₃dx₁(t,q)
+dϑ₃dx₂(t, q) = dg₃₃dx₂(t,q) * q[6] + dA₃dx₂(t,q)
+dϑ₃dx₃(t, q) = dg₃₃dx₃(t,q) * q[6] + dA₃dx₃(t,q)
 
 
 function ϑ(θ, t, q)
@@ -23,95 +40,65 @@ function ϑ(θ, t, q)
 end
 
 
-function ω(t, q, Β)
-    Β[1,1] = 0
+@doc raw"""
+The symplectic two-form of the noncanonical formulation,
+``\Omega_{ij} = \partial \vartheta_{i} / \partial z^{j} - \partial \vartheta_{j} / \partial z^{i}``
+on the phase space ``z = (x, v)``, which is the convention shared with the 4D guiding centre and
+with `GeometricProblems`.
+
+The velocity block is ``\partial \vartheta_{i} / \partial v^{j} = g_{ij}``, the metric — not the
+identity, which is what it reduces to in cartesian coordinates only.
+"""
+function ω(Β, t, q, params)
+    Β .= 0
+
     Β[1,2] = dϑ₁dx₂(t,q) - dϑ₂dx₁(t,q)
     Β[1,3] = dϑ₁dx₃(t,q) - dϑ₃dx₁(t,q)
-    Β[1,4] = +1
-    Β[1,5] = 0
-    Β[1,6] = 0
+    Β[1,4] = g₁₁(t,q)
 
     Β[2,1] = dϑ₂dx₁(t,q) - dϑ₁dx₂(t,q)
-    Β[2,2] = 0
     Β[2,3] = dϑ₂dx₃(t,q) - dϑ₃dx₂(t,q)
-    Β[2,4] = 0
-    Β[2,5] = +1
-    Β[2,6] = 0
+    Β[2,5] = g₂₂(t,q)
 
     Β[3,1] = dϑ₃dx₁(t,q) - dϑ₁dx₃(t,q)
     Β[3,2] = dϑ₃dx₂(t,q) - dϑ₂dx₃(t,q)
-    Β[3,3] = 0
-    Β[3,4] = 0
-    Β[3,5] = 0
-    Β[3,6] = +1
+    Β[3,6] = g₃₃(t,q)
 
-    Β[4,1] = -1
-    Β[4,2] = 0
-    Β[4,3] = 0
-    Β[4,4] = 0
-    Β[4,5] = 0
-    Β[4,6] = 0
-
-    Β[5,1] = 0
-    Β[5,2] = -1
-    Β[5,3] = 0
-    Β[5,4] = 0
-    Β[5,5] = 0
-    Β[5,6] = 0
-
-    Β[6,1] = 0
-    Β[6,2] = 0
-    Β[6,3] = -1
-    Β[6,4] = 0
-    Β[6,5] = 0
-    Β[6,6] = 0
+    Β[4,1] = -g₁₁(t,q)
+    Β[5,2] = -g₂₂(t,q)
+    Β[6,3] = -g₃₃(t,q)
 
     nothing
 end
 
+# LODE calls the two-form with an additional velocity slot; ω depends only on q.
+ω(Β, t, q, v, params) = ω(Β, t, q, params)
 
-function dϑ(t, q, dϑ)
+
+@doc raw"""
+The Jacobian of the one-form on the phase space ``z = (x, v)``,
+``(\mathrm{d}\vartheta)_{ij} = \partial \vartheta_{i} / \partial z^{j}``.
+
+The velocity block is ``\partial \vartheta_{i} / \partial v^{j} = g_{ij}``; it was previously
+set to zero, which is wrong in every coordinate system, cartesian included.
+"""
+function dϑ(dϑ, t, q, params)
+    dϑ .= 0
+
     dϑ[1,1] = dϑ₁dx₁(t,q)
     dϑ[1,2] = dϑ₁dx₂(t,q)
     dϑ[1,3] = dϑ₁dx₃(t,q)
-    dϑ[1,4] = 0
-    dϑ[1,5] = 0
-    dϑ[1,6] = 0
+    dϑ[1,4] = g₁₁(t,q)
 
     dϑ[2,1] = dϑ₂dx₁(t,q)
     dϑ[2,2] = dϑ₂dx₂(t,q)
     dϑ[2,3] = dϑ₂dx₃(t,q)
-    dϑ[2,4] = 0
-    dϑ[2,5] = 0
-    dϑ[2,6] = 0
+    dϑ[2,5] = g₂₂(t,q)
 
     dϑ[3,1] = dϑ₃dx₁(t,q)
     dϑ[3,2] = dϑ₃dx₂(t,q)
     dϑ[3,3] = dϑ₃dx₃(t,q)
-    dϑ[3,4] = 0
-    dϑ[3,5] = 0
-    dϑ[3,6] = 0
-
-    dϑ[4,1] = 0
-    dϑ[4,2] = 0
-    dϑ[4,3] = 0
-    dϑ[4,4] = 0
-    dϑ[4,5] = 0
-    dϑ[4,6] = 0
-
-    dϑ[5,1] = 0
-    dϑ[5,2] = 0
-    dϑ[5,3] = 0
-    dϑ[5,4] = 0
-    dϑ[5,5] = 0
-    dϑ[5,6] = 0
-
-    dϑ[6,1] = 0
-    dϑ[6,2] = 0
-    dϑ[6,3] = 0
-    dϑ[6,4] = 0
-    dϑ[6,5] = 0
-    dϑ[6,6] = 0
+    dϑ[3,6] = g₃₃(t,q)
 
     nothing
 end
@@ -156,10 +143,25 @@ v₅(t, q, v) = E₂(t,q) + q[6] * B₁(t,q) - q[4] * B₃(t,q)
 v₆(t, q, v) = E₃(t,q) + q[4] * B₂(t,q) - q[5] * B₁(t,q)
 
 
-function charged_particle_3d_periodicity(qᵢ)
-    period = zeros(eltype(qᵢ), size(qᵢ,1))
-    period[3] = 2π
-    return period
+# `GeometricEquations` recognises periodicity only as a `(xmin, xmax)` tuple of arrays
+# (`hasperiodicity(::GEperType{<:Tuple{AT,AT}})`); a single vector of periods is silently ignored,
+# which is what this returned before.
+#
+# The periodic range of the position coordinates comes from the coordinate system, via the
+# `rangemin`/`rangemax` injected with the field code — the same mechanism the guiding centre models
+# use. Hard-coding the third coordinate to [0, 2π) would have wrapped `z` in the cartesian
+# equilibria once the periodicity started taking effect. The velocities are never periodic.
+function charged_particle_3d_periodicity(qᵢ, periodic=true)
+    T    = eltype(qᵢ)
+    xmin = -T(Inf) * ones(T, size(qᵢ, 1))
+    xmax = +T(Inf) * ones(T, size(qᵢ, 1))
+
+    if periodic
+        xmin[1:3] .= rangemin(xmin[1:3])
+        xmax[1:3] .= rangemax(xmax[1:3])
+    end
+
+    return (xmin, xmax)
 end
 
 
@@ -220,28 +222,40 @@ function charged_particle_3d_sode_fx(q₁::AbstractArray{DT}, t₁, q₀::Abstra
     nothing
 end
 
+@doc raw"""
+The magnetic-rotation half of the splitting: ``\dot{x} = 0``, ``\dot{v} = v \times B(x)``, solved
+exactly in the sense of the Cayley transform, which is the rotation the implicit midpoint rule
+produces and which preserves ``\vert v \vert`` exactly.
+
+Writing ``\dot{v} = \hat{B} v`` with
+``\hat{B}_{ij} = - \varepsilon_{ijk} B_{k}``, the update is
+``v_{1} = (\mathbb{1} - \tfrac{h}{2} \hat{B})^{-1} (\mathbb{1} + \tfrac{h}{2} \hat{B}) \, v_{0}``.
+
+As with `charged_particle_3d_v`, this is the cartesian Lorentz force; see the model audit for the
+note on curvilinear coordinates.
+"""
 function charged_particle_3d_sode_fv(q₁::AbstractArray{DT}, t₁, q₀::AbstractArray{DT}, t₀) where {DT}
     @assert axes(q₁) == axes(q₀)
 
-    x = q[1:3]
-    v = q[4:6]
+    x = @view q₀[1:3]
+    v = @view q₀[4:6]
 
-    local lB₁ = B₁(t-Δt, x) * x[1]
-    local lB₂ = B₂(t-Δt, x) * x[1]
-    local lB₃ = B₃(t-Δt, x) / x[1]
+    local lB₁ = B₁(t₀, x)
+    local lB₂ = B₂(t₀, x)
+    local lB₃ = B₃(t₀, x)
 
-    local Ω = zeros(DT,3,3)
+    # B̂ with B̂ v = v × B
+    local B̂ = zeros(DT, 3, 3)
 
-    Ω[1,2] = - lB₃
-    Ω[1,3] = + lB₂
-    Ω[2,1] = + lB₃
-    Ω[2,3] = + lB₁
-    Ω[3,1] = - lB₂
-    Ω[3,2] = - lB₁
+    B̂[1,2] = + lB₃
+    B̂[1,3] = - lB₂
+    B̂[2,1] = - lB₃
+    B̂[2,3] = + lB₁
+    B̂[3,1] = + lB₂
+    B̂[3,2] = - lB₁
 
-    C1 = eye(DT,3) .+ (t₁ - t₀) ./ 2 .* Ω
-    C2 = eye(DT,3) .- (t₁ - t₀) ./ 2 .* Ω
-    R  = inv(C1) * C2
+    local h = t₁ - t₀
+    R = (I - h / 2 .* B̂) \ (I + h / 2 .* B̂)
 
     q₁[1:3] .= x
     q₁[4:6] .= R * v
@@ -261,10 +275,10 @@ end
 function charged_particle_3d_sode(qᵢ=qᵢ; tspan=tspan, tstep=Δt, periodic=true)
     if periodic
         SODEProblem(nothing, (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
-                    tspan, tstep, x₀, periodicity=charged_particle_3d_periodicity(qᵢ))
+                    tspan, tstep, qᵢ, periodicity=charged_particle_3d_periodicity(qᵢ))
     else
         SODEProblem(nothing, (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
-                    tspan, tstep, x₀)
+                    tspan, tstep, qᵢ)
     end
 end
 
@@ -290,8 +304,11 @@ function charged_particle_3d_lode(qᵢ=qᵢ; tspan=tspan, tstep=Δt)
 end
 
 
-compute_energy(t::TimeSeries, q::DataSeries, params) = compute_invariant(t, q, params, hamiltonian)
+# `Union{TimeSeries, ScalarDataSeries}`: since GeometricSolutions 0.6 a solution's `sol.t` is a
+# `ScalarDataSeries`, not a `TimeSeries`, so annotating only the latter made the `GeometricSolution`
+# methods below fail to dispatch.
+compute_energy(t::Union{TimeSeries, ScalarDataSeries}, q::DataSeries, params) = compute_invariant(t, q, params, hamiltonian)
 compute_energy(sol::GeometricSolution) = compute_energy(sol.t, sol.q, GeometricEquations.parameters(sol.problem))
 
-compute_energy_error(t::TimeSeries, q::DataSeries, params) = compute_invariant_error(t, q, params, hamiltonian)
+compute_energy_error(t::Union{TimeSeries, ScalarDataSeries}, q::DataSeries, params) = compute_invariant_error(t, q, params, hamiltonian)
 compute_energy_error(sol::GeometricSolution) = compute_energy_error(sol.t, sol.q, GeometricEquations.parameters(sol.problem))

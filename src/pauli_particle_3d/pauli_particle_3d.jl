@@ -84,13 +84,16 @@ function pauli_particle_3d_iode_f(f, t, q, v, params)
     nothing
 end
 
+# The projection force is gᵢ = (∂ϑⱼ/∂qⁱ) λʲ = (∂Aⱼ/∂qⁱ + ∂gⱼⱼ/∂qⁱ vʲ) λʲ. It was previously built
+# from `v` alone, leaving the multiplier `λ` unused, so the projection did not depend on what it
+# was projecting.
 function pauli_particle_3d_iode_g(g, t, q, v, λ, params)
-    g[1] = dA₁dx₁(t, q) * v[1] + dA₂dx₁(t, q) * v[2] + dA₃dx₁(t, q) * v[3] +
-           (dg₁₁dx₁(t, q) * v[1]^2 + dg₂₂dx₁(t, q) * v[2]^2 + dg₃₃dx₁(t, q) * v[3]^2) / 2
-    g[2] = dA₁dx₂(t, q) * v[1] + dA₂dx₂(t, q) * v[2] + dA₃dx₂(t, q) * v[3] +
-           (dg₁₁dx₂(t, q) * v[1]^2 + dg₂₂dx₂(t, q) * v[2]^2 + dg₃₃dx₂(t, q) * v[3]^2) / 2
-    g[3] = dA₁dx₃(t, q) * v[1] + dA₂dx₃(t, q) * v[2] + dA₃dx₃(t, q) * v[3] +
-           (dg₁₁dx₃(t, q) * v[1]^2 + dg₂₂dx₃(t, q) * v[2]^2 + dg₃₃dx₃(t, q) * v[3]^2) / 2
+    g[1] = dA₁dx₁(t, q) * λ[1] + dA₂dx₁(t, q) * λ[2] + dA₃dx₁(t, q) * λ[3] +
+           dg₁₁dx₁(t, q) * v[1] * λ[1] + dg₂₂dx₁(t, q) * v[2] * λ[2] + dg₃₃dx₁(t, q) * v[3] * λ[3]
+    g[2] = dA₁dx₂(t, q) * λ[1] + dA₂dx₂(t, q) * λ[2] + dA₃dx₂(t, q) * λ[3] +
+           dg₁₁dx₂(t, q) * v[1] * λ[1] + dg₂₂dx₂(t, q) * v[2] * λ[2] + dg₃₃dx₂(t, q) * v[3] * λ[3]
+    g[3] = dA₁dx₃(t, q) * λ[1] + dA₂dx₃(t, q) * λ[2] + dA₃dx₃(t, q) * λ[3] +
+           dg₁₁dx₃(t, q) * v[1] * λ[1] + dg₂₂dx₃(t, q) * v[2] * λ[2] + dg₃₃dx₃(t, q) * v[3] * λ[3]
     nothing
 end
 
