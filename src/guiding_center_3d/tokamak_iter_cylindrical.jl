@@ -20,6 +20,7 @@ const qᵢ = [7.0 - 1.4, 0.0, 0.0, 2.8166280889939737]
 const parameters = (μ=4.607782183567846,)
 
 include("guiding_center_3d_equations.jl")
+include("guiding_center_3d_canonical.jl")
 
 function toroidal_momentum(t, q)
     R(t, q) * ϑ₃(t, q)

@@ -49,6 +49,11 @@ end
     test_guiding_center_3d(hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
     test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
 
+    test_guiding_center_3d(hode_canonical(initial_conditions_barely_passing()...; tspan=(0.0, 1E1), tstep=0.1))
+    test_guiding_center_3d(hode_canonical(initial_conditions_barely_trapped()...; tspan=(0.0, 1E1), tstep=0.1))
+    test_guiding_center_3d(hode_canonical(initial_conditions_deeply_passing()...; tspan=(0.0, 1E1), tstep=0.1))
+    test_guiding_center_3d(hode_canonical(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E1), tstep=0.1))
+
     # test_guiding_center_3d(iode(initial_conditions_trapped()...; tstep = 1E4, tspan = (0, 1E6)))
     # test_guiding_center_3d(iode(initial_conditions_barely_passing()...))
     # test_guiding_center_3d(iode(initial_conditions_barely_trapped()...))
@@ -76,6 +81,11 @@ end
     test_guiding_center_3d(hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
     test_guiding_center_3d(hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
     test_guiding_center_3d(hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
+
+    test_guiding_center_3d(hode_canonical(initial_conditions_barely_passing()...; tspan=(0.0, 1E1), tstep=0.1))
+    test_guiding_center_3d(hode_canonical(initial_conditions_barely_trapped()...; tspan=(0.0, 1E1), tstep=0.1))
+    test_guiding_center_3d(hode_canonical(initial_conditions_deeply_passing()...; tspan=(0.0, 1E1), tstep=0.1))
+    test_guiding_center_3d(hode_canonical(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E1), tstep=0.1))
 
     # test_guiding_center_3d(iode(initial_conditions_barely_passing()...))
     # test_guiding_center_3d(iode(initial_conditions_barely_trapped()...))

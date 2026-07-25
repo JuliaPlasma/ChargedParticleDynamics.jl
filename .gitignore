@@ -1,5 +1,8 @@
 .ipynb_checkpoints
 */.ipynb_checkpoints
+.DS_Store
+.tags*
+Manifest.toml
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
@@ -8,4 +11,6 @@
 *.png
 *.h5
 docs/build/
+docs/build-new/
 docs/site/
+examples/build/

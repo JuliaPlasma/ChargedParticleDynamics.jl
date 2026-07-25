@@ -450,7 +450,7 @@ end
 function guiding_center_4d_ω(Ω::Matrix{DT}, t::Number, q::AbstractVector{DT}, v::AbstractVector{DT}, params) where {DT}
     ω(Ω, t, q)
 end
-    
+
 
 function guiding_center_4d_λ(λ::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, μ, Ω::AbstractMatrix{DT}, dh::AbstractVector{DT}) where {DT}
     dH(dh, t, q, μ)

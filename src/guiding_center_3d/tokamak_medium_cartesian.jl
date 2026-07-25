@@ -8,7 +8,7 @@ import ElectromagneticFields.AxisymmetricTokamakCartesian
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
     initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
-export hamiltonian, toroidal_momentum
+export hamiltonian
 
 AxisymmetricTokamakCartesian.@code(2.0, 5.0, 2.0) # inject magnetic field code
 
@@ -55,6 +55,7 @@ function f_surface(s, t)
 end
 
 include("guiding_center_3d_equations.jl")
+include("guiding_center_3d_canonical.jl")
 include("guiding_center_3d_diagnostics.jl")
 
 end

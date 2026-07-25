@@ -21,9 +21,10 @@ initial_conditions_deeply_passing() = merge(initial_conditions(0, [2.5, 0.0, 0.0
 initial_conditions_deeply_trapped() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 1E-1]), params=(μ=1E-2,))     # Δt=5.0, nt=50
 
 include("guiding_center_3d_equations.jl")
+include("guiding_center_3d_canonical.jl")
 
 function toroidal_momentum(t, q)
-    R(t, q) * ϑ3(t, q)
+    R(t, q) * ϑ₃(t, q)
 end
 
 include("guiding_center_3d_diagnostics.jl")

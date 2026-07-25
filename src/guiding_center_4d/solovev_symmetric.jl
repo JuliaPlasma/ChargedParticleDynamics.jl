@@ -24,7 +24,7 @@ module SolovevSymmetricField
     include("guiding_center_4d_equations.jl")
 
     function toroidal_momentum(t,q)
-        R(t,q) * ϑ3(t,q)
+        R(t,q) * ϑ₃(t,q)
     end
 
     include("guiding_center_4d_diagnostics.jl")

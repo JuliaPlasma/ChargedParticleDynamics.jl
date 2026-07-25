@@ -1,4 +1,5 @@
 using GeometricIntegrators
+using SimpleSolvers
 
 using ChargedParticleDynamics.GuidingCenter3d.Dipole3d
 using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: hamiltonian, hamiltonian_u, g₁, g₂, λₒ, λ₁, λ₂, b₁, b₂, b₃
@@ -9,11 +10,18 @@ include("rk3.jl")
 
 const options = (f_abstol=8eps(), verbosity=1)
 
-# initial_conditions_approx() = (q=[1.0, 2.0, 1.0], p=[136.0787, -68.0496, 0.00408], params=(μ=1E-2,))
-
 equ = hode(initial_conditions_dipole()...)
+# equ = hode(initial_conditions_dipole()...; tstep=0.003)
+# equ = hode(initial_conditions_dipole()...; tstep=0.3, tspan=(0.0, 300.0))
 
-sol = integrate(equ, PartitionedGauss(2); initialguess=NoInitialGuess(), options...)
+sol = integrate(equ, PartitionedGauss(1); options...)
+# sol = integrate(equ, PartitionedGauss(1); initialguess=NoInitialGuess(), options...)
+# sol = integrate(equ, PartitionedGauss(1); initialguess=MidpointExtrapolation(2), options...)
+# sol = integrate(equ, PartitionedGauss(1); initialguess=NoInitialGuess(), linesearch=Bisection(), options...)
+# sol = integrate(equ, PartitionedGauss(1); initialguess=NoInitialGuess(), linesearch=BierlaireQuadratic(), options...)
+# sol = integrate(equ, PartitionedGauss(1); solver=PicardMethod(), linesearch=Static(), options...)
+# sol = integrate(equ, PartitionedGauss(2); initialguess=NoInitialGuess(), options...)
+# sol = integrate(equ, PartitionedGauss(2); initialguess=MidpointExtrapolation(2), options...)
 # sol = integrate(equ, RK3(); options...)
 
 h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
@@ -40,6 +48,9 @@ println()
 println("H(0) = ", h[begin], ", ", hu[begin])
 println("H(T) = ", h[end], ", ", hu[end])
 println()
+println("Hᵤ(0) = ", h[begin], ", ", hu[begin])
+println("Hᵤ(T) = ", h[end], ", ", hu[end])
+println()
 println("g₁(0) = ", g1[begin])
 println("g₁(T) = ", g1[end])
 println()
@@ -65,7 +76,7 @@ using CairoMakie
 f = Figure(size=(1000, 800))
 
 axsol = Axis(f[1, 1], xlabel="R", ylabel="Z")
-axham = Axis(f[1, 2], xlabel="t", ylabel="H")
+axham = Axis(f[1, 2], xlabel="t", ylabel="[H(t) - H(0)] / H(0)")
 axg1 = Axis(f[2, 1], xlabel="t", ylabel="g₁")
 axg2 = Axis(f[2, 2], xlabel="t", ylabel="g₂")
 
@@ -74,4 +85,4 @@ plot!(axham, sol.t, (h .- h0) ./ h0)
 plot!(axg1, sol.t, g1)
 plot!(axg2, sol.t, g2)
 
-save("dipole-3d.png", f)
+save("dipole-3d-2.png", f)

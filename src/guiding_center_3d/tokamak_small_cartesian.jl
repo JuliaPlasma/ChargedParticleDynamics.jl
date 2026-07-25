@@ -7,25 +7,27 @@ import ElectromagneticFields.AxisymmetricTokamakCartesian
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
     initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
-    initial_conditions_pauli
+    initial_conditions_pauli, initial_conditions_default
 
 export hamiltonian, toroidal_momentum
 
 AxisymmetricTokamakCartesian.@code() # inject magnetic field code
 
-const Δt = 0.1
-const tspan = (0.0, 1E2)
+# const Δt = 0.1
+# const tspan = (0.0, 1E2)
+
+const Δt = 200.0
+const tspan = (0.0, 2E6)
+
 # const Δt = 500.0
-# const tspan = (0.0, 5E4)
+# const tspan = (0.0, 5E6)
 
-const qᵢ = [1.05, 0.0, 0.0, 0.00045135897235326736]
-const parameters = (μ=2.314593645825811e-6,)
-
-initial_conditions_barely_passing() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 8.117E-4]), params=(μ=2.448E-6,))
-initial_conditions_barely_trapped() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 7.610E-4]), params=(μ=2.250E-6,))
-initial_conditions_deeply_passing() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 1.623E-3]), params=(μ=2.448E-6,))
-initial_conditions_deeply_trapped() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.306E-4]), params=(μ=2.250E-6,))
-initial_conditions_pauli() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.3E-4]), params=(μ=2.310E-6,))
+initial_conditions_default() = merge(initial_conditions(0, [1.05, 0.0, -0.005, 0.000045]), (params=(μ=3.2e-7,),))
+initial_conditions_barely_passing() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 8.117E-4]), (params=(μ=2.448E-6,),))
+initial_conditions_barely_trapped() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 7.610E-4]), (params=(μ=2.250E-6,),))
+initial_conditions_deeply_passing() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 1.623E-3]), (params=(μ=2.448E-6,),))
+initial_conditions_deeply_trapped() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.306E-4]), (params=(μ=2.250E-6,),))
+initial_conditions_pauli() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.3E-4]), (params=(μ=2.310E-6,),))
 
 u_loop() = 4.0E-4
 μ_loop() = 2.5E-6
@@ -63,9 +65,10 @@ function f_surface(s, t)
 end
 
 include("guiding_center_3d_equations.jl")
+include("guiding_center_3d_canonical.jl")
 
 function toroidal_momentum(t, q)
-    R(t, q) * ϑ3(t, q)
+    R(t, q) * ϑ₃(t, q)
 end
 
 include("guiding_center_3d_diagnostics.jl")

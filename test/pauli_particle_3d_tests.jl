@@ -10,12 +10,12 @@ export test_pauli_particle_3d
 
 const options = (f_abstol=1E-15, f_reltol=1E-15)
 
-function test_pauli_particle_3d(equ::Union{HODEProblem,PODEProblem})
-    @test_nowarn integrate(equ, PartitionedGauss(2); options...)
+function test_pauli_particle_3d(equ::Union{HODEProblem,PODEProblem}; kwargs...)
+    @test_nowarn integrate(equ, PartitionedGauss(2); options..., kwargs...)
 end
 
-function test_pauli_particle_3d(equ::Union{IODEProblem,LODEProblem})
-    @test_nowarn integrate(equ, VPRKGauss(2); options...)
+function test_pauli_particle_3d(equ::Union{IODEProblem,LODEProblem}; kwargs...)
+    @test_nowarn integrate(equ, VPRKGauss(2); options..., kwargs...)
 end
 
 end
@@ -44,13 +44,13 @@ end
     using ChargedParticleDynamics.PauliParticle3d.SolovevIterXpoint
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_hode(initial_conditions_barely_passing()...))
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_hode(initial_conditions_barely_trapped()...))
+    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_hode(initial_conditions_barely_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
     test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
     test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
 
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_iode(initial_conditions_barely_passing()...))
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_iode(initial_conditions_barely_trapped()...))
+    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_iode(initial_conditions_barely_passing()...; tspan=(0.0, 1E2), tstep=0.1))
+    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_iode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
     test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_iode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
     test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_iode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
 
@@ -71,12 +71,15 @@ end
 
 @safetestset "Pauli Particle in 3D in Theta Pinch                                                                 " begin
 
+    using GeometricIntegrators: MidpointExtrapolation
     using ChargedParticleDynamics.PauliParticle3d.ThetaPinchField
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_pode())
-    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_hode())
-    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_iode())
+    # the momentum is constant along the initial trajectory, so the default Hermite
+    # extrapolation of the initial guess is degenerate
+    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_pode(); initialguess=MidpointExtrapolation(5))
+    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_hode(); initialguess=MidpointExtrapolation(5))
+    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_iode(); initialguess=MidpointExtrapolation(5))
 
 end
 

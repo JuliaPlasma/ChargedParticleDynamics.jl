@@ -1,5 +1,4 @@
 using GeometricIntegrators
-using SimpleSolvers: Options
 
 using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d
 using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: hamiltonian, hamiltonian_u, g₁, g₂, λₒ, λ₁, λ₂, b₁, b₂, b₃
@@ -10,9 +9,24 @@ using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: dg₂dp₁,
 
 const options = (f_abstol=2eps(), verbosity=1)
 
-equ = hode(initial_conditions_quadratic()...)
+# odeequ = ode(initial_conditions_quadratic()...)
 
-sol = integrate(equ, PartitionedGauss(2); initialguess=NoInitialGuess(), options...)
+# odesol = integrate(odeequ, Gauss(1); options...)
+# odesol = integrate(odeequ, Gauss(1); initialguess=NoInitialGuess(), options...)
+# odesol = integrate(odeequ, Gauss(1); initialguess=MidpointExtrapolation(2), options...)
+
+
+
+
+# equ = hode(initial_conditions_quadratic()...)
+# equ = hode(initial_conditions_quadratic()...; tspan=(0.0, 50.0))
+equ = hode(initial_conditions_quadratic()...; tstep=0.035, tspan=(0.0, 42_000.0))
+
+sol = integrate(equ, PartitionedGauss(1); options...)
+# sol = integrate(equ, PartitionedGauss(1); initialguess=NoInitialGuess(), options...)
+# sol = integrate(equ, PartitionedGauss(1); initialguess=MidpointExtrapolation(2), options...)
+# sol = integrate(equ, PartitionedGauss(2); initialguess=NoInitialGuess(), options...)
+# sol = integrate(equ, PartitionedGauss(2); initialguess=MidpointExtrapolation(2), options...)
 # sol = integrate(equ, RK3(); options...)
 
 h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
@@ -39,6 +53,9 @@ println()
 println("H(0) = ", h[begin], ", ", hu[begin])
 println("H(T) = ", h[end], ", ", hu[end])
 println()
+println("Hᵤ(0) = ", h[begin], ", ", hu[begin])
+println("Hᵤ(T) = ", h[end], ", ", hu[end])
+println()
 println("g₁(0) = ", g1[begin])
 println("g₁(T) = ", g1[end])
 println()
@@ -64,7 +81,7 @@ using CairoMakie
 f = Figure(size=(1000, 800))
 
 axsol = Axis(f[1, 1], xlabel="R", ylabel="Z")
-axham = Axis(f[1, 2], xlabel="t", ylabel="H")
+axham = Axis(f[1, 2], xlabel="t", ylabel="[H(t) - H(0)] / H(0)")
 axg1 = Axis(f[2, 1], xlabel="t", ylabel="g₁")
 axg2 = Axis(f[2, 2], xlabel="t", ylabel="g₂")
 

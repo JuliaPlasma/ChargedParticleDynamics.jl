@@ -37,7 +37,6 @@ end
 
 @safetestset "Gyrokinetic GC Model in 4D with ITER-like Solov'ev Equilibrium with X-Point                         " begin
 
-    using SimpleSolvers
     using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
     # using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint: scaling_factor, transform_q̃_to_q_jacobian!, transform_q̃_to_q_rhs!
     using ..GyroKinetics4dTests

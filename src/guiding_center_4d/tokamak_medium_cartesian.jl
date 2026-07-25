@@ -8,7 +8,7 @@ module TokamakMediumCartesian
     export initial_conditions_barely_passing, initial_conditions_barely_trapped,
            initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
-    export hamiltonian, toroidal_momentum
+    export hamiltonian
 
     AxisymmetricTokamakCartesian.@code(2., 5., 2.) # inject magnetic field code
 

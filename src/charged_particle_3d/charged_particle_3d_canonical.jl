@@ -1,7 +1,7 @@
+import GeometricEquations
 using GeometricEquations: IODEProblem, LODEProblem, PODEProblem
 using GeometricSolutions: GeometricSolution, DataSeries, TimeSeries
-
-import GeometricProblems.Diagnostics: compute_invariant, compute_invariant_error
+using GeometricSolutions: compute_invariant, compute_invariant_error
 
 
 const Δt = 0.01
@@ -26,6 +26,9 @@ v³(t, q, p) = g³³(t, q) * (p[3] - A₃(t, q))
 lagrangian(t, q, v) = (g₁₁(t, q) * v[1]^2 + g₂₂(t, q) * v[2]^2 + g₃₃(t, q) * v[3]^2) / 2 - φ(t, q)
 hamiltonian(t, q, p) = (g₁₁(t, q) * v¹(t, q, p)^2 + g₂₂(t, q) * v²(t, q, p)^2 + g₃₃(t, q) * v³(t, q, p)^2) / 2 + φ(t, q)
 toroidal_momentum(t, q, p) = p[3]
+
+lagrangian(t, q, v, params) = lagrangian(t, q, v)
+hamiltonian(t, q, p, params) = hamiltonian(t, q, p)
 
 
 function charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ)
@@ -110,8 +113,8 @@ function charged_particle_3d_lode(q₀=qᵢ, p₀=pᵢ; tspan=tspan, tstep=Δt)
 end
 
 
-compute_energy(t::TimeSeries, q::DataSeries, p::DataSeries) = compute_invariant(t, q, p, hamiltonian)
-compute_energy(sol::GeometricSolution) = compute_energy(sol.t, sol.q, sol.p)
+compute_energy(t::TimeSeries, q::DataSeries, p::DataSeries, params) = compute_invariant(t, q, p, params, hamiltonian)
+compute_energy(sol::GeometricSolution) = compute_energy(sol.t, sol.q, sol.p, GeometricEquations.parameters(sol.problem))
 
-compute_energy_error(t::TimeSeries, q::DataSeries, p::DataSeries) = compute_invariant_error(t, q, p, hamiltonian)
-compute_energy_error(sol::GeometricSolution) = compute_energy_error(sol.t, sol.q, sol.p)
+compute_energy_error(t::TimeSeries, q::DataSeries, p::DataSeries, params) = compute_invariant_error(t, q, p, params, hamiltonian)
+compute_energy_error(sol::GeometricSolution) = compute_energy_error(sol.t, sol.q, sol.p, GeometricEquations.parameters(sol.problem))

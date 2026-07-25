@@ -1,7 +1,7 @@
+import GeometricEquations
 using GeometricEquations: ODEProblem, IODEProblem, LODEProblem, SODEProblem
 using GeometricSolutions: GeometricSolution, DataSeries, TimeSeries
-
-import GeometricProblems.Diagnostics: compute_invariant, compute_invariant_error
+using GeometricSolutions: compute_invariant, compute_invariant_error
 
 
 const Δt = 0.01
@@ -125,6 +125,7 @@ end
 
 
 hamiltonian(t,q) = 0.5 * ( g₁₁(t,q) * q[4]^2 + g₂₂(t,q) * q[5]^2 + g₃₃(t,q) * q[6]^2 ) + φ(t,q)
+hamiltonian(t,q,params) = hamiltonian(t,q)
 hamiltonian(t,q,p,params) = hamiltonian(t,q)
 lagrangian(t,q,v,params) = ϑ₁(t, q) * v[1] + ϑ₂(t, q) * v[2] + ϑ₃(t, q) * v[3] - hamiltonian(t,q)
 
@@ -221,7 +222,7 @@ end
 
 function charged_particle_3d_sode_fv(q₁::AbstractArray{DT}, t₁, q₀::AbstractArray{DT}, t₀) where {DT}
     @assert axes(q₁) == axes(q₀)
-    
+
     x = q[1:3]
     v = q[4:6]
 
@@ -273,7 +274,7 @@ function charged_particle_3d_iode(qᵢ=qᵢ; tspan=tspan, tstep=Δt)
         charged_particle_3d_iode_f,
         charged_particle_3d_iode_g,
         tspan, tstep, qᵢ, charged_particle_3d_pᵢ(tspan[begin], qᵢ);
-        invariants = (h = hamiltonian,), 
+        invariants = (h = hamiltonian,),
         v̄ = charged_particle_3d_v)
 end
 
@@ -284,13 +285,13 @@ function charged_particle_3d_lode(qᵢ=qᵢ; tspan=tspan, tstep=Δt)
         charged_particle_3d_iode_g,
         ω, lagrangian,
         tspan, tstep, qᵢ, charged_particle_3d_pᵢ(tspan[begin], qᵢ);
-        invariants = (h = hamiltonian,), 
+        invariants = (h = hamiltonian,),
         v̄ = charged_particle_3d_v)
 end
 
 
-compute_energy(t::TimeSeries, q::DataSeries) = compute_invariant(t, q, hamiltonian)
-compute_energy(sol::GeometricSolution) = compute_energy(sol.t, sol.q)
+compute_energy(t::TimeSeries, q::DataSeries, params) = compute_invariant(t, q, params, hamiltonian)
+compute_energy(sol::GeometricSolution) = compute_energy(sol.t, sol.q, GeometricEquations.parameters(sol.problem))
 
-compute_energy_error(t::TimeSeries, q::DataSeries) = compute_invariant_error(t, q, hamiltonian)
-compute_energy_error(sol::GeometricSolution) = compute_energy_error(sol.t, sol.q)
+compute_energy_error(t::TimeSeries, q::DataSeries, params) = compute_invariant_error(t, q, params, hamiltonian)
+compute_energy_error(sol::GeometricSolution) = compute_energy_error(sol.t, sol.q, GeometricEquations.parameters(sol.problem))

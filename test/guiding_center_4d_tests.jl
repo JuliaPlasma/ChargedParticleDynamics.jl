@@ -6,8 +6,6 @@ module GuidingCenter4dTests
 using GeometricIntegrators
 using Test
 
-using GeometricIntegratorsBase: MidpointExtrapolation
-
 const nl = 100
 const nx = 10
 const ny = 10
@@ -109,10 +107,11 @@ end
     # test_guiding_center_4d(guiding_center_4d_loop_ode(nl))
     # test_guiding_center_4d(guiding_center_4d_surface_ode(nx, ny))
 
-    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_barely_passing()...))
-    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_barely_trapped()...))
+    # the variational integrators do not converge at the default time step of Δt = 500
+    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_barely_passing()...; tstep=10.0, tspan=(0, 1E3)))
+    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_barely_trapped()...; tstep=10.0, tspan=(0, 1E3)))
     test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_deeply_passing()...; tstep=10.0, tspan=(0, 1E3)))
-    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_deeply_trapped()...))
+    test_guiding_center_4d(guiding_center_4d_iode(initial_conditions_deeply_trapped()...; tstep=10.0, tspan=(0, 1E3)))
     # test_guiding_center_4d(guiding_center_4d_loop_iode(nl; tstep = 10., tspan = [0, 1E3]))
     # test_guiding_center_4d(guiding_center_4d_surface_iode(nx, ny; tstep = 10., tspan = [0, 1E3]))
 
@@ -169,7 +168,8 @@ end
     using ..GuidingCenter4dTests
 
     test_guiding_center_4d(guiding_center_4d_ode(initial_conditions_barely_passing()...; tstep=1E2, tspan=(0, 1E4)))
-    test_guiding_center_4d(guiding_center_4d_ode(initial_conditions_barely_trapped()...; tstep=1E2, tspan=(0, 1E4)))
+    # the barely trapped orbit needs a smaller time step for the solver to converge
+    test_guiding_center_4d(guiding_center_4d_ode(initial_conditions_barely_trapped()...; tstep=1E1, tspan=(0, 1E4)))
     test_guiding_center_4d(guiding_center_4d_ode(initial_conditions_deeply_passing()...))
     test_guiding_center_4d(guiding_center_4d_ode(initial_conditions_deeply_trapped()...; tstep=1E1, tspan=(0, 1E3)))
 

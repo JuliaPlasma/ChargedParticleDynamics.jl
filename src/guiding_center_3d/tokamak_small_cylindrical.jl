@@ -66,9 +66,10 @@ function f_surface(s, t)
 end
 
 include("guiding_center_3d_equations.jl")
+include("guiding_center_3d_canonical.jl")
 
 function toroidal_momentum(t, q)
-    R(t, q) * ϑ3(t, q)
+    R(t, q) * ϑ₃(t, q)
 end
 
 include("guiding_center_3d_diagnostics.jl")

@@ -20,6 +20,7 @@ Pages = ["normalization.md",
 
 ```@contents
 Pages = ["charged_particle_3d.md",
+         "guiding_center_3d.md",
          "guiding_center_4d.md",
          "pauli_particle_3d.md",
 ]

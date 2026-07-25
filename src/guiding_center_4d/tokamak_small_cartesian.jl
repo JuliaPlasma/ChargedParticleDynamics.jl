@@ -66,7 +66,7 @@ module TokamakSmallCartesian
     include("guiding_center_4d_surface.jl")
 
     function toroidal_momentum(t,q)
-        R(t,q) * ϑ3(t,q)
+        R(t,q) * ϑ₃(t,q)
     end
 
     include("guiding_center_4d_diagnostics.jl")
