@@ -1,0 +1,61 @@
+
+import GeometricEquations
+using GeometricSolutions
+using GeometricSolutions: compute_error_drift, compute_momentum_error, compute_one_form
+
+export compute_energy, compute_energy_error,
+       compute_toroidal_momentum, compute_toroidal_momentum_error,
+       compute_constraints,
+       compute_momentum_error, compute_one_form, compute_error_drift
+
+
+# `TimeSeries` accepts the time axis of a `TimeSeries` object, `ScalarDataSeries` the one a
+# `GeometricSolution` stores in `sol.t`; see the note in the 4D diagnostics for why both are needed.
+const SolutionTimes = Union{TimeSeries, ScalarDataSeries}
+
+
+# The 3D model is a `HODEProblem`, so unlike the 4D one its invariants are functions of `(q, p)`
+# and the diagnostics take both series.
+
+compute_energy(t::SolutionTimes, q::DataSeries, p::DataSeries, params) =
+    compute_invariant(t, q, p, params, hamiltonian)
+compute_energy(sol::GeometricSolution, params=GeometricEquations.parameters(sol.problem)) =
+    compute_energy(sol.t, sol.q, sol.p, params)
+
+compute_energy_error(t::SolutionTimes, q::DataSeries, p::DataSeries, params) =
+    compute_invariant_error(t, q, p, params, hamiltonian)
+compute_energy_error(sol::GeometricSolution, params=GeometricEquations.parameters(sol.problem)) =
+    compute_energy_error(sol.t, sol.q, sol.p, params)
+
+
+# Defined only by the equilibria that have a symmetry direction; calling these on one that does not
+# raises an `UndefVarError` for `toroidal_momentum`, as it does for the 4D model.
+compute_toroidal_momentum(t::SolutionTimes, q::DataSeries, p::DataSeries, params) =
+    compute_invariant(t, q, p, params, (t, q, p, params) -> toroidal_momentum(t, q, p))
+compute_toroidal_momentum(sol::GeometricSolution, params=GeometricEquations.parameters(sol.problem)) =
+    compute_toroidal_momentum(sol.t, sol.q, sol.p, params)
+
+compute_toroidal_momentum_error(t::SolutionTimes, q::DataSeries, p::DataSeries, params) =
+    compute_invariant_error(t, q, p, params, (t, q, p, params) -> toroidal_momentum(t, q, p))
+compute_toroidal_momentum_error(sol::GeometricSolution, params=GeometricEquations.parameters(sol.problem)) =
+    compute_toroidal_momentum_error(sol.t, sol.q, sol.p, params)
+
+
+@doc raw"""
+    compute_constraints(sol)
+
+The two constraints ``g_{1}`` and ``g_{2}`` that confine the solution to the manifold on which the
+momentum equals the guiding centre one-form, returned as a named tuple of two `DataSeries`.
+
+They vanish identically along the continuous flow, so their magnitude measures how far a numerical
+solution has drifted off that manifold — the quantity the approximately symplectic methods of Li,
+Zhang and Liu are designed to keep bounded, and the one that decides whether `hode_canonical`
+agrees with `hode`. Since they start at zero, the absolute value is the meaningful one; there is no
+relative-error variant.
+"""
+function compute_constraints(t::SolutionTimes, q::DataSeries, p::DataSeries)
+    (g₁=DataSeries([g₁(t[i], q[i], p[i]) for i in eachindex(t)]),
+     g₂=DataSeries([g₂(t[i], q[i], p[i]) for i in eachindex(t)]))
+end
+
+compute_constraints(sol::GeometricSolution) = compute_constraints(sol.t, sol.q, sol.p)

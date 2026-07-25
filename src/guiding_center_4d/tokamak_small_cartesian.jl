@@ -71,8 +71,11 @@ module TokamakSmallCartesian
     include("guiding_center_4d_loop.jl")
     include("guiding_center_4d_surface.jl")
 
+    # In cartesian coordinates the third coordinate is z, not an angle, so the toroidal momentum is
+    # the generator of rotation about the z-axis, x ϑ₂ - y ϑ₁, rather than ϑ₃. Neither ϑ₃ nor R ϑ₃
+    # is conserved here; this is, to the order of the integrator.
     function toroidal_momentum(t,q)
-        R(t,q) * ϑ₃(t,q)
+        q[1] * ϑ₂(t,q) - q[2] * ϑ₁(t,q)
     end
 
     include("guiding_center_4d_diagnostics.jl")

@@ -22,7 +22,9 @@ Pages = ["charged_particle_3d.md",
          "guiding_center_3d.md",
          "guiding_center_4d.md",
          "pauli_particle_3d.md",
+         "gyro_kinetics_4d.md",
          "audit.md",
+         "findings.md",
 ]
 ```
 

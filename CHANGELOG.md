@@ -67,6 +67,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   antisymmetric. Every one of these corresponds to a bug listed under *Fixed* that no existing test
   would have caught.
 - References to the literature the models follow, on the index page and in the audit.
+- **A findings page** (`docs/src/findings.md`) and **`TODO.md`**, together with the five
+  `scripts/study_*.jl` that reproduce the former. The findings page records the numerical studies
+  made during the audit that characterise the models rather than merely verify a line of code: the
+  conditioning of the 3D guiding centre constraint pair, which expression is the conserved toroidal
+  momentum, the exact proportionality between the gyrokinetic and the guiding centre vector fields,
+  the volume preservation of the gyrokinetic splitting measured against step size, and the
+  conservation levels of each family side by side. `TODO.md` carries the open work.
+- **Diagnostics for the 3D guiding centre model.** `guiding_center_3d_diagnostics.jl` was an empty
+  file, included by all thirteen equilibria, so the model had no `compute_energy`,
+  `compute_energy_error` or `compute_toroidal_momentum` at all. Alongside them,
+  `compute_constraints` returns the two constraints ``g₁`` and ``g₂`` as data series: they vanish
+  along the exact flow, so their magnitude is the drift off the manifold on which `p = ϑ`, which is
+  the quantity the approximately symplectic methods are designed to keep bounded.
+- **A documentation page for `GyroKinetics4d`** (`docs/src/gyro_kinetics_4d.md`), which had none
+  and was not listed in the index. It derives the gyrokinetic characteristics, the rescaled time
+  and the ``\beta``/``\gamma`` potentials from the notes the module follows, explains the six-way
+  splitting and why it is volume preserving, and records what is and is not implemented.
 
 ### Changed
 
@@ -245,6 +262,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The reference for the 3D guiding centre model was cited under the wrong title; both it and its
   companion paper are now cited in full, with DOIs.
 - The docstring of the dipole equilibrium was a copy of the one for the quadratic potentials.
+- **`toroidal_momentum` was not conserved, because of a spurious factor of `R`.** Fifteen of the
+  sixteen 3D and 4D guiding centre equilibria defined it as `R(t,q) * ϑ₃(t,q)`, but `ϑ₃` is already
+  the covariant φ-component and is the canonical momentum on its own: over 10³ time units on the
+  small tokamak the relative variation is 2E-13 for `ϑ₃` and 3E-3 for `R ϑ₃`. In cartesian
+  coordinates the third coordinate is `z` rather than an angle, so neither expression is right and
+  the momentum is the generator of rotation about the z-axis, `x ϑ₂ - y ϑ₁`. In the 3D model, whose
+  state is `(q, p)` with `p = ϑ`, the definition also indexed `q[4]` of a three-component vector
+  and raised a `BoundsError` on every call. All sixteen are corrected and the conservation is now
+  asserted in the tests.
+- **`GyroKinetics4d` integrated the wrong system.** Its problem constructors substituted a
+  coordinate transformation `q̃ = ω₀ q` into the vector field without applying the corresponding
+  Jacobian, and evaluated the `hamiltonian` invariant on the transformed state. The transformation
+  itself was a literal reading of the `R̃ = B*∥ R` of the notes, which denotes the time
+  reparametrisation `dt = B*∥ ds` that the vector field already carries rather than a change of
+  variables — and freezing `B*∥` at the initial condition, as `params.ω₀` does, would not
+  reproduce that substitution in any case. The constructors now work in the untransformed state.
+  The transformation functions are retained as utilities, documented, and no longer applied.
+
+  With that removed, the module is verified: its vector field agrees with the 4D guiding centre
+  model to machine precision after multiplication by `B*∥`, the six subsystems sum exactly to the
+  full field, and the Strang composition holds the determinant of the one-step map at 1 for every
+  step size tested while a first-order method's volume error grows linearly with the step. Its
+  integration tests, all of which were commented out, are re-enabled.
+- The default time step of `GyroKinetics4d` was that of the physical time, a factor of
+  `B*∥ ≈ 2E2` too large for the rescaled time the module actually integrates in.
+- The callbacks of `GyroKinetics4d` — `dH`, `ϑ`, both methods of `ω`, `β` and `γ` — all took their
+  output array in the third argument slot rather than the first, so none of them conformed to the
+  `GeometricEquations` convention.
+- `guiding_center_4d_periodicity` of `GyroKinetics4d` returned a bare vector of periods, silently
+  ignored, and computed it by calling an ambiguous `periodicity`; it now derives the range from the
+  coordinate system like the other models.
 
 ### Removed
 

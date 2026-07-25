@@ -74,9 +74,9 @@ const parameters = default_parameters()
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_canonical.jl")
 
-function toroidal_momentum(t, q)
-    R(t, q) * ϑ₃(t, q)
-end
+# In cartesian coordinates the third coordinate is z, not an angle, so the toroidal momentum is the
+# generator of rotation about the z-axis, x p₂ - y p₁, rather than p₃.
+toroidal_momentum(t, q, p) = q[1] * p[2] - q[2] * p[1]
 
 include("guiding_center_3d_diagnostics.jl")
 

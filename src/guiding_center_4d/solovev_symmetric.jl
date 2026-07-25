@@ -30,8 +30,11 @@ module SolovevSymmetricField
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")
 
+    # The canonical toroidal momentum is the covariant φ-component of the one-form, ϑ₃. It was
+    # previously multiplied by R, which destroys the conservation: on the small tokamak the
+    # relative variation over 10³ time units is 2e-13 for ϑ₃ and 3e-3 for R ϑ₃.
     function toroidal_momentum(t,q)
-        R(t,q) * ϑ₃(t,q)
+        ϑ₃(t,q)
     end
 
     include("guiding_center_4d_diagnostics.jl")

@@ -4,6 +4,8 @@ ChargedParticleDynamics = "209b3593-7183-5600-9f8f-df5ce7fddd64"
 ElectromagneticFields = "d6c1ba6f-ee03-53af-b876-68cefeb88ec8"
 GeometricIntegrators = "dcce2d33-59f6-5b8d-9047-0defad88ae06"
 GeometricIntegratorsBase = "71212ab4-08a2-48eb-a02b-4cbad0e9c44a"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 SimpleSolvers = "36b790f5-6434-4fbe-b711-1f64a1e2f6a2"
 
 [sources]

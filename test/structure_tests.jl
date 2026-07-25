@@ -225,6 +225,63 @@ end
 end
 
 
+@safetestset "Toroidal momentum is conserved                                                                      " begin
+    using ChargedParticleDynamics.GuidingCenter4d
+    using GeometricIntegrators
+    using Test
+
+    # `toroidal_momentum` used to be R ϑ₃ everywhere, which is not conserved: the factor of R is
+    # spurious, since ϑ₃ is already the covariant φ-component. On the small tokamak the relative
+    # variation over 10³ time units was 3e-3 for R ϑ₃ against 2e-13 for ϑ₃. In cartesian
+    # coordinates the third coordinate is z rather than an angle, so neither is right there and
+    # the momentum is the generator of rotation about the z-axis instead.
+    #
+    # The tolerances below are far tighter than the old definition could ever reach, which is the
+    # point of the test; they are loose relative to what the integrator achieves.
+    cases = ((GuidingCenter4d.TokamakSmallCylindrical, (tstep = 10.0, tspan = (0.0, 1e3)), 1e-10),
+             (GuidingCenter4d.TokamakSmallToroidal,    (tstep = 10.0, tspan = (0.0, 1e3)), 1e-10),
+             (GuidingCenter4d.TokamakSmallCartesian,   (tstep = 10.0, tspan = (0.0, 1e3)), 1e-8),
+             (GuidingCenter4d.SolovevIterXpoint,       (tstep = 1.0,  tspan = (0.0, 1e2)), 1e-10))
+
+    for (M, kw, tol) in cases
+        prob = M.guiding_center_4d_ode(M.initial_conditions_barely_passing()...; kw...)
+        sol  = integrate(prob, Gauss(2))
+        _, perr = M.compute_toroidal_momentum_error(sol)
+        @test maximum(abs(perr[i]) for i in eachindex(perr)) < tol
+    end
+end
+
+
+@safetestset "3D guiding centre diagnostics                                                                       " begin
+    using ChargedParticleDynamics.GuidingCenter3d
+    using GeometricIntegrators
+    using Test
+
+    # `guiding_center_3d_diagnostics.jl` was an empty file, so the 3D model had no diagnostics at
+    # all, and the `toroidal_momentum` its equilibria defined indexed `q[4]` of a three-component
+    # state. The constraints are the model-specific diagnostic: they vanish along the exact flow,
+    # so their magnitude is the drift off the manifold on which p = ϑ.
+    mx(ds) = maximum(abs(ds[i]) for i in eachindex(ds))
+
+    for M in (GuidingCenter3d.SolovevIterXpoint, GuidingCenter3d.TokamakMediumCartesian)
+        prob = M.hode(M.initial_conditions_barely_passing()...; tstep = 0.1, tspan = (0.0, 1e2))
+        sol  = integrate(prob, PartitionedGauss(2); initialguess = MidpointExtrapolation(5))
+
+        _, eerr = M.compute_energy_error(sol)
+        @test mx(eerr) < 1e-8
+
+        c = M.compute_constraints(sol)
+        @test mx(c.g₁) < 1e-8
+        @test mx(c.g₂) < 1e-8
+
+        if isdefined(M, :toroidal_momentum)
+            _, perr = M.compute_toroidal_momentum_error(sol)
+            @test mx(perr) < 1e-10
+        end
+    end
+end
+
+
 @safetestset "Symplectic two-forms are antisymmetric                                                              " begin
     using ChargedParticleDynamics.GuidingCenter4d
     using ChargedParticleDynamics.ChargedParticle3d

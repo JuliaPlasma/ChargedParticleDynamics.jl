@@ -74,9 +74,10 @@ const parameters = default_parameters()
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_canonical.jl")
 
-function toroidal_momentum(t, q)
-    R(t, q) * ϑ₃(t, q)
-end
+# The canonical toroidal momentum is the covariant φ-component of the momentum. Since p = ϑ on the
+# constraint manifold this is simply p₃ — the previous R(t,q) * ϑ₃(t,q) both indexed q[4] of a
+# three-component state and carried a spurious factor of R that destroys the conservation.
+toroidal_momentum(t, q, p) = p[3]
 
 include("guiding_center_3d_diagnostics.jl")
 
