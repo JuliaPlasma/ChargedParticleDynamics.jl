@@ -87,6 +87,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The two 3D guiding centre integration blocks run 100 steps rather than 1000. They only assert that
+  `integrate` returns a solution, which 100 steps exercises identically, and the 3D `hode` path is
+  expensive per step: its second derivatives differentiate field functions that are themselves
+  AD-generated, and `MidpointExtrapolation(5)` triples that. Long-time behaviour of the 3D model is
+  checked by the `3D guiding centre diagnostics` block in `test/structure_tests.jl`, which keeps its
+  1000 steps and its conservation assertions. Note this cost is not specific to the ITER-like
+  equilibria — the medium tokamak is slower still. `test/guiding_center_3d_tests.jl`.
+- CI collects coverage on a single matrix job instead of all twelve. Instrumentation costs a factor
+  of 2.4–6.7 on these models and only one job's results were ever uploaded.
+  `.github/workflows/CI.yml`.
 - Updated to the current `GeometricEquations` problem interface and the current
   `GeometricSolutions` diagnostics interface. `compute_energy`, `compute_toroidal_momentum` and
   their error variants now take the problem parameters, following the new `compute_invariant`
@@ -134,6 +144,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The test suite requested a solver tolerance the ITER-scale models cannot reach**, which made
+  every ITER-like Solov'ev block take minutes instead of seconds and emitted over fifty thousand
+  suppressed solver warnings per run. `SimpleSolvers` accepts an iterate when
+  `rfₐ ≤ f_abstol + f_reltol ‖F(x₀)‖`; the tests set *both* terms to `1E-15`, which collapses the
+  criterion to `1E-15` regardless of problem scale and in particular removes the relative term that
+  exists so a large-magnitude solve can converge. The 4D guiding centre residual carries the
+  momentum equation `p = ϑ(q)` with `‖ϑ‖ ≈ 15` in an ITER field, so no residual can go below the
+  round-off floor `‖ϑ‖ eps ≈ 3.3E-15`; the solver then had no reachable stopping criterion and ran
+  to its 1000-iteration limit on nearly half of all steps. The tests now ask for `f_abstol = 1E-12`,
+  leave `f_reltol` alone, and cap `max_iterations` (with `warn_iterations` set to match, so that
+  hitting the cap is still reported). Solutions are unchanged to ~1E-14.
+  `test/guiding_center_3d_tests.jl`, `test/guiding_center_4d_tests.jl`,
+  `test/pauli_particle_3d_tests.jl`, `test/gyro_kinetics_4d_tests.jl`.
 - **`compute_energy`, `compute_energy_error`, `compute_toroidal_momentum` and
   `compute_toroidal_momentum_error` no longer dispatched on a `GeometricSolution`.** Their
   low-level methods annotate the time axis as `::TimeSeries`, but since GeometricSolutions 0.6

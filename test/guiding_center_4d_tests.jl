@@ -10,7 +10,9 @@ const nl = 100
 const nx = 10
 const ny = 10
 
-const options = (f_abstol=1E-15, f_reltol=1E-15)
+# See `guiding_center_3d_tests.jl` for why `f_abstol` has to stay above the residual's round-off
+# floor and why `f_reltol` is left at its default.
+const options = (f_abstol=1E-12, max_iterations=50, warn_iterations=50)
 
 export test_guiding_center_4d
 export nl, nx, ny

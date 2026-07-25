@@ -7,7 +7,9 @@ using ChargedParticleDynamics.GyroKinetics4d
 using GeometricIntegrators
 using Test
 
-const options = (f_abstol=1E-15, f_reltol=1E-15)
+# See `guiding_center_3d_tests.jl` for why `f_abstol` has to stay above the residual's round-off
+# floor and why `f_reltol` is left at its default.
+const options = (f_abstol=1E-12, max_iterations=50, warn_iterations=50)
 
 export test_gyro_kinetics_4d_erk4, test_gyro_kinetics_4d_glrk, test_gyro_kinetics_4d_strang
 export strang_composition

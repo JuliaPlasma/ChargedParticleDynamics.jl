@@ -13,6 +13,10 @@ jobs:
         name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
         runs-on: ${{ matrix.os }}
         continue-on-error: ${{ matrix.experimental }}
+        # Coverage instrumentation costs a factor of 2.4-6.7 on these models, and only one job's
+        # results are uploaded, so collect it on a single job rather than on all twelve.
+        env:
+            COVERAGE: ${{ matrix.version == '1.11' && matrix.os == 'ubuntu-latest' }}
         strategy:
             fail-fast: false
             matrix:
@@ -51,8 +55,12 @@ jobs:
             - uses: julia-actions/cache@v3
             - uses: julia-actions/julia-buildpkg@v1
             - uses: julia-actions/julia-runtest@v1
+              with:
+                  coverage: ${{ env.COVERAGE }}
             - uses: julia-actions/julia-processcoverage@v1
+              if: env.COVERAGE == 'true'
             - uses: codecov/codecov-action@v6
+              if: env.COVERAGE == 'true'
               env:
                   CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
               with:

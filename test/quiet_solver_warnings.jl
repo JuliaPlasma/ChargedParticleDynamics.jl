@@ -1,10 +1,20 @@
 #
 # Suppress the repetitive nonlinear-solver warnings for the duration of the test suite.
 #
-# The guiding-centre and Pauli-particle models are stiff enough that the Newton solver routinely
-# exhausts its iteration budget at the accuracy the tests ask for, and `SimpleSolvers` emits one
-# warning per occurrence: a single testset can produce well over thirty thousand of them, which
-# buries every other line of a CI log. Only the count is reported, at the end of the run.
+# `SimpleSolvers` emits one warning per solve that exhausts its iteration budget, and which orbits
+# trip it depends on the floating-point details of the platform. Only the count is reported, at the
+# end of the run.
+#
+# That count is also a tripwire. It used to sit above fifty thousand because the tests requested an
+# `f_abstol` below the round-off floor of the ITER-scale residuals, so Newton could not converge and
+# ran to its iteration limit on nearly half of all steps; see the comment on `options` in
+# `guiding_center_3d_tests.jl`. With the tolerances now in use the blocks that pass those options
+# contribute none of them, so a sharp rise means a tolerance has slipped below a residual floor
+# again.
+#
+# The residue that remains comes from `structure_tests.jl` and `plots_tests.jl`, which deliberately
+# integrate without passing `options` in order to exercise the library defaults — and those defaults
+# ask for `f_abstol = 8eps()`, which is itself below the ITER-scale floor.
 #
 # This is deliberately *not* a way of hiding failures: the tests assert that `integrate` returns a
 # solution, which is unaffected by the warnings. See the comment on the assertions in the
