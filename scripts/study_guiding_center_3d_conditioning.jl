@@ -214,7 +214,7 @@ Integrate one variant and return the final state together with the invariant err
 function solve(M, ic, makeproblem)
     try
         problem = makeproblem(ic)
-        sol = integrate(problem, METHOD; initialguess = MidpointExtrapolation(5), OPTIONS...)
+        sol = integrate(problem, METHOD; OPTIONS...)
         y = vcat(sol.q[end], sol.p[end])
         any(!isfinite, y) && return nothing
 
@@ -305,10 +305,9 @@ function cost(makeproblem, ic)
     try
         problem = makeproblem(ic)
         nsteps = GeometricIntegrators.GeometricBase.ntime(problem)
-        integrate(problem, METHOD; initialguess = MidpointExtrapolation(5), warn_iterations = 1, OPTIONS...)
+        integrate(problem, METHOD; warn_iterations = 1, OPTIONS...)
         empty!(ITERLOG.iterations)
-        elapsed = @elapsed integrate(problem, METHOD; initialguess = MidpointExtrapolation(5),
-                                     warn_iterations = 1, OPTIONS...)
+        elapsed = @elapsed integrate(problem, METHOD; warn_iterations = 1, OPTIONS...)
         its = copy(ITERLOG.iterations)
         return (ms_per_step = elapsed / nsteps * 1E3,
                 mean_iterations = mean(its),

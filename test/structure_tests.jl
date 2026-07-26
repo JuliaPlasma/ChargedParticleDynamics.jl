@@ -242,6 +242,70 @@ end
 end
 
 
+@safetestset "3D guiding centre: the cached field values are the field functions                                  " begin
+    using ChargedParticleDynamics.GuidingCenter3d
+    using Test
+
+    # `guiding_center_3d_v`/`_f` evaluate every injected field function once into a `FieldValues` and
+    # then read the results out of it, which is what makes them 6x faster than calling through to the
+    # generated code on every one of the twelve Poisson-bracket terms. The whole construction rests on
+    # the cached accessors returning exactly what the uncached ones do — not approximately, exactly —
+    # so that is what is asserted, on one chart of each kind.
+    #
+    # A field left out of `fieldvalues`, or filled from the wrong index, would otherwise surface only
+    # as a silently wrong trajectory: the right-hand side would still run, and every one of these
+    # equilibria integrates happily with a corrupted `∂b/∂x`.
+    for M in (GuidingCenter3d.SolovevIterXpoint,        # cylindrical
+              GuidingCenter3d.TokamakMediumCartesian,   # cartesian
+              GuidingCenter3d.TokamakSmallToroidal)     # toroidal
+        ic = M.initial_conditions_barely_passing()
+        t, q, p = 0.0, ic.q, ic.p
+        F = M.fieldvalues(t, q)
+
+        @test isconcretetype(typeof(F))
+
+        for i in 1:3
+            # `==` rather than `===`: a vanishing component comes back from the generated code as an
+            # `Int` literal — `E₁` and `dg¹¹dx₁` both do in a cartesian chart — and `fieldvalues`
+            # converts it to the element type of the coordinate vector. The value is what matters.
+            @test M.Aᵢ(Val(i), t, F) == M.Aᵢ(Val(i), t, q)
+            @test M.bᵢ(Val(i), t, F) == M.bᵢ(Val(i), t, q)
+
+            for j in 1:3
+                @test M.dAᵢdxⱼ(Val(i), Val(j), t, F) == M.dAᵢdxⱼ(Val(i), Val(j), t, q)
+                @test M.dbᵢdxⱼ(Val(i), Val(j), t, F) == M.dbᵢdxⱼ(Val(i), Val(j), t, q)
+            end
+        end
+
+        # The injected names the Hamiltonian gradients and `u` call without going through an accessor.
+        for (f, g) in ((M.g¹¹, M.g¹¹), (M.g²², M.g²²), (M.g³³, M.g³³),
+                       (M.dBdx₁, M.dBdx₁), (M.dBdx₂, M.dBdx₂), (M.dBdx₃, M.dBdx₃),
+                       (M.E₁, M.E₁), (M.E₂, M.E₂), (M.E₃, M.E₃),
+                       (M.A₁, M.A₁), (M.b₁, M.b₁), (M.b₂, M.b₂), (M.b₃, M.b₃),
+                       (M.dg¹¹dx₁, M.dg¹¹dx₁), (M.dg²²dx₂, M.dg²²dx₂), (M.dg³³dx₃, M.dg³³dx₃),
+                       (M.dg¹¹dx₃, M.dg¹¹dx₃), (M.dg³³dx₁, M.dg³³dx₁))
+            @test f(t, F) == g(t, q)
+        end
+
+        # And the composites, which is what actually catches a wrong index: they contract several
+        # cached fields together, so a transposed `db` shows up here even where it agrees componentwise.
+        c = M.constraint_pair(M.default_constraints())
+        @test M.u(t, F, p) == M.u(t, q, p)
+        @test M.λₒ(t, F, p, c) == M.λₒ(t, q, p, c)
+
+        for i in 1:3
+            @test M.dHdqᵢ(Val(i), t, F, p, ic.params) == M.dHdqᵢ(Val(i), t, q, p, ic.params)
+            @test M.dHdpᵢ(Val(i), t, F, p, ic.params) == M.dHdpᵢ(Val(i), t, q, p, ic.params)
+
+            for k in 1:3
+                @test M.dgᵏdqₗ(Val(k), Val(i), t, F, p) == M.dgᵏdqₗ(Val(k), Val(i), t, q, p)
+                @test M.dgᵏdpₗ(Val(k), Val(i), t, F, p) == M.dgᵏdpₗ(Val(k), Val(i), t, q, p)
+            end
+        end
+    end
+end
+
+
 @safetestset "3D guiding centre: second derivatives of H match finite differences                                 " begin
     using ChargedParticleDynamics.GuidingCenter3d
     using ..StructureTestUtils
@@ -590,7 +654,17 @@ end
 
     for M in (GuidingCenter3d.SolovevIterXpoint, GuidingCenter3d.TokamakMediumCartesian)
         prob = M.hodeproblem(M.initial_conditions_barely_passing(); timestep = 0.1, timespan = (0.0, 1e2))
-        sol  = integrate(prob, PartitionedGauss(2); initialguess = MidpointExtrapolation(5), options...)
+        # No `initialguess`: `PartitionedGauss` defaults to `HermiteExtrapolation`, and the
+        # `MidpointExtrapolation(5)` this used to request was 70% of the block's runtime while
+        # leaving the trajectory bit-identical. See `guiding_center_3d_tests.jl`.
+        #
+        # It is not quite free: on the Solov'ev X-point four of these thousand steps now exhaust the
+        # 50-iteration budget where two did before, so this block contributes two more suppressed
+        # warnings to the count `quiet_solver_warnings.jl` reports. The energy error is unchanged to
+        # the last bit (5.388E-15), the block is 5.4x faster, and the extra two steps are the price
+        # of a marginally worse initial guess on a handful of hard ones — not a tolerance slipping
+        # below a residual floor, which is what that count exists to catch.
+        sol  = integrate(prob, PartitionedGauss(2); options...)
 
         _, eerr = M.compute_energy_error(sol)
         @test mx(eerr) < 1e-8

@@ -27,6 +27,7 @@
 #
 
 const INDEX_SUBSCRIPTS = ('₁', '₂', '₃')
+const INDEX_SUPERSCRIPTS = ('¹', '²', '³')
 
 for i in 1:3
     @eval @inline Aᵢ(::Val{$i}, t, q) = $(Symbol("A", INDEX_SUBSCRIPTS[i]))(t, q)
@@ -47,6 +48,107 @@ end
 # Contraction over the three coordinate directions. Written as a sum of three calls rather than a
 # loop or a generator so that the `Val` index stays a compile-time constant in each summand.
 @inline contract(f) = f(Val(1)) + f(Val(2)) + f(Val(3))
+
+
+#
+# The injected field functions evaluated once per point.
+#
+# Everything below — the constraints, their derivatives, the Hamiltonian gradients, the Poisson
+# brackets — is written against the accessors above, and each of them calls straight through to an
+# `ElectromagneticFields.@code()`-injected function. Those are the expensive part: the generated code
+# carries no common subexpression elimination, so `db₁dx₁` on the ITER Solov'ev X-point is 1905
+# statements containing 108 separate evaluations of `log(x₁)`, and costs 566 ns against 0.5 ns for
+# `g¹¹`. A single evaluation of the Hamilton-Dirac right-hand side used to call `dbᵢdxⱼ` more than
+# seventy times, because every one of the twelve Poisson bracket terms re-entered it from the top.
+#
+# `FieldValues` holds one evaluation of each. The functions that consume it need no changes at all:
+# they are already generic in their `q` argument, so passing a `FieldValues` where the coordinate
+# vector would go picks up the methods defined below by dispatch, and every field read becomes a
+# tuple index. This is what makes the right-hand side 4.5x faster; the values are identical, so the
+# trajectories are too (`max|Δv| = 3.5E-18` on `SolovevIterXpoint`).
+#
+# It is parametric because the integrator evaluates the right-hand side on `ForwardDiff.Dual` as well
+# as `Float64` — four of the roughly eighteen calls per step, for the Newton Jacobian.
+#
+
+struct FieldValues{T}
+    A ::NTuple{3,T}
+    b ::NTuple{3,T}
+    g ::NTuple{3,T}
+    dB::NTuple{3,T}
+    E ::NTuple{3,T}
+    dA::NTuple{3,NTuple{3,T}}
+    db::NTuple{3,NTuple{3,T}}
+    dg::NTuple{3,NTuple{3,T}}
+end
+
+# An expression that names an injected field function directly, rather than going through one of the
+# accessors below, reaches the two-argument `f(t, ξ)` form and indexes its second argument. That is a
+# missing cached method, not a bug in the caller, and the `MethodError` it raises names `getindex`
+# rather than the function that is missing one — so say which.
+Base.getindex(::FieldValues, i::Integer) = error(
+    "a `FieldValues` was passed to an `ElectromagneticFields` field function as a coordinate " *
+    "vector. Some expression on the right-hand side names an injected function that has no " *
+    "`FieldValues` method; add one beside the others in `guiding_center_3d_constraints.jl`.")
+
+"""
+    fieldvalues(t, q)
+
+Every injected field function the first-derivative right-hand sides need, evaluated at `(t, q)`.
+Pass the result where those right-hand sides expect `q`; see [`FieldValues`](@ref).
+"""
+@inline function fieldvalues(t, q)
+    # The generated functions return an exact `0` for a vanishing component — an `Int` literal in a
+    # cartesian chart, where `dg¹¹dx₁` and `E₁` fold away entirely — so the tuples need converting
+    # rather than merely collecting, or `FieldValues` would not be concretely typed.
+    T = eltype(q)
+    c(x) = convert(T, x)
+
+    FieldValues{T}(
+        (c(A₁(t, q)),     c(A₂(t, q)),     c(A₃(t, q))),
+        (c(b₁(t, q)),     c(b₂(t, q)),     c(b₃(t, q))),
+        (c(g¹¹(t, q)),    c(g²²(t, q)),    c(g³³(t, q))),
+        (c(dBdx₁(t, q)),  c(dBdx₂(t, q)),  c(dBdx₃(t, q))),
+        (c(E₁(t, q)),     c(E₂(t, q)),     c(E₃(t, q))),
+        ((c(dA₁dx₁(t, q)),  c(dA₁dx₂(t, q)),  c(dA₁dx₃(t, q))),
+         (c(dA₂dx₁(t, q)),  c(dA₂dx₂(t, q)),  c(dA₂dx₃(t, q))),
+         (c(dA₃dx₁(t, q)),  c(dA₃dx₂(t, q)),  c(dA₃dx₃(t, q)))),
+        ((c(db₁dx₁(t, q)),  c(db₁dx₂(t, q)),  c(db₁dx₃(t, q))),
+         (c(db₂dx₁(t, q)),  c(db₂dx₂(t, q)),  c(db₂dx₃(t, q))),
+         (c(db₃dx₁(t, q)),  c(db₃dx₂(t, q)),  c(db₃dx₃(t, q)))),
+        ((c(dg¹¹dx₁(t, q)), c(dg¹¹dx₂(t, q)), c(dg¹¹dx₃(t, q))),
+         (c(dg²²dx₁(t, q)), c(dg²²dx₂(t, q)), c(dg²²dx₃(t, q))),
+         (c(dg³³dx₁(t, q)), c(dg³³dx₂(t, q)), c(dg³³dx₃(t, q)))))
+end
+
+# The cached counterparts of the accessors above, and of the injected names the Hamiltonian gradients
+# call directly. Same signatures with a `FieldValues` in place of the coordinate vector, so that
+# every expression written against them works unchanged on either.
+#
+# Written out per index rather than as `Aᵢ(::Val{i}, t, F::FieldValues) where {i}`, which would be
+# ambiguous against the per-index methods above: those fix the `Val`s and leave `q` untyped, so
+# neither signature is more specific than the other and dispatch has no way to choose.
+for i in 1:3
+    @eval @inline Aᵢ(::Val{$i}, t, F::FieldValues) = F.A[$i]
+    @eval @inline bᵢ(::Val{$i}, t, F::FieldValues) = F.b[$i]
+
+    # `Aᵢ`/`bᵢ` do not cover every call: `u` and `ϑ` name `A₁`, `b₁` and their siblings directly, and
+    # without these they reach the injected functions and index the `FieldValues` as if it were the
+    # coordinate vector.
+    @eval @inline $(Symbol("A", INDEX_SUBSCRIPTS[i]))(t, F::FieldValues) = F.A[$i]
+    @eval @inline $(Symbol("b", INDEX_SUBSCRIPTS[i]))(t, F::FieldValues) = F.b[$i]
+
+    @eval @inline $(Symbol("g", INDEX_SUPERSCRIPTS[i], INDEX_SUPERSCRIPTS[i]))(t, F::FieldValues) = F.g[$i]
+    @eval @inline $(Symbol("dBdx", INDEX_SUBSCRIPTS[i]))(t, F::FieldValues) = F.dB[$i]
+    @eval @inline $(Symbol("E", INDEX_SUBSCRIPTS[i]))(t, F::FieldValues) = F.E[$i]
+
+    for j in 1:3
+        @eval @inline dAᵢdxⱼ(::Val{$i}, ::Val{$j}, t, F::FieldValues) = F.dA[$i][$j]
+        @eval @inline dbᵢdxⱼ(::Val{$i}, ::Val{$j}, t, F::FieldValues) = F.db[$i][$j]
+
+        @eval @inline $(Symbol("dg", INDEX_SUPERSCRIPTS[i], INDEX_SUPERSCRIPTS[i], "dx", INDEX_SUBSCRIPTS[j]))(t, F::FieldValues) = F.dg[$i][$j]
+    end
+end
 
 
 vᵢ(::Val{i}, t, q, p) where {i} = p[i] - Aᵢ(Val(i), t, q)
