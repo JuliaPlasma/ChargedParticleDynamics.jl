@@ -93,33 +93,43 @@ under a different justification.
 
 # Physics
 
-## Add the remaining constraint formulations to the 3D guiding centre model
+## ~~Add the remaining constraint formulations to the 3D guiding centre model~~ — done
 
-**Context from the author:** several formulations of the constraints exist. What is implemented is
-one variant taken from an *earlier version* of Li, Zhang & Liu — so this is incompleteness, not a
-mistake. The task is to generalise and add the missing variants.
+All three constraint pairs are implemented, selected by a `constraints = :g31` / `:g12` / `:g23`
+keyword on `hodeproblem` and `hodeproblem_canonical`, with a per-equilibrium `default_constraints`
+that is regular at that equilibrium's own initial conditions. The constraints and every one of their
+first and second derivatives are now written once against a generic index pair in
+`src/guiding_center_3d/guiding_center_3d_constraints.jl`, as decided;
+`guiding_center_3d_canonical.jl` lost some four hundred lines rather than tripling in size.
 
-This also happens to be the fix for the sharpest limitation in the package. The active pair is
-``(g^3, g^1)``, which puts ``b_1`` in the denominator of both Lagrange multipliers, and **seven of
-the eleven equilibria have ``b_1 = 0`` exactly at their shipped initial condition** — the
-multipliers are infinite and `hode` cannot be started at all. See the table in
-[findings.md](docs/src/findings.md); the pair ``(g^1, g^2)`` puts ``b_3 = b_\varphi`` there
-instead, which does not vanish on the midplane.
+The compact form of Eq. (29) is implemented as well, as a third formulation, `hodeproblem_compact`.
+Since that equation as printed is cartesian, it is derived coordinate-generally instead of ported;
+the derivation is at the top of `guiding_center_3d_compact.jl` and written up in
+[docs/src/guiding_center_3d.md](docs/src/guiding_center_3d.md). It turns out to be independent of the
+constraint pair and free of every `bₘ` denominator.
 
-Proposed shape: a `constraints = :g31` / `:g12` / `:g23` keyword threaded through `hode` and
-`hode_canonical`, defaulting to the present `:g31` for compatibility, with a per-equilibrium default
-chosen so each ships with a pair that is non-singular at its own initial condition.
+Five of the seven commented-out 3D test blocks are re-enabled. The two that are not —
+`SymmetricField` and `ThetaPinchField` — never had integration content: they called
+`guiding_center_3d_loop_ode` and `guiding_center_3d_surface_ode`, which this package no longer
+defines. See the note where those blocks used to be.
 
-The obstacle is that the constraints and *all* their first and second derivatives are written out
-by hand for one pair — `guiding_center_3d_canonical.jl` is 700 lines of it.
+Two things this left open, neither of them about the constraint pair:
 
-**Decided: restructure around `Val{:g31}`-style dispatch** rather than hand-writing the other two
-pairs or generating the derivatives symbolically. Writing the constraints and their derivatives
-once against a generic index pair shrinks that file instead of tripling it, at the cost of touching
-every line of it. Do not open this again as a three-way choice.
-
-Once it works, re-enable the commented-out 3D test blocks in `test/guiding_center_3d_tests.jl`
-(~150 lines, all of them blocked on exactly this).
+* **`hodeproblem_canonical` diverges on `SolovevSymmetricField`** after some thirty steps, although
+  the pair is well conditioned there (``\lambda_o \approx -228``) and the same orbit runs to
+  completion under `hodeproblem` and `hodeproblem_compact`. The ``\partial\lambda/\partial q``,
+  ``\partial\lambda/\partial p`` terms amplify the constraint drift rather than ignoring it. It is
+  the only equilibrium where this happens.
+* **The omitted constraint drifts `1/bₘ` times as much as the retained pair**, since
+  ``b_1 g^2 - b_2 g^1 + b_3 g^3 = 0`` determines it from them. On the ITER Solov'ev X-point that is a
+  factor of 170. Nothing is wrong with it, but it is one of two reasons to prefer the pair whose
+  ``b_m`` is largest rather than merely non-zero.
+* **`default_constraints` is chosen on regularity at the initial condition, not on conditioning along
+  the orbit** — with one exception. `Dipole3d` had to be moved to `:g12` because its orbit takes both
+  `b₁` and `b₂` through zero and the other two pairs lose the orbit entirely by ``t = 30``. The rest
+  were left where regularity put them, including `TokamakMediumCartesian` at ``\lambda_o = -0.15``
+  where `:g23` would give ``-3.8``, because changing them moves numbers that findings.md tabulates.
+  A sweep of ``\min |b_m|`` along each shipped orbit would settle all eleven properly.
 
 ## One initial-conditions layer for all models
 
@@ -246,10 +256,6 @@ observed order of a few would be cheap and would validate the subsystem integrat
 
 # Smaller things
 
-* `test/guiding_center_3d_tests.jl` has ~150 lines of commented-out test blocks. Every equilibrium
-  they cover — `TokamakMediumCylindrical`, `TokamakSmall{Cartesian,Cylindrical,Toroidal}`,
-  `SolovevSymmetricField` — has `b₁ = 0` at its initial condition, so all are blocked on the
-  constraint-formulation item above.
 * Per-equilibrium docstrings: the coordinate system and the equilibrium parameters are now stated
   everywhere. The provenance of the hard-coded `μ` and `u` is not, because it is unknown — see
   *One initial-conditions layer for all models* above, which subsumes this. If the derivation
@@ -273,11 +279,11 @@ observed order of a few would be cheap and would validate the subsystem integrat
 Observations from reviewing the audit that were not defects and so were not fixed with it. Recorded
 here rather than lost in a pull request thread.
 
-* **Integration coverage of `GuidingCenter3d` is four equilibria of eleven** — `SolovevIterXpoint`,
-  `TokamakMediumCartesian`, and now `Dipole3d` and `QuadraticPotentials3d`. The structure tests
-  cover all eleven but do not integrate. The remaining seven are blocked by the `b₁ = 0`
-  singularity rather than by anything the audit did; fixing the constraint pair fixes the coverage
-  too, and until then it is worth knowing how thin it is.
+* **Integration coverage of `GuidingCenter3d` was four equilibria of eleven** — the remaining seven
+  were blocked by the `b₁ = 0` singularity of the one implemented constraint pair rather than by
+  anything the audit did. Selecting the pair per equilibrium lifted that: nine of the eleven now
+  integrate, and the two that do not (`SymmetricField`, `ThetaPinchField`) ship Poincaré-invariant
+  loops rather than initial conditions and never had integration tests to begin with.
 * **The SciML reformat landed in the same commits as the semantic changes**, which makes several
   equilibrium modules read as whole-file rewrites; `git diff -w` is the way to review them. Worth
   keeping formatting sweeps to their own commit next time, now that `.JuliaFormatter.toml` exists
@@ -290,9 +296,10 @@ here rather than lost in a pull request thread.
 
 Recorded so a future session does not re-open them.
 
-**Constraint pair.** Not a mistake — the implemented variant comes from an earlier version of the
-paper, and the others are simply missing. Generalising is a planned task; see above. The shape is
-settled too: `Val{:g31}`-style dispatch, not hand-written pairs or symbolic generation.
+**Constraint pair.** Not a mistake — the implemented variant came from an earlier version of the
+paper, and the others were simply missing. All three now exist, on `Val{:g31}`-style dispatch as
+settled, along with the compact form of Eq. (29); see above. There is nothing left to decide here
+except which pair each equilibrium should *prefer* among those that are regular for it.
 
 **The suppressed-warning count is not a tripwire.** It is reported by `@info` and nothing asserts
 on it. A threshold was considered and rejected: which orbits exhaust the solver's iteration budget

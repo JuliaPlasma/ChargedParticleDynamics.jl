@@ -64,10 +64,19 @@ function f_surface(s, t)
     return qt
 end
 
-export default_parameters
+export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
 default_parameters(::Type{T}=Float64) where {T} = (μ = T(3.2e-7),)
+
+"""
+The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+
+`b₁ = B_x` vanishes at the initial conditions of this equilibrium,
+which sit at `y = z = 0`, so `(g³, g¹)` is singular there. `(g², g³)` divides by `b₂`, the toroidal
+component in this chart and the largest of the three.
+"""
+default_constraints() = :g23
 
 
 include("guiding_center_3d_equations.jl")

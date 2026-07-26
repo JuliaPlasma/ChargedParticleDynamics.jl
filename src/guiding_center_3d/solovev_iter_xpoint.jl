@@ -19,10 +19,18 @@ const DEFAULT_TIMESPAN = (0.0, 1000.0)
 const xᵢ = [7.0 - 1.4, 0.0, 0.0]
 const qᵢ = [from_cartesian(0, xᵢ)..., 2.8166280889939737]
 
-export default_parameters
+export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
 default_parameters(::Type{T}=Float64) where {T} = (μ = T(4.607782183567846),)
+
+"""
+The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+
+`b₁` is small but non-zero at every initial condition of this
+equilibrium, so the historical pair is still usable.
+"""
+default_constraints() = :g31
 
 
 include("guiding_center_3d_equations.jl")

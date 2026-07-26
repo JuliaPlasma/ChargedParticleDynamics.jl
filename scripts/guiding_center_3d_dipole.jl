@@ -2,9 +2,7 @@ using GeometricIntegrators
 using SimpleSolvers
 
 using ChargedParticleDynamics.GuidingCenter3d.Dipole3d
-using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: hamiltonian, hamiltonian_u, g₁, g₂, λₒ, λ₁, λ₂, b₁, b₂, b₃
-using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: dg₁dq₁, dg₁dq₂, dg₁dq₃, dg₁dp₁, dg₁dp₂, dg₁dp₃
-using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: dg₂dp₁, dg₂dp₂, dg₂dp₃, dg₂dq₁, dg₂dq₂, dg₂dq₃
+using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, b₁, b₂, b₃
 
 const options = (f_abstol=8eps(), verbosity=1)
 
@@ -30,6 +28,7 @@ hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in each
 λ2 = [λ₂(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
 g1 = [g₁(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
 g2 = [g₂(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
+g3 = [g₃(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
 b1 = [b₁(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
 b2 = [b₂(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
 b3 = [b₃(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
@@ -54,6 +53,9 @@ println("g₁(T) = ", g1[end])
 println()
 println("g₂(0) = ", g2[begin])
 println("g₂(T) = ", g2[end])
+
+println("g₃(0) = ", g3[begin])
+println("g₃(T) = ", g3[end])
 println()
 println("λ₀(0) = ", λ0[begin])
 println("λ₀(T) = ", λ0[end])

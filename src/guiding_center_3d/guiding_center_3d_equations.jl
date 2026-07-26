@@ -7,52 +7,31 @@ import GeometricSolutions: GeometricSolution, DataSeries, TimeSeries
 export hamiltonian, hamiltonian_canonical
 export hodeproblem, hodeproblem_canonical
 
+# The constraints and the index accessors every generic expression below is written with. Included
+# from here rather than from the equilibrium modules so that adding it did not need thirteen edits;
+# `include` resolves relative to the file containing the call. The compact form is pulled in the same
+# way at the foot of this file.
+include("guiding_center_3d_constraints.jl")
+
 
 @views ϑ₁(t, Q) = A₁(t, Q[1:3]) + Q[4] * b₁(t, Q[1:3])
 @views ϑ₂(t, Q) = A₂(t, Q[1:3]) + Q[4] * b₂(t, Q[1:3])
 @views ϑ₃(t, Q) = A₃(t, Q[1:3]) + Q[4] * b₃(t, Q[1:3])
 
-v₁(t, q, p) = p[1] - A₁(t, q)
-v₂(t, q, p) = p[2] - A₂(t, q)
-v₃(t, q, p) = p[3] - A₃(t, q)
+# The named `v` and its first derivatives, kept because the second derivatives of the Hamiltonian in
+# `guiding_center_3d_canonical.jl` are written out per index and read better that way. They are
+# aliases of the generic accessors rather than second definitions of them.
+for i in 1:3
+    @eval $(Symbol("v", INDEX_SUBSCRIPTS[i]))(t, q, p) = vᵢ($(Val(i)), t, q, p)
 
-dv₁dq₁(t, q, p) = -dA₁dx₁(t, q)
-dv₁dq₂(t, q, p) = -dA₁dx₂(t, q)
-dv₁dq₃(t, q, p) = -dA₁dx₃(t, q)
-
-dv₂dq₁(t, q, p) = -dA₂dx₁(t, q)
-dv₂dq₂(t, q, p) = -dA₂dx₂(t, q)
-dv₂dq₃(t, q, p) = -dA₂dx₃(t, q)
-
-dv₃dq₁(t, q, p) = -dA₃dx₁(t, q)
-dv₃dq₂(t, q, p) = -dA₃dx₂(t, q)
-dv₃dq₃(t, q, p) = -dA₃dx₃(t, q)
-
-dv₁dp₁(t, q, p) = one(eltype(p))
-dv₁dp₂(t, q, p) = zero(eltype(p))
-dv₁dp₃(t, q, p) = zero(eltype(p))
-
-dv₂dp₁(t, q, p) = zero(eltype(p))
-dv₂dp₂(t, q, p) = one(eltype(p))
-dv₂dp₃(t, q, p) = zero(eltype(p))
-
-dv₃dp₁(t, q, p) = zero(eltype(p))
-dv₃dp₂(t, q, p) = zero(eltype(p))
-dv₃dp₃(t, q, p) = one(eltype(p))
+    for j in 1:3
+        @eval $(Symbol("dv", INDEX_SUBSCRIPTS[i], "dq", INDEX_SUBSCRIPTS[j]))(t, q, p) = dvᵢdqⱼ($(Val(i)), $(Val(j)), t, q, p)
+        @eval $(Symbol("dv", INDEX_SUBSCRIPTS[i], "dp", INDEX_SUBSCRIPTS[j]))(t, q, p) = dvᵢdpⱼ($(Val(i)), $(Val(j)), t, q, p)
+    end
+end
 
 
 u(t, q, p) = v₁(t, q, p) * g¹¹(t, q) * b₁(t, q) + v₂(t, q, p) * g²²(t, q) * b₂(t, q) + v₃(t, q, p) * g³³(t, q) * b₃(t, q)
-
-# dudq₁(t, q, p) = v₁(t, q, p) * db₁dx₁(t, q) + v₂(t, q, p) * db₂dx₁(t, q) + v₃(t, q, p) * db₃dx₁(t, q) +
-#                  dv₁dq₁(t, q, p) * b₁(t, q) + dv₂dq₁(t, q, p) * b₂(t, q) + dv₃dq₁(t, q, p) * b₃(t, q)
-# dudq₂(t, q, p) = v₁(t, q, p) * db₁dx₂(t, q) + v₂(t, q, p) * db₂dx₂(t, q) + v₃(t, q, p) * db₃dx₂(t, q) +
-#                  dv₁dq₂(t, q, p) * b₁(t, q) + dv₂dq₂(t, q, p) * b₂(t, q) + dv₃dq₂(t, q, p) * b₃(t, q)
-# dudq₃(t, q, p) = v₁(t, q, p) * db₁dx₃(t, q) + v₂(t, q, p) * db₂dx₃(t, q) + v₃(t, q, p) * db₃dx₃(t, q) +
-#                  dv₁dq₃(t, q, p) * b₁(t, q) + dv₂dq₃(t, q, p) * b₂(t, q) + dv₃dq₃(t, q, p) * b₃(t, q)
-
-# dudp₁(t, q, p) = b₁(t, q)
-# dudp₂(t, q, p) = b₂(t, q)
-# dudp₃(t, q, p) = b₃(t, q)
 
 
 function initial_momentum(tᵢ, Qᵢ::AbstractArray{T}) where {T<:Number}
@@ -105,8 +84,6 @@ hamiltonian(t, q, p, params) = g¹¹(t, q) * v₁(t, q, p)^2 / 2 + g²²(t, q) *
 # which is what `scripts/guiding_center_3d_*.jl` plot it for. It omitted `φ`, unlike `hamiltonian`
 # beside it, which made the two incomparable for any equilibrium with a potential.
 hamiltonian_u(t, q, p, params) = u(t, q, p)^2 / 2 + params.μ * B(t, q) + φ(t, q)
-hamiltonian_canonical(t, q, p, params) = hamiltonian(t, q, p, params) + λ₁(t, q, p, params) * g₁(t, q, p) +
-                                         λ₂(t, q, p, params) * g₂(t, q, p)
 
 
 dHdq₁(t, q, p, params) = v₁(t, q, p) * g¹¹(t, q) * dv₁dq₁(t, q, p) +
@@ -148,141 +125,87 @@ dHdp₃(t, q, p, params) = v₁(t, q, p) * g¹¹(t, q) * dv₁dp₃(t, q, p) +
                          v₂(t, q, p) * g²²(t, q) * dv₂dp₃(t, q, p) +
                          v₃(t, q, p) * g³³(t, q) * dv₃dp₃(t, q, p)
 
-
-# function dHdq(dH, t, q, p, params)
-#     dH[1] = dHdq₁(t, q, p, params)
-#     dH[2] = dHdq₂(t, q, p, params)
-#     dH[3] = dHdq₃(t, q, p, params)
-#     nothing
-# end
-
-# function dHdp(dH, t, q, p, params)
-#     dH[1] = dHdp₁(t, q, p, params)
-#     dH[2] = dHdp₂(t, q, p, params)
-#     dH[3] = dHdp₃(t, q, p, params)
-#     nothing
-# end
-
-g₁(t, q, p) = b₁(t, q) * v₂(t, q, p) - b₂(t, q) * v₁(t, q, p)
-g₂(t, q, p) = b₁(t, q) * v₃(t, q, p) - b₃(t, q) * v₁(t, q, p)
-# g₁(t, q, p) = b₁(t, q) * v₃(t, q, p) - b₃(t, q) * v₁(t, q, p)
-# g₂(t, q, p) = b₂(t, q) * v₃(t, q, p) - b₃(t, q) * v₂(t, q, p)
-
-g₁(t, q, p, params) = g₁(t, q, p)
-g₂(t, q, p, params) = g₂(t, q, p)
-
-dg₁dq₁(t, q, p) = (db₁dx₁(t, q) * v₂(t, q, p) + b₁(t, q) * dv₂dq₁(t, q, p)) -
-                  (db₂dx₁(t, q) * v₁(t, q, p) + b₂(t, q) * dv₁dq₁(t, q, p))
-dg₁dq₂(t, q, p) = (db₁dx₂(t, q) * v₂(t, q, p) + b₁(t, q) * dv₂dq₂(t, q, p)) -
-                  (db₂dx₂(t, q) * v₁(t, q, p) + b₂(t, q) * dv₁dq₂(t, q, p))
-dg₁dq₃(t, q, p) = (db₁dx₃(t, q) * v₂(t, q, p) + b₁(t, q) * dv₂dq₃(t, q, p)) -
-                  (db₂dx₃(t, q) * v₁(t, q, p) + b₂(t, q) * dv₁dq₃(t, q, p))
-
-dg₂dq₁(t, q, p) = (db₁dx₁(t, q) * v₃(t, q, p) + b₁(t, q) * dv₃dq₁(t, q, p)) -
-                  (db₃dx₁(t, q) * v₁(t, q, p) + b₃(t, q) * dv₁dq₁(t, q, p))
-dg₂dq₂(t, q, p) = (db₁dx₂(t, q) * v₃(t, q, p) + b₁(t, q) * dv₃dq₂(t, q, p)) -
-                  (db₃dx₂(t, q) * v₁(t, q, p) + b₃(t, q) * dv₁dq₂(t, q, p))
-dg₂dq₃(t, q, p) = (db₁dx₃(t, q) * v₃(t, q, p) + b₁(t, q) * dv₃dq₃(t, q, p)) -
-                  (db₃dx₃(t, q) * v₁(t, q, p) + b₃(t, q) * dv₁dq₃(t, q, p))
-
-dg₁dp₁(t, q, p) = b₁(t, q) * dv₂dp₁(t, q, p) - b₂(t, q) * dv₁dp₁(t, q, p)
-dg₁dp₂(t, q, p) = b₁(t, q) * dv₂dp₂(t, q, p) - b₂(t, q) * dv₁dp₂(t, q, p)
-dg₁dp₃(t, q, p) = b₁(t, q) * dv₂dp₃(t, q, p) - b₂(t, q) * dv₁dp₃(t, q, p)
-
-dg₂dp₁(t, q, p) = b₁(t, q) * dv₃dp₁(t, q, p) - b₃(t, q) * dv₁dp₁(t, q, p)
-dg₂dp₂(t, q, p) = b₁(t, q) * dv₃dp₂(t, q, p) - b₃(t, q) * dv₁dp₂(t, q, p)
-dg₂dp₃(t, q, p) = b₁(t, q) * dv₃dp₃(t, q, p) - b₃(t, q) * dv₁dp₃(t, q, p)
+for i in 1:3
+    @eval @inline dHdqᵢ(::Val{$i}, t, q, p, params) = $(Symbol("dHdq", INDEX_SUBSCRIPTS[i]))(t, q, p, params)
+    @eval @inline dHdpᵢ(::Val{$i}, t, q, p, params) = $(Symbol("dHdp", INDEX_SUBSCRIPTS[i]))(t, q, p, params)
+end
 
 
-# dg₁dq₁(t, q, p) = (db₁dx₁(t, q) * v₃(t, q, p) + b₁(t, q) * dv₃dq₁(t, q, p)) -
-#                   (db₃dx₁(t, q) * v₁(t, q, p) + b₃(t, q) * dv₁dq₁(t, q, p))
-# dg₁dq₂(t, q, p) = (db₁dx₂(t, q) * v₃(t, q, p) + b₁(t, q) * dv₃dq₂(t, q, p)) -
-#                   (db₃dx₂(t, q) * v₁(t, q, p) + b₃(t, q) * dv₁dq₂(t, q, p))
-# dg₁dq₃(t, q, p) = (db₁dx₃(t, q) * v₃(t, q, p) + b₁(t, q) * dv₃dq₃(t, q, p)) -
-#                   (db₃dx₃(t, q) * v₁(t, q, p) + b₃(t, q) * dv₁dq₃(t, q, p))
+# The two Poisson brackets the Lagrange multipliers are built from,
+# `{f, l} = Σᵢ (∂f/∂qᵢ ∂l/∂pᵢ - ∂f/∂pᵢ ∂l/∂qᵢ)`.
+@inline bracket_gg(k₁::Val, k₂::Val, t, q, p) = contract(l ->
+    dgᵏdqₗ(k₁, l, t, q, p) * dgᵏdpₗ(k₂, l, t, q, p) -
+    dgᵏdpₗ(k₁, l, t, q, p) * dgᵏdqₗ(k₂, l, t, q, p))
 
-# dg₂dq₁(t, q, p) = (db₂dx₁(t, q) * v₃(t, q, p) + b₂(t, q) * dv₃dq₁(t, q, p)) -
-#                   (db₃dx₁(t, q) * v₂(t, q, p) + b₃(t, q) * dv₂dq₁(t, q, p))
-# dg₂dq₂(t, q, p) = (db₂dx₂(t, q) * v₃(t, q, p) + b₂(t, q) * dv₃dq₂(t, q, p)) -
-#                   (db₃dx₂(t, q) * v₂(t, q, p) + b₃(t, q) * dv₂dq₂(t, q, p))
-# dg₂dq₃(t, q, p) = (db₂dx₃(t, q) * v₃(t, q, p) + b₂(t, q) * dv₃dq₃(t, q, p)) -
-#                   (db₃dx₃(t, q) * v₂(t, q, p) + b₃(t, q) * dv₂dq₃(t, q, p))
-
-# dg₁dp₁(t, q, p) = b₁(t, q) * dv₃dp₁(t, q, p) - b₃(t, q) * dv₁dp₁(t, q, p)
-# dg₁dp₂(t, q, p) = b₁(t, q) * dv₃dp₂(t, q, p) - b₃(t, q) * dv₁dp₂(t, q, p)
-# dg₁dp₃(t, q, p) = b₁(t, q) * dv₃dp₃(t, q, p) - b₃(t, q) * dv₁dp₃(t, q, p)
-
-# dg₂dp₁(t, q, p) = b₂(t, q) * dv₃dp₁(t, q, p) - b₃(t, q) * dv₂dp₁(t, q, p)
-# dg₂dp₂(t, q, p) = b₂(t, q) * dv₃dp₂(t, q, p) - b₃(t, q) * dv₂dp₂(t, q, p)
-# dg₂dp₃(t, q, p) = b₂(t, q) * dv₃dp₃(t, q, p) - b₃(t, q) * dv₂dp₃(t, q, p)
+@inline bracket_gH(k::Val, t, q, p, params) = contract(l ->
+    dgᵏdqₗ(k, l, t, q, p) * dHdpᵢ(l, t, q, p, params) -
+    dgᵏdpₗ(k, l, t, q, p) * dHdqᵢ(l, t, q, p, params))
 
 
-λₒ(t, q, p) = (
-    dg₁dq₁(t, q, p) * dg₂dp₁(t, q, p) +
-    dg₁dq₂(t, q, p) * dg₂dp₂(t, q, p) +
-    dg₁dq₃(t, q, p) * dg₂dp₃(t, q, p) -
-    dg₁dp₁(t, q, p) * dg₂dq₁(t, q, p) -
-    dg₁dp₂(t, q, p) * dg₂dq₂(t, q, p) -
-    dg₁dp₃(t, q, p) * dg₂dq₃(t, q, p)
-)
+"""
+    λₒ(t, q, p, c = default_constraint_pair())
 
-λ₁(t, q, p, params) = +(
-    dg₂dq₁(t, q, p) * dHdp₁(t, q, p, params) +
-    dg₂dq₂(t, q, p) * dHdp₂(t, q, p, params) +
-    dg₂dq₃(t, q, p) * dHdp₃(t, q, p, params) -
-    dg₂dp₁(t, q, p) * dHdq₁(t, q, p, params) -
-    dg₂dp₂(t, q, p) * dHdq₂(t, q, p, params) -
-    dg₂dp₃(t, q, p) * dHdq₃(t, q, p, params)
-) / λₒ(t, q, p)
+The Poisson bracket `{g₁, g₂}` of the two constraints of the pair `c`, which divides both Lagrange
+multipliers. It equals `±bₘ [B + (p-A)·(∇×b)]` with `m` the index of the constraint the pair omits, so
+it is where the formulation becomes singular — see
+`scripts/study_guiding_center_3d_conditioning.jl`.
 
-λ₂(t, q, p, params) = -(
-    dg₁dq₁(t, q, p) * dHdp₁(t, q, p, params) +
-    dg₁dq₂(t, q, p) * dHdp₂(t, q, p, params) +
-    dg₁dq₃(t, q, p) * dHdp₃(t, q, p, params) -
-    dg₁dp₁(t, q, p) * dHdq₁(t, q, p, params) -
-    dg₁dp₂(t, q, p) * dHdq₂(t, q, p, params) -
-    dg₁dp₃(t, q, p) * dHdq₃(t, q, p, params)
-) / λₒ(t, q, p)
+The sign depends on the pair's ordering and is `+` for `:g31` and `:g12`, `-` for `:g23`; see
+[`constraint_pair`](@ref). Only `λₒ = 0` matters for whether the pair is usable, so nothing turns on
+it, but `λₒ` and `bₘ` do not always share a sign and the tabulated values reflect that.
+"""
+λₒ(t, q, p, c = default_constraint_pair()) = bracket_gg(c[1], c[2], t, q, p)
 
+"""
+    λ₁(t, q, p, params, c = default_constraint_pair())
+    λ₂(t, q, p, params, c = default_constraint_pair())
 
+The two Lagrange multipliers, `λ₁ = {g₂, H} / {g₁, g₂}` and `λ₂ = -{g₁, H} / {g₁, g₂}`, for the
+constraint pair `c`.
+"""
+λ₁(t, q, p, params, c = default_constraint_pair()) = +bracket_gH(c[2], t, q, p, params) / λₒ(t, q, p, c)
+λ₂(t, q, p, params, c = default_constraint_pair()) = -bracket_gH(c[1], t, q, p, params) / λₒ(t, q, p, c)
 
-# function guiding_center_3d_ode_v(v, t, x, params)
-#     q = @views x[1:3]
-#     p = @views x[4:6]
-
-#     v[1] = dHdp₁(t, q, p, params) + λ₁(t, q, p, params) * dg₁dp₁(t, q, p) + λ₂(t, q, p, params) * dg₂dp₁(t, q, p)
-#     v[2] = dHdp₂(t, q, p, params) + λ₁(t, q, p, params) * dg₁dp₂(t, q, p) + λ₂(t, q, p, params) * dg₂dp₂(t, q, p)
-#     v[3] = dHdp₃(t, q, p, params) + λ₁(t, q, p, params) * dg₁dp₃(t, q, p) + λ₂(t, q, p, params) * dg₂dp₃(t, q, p)
-#     v[4] = -dHdq₁(t, q, p, params) - λ₁(t, q, p, params) * dg₁dq₁(t, q, p) - λ₂(t, q, p, params) * dg₂dq₁(t, q, p)
-#     v[5] = -dHdq₂(t, q, p, params) - λ₁(t, q, p, params) * dg₁dq₂(t, q, p) - λ₂(t, q, p, params) * dg₂dq₂(t, q, p)
-#     v[6] = -dHdq₃(t, q, p, params) - λ₁(t, q, p, params) * dg₁dq₃(t, q, p) - λ₂(t, q, p, params) * dg₂dq₃(t, q, p)
-
-#     nothing
-# end
-
-# function ode(x₀, parameters; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP, periodic=false)
-#     # println("3D Guiding Center model initial constraints g₁ = $(g₁(t₀, q₀, p₀)) and g₂ = $(g₂(t₀, q₀, p₀))")
-#     ODEProblem(
-#         guiding_center_3d_ode_v,
-#         timespan, timestep, x₀;
-#         parameters=parameters,
-#         periodicity=guiding_center_3d_periodicity(q₀, periodic))
-# end
+hamiltonian_canonical(t, q, p, params, c = default_constraint_pair()) =
+    hamiltonian(t, q, p, params) + λ₁(t, q, p, params, c) * gᵏ(c[1], t, q, p) +
+                                   λ₂(t, q, p, params, c) * gᵏ(c[2], t, q, p)
 
 
-function guiding_center_3d_v(v, t, q, p, params)
-    v[1] = dHdp₁(t, q, p, params) + λ₁(t, q, p, params) * dg₁dp₁(t, q, p) + λ₂(t, q, p, params) * dg₂dp₁(t, q, p)
-    v[2] = dHdp₂(t, q, p, params) + λ₁(t, q, p, params) * dg₁dp₂(t, q, p) + λ₂(t, q, p, params) * dg₂dp₂(t, q, p)
-    v[3] = dHdp₃(t, q, p, params) + λ₁(t, q, p, params) * dg₁dp₃(t, q, p) + λ₂(t, q, p, params) * dg₂dp₃(t, q, p)
+# Fill or accumulate into the three components of a right-hand side from a function of the
+# compile-time index.
+@inline function components!(x, f)
+    x[1] = f(Val(1))
+    x[2] = f(Val(2))
+    x[3] = f(Val(3))
+    x
+end
+
+@inline function addcomponents!(x, f)
+    x[1] += f(Val(1))
+    x[2] += f(Val(2))
+    x[3] += f(Val(3))
+    x
+end
+
+
+function guiding_center_3d_v(v, t, q, p, params, c = default_constraint_pair())
+    l₁ = λ₁(t, q, p, params, c)
+    l₂ = λ₂(t, q, p, params, c)
+
+    components!(v, i -> dHdpᵢ(i, t, q, p, params) + l₁ * dgᵏdpₗ(c[1], i, t, q, p)
+                                                  + l₂ * dgᵏdpₗ(c[2], i, t, q, p))
     nothing
 end
 
-function guiding_center_3d_f(f, t, q, p, params)
-    f[1] = -dHdq₁(t, q, p, params) - λ₁(t, q, p, params) * dg₁dq₁(t, q, p) - λ₂(t, q, p, params) * dg₂dq₁(t, q, p)
-    f[2] = -dHdq₂(t, q, p, params) - λ₁(t, q, p, params) * dg₁dq₂(t, q, p) - λ₂(t, q, p, params) * dg₂dq₂(t, q, p)
-    f[3] = -dHdq₃(t, q, p, params) - λ₁(t, q, p, params) * dg₁dq₃(t, q, p) - λ₂(t, q, p, params) * dg₂dq₃(t, q, p)
+function guiding_center_3d_f(f, t, q, p, params, c = default_constraint_pair())
+    l₁ = λ₁(t, q, p, params, c)
+    l₂ = λ₂(t, q, p, params, c)
+
+    components!(f, i -> -dHdqᵢ(i, t, q, p, params) - l₁ * dgᵏdqₗ(c[1], i, t, q, p)
+                                                   - l₂ * dgᵏdqₗ(c[2], i, t, q, p))
     nothing
 end
+
 
 """
     hodeproblem(q₀, p₀; kwargs...)
@@ -290,18 +213,29 @@ end
     hodeproblem(ics::NamedTuple; kwargs...)
 
 The constrained canonical guiding centre system as an `HODEProblem` in the position and its
-conjugate momentum.
+conjugate momentum — the Hamilton-Dirac form, with the Lagrange multipliers substituted.
 
 The first form takes the position and momentum directly. The second takes the four-component state
 ``(x, u)`` and recovers the momentum from it through `initial_conditions`; this is the form
 the module constant `qᵢ` is in. The third takes the named tuple that every `initial_conditions_*`
 returns, so `hodeproblem(initial_conditions_barely_passing())` carries that condition's own `μ`.
+
+`constraints` selects which pair of the three constraints is retained; see
+[`constraint_pair`](@ref). It defaults to [`default_constraints`](@ref), which each equilibrium sets
+to a pair that is regular at its own initial condition. Where the pair is singular the multipliers
+are infinite and the problem cannot be integrated at all, so this is not a free choice.
 """
 function hodeproblem(q₀::AbstractVector, p₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
-                     timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic = true)
+                     timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic = true,
+                     constraints = default_constraints())
+    c = constraint_pair(constraints)
+
+    _v(v, t, q, p, params) = guiding_center_3d_v(v, t, q, p, params, c)
+    _f(f, t, q, p, params) = guiding_center_3d_f(f, t, q, p, params, c)
+
     HODEProblem(
-        guiding_center_3d_v,
-        guiding_center_3d_f,
+        _v,
+        _f,
         hamiltonian,
         timespan, timestep, q₀, p₀;
         parameters=parameters,
@@ -314,3 +248,9 @@ function hodeproblem(x₀::AbstractVector = qᵢ; timespan = DEFAULT_TIMESPAN, k
 end
 
 hodeproblem(ics::NamedTuple; kwargs...) = hodeproblem(ics.q, ics.p; parameters = ics.params, kwargs...)
+
+
+# The compact form, Eq. (29), which drops the constraint-proportional terms from the right-hand side.
+# It needs the brackets, the Hamiltonian gradients and `u` from this file, and nothing at all from
+# `guiding_center_3d_canonical.jl` — no second derivatives — so it is included here rather than there.
+include("guiding_center_3d_compact.jl")

@@ -13,6 +13,36 @@ deprecation shims; see *Changed* below for the mapping.
 
 ### Added
 
+- **All three constraint pairs of the 3D guiding centre model, and a `constraints` keyword to
+  select between them.** Only ``(g^3, g^1)`` was implemented, taken from an earlier version of Li,
+  Zhang & Liu; its Lagrange multipliers divide by `b₁`, which vanishes on the midplane of an
+  axisymmetric equilibrium — where seven of the eleven equilibria that ship an initial condition sit.
+  `hodeproblem` and `hodeproblem_canonical` now take `constraints = :g31 | :g12 | :g23`, and every
+  equilibrium declares a `default_constraints` that is regular at its own initial conditions.
+  `SolovevSymmetricField` needed all three to exist: `b = e₂` there, so two of the pairs are singular
+  at once.
+
+  Five of the seven commented-out test blocks in `test/guiding_center_3d_tests.jl` are re-enabled as
+  a result, and neither `scripts/guiding_center_3d.jl` nor `docs/src/examples/iter_cylindrical.md` has
+  to displace its initial condition off the midplane by `sqrt(eps())` any longer. The 3D guiding
+  centre test file goes from four integration blocks to ten, and correspondingly from about four
+  minutes to about ten in CI — the cost of covering nine equilibria instead of four, most of it
+  compilation of one right-hand side specialisation per (equilibrium, formulation, pair).
+
+  The constraints and all of their first and second derivatives are now written once against a
+  generic index pair in the new `src/guiding_center_3d/guiding_center_3d_constraints.jl`, rather than
+  by hand per pair, which shrank `guiding_center_3d_canonical.jl` from 722 lines to 361 rather than
+  tripling it.
+- **`hodeproblem_compact`, the compact form of the 3D guiding centre equations** — Eq. (29) of Li,
+  Zhang & Liu, which drops the constraint-proportional terms from the Hamilton-Dirac right-hand side.
+  That equation as printed is cartesian and assumes `H = ½Σ(pᵢ-Aᵢ)²`, so it is derived
+  coordinate-generally here instead of ported; the derivation is at the top of
+  `guiding_center_3d_compact.jl` and written up in `docs/src/guiding_center_3d.md`, and is checked
+  against the paper's expressions on the three cartesian equilibria in `test/structure_tests.jl`.
+
+  In that form it is *independent of the constraint pair* and free of every `bₘ` denominator, which
+  is what `constraints = :parallel`, its default, selects. Passing a pair symbol instead reproduces
+  the paper literally, `(pₘ-Aₘ)/bₘ` and its singularity included.
 - **Seven more equilibria for `GyroKinetics4d`**, which previously shipped only the ITER-like
   Solov'ev equilibrium with X-point: `SolovevIter`, `TokamakIterCylindrical`,
   `TokamakMedium{Cartesian,Cylindrical}`, `TokamakSmall{Cartesian,Cylindrical,Toroidal}`. Each
@@ -39,11 +69,11 @@ deprecation shims; see *Changed* below for the mapping.
   `initial_conditions_*` returns directly: `odeproblem(initial_conditions_deeply_passing())`, with
   that condition's own `μ` travelling in `params`.
 - **Test blocks for `Dipole3d` and `QuadraticPotentials3d`** in the 3D guiding centre suite. Neither
-  is blocked by the `b₁ = 0` singularity — `b₁` is -0.41 and 2E-3 at their initial conditions — and
-  neither had a test block at all, so the 3D model's dynamics now runs on four equilibria of eleven
-  rather than two. `QuadraticPotentials3d` is the only shipped equilibrium with a non-zero
-  potential, so it is also the only integration test that exercises the `φ` and `E` terms on a field
-  where they do not vanish.
+  was blocked by the `b₁ = 0` singularity — `b₁` is -0.41 and 2E-3 at their initial conditions — and
+  neither had a test block at all, so these took the 3D model's dynamics from two equilibria of eleven
+  to four, before the selectable constraint pair took it to nine. `QuadraticPotentials3d` is the only
+  shipped equilibrium with a non-zero potential, so it is also the only integration test that
+  exercises the `φ` and `E` terms on a field where they do not vanish.
 - **An integration test for the κ-dependent "dg" formulation** (`iodeproblem_dg`) at κ = 0, ½ and 1.
   Its `ḡ` was checked against finite differences but it had never been integrated, and κ = 0 — the
   default — reduces it to the plain `iodeproblem`, so the κ terms were entirely unexercised.
@@ -85,6 +115,21 @@ deprecation shims; see *Changed* below for the mapping.
 
 ### Changed
 
+- **The 3D guiding centre right-hand side is 2.7× faster**, incidentally to the constraint rewrite:
+  the old code evaluated `λ₁` and `λ₂` once per component of `v` and of `f`, so the two multipliers
+  and the six Poisson-bracket terms behind them were computed three times per call. A hundred steps of
+  `Dipole3d` with `PartitionedGauss(2)` went from 1383 ms to 517 ms, and `hodeproblem_canonical` from
+  11.9 s to 10.1 s. Allocations and compile time are unchanged to the byte and the second.
+- **`compute_constraints` returns three series where it returned two**, and `g₁`, `g₂` in the
+  equilibrium modules now mean the paper's ``g^1``, ``g^2`` rather than the two members of the one
+  hard-coded pair, which were ``g^3`` and ``g^1``. Anything that read `c.g₁`/`c.g₂` still reads a
+  constraint that vanishes along the flow, but not the same one.
+
+  In the same vein, `λₒ(t, q, p)`, `λ₁(t, q, p, params)` and `λ₂(t, q, p, params)` — the short forms
+  the scripts in `scripts/` use — take the constraint pair as a trailing argument now and default it to
+  the equilibrium's own `default_constraints()`. For the eight modules whose default is no longer
+  ``(g^3, g^1)`` those calls therefore return the multipliers of a different pair than before. Pass
+  `constraint_pair(:g31)` explicitly to get the old quantity.
 - **Every problem constructor is renamed to the `GeometricProblems` scheme.** No deprecation shims.
 
   | Module | Was | Is |
@@ -152,6 +197,29 @@ deprecation shims; see *Changed* below for the mapping.
 
 ### Fixed
 
+- **``\partial\lambda_{2}/\partial q`` and ``\partial\lambda_{2}/\partial p`` of the 3D guiding centre
+  carried the wrong sign** on the term proportional to ``\partial \{ g_{1}, g_{2} \} / \partial\cdot``.
+  Both multipliers are a bracket over ``\lambda_{\mathrm{o}} = \{ g_{1}, g_{2} \}``, so both derivatives
+  carry ``-\lambda \, \partial\lambda_{\mathrm{o}} / \lambda_{\mathrm{o}}`` whatever the sign of the
+  numerator; ``\lambda_{1}`` had it, ``\lambda_{2}`` had the ``+`` the quotient rule gives before the
+  minus of ``-\{ g_{1}, H \}`` is folded back in. The error was off by exactly
+  ``2 \lambda_{2} \, \partial\lambda_{\mathrm{o}} / \lambda_{\mathrm{o}}``.
+
+  Only `hodeproblem_canonical` uses these, and only multiplied by a constraint, so it vanished on the
+  constraint manifold — which is why the canonicalised form still agreed with `hodeproblem` to 1E-8 and
+  why nothing caught it. What it cost was accuracy and solver work. `TokamakMediumCartesian` now
+  conserves energy to 2.2E-9 over a hundred steps where it managed 7.7E-9 before, and `Dipole3d` — the
+  one equilibrium whose canonicalised solve needs more than one Newton iteration per stage — drops from
+  3.8 iterations per stage to 2.6, peak 50 to 9, and from 29.6× to 18.8× the cost of the Hamilton-Dirac
+  form. The right-hand side itself costs the same either way; the whole difference is the solve. The
+  cost table in [Findings](docs/src/findings.md) is updated accordingly.
+
+  It does *not* account for the canonicalised form's other weaknesses — `SolovevSymmetricField` still
+  cannot complete an orbit under it, and `Dipole3d`'s conservation is unchanged — so the comparisons
+  between the three formulations stand as written.
+
+  Now pinned by a finite-difference test on all four multiplier derivatives in three charts, at a point
+  displaced off the constraint manifold, since on it either sign passes.
 - **`sodeproblem` of the noncanonical charged particle accepted `parameters` and dropped it.**
   Neither `SODEProblem` branch forwarded the keyword, so it — and anything the named-tuple form put
   into `ics.params` — was silently discarded, unlike in `odeproblem` beside it and in the
@@ -285,9 +353,13 @@ deprecation shims; see *Changed* below for the mapping.
 - **Diagnostics for the 3D guiding centre model.** `guiding_center_3d_diagnostics.jl` was an empty
   file, included by all thirteen equilibria, so the model had no `compute_energy`,
   `compute_energy_error` or `compute_toroidal_momentum` at all. Alongside them,
-  `compute_constraints` returns the two constraints ``g₁`` and ``g₂`` as data series: they vanish
-  along the exact flow, so their magnitude is the drift off the manifold on which `p = ϑ`, which is
-  the quantity the approximately symplectic methods are designed to keep bounded.
+  `compute_constraints` returns all three constraints ``g^1``, ``g^2``, ``g^3`` as data series: they
+  vanish along the exact flow, so their magnitude is the drift off the manifold on which `p = ϑ`,
+  which is the quantity the approximately symplectic methods are designed to keep bounded. All three
+  are reported rather than the two the problem's constraint pair retains, because the omitted one
+  carries the drift of the retained pair amplified by ``1/b_m`` — a factor of 800 over a thousand
+  steps on `TokamakMediumCartesian` — and is invisible otherwise. `SolovevIter`, whose
+  `include` of the diagnostics was commented out, has them too now.
 - **A documentation page for `GyroKinetics4d`** (`docs/src/gyro_kinetics_4d.md`), which had none
   and was not listed in the index. It derives the gyrokinetic characteristics, the rescaled time
   and the ``\beta``/``\gamma`` potentials from the notes the module follows, explains the six-way

@@ -54,10 +54,24 @@ function f_surface(s, t)
     return qt
 end
 
-export default_parameters
+export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
 default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+
+"""
+The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+
+The one equilibrium in the package where no component of `b` vanishes at the initial condition, so all
+three pairs are usable and the three can be compared against each other — which is what
+`test/guiding_center_3d_tests.jl` does with them.
+
+This is the worst conditioned of the three, at `λₒ = -0.15` against `-3.8` for `(g², g³)`, and `b₁`
+falls to 3.5E-4 along the orbit, which is what drives the omitted constraint to 1.4E-6 where the
+retained pair holds 2E-9. It is kept because the measurements in `docs/src/findings.md` were made with
+it; see the open item in `TODO.md`.
+"""
+default_constraints() = :g31
 
 
 include("guiding_center_3d_equations.jl")
