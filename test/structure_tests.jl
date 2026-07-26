@@ -687,9 +687,20 @@ end
         # It is not quite free: on the Solov'ev X-point four of these thousand steps now exhaust the
         # 50-iteration budget where two did before, so this block contributes two more suppressed
         # warnings to the count `quiet_solver_warnings.jl` reports. The energy error is unchanged to
-        # the last bit (5.388E-15), the block is 5.4x faster, and the extra two steps are the price
-        # of a marginally worse initial guess on a handful of hard ones — not a tolerance slipping
-        # below a residual floor, which is what that count exists to catch.
+        # the last bit (5.388E-15) and the block is 5.4x faster.
+        #
+        # Those four steps are 261, 262, 263 and 271, where the orbit crosses `b₁ = 0` — `b₁` runs
+        # 3.6E-5, 1.0E-5, -1.5E-5 against a typical -5.9E-3 — so `λₒ ∝ b₁` collapses and the residual
+        # is badly scaled. They do not converge at *any* iteration budget: 50, 100, 200 and 1000 all
+        # terminate at the cap and all four give a bit-identical final state, while the mean
+        # iteration count over the run rises from 1.25 to 5.05. Raising the cap therefore buys
+        # nothing and costs linearly, which is why it is 50 and not higher. Every step that converges
+        # at all takes one to four iterations.
+        #
+        # The lever that does remove them is `f_abstol`: at 1E-13 no step hits the cap and the
+        # maximum drops to four. `8eps() = 1.8E-15` is below this equilibrium's round-off floor of
+        # `‖ϑ‖ eps ≈ 3.5E-15`. It is left at the library default deliberately, because measuring what
+        # an unconfigured `integrate` delivers is the point of this block.
         sol  = integrate(prob, PartitionedGauss(2); options...)
 
         _, eerr = M.compute_energy_error(sol)
