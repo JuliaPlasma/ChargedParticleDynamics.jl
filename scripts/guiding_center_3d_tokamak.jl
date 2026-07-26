@@ -5,8 +5,6 @@ using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCartesian: hamiltonian
 using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCartesian: dg₁dq₁, dg₁dq₂, dg₁dq₃, dg₁dp₁, dg₁dp₂, dg₁dp₃
 using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCartesian: dg₂dp₁, dg₂dp₂, dg₂dp₃, dg₂dq₁, dg₂dq₂, dg₂dq₃
 
-# include("rk3.jl")
-
 # See `guiding_center_3d_constraint.jl` for why `f_abstol` cannot be pushed to the round-off floor:
 # `2eps()` leaves the solver no reachable stopping criterion on these models.
 const options = (f_abstol=1E-12, max_iterations=50, warn_iterations=50)
@@ -21,7 +19,7 @@ sol = integrate(equ, PartitionedGauss(1); initialguess=MidpointExtrapolation(2),
 # sol = integrate(equ, PartitionedGauss(1); initialguess=NoInitialGuess(), options...)
 # sol = integrate(equ, PartitionedGauss(2); initialguess=NoInitialGuess(), options...)
 # sol = integrate(equ, PartitionedGauss(2); initialguess=MidpointExtrapolation(2), options...)
-# sol = integrate(equ, RK3(); options...)
+# sol = integrate(equ, IRK3(); options...)
 
 
 h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
