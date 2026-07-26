@@ -667,16 +667,31 @@ end
     mx(ds) = maximum(abs(ds[i]) for i in eachindex(ds))
 
     # This block keeps its 1000 steps deliberately: it is where the long-time behaviour of the 3D
-    # model is checked, now that the integration tests in `guiding_center_3d_tests.jl` run 100. It
-    # also keeps the library's default tolerance, so that it measures the conservation an
-    # unconfigured `integrate` delivers — but it caps the iteration count, because a handful of steps
-    # otherwise run to the default limit of 1000 and account for most of the block's runtime (48 s of
-    # 49 s on the Solov'ev case). Capping to 50 leaves every error below bit-for-bit unchanged.
+    # model is checked, now that the integration tests in `guiding_center_3d_tests.jl` run 100. The
+    # iteration cap is there because a handful of steps otherwise run to the library's limit of 1000
+    # and accounted for most of the block's runtime (48 s of 49 s on the Solov'ev case).
     #
-    # `f_abstol` has to be restated even though it is the library default:
-    # `GeometricIntegratorsBase` replaces its whole `default_options` set as soon as the caller passes
-    # any option, and `SimpleSolvers`' own default is `f_abstol = 0`, which no residual can meet.
-    options = (f_abstol = 8eps(), max_iterations = 50, warn_iterations = 50)
+    # `f_abstol` has to be stated at all because `GeometricIntegratorsBase` replaces its whole
+    # `default_options` set as soon as the caller passes any option, and `SimpleSolvers`' own default
+    # is `f_abstol = 0`, which no residual can meet.
+    #
+    # It used to restate the library default of `8eps() = 1.8E-15` so as to measure the conservation
+    # an unconfigured `integrate` delivers. That was the wrong criterion to hold this block to: the
+    # package's own measurements put the round-off floor of the ITER-scale residual at
+    # `‖ϑ‖ eps ≈ 3.5E-15`, so `8eps()` is unreachable there — `quiet_solver_warnings.jl` and
+    # `study_solver_tolerances.jl` both say so — and four steps of the Solov'ev X-point ran to the
+    # iteration cap chasing it. `1E-12` is what every other test module, script and example in the
+    # package uses, for the reasons set out on `options` in `guiding_center_3d_tests.jl`.
+    #
+    # Nothing is given up by the change. The library defaults are still exercised, by the calls that
+    # genuinely pass no options at all — `integrate(prob, Gauss(2))` earlier in this file, and the
+    # three in `plots_tests.jl` — which is what `quiet_solver_warnings.jl` describes as the source of
+    # its residue. The energy error here is identical at both tolerances (5.388E-15 on the X-point,
+    # 3.226E-10 on the medium tokamak), the medium tokamak is bit-identical throughout, and the
+    # X-point's constraint errors move by under a quarter of one order against five orders of slack
+    # in the bound below. What it buys is four fewer capped steps, four fewer suppressed warnings,
+    # and a block that no longer asks the solver for something it cannot deliver.
+    options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 
     for M in (GuidingCenter3d.SolovevIterXpoint, GuidingCenter3d.TokamakMediumCartesian)
         prob = M.hodeproblem(M.initial_conditions_barely_passing(); timestep = 0.1, timespan = (0.0, 1e2))
@@ -684,23 +699,14 @@ end
         # `MidpointExtrapolation(5)` this used to request was 70% of the block's runtime while
         # leaving the trajectory bit-identical. See `guiding_center_3d_tests.jl`.
         #
-        # It is not quite free: on the Solov'ev X-point four of these thousand steps now exhaust the
-        # 50-iteration budget where two did before, so this block contributes two more suppressed
-        # warnings to the count `quiet_solver_warnings.jl` reports. The energy error is unchanged to
-        # the last bit (5.388E-15) and the block is 5.4x faster.
-        #
-        # Those four steps are 261, 262, 263 and 271, where the orbit crosses `b₁ = 0` — `b₁` runs
-        # 3.6E-5, 1.0E-5, -1.5E-5 against a typical -5.9E-3 — so `λₒ ∝ b₁` collapses and the residual
-        # is badly scaled. They do not converge at *any* iteration budget: 50, 100, 200 and 1000 all
-        # terminate at the cap and all four give a bit-identical final state, while the mean
-        # iteration count over the run rises from 1.25 to 5.05. Raising the cap therefore buys
-        # nothing and costs linearly, which is why it is 50 and not higher. Every step that converges
-        # at all takes one to four iterations.
-        #
-        # The lever that does remove them is `f_abstol`: at 1E-13 no step hits the cap and the
-        # maximum drops to four. `8eps() = 1.8E-15` is below this equilibrium's round-off floor of
-        # `‖ϑ‖ eps ≈ 3.5E-15`. It is left at the library default deliberately, because measuring what
-        # an unconfigured `integrate` delivers is the point of this block.
+        # At the `8eps()` this block used to request, four of these thousand steps on the Solov'ev
+        # X-point ran to the iteration cap: steps 261, 262, 263 and 271, where the orbit crosses
+        # `b₁ = 0` — `b₁` runs 3.6E-5, 1.0E-5, -1.5E-5 against a typical -5.9E-3 — so `λₒ ∝ b₁`
+        # collapses and the residual is badly scaled. They did not converge at *any* iteration
+        # budget: 50, 100, 200 and 1000 all terminated at the cap and all four gave a bit-identical
+        # final state, while the mean iteration count over the run rose from 1.25 to 5.05. That is
+        # why the cap is 50 and not higher, and why the fix was the tolerance rather than the budget.
+        # At `1E-12` nothing caps and every step converges in one iteration.
         sol  = integrate(prob, PartitionedGauss(2); options...)
 
         _, eerr = M.compute_energy_error(sol)
@@ -737,12 +743,12 @@ end
 
         # The bound is anchored to what the retained pair actually achieved rather than to the 1E-8 it
         # is merely required to stay under. Dividing the requirement by `bmin` gives 9E-4 on the ITER
-        # Solov'ev X-point against an observed 9E-13 — nine orders of slack, which asserts nothing.
-        # Anchoring closes that to five: the retained pair does 1.5E-13 there, five orders better than
+        # Solov'ev X-point against an observed 1.1E-12 — nine orders of slack, which asserts nothing.
+        # Anchoring closes that to five: the retained pair does 1.4E-13 there, five orders better than
         # required.
         #
         # The factor is for the relation above being an inequality with no constant attached. Measured,
-        # the two sides are within 0.3 on the medium tokamak and 7E-5 on the X-point, so 10 leaves the
+        # the two sides are within 0.3 on the medium tokamak and 8E-5 on the X-point, so 10 leaves the
         # tighter of the two about 35× of headroom — enough for a solver or platform difference, little
         # enough that a real regression in the omitted constraint trips it. The floor is for the `:g12`
         # equilibria, where `bₘ` is the *large* component of `b` and the omitted constraint comes out

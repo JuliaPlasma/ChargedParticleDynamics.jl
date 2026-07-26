@@ -17,9 +17,15 @@
 # floating-point details of the platform, which is the whole reason the warnings are filtered here,
 # so any threshold tight enough to catch a regression would also flake across platforms.
 #
-# The residue that remains comes from `structure_tests.jl` and `plots_tests.jl`, which deliberately
-# integrate without passing `options` in order to exercise the library defaults — and those defaults
-# ask for `f_abstol = 8eps()`, which is itself below the ITER-scale floor.
+# The residue that remains comes from the calls in `structure_tests.jl` and `plots_tests.jl` that
+# deliberately integrate without passing `options` in order to exercise the library defaults — and
+# those defaults ask for `f_abstol = 8eps()`, which is itself below the ITER-scale floor.
+#
+# Every call that *does* pass options now asks for `1E-12`. The 3D guiding centre diagnostics block
+# of `structure_tests.jl` used to restate `8eps()` by hand while still passing options, which is the
+# worst of both: it configured the solver and then asked it for a residual below the round-off floor,
+# and four steps of the Solov'ev X-point ran to the iteration cap chasing it. See the comment on
+# `options` there.
 #
 # This is deliberately *not* a way of hiding failures: the tests assert that `integrate` returns a
 # solution, which is unaffected by the warnings. See the comment on the assertions in the
