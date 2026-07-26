@@ -187,6 +187,41 @@ deprecation shims; see *Changed* below for the mapping.
   `‖ϑ‖ eps`, so the solver had no reachable stopping criterion and the line search ran to its limit
   on every step — the same defect the scripts were fixed for. It now uses the tolerances the test
   suite does.
+- **The 3D guiding centre right-hand side is about twenty times cheaper**, in two independent
+  changes, neither of which alters a trajectory by a single bit.
+
+  `MidpointExtrapolation(5)` is no longer requested. It is not the default for either method —
+  `PartitionedGauss` and `VPRKGauss` both declare `default_iguess() = HermiteExtrapolation()` — and
+  nothing recorded why the 3D tests asked for it; the one documented reason is the Pauli theta pinch,
+  whose momentum is constant along the initial trajectory, and that call site keeps it. It was **70 %
+  of wall clock**, for 3.0–3.5× across all thirteen equilibria and all three formulations, with
+  Newton converging in one iteration either way.
+
+  The right-hand side no longer re-enters the generated field code once per term. `db₁dx₁` on the
+  ITER Solov'ev X-point is 1905 statements containing 108 separate evaluations of `log(x₁)` and costs
+  566 ns, against 0.5 ns for `g¹¹`, because `ElectromagneticFields` emits SymEngine's expanded tree
+  with no common subexpression elimination. One evaluation of the Hamilton-Dirac right-hand side
+  called it more than seventy times: each of the twelve Poisson-bracket terms re-entered from the
+  top, and `λ₁` and `λ₂` each recomputed the `λₒ` they share. `fieldvalues` evaluates each injected
+  function once into a `FieldValues`, which is passed where the coordinate vector would go —
+  everything downstream is already generic in that argument, so the accessors pick it up by dispatch.
+  `SecondFieldValues` does the same for the ninety-nine second derivatives `hodeproblem_canonical`
+  needs, kept separate so that the other two formulations do not pay for derivatives they never read.
+
+  `guiding_center_3d_v` goes from 25.0 µs to 4.3 µs; `hodeproblem` on `SolovevIterXpoint` from
+  6.18 ms/step to 0.31, and `hodeproblem_canonical` from 76.9 to 2.2. A new block in
+  `test/structure_tests.jl` pins every cached accessor to its uncached counterpart, so a missing or
+  misindexed field cannot pass as a merely different trajectory. `src/guiding_center_3d/`.
+- **The `3D guiding centre diagnostics` block asks for `f_abstol = 1E-12`** like the rest of the
+  suite, rather than restating `GeometricIntegratorsBase`'s default of `8eps() = 1.8E-15`. It did so
+  in order to measure what an unconfigured `integrate` delivers, but that is below the round-off floor
+  of the ITER-scale residual — `quiet_solver_warnings.jl` and `study_solver_tolerances.jl` both say
+  so — and four steps of the Solov'ev X-point ran to the iteration cap chasing it, at the crossing of
+  `b₁ = 0` where `λₒ ∝ b₁` collapses. Those four converge at no budget at all: 50, 100, 200 and 1000
+  iterations all terminate at the cap and all four give a bit-identical final state. The library
+  defaults are still exercised by the calls that genuinely pass no options. Energy error is identical
+  at both tolerances, and `structure_tests.jl` now emits no suppressed solver warnings at all.
+  `test/structure_tests.jl`, `test/quiet_solver_warnings.jl`.
 
 ### Removed
 
@@ -262,6 +297,21 @@ deprecation shims; see *Changed* below for the mapping.
   `QuadraticPotentials3d`, the one equilibrium where `φ ≠ 0`.
 - Docstring cross-references that could not resolve, and `lodeproblem`, `odeproblem`,
   `iodeproblem` and `iodeproblem_λ` of the 4D guiding centre, which had no docstrings at all.
+- **The explanation given for the cost of the 3D `hode` path was wrong in every part.** Both
+  `docs/src/findings.md` and the 0.2.0 entry below attributed it to "nested `ForwardDiff`: the second
+  derivatives of the 3D Hamiltonian differentiate field functions that are themselves AD-generated,
+  and the backtracking line search re-evaluates them". Profiling contradicts all three clauses. There
+  is no nesting and no AD in the field layer: `ElectromagneticFields` generates its field functions
+  symbolically with SymEngine at precompile time and does not depend on `ForwardDiff`. `hodeproblem`
+  never touches a second derivative of the Hamiltonian — its right-hand side is first derivatives
+  throughout, and the Hessian belongs to `hodeproblem_canonical` alone, hand-written in closed form
+  rather than differentiated. And the line search is 8 % of wall clock against the Jacobian's 13 %:
+  of the roughly ninety-eight right-hand side evaluations per step, **four** are on `Dual`.
+
+  Only the clause about `MidpointExtrapolation(5)` survived, and it was the whole of the first layer
+  rather than a multiplier on top of another one. `findings.md:280` already stated correctly that
+  `ForwardDiff` is not a dependency, contradicting the claim eighty lines below it. The passage is
+  rewritten with the profile behind it. The 0.2.0 entry is left as it stands, being released.
 
 ### Known issues
 

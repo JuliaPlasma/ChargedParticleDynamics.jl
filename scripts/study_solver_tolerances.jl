@@ -293,12 +293,21 @@ function step_costs()
     path costs orders of magnitude more per step than the Pauli `hodeproblem` even though Newton converges
     in one iteration, and `TokamakMediumCartesian` is *slower* than the ITER Solov'ev — so the two
     ten-minute 3D blocks in CI were a step-count and per-step-cost problem, not a convergence one.
-    The cost is nested ForwardDiff: the second derivatives of the 3D Hamiltonian differentiate field
-    functions that are themselves AD-generated, and the backtracking line search re-evaluates them.
-    `MidpointExtrapolation(5)` multiplies it by a further factor of three.
 
-    Reducing those blocks from 1000 to 100 steps was the pragmatic fix; making the 3D second
-    derivatives cheaper would be the real one.""")
+    This used to say the cost was nested ForwardDiff over the second derivatives of the Hamiltonian,
+    re-evaluated by the line search. None of that was true of this path. `ElectromagneticFields`
+    generates its field functions symbolically with SymEngine at precompile time and does not depend on
+    ForwardDiff; `hodeproblem` never evaluates a second derivative of the Hamiltonian, only
+    `hodeproblem_canonical` does; and of the ~98 right-hand side evaluations per step exactly 4 are on
+    `Dual`, the line search being 8% of wall clock against the Jacobian's 13%.
+
+    The cost was `MidpointExtrapolation(5)` at 70% of wall clock — not the default for either method, and
+    dropped — over a right-hand side that re-entered the generated field code once per bracket term.
+    `db₁dx₁` is 1905 statements with 108 separate evaluations of `log(x₁)` on the ITER Solov'ev X-point,
+    and was called seventy times per evaluation; it is now called once. See `docs/src/findings.md`.
+
+    What remains is the expression swell itself, which lives in `ElectromagneticFields`: a common
+    subexpression pass over the generated bodies takes `db₁dx₁` from 566 ns to 83.""")
 end
 
 function main()

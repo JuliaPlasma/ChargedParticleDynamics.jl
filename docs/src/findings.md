@@ -385,7 +385,9 @@ nothing.
 Note this also rules out simply dropping the options: the library default is `f_abstol = 8 eps() =
 1.8e-15`, itself below the ITER floor.
 
-Once the tolerance is sound the remaining cost has nothing to do with ITER:
+Once the tolerance is sound the remaining cost has nothing to do with ITER. This is the measurement
+that prompted the work described below; the ratios are what matter, since the absolute figures are
+from the machine of the day:
 
 | workload | ms/step | mean iters |
 |---|---|---|
@@ -394,9 +396,45 @@ Once the tolerance is sound the remaining cost has nothing to do with ITER:
 | GC4d SolovevIterXpoint `iode`                      |  0.3 | 2.0 |
 | Pauli3d SolovevIter `iode`                         |  0.1 | 2.9 |
 
-`TokamakMediumCartesian` is *slower* than the ITER Solov'ev, and the 3D `hodeproblem` path costs two
+`TokamakMediumCartesian` is *slower* than the ITER Solov'ev, and the 3D `hodeproblem` path cost two
 orders of magnitude more per step than the Pauli one even though Newton converges in a single
-iteration. The cost is nested `ForwardDiff`: the second derivatives of the 3D Hamiltonian
-differentiate field functions that are themselves AD-generated, and `MidpointExtrapolation(5)`
-triples it. Making those derivatives cheaper is the real fix; cutting the two 3D blocks from 1000
-steps to 100 was the pragmatic one.
+iteration.
+
+This was for a long time attributed to "nested `ForwardDiff`: the second derivatives of the 3D
+Hamiltonian differentiate field functions that are themselves AD-generated, and the backtracking
+line search re-evaluates them". **Every part of that is wrong for this path**, and profiling says so:
+
+* There is no nesting, and no AD in the field layer at all. `ElectromagneticFields` generates its
+  field functions **symbolically, with SymEngine, at precompile time** — its dependencies are
+  `Combinatorics, Documenter, LaTeXStrings, LinearAlgebra, NaNMath, RecipesBase, SymEngine`, and
+  `ForwardDiff` is not among them. The only automatic differentiation anywhere in the stack is the
+  Newton Jacobian, which `SimpleSolvers` takes of the residual.
+* `hodeproblem` never touches a second derivative of the Hamiltonian. Its right-hand side runs
+  `λ₁`/`λ₂` → `bracket_gg`/`bracket_gH` → `dgᵏd…`, `dHdq`, `dHdp`, all first derivatives. The Hessian
+  in `guiding_center_3d_canonical.jl` belongs to `hodeproblem_canonical` alone, and is hand-written
+  closed form rather than differentiated at runtime.
+* The line search is 8 % of wall clock and the Jacobian 13 %. Per step the right-hand side is
+  evaluated **93.8 times on `Float64` against 4.0 times on `Dual`** — automatic differentiation sees
+  four per cent of the calls, so it cannot be the cost whatever it is doing.
+
+Only the last clause survived. `initial_guess!` was **70 %** of wall clock, and
+`MidpointExtrapolation(5)` is not the default for either method — `PartitionedGauss` and `VPRKGauss`
+both declare `default_iguess() = HermiteExtrapolation()`. Nothing recorded why the 3D tests asked for
+it; the one documented reason is the Pauli theta pinch, whose momentum is constant along the initial
+trajectory.
+
+What the cost actually was, in two layers:
+
+1. **The extrapolator**, 3.0–3.5× across all thirteen equilibria and all three formulations, for
+   bit-identical trajectories and no change in iteration count.
+2. **The right-hand side re-entering the generated field code.** `ElectromagneticFields` emitted
+   SymEngine's expanded tree with no common subexpression elimination, so `db₁dx₁` on the ITER
+   Solov'ev X-point was 1905 statements containing 108 separate evaluations of `log(x₁)` and cost
+   566 ns, against 0.5 ns for `g¹¹`. One evaluation of the Hamilton-Dirac right-hand side called it
+   more than seventy times: each of the twelve Poisson-bracket terms re-entered from the top, and
+   `λ₁` and `λ₂` each recomputed the `λₒ` they share. Evaluating each injected function once into a
+   `FieldValues` and reading the results back took `guiding_center_3d_v` from 25.0 µs to 4.3 µs.
+
+A third layer remains, in `ElectromagneticFields` rather than here: the expression swell itself. A
+common-subexpression pass over the generated bodies takes `db₁dx₁` to 83 ns and `d²b₁dx₁dx₁` — which
+`hodeproblem_canonical` does need — from 1749 ns to 137 ns.
