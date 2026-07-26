@@ -37,14 +37,14 @@ function compare()
     println("Relative variation over the orbit of each candidate, Gauss(2)\n")
     @printf("  %-34s %-10s %-12s %-12s %-12s\n", "equilibrium", "coords", "ϑ₃", "R ϑ₃", "x ϑ₂ - y ϑ₁")
 
-    cases = (("TokamakSmallCylindrical",  GC.TokamakSmallCylindrical,  "cylindrical", (tstep = 10.0, tspan = (0.0, 1E3))),
-             ("TokamakSmallToroidal",     GC.TokamakSmallToroidal,     "toroidal",    (tstep = 10.0, tspan = (0.0, 1E3))),
-             ("SolovevIterXpoint",        GC.SolovevIterXpoint,        "cylindrical", (tstep = 1.0,  tspan = (0.0, 1E2))),
-             ("TokamakSmallCartesian",    GC.TokamakSmallCartesian,    "cartesian",   (tstep = 10.0, tspan = (0.0, 1E3))),
-             ("TokamakMediumCartesian",   GC.TokamakMediumCartesian,   "cartesian",   (tstep = 1.0,  tspan = (0.0, 1E3))))
+    cases = (("TokamakSmallCylindrical",  GC.TokamakSmallCylindrical,  "cylindrical", (timestep = 10.0, timespan = (0.0, 1E3))),
+             ("TokamakSmallToroidal",     GC.TokamakSmallToroidal,     "toroidal",    (timestep = 10.0, timespan = (0.0, 1E3))),
+             ("SolovevIterXpoint",        GC.SolovevIterXpoint,        "cylindrical", (timestep = 1.0,  timespan = (0.0, 1E2))),
+             ("TokamakSmallCartesian",    GC.TokamakSmallCartesian,    "cartesian",   (timestep = 10.0, timespan = (0.0, 1E3))),
+             ("TokamakMediumCartesian",   GC.TokamakMediumCartesian,   "cartesian",   (timestep = 1.0,  timespan = (0.0, 1E3))))
 
     for (name, M, coords, kw) in cases
-        prob = M.guiding_center_4d_ode(M.initial_conditions_barely_passing()...; kw...)
+        prob = M.odeproblem(M.initial_conditions_barely_passing(); kw...)
         sol  = integrate(prob, Gauss(2))
         c    = candidates(M, sol)
         @printf("  %-34s %-10s %-12.2e %-12.2e %-12.2e\n", name, coords, c.ϑ₃, c.Rϑ₃, c.angular)
@@ -62,7 +62,7 @@ function convergence()
     M = GC.TokamakMediumCartesian
     previous = NaN
     for Δt in (1.0, 0.5, 0.25, 0.125)
-        prob = M.guiding_center_4d_ode(M.initial_conditions_barely_passing()...; tstep = Δt, tspan = (0.0, 1E3))
+        prob = M.odeproblem(M.initial_conditions_barely_passing(); timestep = Δt, timespan = (0.0, 1E3))
         sol  = integrate(prob, Gauss(2))
         v    = candidates(M, sol).angular
         @printf("  %-10.3g %-12.2e %s\n", Δt, v, isnan(previous) ? "" : @sprintf("%.1f", previous / v))

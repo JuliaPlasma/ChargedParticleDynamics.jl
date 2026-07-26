@@ -31,7 +31,7 @@ end
     using ChargedParticleDynamics.ChargedParticle3d.SymmetricField
     using ..ChargedParticle3dTests
 
-    test_charged_particle_3d(SymmetricField.charged_particle_3d_iode())
+    test_charged_particle_3d(SymmetricField.iodeproblem())
 
 end
 
@@ -41,7 +41,7 @@ end
     using ChargedParticleDynamics.ChargedParticle3d.SingularField
     using ..ChargedParticle3dTests
 
-    test_charged_particle_3d(SingularField.charged_particle_3d_iode())
+    test_charged_particle_3d(SingularField.iodeproblem())
 
 end
 
@@ -51,7 +51,7 @@ end
     using ChargedParticleDynamics.ChargedParticle3d.ThetaPinchCanonical
     using ..ChargedParticle3dTests
 
-    test_charged_particle_3d(ThetaPinchCanonical.charged_particle_3d_iode())
+    test_charged_particle_3d(ThetaPinchCanonical.iodeproblem())
 
 end
 
@@ -61,7 +61,7 @@ end
     using ChargedParticleDynamics.ChargedParticle3d.ThetaPinchNoncanonical
     using ..ChargedParticle3dTests
 
-    test_charged_particle_3d(ThetaPinchNoncanonical.charged_particle_3d_iode())
+    test_charged_particle_3d(ThetaPinchNoncanonical.iodeproblem())
 
 end
 
@@ -71,8 +71,8 @@ end
     using ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCartesian
     using ..ChargedParticle3dTests
 
-    test_charged_particle_3d(TokamakSmallCartesian.charged_particle_3d_pode())
-    test_charged_particle_3d(TokamakSmallCartesian.charged_particle_3d_iode())
+    test_charged_particle_3d(TokamakSmallCartesian.podeproblem())
+    test_charged_particle_3d(TokamakSmallCartesian.iodeproblem())
 
 end
 
@@ -82,8 +82,8 @@ end
     using ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCylindrical
     using ..ChargedParticle3dTests
 
-    test_charged_particle_3d(TokamakSmallCylindrical.charged_particle_3d_pode())
-    test_charged_particle_3d(TokamakSmallCylindrical.charged_particle_3d_iode())
+    test_charged_particle_3d(TokamakSmallCylindrical.podeproblem())
+    test_charged_particle_3d(TokamakSmallCylindrical.iodeproblem())
 
 end
 
@@ -93,8 +93,8 @@ end
     using ChargedParticleDynamics.ChargedParticle3d.TokamakSmallToroidal
     using ..ChargedParticle3dTests
 
-    test_charged_particle_3d(TokamakSmallToroidal.charged_particle_3d_pode())
-    test_charged_particle_3d(TokamakSmallToroidal.charged_particle_3d_iode())
+    test_charged_particle_3d(TokamakSmallToroidal.podeproblem())
+    test_charged_particle_3d(TokamakSmallToroidal.iodeproblem())
 
 end
 
@@ -104,6 +104,6 @@ end
     using ChargedParticleDynamics.ChargedParticle3d.TokamakSmallNoncanonical
     using ..ChargedParticle3dTests
 
-    test_charged_particle_3d(TokamakSmallNoncanonical.charged_particle_3d_iode())
+    test_charged_particle_3d(TokamakSmallNoncanonical.iodeproblem())
 
 end

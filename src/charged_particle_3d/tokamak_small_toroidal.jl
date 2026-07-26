@@ -1,8 +1,18 @@
+@doc raw"""
+Small axisymmetric tokamak equilibrium, in toroidal coordinates ``(r, \theta, \varphi)``.
+
+Major radius ``R_{0} = 1``, magnetic field on axis ``B_{0} = 1`` and safety factor
+``q_{0} = 2``.
+
+The hard-coded `μ` and `u` of the `initial_conditions_*` below are inherited from earlier work on
+this package and their provenance is not recorded; they are known-good starting points for the
+charged particle model rather than values derived here.
+"""
 module TokamakSmallToroidal
 
     import ElectromagneticFields.AxisymmetricTokamakToroidal
 
-    export charged_particle_3d_pode, charged_particle_3d_iode,
+    export podeproblem, iodeproblem,
            hamiltonian, toroidal_momentum
 
     AxisymmetricTokamakToroidal.@code() # inject magnetic field code
@@ -18,7 +28,6 @@ module TokamakSmallToroidal
     """
     default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
 
-    const parameters = default_parameters()
 
     const xᵢ = [1.05, 0.0, 0.0]
     const qᵢ = from_cartesian(0, xᵢ)

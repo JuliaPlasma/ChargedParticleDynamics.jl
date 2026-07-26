@@ -9,7 +9,7 @@ using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: dg₂dp₁,
 
 const options = (f_abstol=2eps(), verbosity=1)
 
-# odeequ = ode(initial_conditions_quadratic()...)
+# odeequ = ode(initial_conditions_quadratic())
 
 # odesol = integrate(odeequ, Gauss(1); options...)
 # odesol = integrate(odeequ, Gauss(1); initialguess=NoInitialGuess(), options...)
@@ -18,9 +18,9 @@ const options = (f_abstol=2eps(), verbosity=1)
 
 
 
-# equ = hode(initial_conditions_quadratic()...)
-# equ = hode(initial_conditions_quadratic()...; tspan=(0.0, 50.0))
-equ = hode(initial_conditions_quadratic()...; tstep=0.035, tspan=(0.0, 42_000.0))
+# equ = hodeproblem(initial_conditions_quadratic())
+# equ = hodeproblem(initial_conditions_quadratic(); timespan=(0.0, 50.0))
+equ = hodeproblem(initial_conditions_quadratic(); timestep=0.035, timespan=(0.0, 42_000.0))
 
 sol = integrate(equ, PartitionedGauss(1); options...)
 # sol = integrate(equ, PartitionedGauss(1); initialguess=NoInitialGuess(), options...)

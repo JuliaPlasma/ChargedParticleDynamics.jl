@@ -1,3 +1,10 @@
+@doc raw"""
+The charged particle in a static electromagnetic field: the full Lorentz-force dynamics in three
+dimensions, with no averaging over the gyration.
+
+Available in a canonical formulation on the phasespace ``(x, p)`` and a noncanonical one on
+``(x, v)``, one module per equilibrium. See the [Charged Particles in 3D](@ref) page.
+"""
 module ChargedParticle3d
 
     include("charged_particle_3d/singular_field_canonical.jl")

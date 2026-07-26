@@ -37,7 +37,7 @@ The Pauli particle sits between the [charged particle](charged_particle_3d.md) a
 | guiding centre | ``L = ( A(x) + u \, b(x) ) \cdot \dot{x} - \tfrac{1}{2} u^{2} - \mu \vert B(x) \vert - \phi (x)``, with ``u = \dot{x} \cdot b(x)`` |
 
 It differs from the charged particle only by the ``\mu \vert B \vert`` term, so it retains the full
-six-dimensional phase space and a *regular* Lagrangian — unlike the guiding centre model, whose
+six-dimensional phasespace and a *regular* Lagrangian — unlike the guiding centre model, whose
 Lagrangian is degenerate.
 That is the point: the Pauli particle can be integrated with ordinary symplectic or variational
 partitioned Runge-Kutta methods, with no projection onto a constraint manifold.
@@ -83,11 +83,12 @@ v_{\parallel} = u_{0} \, b (x_{0}) , \qquad
 v_{\perp} = v_{0} - v_{\parallel} , \qquad
 \mu = \dfrac{\vert v_{\perp} \vert^{2}}{2 \vert B (x_{0}) \vert} ,
 ```
-and returns `(x₀, v∥, (μ = μ,))`, ready to be splatted into a problem constructor.
+and returns `(q = x₀, v = v∥, params = (μ = μ,))`, which every problem constructor of this module
+takes directly — `podeproblem(initial_conditions(x₀, v₀))`.
 See [Initialization](@ref) for the route from an energy and a pitch angle instead.
 
-The problem is available in partitioned (`pauli_particle_3d_pode`), Hamiltonian
-(`pauli_particle_3d_hode`) and implicit (`pauli_particle_3d_iode`) form.
+The problem is available in partitioned (`podeproblem`), Hamiltonian
+(`hodeproblem`) and implicit (`iodeproblem`) form.
 
 
 ## Usage
@@ -96,7 +97,7 @@ The problem is available in partitioned (`pauli_particle_3d_pode`), Hamiltonian
 using GeometricIntegrators
 using ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical
 
-problem  = pauli_particle_3d_hode(initial_conditions_pauli()...)
+problem  = hodeproblem(initial_conditions_pauli())
 solution = integrate(problem, PartitionedGauss(1))
 ```
 
@@ -128,13 +129,25 @@ The three models can therefore be compared directly on the same physical orbit.
 
 ## Modules
 
+```@docs
+ChargedParticleDynamics.PauliParticle3d
+```
+
+Each equilibrium is its own module, and every one of them `include`s the same
+`pauli_particle_3d.jl`. The model's functions are therefore documented once, below, under
+`TokamakSmallCylindrical`, and hold verbatim for all eight. What differs between the modules is the
+chart, the equilibrium parameters and the initial conditions, which is what these docstrings record:
+
+```@docs
+ChargedParticleDynamics.PauliParticle3d.SymmetricField
+ChargedParticleDynamics.PauliParticle3d.ThetaPinchField
+ChargedParticleDynamics.PauliParticle3d.TokamakSmallCartesian
+ChargedParticleDynamics.PauliParticle3d.TokamakSmallToroidal
+ChargedParticleDynamics.PauliParticle3d.TokamakIterCylindrical
+ChargedParticleDynamics.PauliParticle3d.SolovevIter
+ChargedParticleDynamics.PauliParticle3d.SolovevIterXpoint
+```
+
 ```@autodocs
-Modules = [ChargedParticleDynamics.PauliParticle3d.SymmetricField,
-           ChargedParticleDynamics.PauliParticle3d.ThetaPinchField,
-           ChargedParticleDynamics.PauliParticle3d.TokamakSmallCartesian,
-           ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical,
-           ChargedParticleDynamics.PauliParticle3d.TokamakSmallToroidal,
-           ChargedParticleDynamics.PauliParticle3d.TokamakIterCylindrical,
-           ChargedParticleDynamics.PauliParticle3d.SolovevIter,
-           ChargedParticleDynamics.PauliParticle3d.SolovevIterXpoint]
+Modules = [ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical]
 ```

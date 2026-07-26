@@ -78,20 +78,24 @@ Time step size and integration intervals:
 Δt3 = 1.0
 Δt4 = 10.0
 Δt5 = 50.0
-tspan = (0., 10_000.)
-tspan_long = (0., 1_000_000.);
+timespan = (0., 10_000.)
+timespan_long = (0., 1_000_000.);
 ```
 
-Nonlinear solver options:
+Nonlinear solver options.
+`f_abstol` is an absolute bound on the residual and has to stay above its round-off floor, which
+for these ITER-scale models is `‖ϑ‖ eps` — the `1E-15` this page used to ask for sits below it, so
+the solver had no reachable stopping criterion and the line search ran to its iteration limit on
+every step:
 ```@example 1
-options = (f_abstol = 1E-15, max_iterations = 1_000)
+options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 ```
 
 ## Charged Particle
 
 Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
-code = ChargedParticle3d.TokamakIterCylindrical.charged_particle_3d_pode(x₀, p₀; tstep=Δt1, tspan=tspan)
+code = ChargedParticle3d.TokamakIterCylindrical.podeproblem(x₀, p₀; timestep=Δt1, timespan=timespan)
 csol = integrate(code, PartitionedGauss(1); options...)
 ccar = cartesian_solution(csol, ChargedParticle3d.TokamakIterCylindrical);
 ```
@@ -114,7 +118,7 @@ plot_invariant_error(csol.t, cham; label="H", padding_right=30)
 
 Integrate charged particle dynamics with large time step and convert result to cartesian coordinates:
 ```@example 1
-code_Δt2 = ChargedParticle3d.TokamakIterCylindrical.charged_particle_3d_pode(x₀, p₀; tstep=Δt2, tspan=tspan)
+code_Δt2 = ChargedParticle3d.TokamakIterCylindrical.podeproblem(x₀, p₀; timestep=Δt2, timespan=timespan)
 csol_Δt2 = integrate(code_Δt2, PartitionedGauss(1); options...)
 ccar_Δt2 = cartesian_solution(csol_Δt2, ChargedParticle3d.TokamakIterCylindrical);
 ```
@@ -123,7 +127,7 @@ ccar_Δt2 = cartesian_solution(csol_Δt2, ChargedParticle3d.TokamakIterCylindric
 
 Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
-hode = PauliParticle3d.TokamakIterCylindrical.pauli_particle_3d_hode(X₀, u₀, parameters; tstep=Δt3, tspan=tspan)
+hode = PauliParticle3d.TokamakIterCylindrical.hodeproblem(X₀, u₀; parameters = parameters, timestep=Δt3, timespan=timespan)
 hsol = integrate(hode, PartitionedGauss(1); options...)
 hcar = cartesian_solution(hsol, PauliParticle3d.TokamakIterCylindrical);
 ```
@@ -149,7 +153,7 @@ plot_invariant_error(hsol.t, hham; label="H", padding_right=30)
 
 Integrate charged particle dynamics with large time step and convert result to cartesian coordinates:
 ```@example 1
-hode_Δt5 = PauliParticle3d.TokamakIterCylindrical.pauli_particle_3d_hode(X₀, u₀, parameters; tstep=Δt5, tspan=tspan_long)
+hode_Δt5 = PauliParticle3d.TokamakIterCylindrical.hodeproblem(X₀, u₀; parameters = parameters, timestep=Δt5, timespan=timespan_long)
 hsol_Δt5 = integrate(hode_Δt5, PartitionedGauss(1); initialguess=NoInitialGuess(), options...);
 hcar_Δt5 = cartesian_solution(hsol_Δt5, PauliParticle3d.TokamakIterCylindrical);
 ```
@@ -158,7 +162,7 @@ hcar_Δt5 = cartesian_solution(hsol_Δt5, PauliParticle3d.TokamakIterCylindrical
 
 Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
-pode = PauliParticle3d.TokamakIterCylindrical.pauli_particle_3d_iode(X₀, u₀, parameters; tstep=Δt3, tspan=tspan)
+pode = PauliParticle3d.TokamakIterCylindrical.iodeproblem(X₀, u₀; parameters = parameters, timestep=Δt3, timespan=timespan)
 psol = integrate(pode, VPRKGauss(1); options...)
 pcar = cartesian_solution(psol, PauliParticle3d.TokamakIterCylindrical);
 ```
@@ -184,7 +188,7 @@ plot_invariant_error(psol.t, pham; label="H", padding_right=30)
 
 Integrate charged particle dynamics with large time step and convert result to cartesian coordinates:
 ```@example 1
-pode_Δt5 = PauliParticle3d.TokamakIterCylindrical.pauli_particle_3d_iode(X₀, u₀, parameters; tstep=Δt5, tspan=tspan_long)
+pode_Δt5 = PauliParticle3d.TokamakIterCylindrical.iodeproblem(X₀, u₀; parameters = parameters, timestep=Δt5, timespan=timespan_long)
 psol_Δt5 = integrate(pode_Δt5, VPRKGauss(1); initialguess=NoInitialGuess(), options...);
 pcar_Δt5 = cartesian_solution(psol_Δt5, PauliParticle3d.TokamakIterCylindrical);
 ```
@@ -194,7 +198,7 @@ pcar_Δt5 = cartesian_solution(psol_Δt5, PauliParticle3d.TokamakIterCylindrical
 
 Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
-vode = GuidingCenter4d.TokamakIterCylindrical.guiding_center_4d_iode(q₀, parameters; tstep=10., tspan=(0,1800))
+vode = GuidingCenter4d.TokamakIterCylindrical.iodeproblem(q₀; parameters = parameters, timestep=10., timespan=(0,1800))
 vsol = integrate(vode, VPRKLobattoIIIAIIIB(2); options...)
 vcar = cartesian_solution(vsol, GuidingCenter4d.TokamakIterCylindrical);
 ```
@@ -222,7 +226,7 @@ plot_invariant_error(vsol.t, vham; label="H", padding_right=30)
 
 Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
-gode = GuidingCenter4d.TokamakIterCylindrical.guiding_center_4d_iode(q₀, parameters; tstep=Δt3, tspan=tspan)
+gode = GuidingCenter4d.TokamakIterCylindrical.iodeproblem(q₀; parameters = parameters, timestep=Δt3, timespan=timespan)
 gsol = integrate(gode, SymmetricProjection(VPRKGauss(1)); options...)
 gcar = cartesian_solution(gsol, GuidingCenter4d.TokamakIterCylindrical);
 ```
@@ -248,7 +252,7 @@ plot_invariant_error(gsol.t, gham; label="H", padding_right=30)
 
 Integrate charged particle dynamics with large time step and convert result to cartesian coordinates:
 ```@example 1
-gode_Δt5 = GuidingCenter4d.TokamakIterCylindrical.guiding_center_4d_iode(q₀, parameters; tstep=Δt5, tspan=tspan_long)
+gode_Δt5 = GuidingCenter4d.TokamakIterCylindrical.iodeproblem(q₀; parameters = parameters, timestep=Δt5, timespan=timespan_long)
 gsol_Δt5 = integrate(gode_Δt5, SymmetricProjection(VPRKGauss(1)); options...);
 gcar_Δt5 = cartesian_solution(gsol_Δt5, GuidingCenter4d.TokamakIterCylindrical);
 ```
@@ -258,7 +262,7 @@ gcar_Δt5 = cartesian_solution(gsol_Δt5, GuidingCenter4d.TokamakIterCylindrical
 
 Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
-g3ode = GuidingCenter3d.TokamakIterCylindrical.hode(q3₀, parameters; tstep=Δt3, tspan=(0., 19_189.))
+g3ode = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(q3₀; parameters = parameters, timestep=Δt3, timespan=(0., 19_189.))
 g3sol = integrate(g3ode, PartitionedGauss(1); initialguess=NoInitialGuess(), options...)
 g3car = cartesian_solution(g3sol, GuidingCenter3d.TokamakIterCylindrical);
 ```
@@ -308,13 +312,13 @@ plot_invariant(g3sol.t, g3g2; label="g₂", padding_right=40)
 
 Integrate charged particle dynamics with large time step and convert result to cartesian coordinates:
 ```@example 1
-g3ode_Δt4 = GuidingCenter3d.TokamakIterCylindrical.hode(q3₀, parameters; tstep=Δt4, tspan=(0, 100*Δt4))
+g3ode_Δt4 = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(q3₀; parameters = parameters, timestep=Δt4, timespan=(0, 100*Δt4))
 g3sol_Δt4 = integrate(g3ode_Δt4, PartitionedGauss(1); initialguess=MidpointExtrapolation(5, 1.0), options...)
 g3car_Δt4 = cartesian_solution(g3sol_Δt4, GuidingCenter3d.TokamakIterCylindrical);
 ```
 
 ```@example 1
-g3ode_Δt5 = GuidingCenter3d.TokamakIterCylindrical.hode(q3₀, parameters; tstep=Δt5, tspan=(0, 100*Δt4))
+g3ode_Δt5 = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(q3₀; parameters = parameters, timestep=Δt5, timespan=(0, 100*Δt4))
 g3sol_Δt5 = integrate(g3ode_Δt5, PartitionedGauss(1); initialguess=MidpointExtrapolation(5, 1.0), options...)
 g3car_Δt5 = cartesian_solution(g3sol_Δt5, GuidingCenter3d.TokamakIterCylindrical);
 ```

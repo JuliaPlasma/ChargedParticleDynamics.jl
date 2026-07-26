@@ -6,7 +6,7 @@ module SymmetricField
 
     import ElectromagneticFields.SymmetricQuadratic
 
-    export charged_particle_3d_ode, charged_particle_3d_iode
+    export odeproblem, iodeproblem
     export hamiltonian, angular_momentum
     export compute_energy, compute_energy_error
 
@@ -27,6 +27,5 @@ module SymmetricField
     """
     default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
 
-    const parameters = default_parameters()
 
 end

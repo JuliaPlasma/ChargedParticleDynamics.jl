@@ -1,48 +1,22 @@
 # TODO
 
-Open work left by the correctness audit. The two sections under **Next** are the priority: they are
-the parts of Phases 4 and 5 of the audit plan that were deferred.
+Open work left by the correctness audit.
 
 Supporting material: [`docs/src/findings.md`](docs/src/findings.md) has the numerical studies that
 motivate several of these, and `docs/src/audit.md` the user-facing summary of the known
 limitations.
 
+**Phase 4 is done** — the constructors follow the `GeometricProblems` scheme
+(`odeproblem`/`iodeproblem`/…), the keywords are `timespan`/`timestep` against
+`DEFAULT_TIMESPAN`/`DEFAULT_TIMESTEP`, `parameters` is a keyword defaulting to
+`default_parameters()`, and every `initial_conditions_*` returns the same named tuple. So are the
+electrostatic potential, the curvilinear noncanonical charged particle, and the additional
+`GyroKinetics4d` equilibria. See the CHANGELOG.
+
 
 ---
 
 # Next
-
-## Phase 4 — finish the API modernisation
-
-`default_parameters` (D3) and the 3D guiding centre diagnostics (E4) are done. What remains breaks
-every example, script and notebook, which is why it was held back for its own diff.
-
-### Rename the constructors to the GeometricProblems scheme
-
-`hode`, `hode_canonical`, `ode`, `guiding_center_4d_ode`, `charged_particle_3d_iode`,
-`pauli_particle_3d_pode`, … → `odeproblem`, `hodeproblem`, `iodeproblem`, `lodeproblem`,
-`podeproblem`, `sodeproblem`. Keep the model-distinguishing suffix only where two formulations
-coexist in one module: `hodeproblem` vs `hodeproblem_canonical`.
-
-Seventeen constructors across four naming schemes; `GeometricProblems`'
-`massless_charged_particle_common.jl` is the reference.
-
-### Keyword and constant names
-
-`tspan`/`tstep` → `timespan`/`timestep`, and `const tspan`/`const Δt` →
-`DEFAULT_TIMESPAN`/`DEFAULT_TIMESTEP`. There are 19 instances of the literal
-`tspan=tspan, tstep=Δt`, where the keyword default shadows a module constant of the same name;
-renaming the constants removes that hazard as a side effect.
-
-### Uniform `initial_conditions_*` return shape
-
-Currently a mix of `NamedTuple` (3D guiding centre, now uniformly so) and bare tuple (4D guiding
-centre, gyrokinetics, Pauli). `test/structure_tests.jl` has to branch on `ics isa NamedTuple` to
-sweep across families. Settle on the `NamedTuple`.
-
-No deprecation shims — the package is pre-1.0 with no external users. Note the renames in the
-CHANGELOG.
-
 
 ## Phase 5 — finish porting the stale subsystems
 
@@ -60,12 +34,26 @@ Write it against the current `IRK` integrator: `GeometricIntegrators/src/integra
 integrators_irk.jl` — `struct IRK{TT<:Tableau,ImplicitUpdate} <: IRKMethod`, `IRKCache`,
 `initmethod`, and the `components!`/`residual!` split.
 
-There was a 0.x-era sketch of this, `firk_with_coordinate_transformation.jl`, written against a
-`GeometricIntegrators` API (`Parameters`, `ODEIntegratorCache`, `create_nonlinear_solver`,
-`function_stages!`) removed several major versions ago. It is not in the repository: nothing in it
-survived the API turnover, and the transformation itself was never finished — all three
-`coordinate_transformation_*` functions were commented out and the one that would have applied the
-transform was an empty stub. The one design decision worth carrying over is recorded here instead:
+The 0.x-era sketch of this is tracked at
+[`src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl`](src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl).
+It is not `include`d by any module and does not compile: it is written against a
+`GeometricIntegrators` API (`Parameters`, `ODEIntegratorCache`, `CacheDict`,
+`create_nonlinear_solver`, `function_stages!`, `AtomicSolutionODE`) removed several major versions
+ago, and the transformation itself was never finished — all three `coordinate_transformation_*`
+functions are commented out and the one that would apply the transform is an empty stub. It is on
+file as a starting point, not as code to be revived.
+
+What it gives the port:
+
+* the `(Q, Q̃)` stage-pair cache layout of `IntegratorCacheFIRKwCT`;
+* the `compute_stages!`/`function_stages!` split, which is `components!`/`residual!` in the current
+  integrator;
+* the commented-out `coordinate_transformation_rhs!`, which spells out the relation to be solved,
+  ``b = \tilde q - B^{\star}_{\parallel}(q) \, q``.
+
+Everything that touches the removed API has to be rewritten. Its internal names still use the old
+`FIRK` spelling; rename them to `IRK` with the port. The two design decisions worth stating
+explicitly:
 
 * **The transformation is implicit.** The intended relation is ``\tilde q = B^{\star}_{\parallel}(q)
   \, q``, with ``B^{\star}_{\parallel}`` evaluated at the *unknown* ``q``, so recovering ``q`` from
@@ -80,10 +68,25 @@ Once it exists, add a test that it produces the same trajectory as plain `IRK` o
 — the transformation must not change the solution, only the conditioning of the solve — and
 ideally one showing the iteration count it saves.
 
-### More equilibria for `GyroKinetics4d`
+### `lodeproblem_formal_lagrangian` is not the formal Lagrangian
 
-Only the ITER-like Solov'ev equilibrium with X-point is provided, where the other families cover a
-dozen each. `gc_solovev_iter_xpoint.jl` is the template and the module structure now supports more.
+`src/guiding_center_4d/guiding_center_4d_equations.jl`. It is a verbatim copy of `lodeproblem` —
+the same `LODEProblem` from the same `ϑ`, `f`, `g`, `ω` and `lagrangian`. It should instead be the
+**formal Lagrangian of the equations of motion in noncanonical Hamiltonian form**: writing them as
+``F_i(z, \dot z) = \Omega_{ij}(z) \dot z^j + \partial_i H(z) = 0``, the formal Lagrangian is
+
+```math
+L(z, y, \dot z) = y^i \, F_i(z, \dot z)
+```
+
+on the doubled state ``(z, y)``, whose Euler-Lagrange equations return the system on variation of
+``y`` and its adjoint on variation of ``z``. That is an **eight-dimensional** problem for the 4D
+guiding centre, not the four-dimensional one it builds today.
+
+`GeometricProblems.PointVortices.lodeproblem_formal_lagrangian` is **not** the template: there the
+name is used for the degenerate phasespace Lagrangian ``L = \vartheta \cdot \dot q - H``, which is
+exactly what `lodeproblem` already is here. Copying it would reproduce the present duplication
+under a different justification.
 
 
 ---
@@ -108,43 +111,105 @@ Proposed shape: a `constraints = :g31` / `:g12` / `:g23` keyword threaded throug
 chosen so each ships with a pair that is non-singular at its own initial condition.
 
 The obstacle is that the constraints and *all* their first and second derivatives are written out
-by hand for one pair — `guiding_center_3d_canonical.jl` is 700 lines of it. Three pairs would
-triple that unless the derivatives are generated or the code restructured around
-`Val{:g31}`-style dispatch. Worth deciding before starting.
+by hand for one pair — `guiding_center_3d_canonical.jl` is 700 lines of it.
+
+**Decided: restructure around `Val{:g31}`-style dispatch** rather than hand-writing the other two
+pairs or generating the derivatives symbolically. Writing the constraints and their derivatives
+once against a generic index pair shrinks that file instead of tripling it, at the cost of touching
+every line of it. Do not open this again as a three-way choice.
 
 Once it works, re-enable the commented-out 3D test blocks in `test/guiding_center_3d_tests.jl`
 (~150 lines, all of them blocked on exactly this).
 
-## Add the electrostatic potential to the 4D guiding centre Hamiltonian
+## One initial-conditions layer for all models
 
-`GuidingCenter4d` uses `H = ½u² + μ|B|` with no `φ` and no `E` in `∇H`
-(`guiding_center_4d_common.jl`, `hamiltonian` and `dHdx₁₋₃`). `GuidingCenter3d` includes both, and
-both reference papers carry `Φ(X)`, so the two guiding centre families currently describe different
-systems whenever the equilibrium has a non-zero electrostatic potential.
+**The equilibrium modules should not carry `u` and `μ` as literals.** Each one should declare its
+initial conditions in *physical* terms — a position, a pitch angle and an energy — and let a shared
+layer derive the state each model actually needs. Today all forty-odd modules hard-code the
+derived numbers instead, and where those numbers came from is no longer known; see *Provenance*
+below for why that is more than an aesthetic complaint.
 
-Two lines, mirroring `guiding_center_3d_equations.jl`. What needs care:
+### Most of the layer already exists
 
-* Which `ElectromagneticFields` configurations have a non-zero `φ`? For those the results change,
-  so it is a behaviour change for the CHANGELOG and the test reference values may move.
-* `GyroKinetics4d` inherits the same gap: its notes give the zero Larmor radius Hamiltonian with the
-  `φ`, `A∥` and `⟨Ã∥⟩²` terms, but only `H₀` is implemented. Decide whether it gains the full
-  `H^zlr` at the same time — a larger job, since `β` and `γ` acquire extra terms.
-* `hamiltonian_u` in `guiding_center_3d_equations.jl` also omits `φ`, unlike `hamiltonian` beside
-  it. It is unused; fix or delete.
+`src/utils/initial_conditions.jl` has the pieces and nothing uses them:
 
-## Make `charged_particle_3d_noncanonical` consistently curvilinear
+* `InitialConditions` — a struct holding the physical state once: `x`, `X`, `ρ`, `vvec`, `vpar`,
+  `vper`, `v`, `u`, `μ`, `θ`, `α`, `ω`, `mass`, `energy`, `charge`.
+* `InitialConditions(X, θ, α, E, M, C, â, b̂, ĉ, b, B, g̅, DF̄, J; l₀)` — builds it from a gyro-centre
+  position, gyro angle, pitch angle and an energy in eV, doing the parallel/perpendicular split
+  against the equilibrium's own field and metric. `InitialConditionsGC(X, θ, u, μ, …)` is the
+  variant that starts from `(u, μ)` instead.
+* `charged_particle(ics)`, `guiding_center(ics)`, `pauli_particle(ics)` — per-model converters.
 
-It pairs a metric one-form, Hamiltonian, two-form and Jacobian with a plain cartesian Lorentz force
-in `charged_particle_3d_v`, and a `dH` that does not differentiate the `hamiltonian` beside it.
-Of the four equilibria that use the formulation, `SingularField`, `SymmetricField` and
-`ThetaPinchNoncanonical` are cartesian and so unaffected; only `TokamakSmallNoncanonical`, which is
-toroidal, is not self-consistent.
+**No equilibrium module calls any of it.** The only callers are `docs/src/initialization.md`,
+`docs/src/examples/iter_cylindrical.md` and `scripts/guiding_center_3d.jl`. So there is a function
+that computes `u` and `μ` from physical inputs, and forty modules that hard-code them anyway.
 
-Recommended: derive the vector field from `Ω q̇ = -∇H` using the (now correct) `ω`, and add the
-missing metric-derivative terms to `dH` and `charged_particle_3d_iode_f`. Restricting the
-formulation to cartesian equilibria instead would mean deleting one equilibrium — cheaper than it
-looked while the caveat was thought to cover two, so it is now a real alternative.
-`charged_particle_3d_sode_fv`/`_vv` are cartesian for the same reason and would follow.
+### What is missing
+
+* **A 3D guiding centre converter.** That model's state is `(q, p)` with `p = ϑ(q)`, so it needs
+  `guiding_center_3d(ics)` alongside the three above; at present the modules reach the momentum
+  through the model-local `initial_conditions(tᵢ, Qᵢ)` in `guiding_center_3d_equations.jl`.
+* **A gyrokinetic converter.** `GyroKinetics4d` shares the 4D state, so this is `guiding_center`
+  plus the rescaled time step — the factor `B^{\star}_{\parallel}` that its `DEFAULT_TIMESTEP`
+  carries and that must not be copied between equilibria.
+* **The uniform return shape.** The three converters return bare tuples. Every constructor now
+  takes `(q = …, params = …)`, plus `p` or `v` where the model has one, so the converters should
+  return that directly and the modules should be one line each:
+
+  ```julia
+  initial_conditions_deeply_passing() = guiding_center(InitialConditions(x₀, θ, α, E, md, 1, …))
+  ```
+
+* **The per-equilibrium field arguments.** `InitialConditions` takes nine field functions
+  positionally. Since they are all injected into the module by `@code`, a small wrapper per module —
+  or a macro alongside the injection — would remove that boilerplate.
+
+### Provenance: why the literals cannot simply be documented
+
+Two different number styles sit side by side, which is the first sign they have different origins:
+
+```julia
+const uᵢ = -0.00045135897235326736                              # 17 digits: a Float64 round-trip
+initial_conditions_pauli() = (q = [1.05, 0., 0., 4.3E-4], params = (μ = 2.310E-6,))   # 4 digits
+```
+
+The first is machine output that was printed and pasted; the second is hand-rounded. Neither is
+reproducible from the package's own helpers. Taking the small tokamak in cartesian coordinates,
+with the `xᵢ = [1.05, 0, 0]` and `vᵢ = [2.1E-3, 4.3E-4, 0]` its Pauli module declares:
+
+| Quantity | What the helpers give | What is hard-coded | |
+|---|---|---|---|
+| ``v \cdot b`` | `0.00042987` | `0.00045136` | 5 % apart |
+| ``\vert v_\perp \vert^{2} / 2B`` | `2.31459E-6` | `2.310E-6` | 0.2 % apart |
+
+The second is the telling one: `2.31459E-6` does not round to `2.310E-6` — it rounds to
+`2.315E-6`. It is not the same number at lower precision, it is a nearby but different number. So
+the literals are near-misses against every derivation this repository can perform, and one of the
+following is true, with no way to tell which from the code:
+
+* they were computed for a slightly different position or field configuration than the modules now
+  use;
+* they predate a change of normalisation or of the parallel/perpendicular split;
+* they were derived outside the repository and transcribed.
+
+The consequences are practical rather than cosmetic. Nobody can produce the corresponding numbers
+for a *new* equilibrium without redoing whatever the original derivation was. Nobody can say
+whether "barely passing" versus "deeply passing" reflects a computed trapped-passing boundary or a
+value that was tuned until the orbit looked right. And a genuine transcription error would be
+indistinguishable from the discrepancies above.
+
+The docstrings therefore say the provenance is unrecorded rather than inventing one. **Building the
+layer above resolves this by making the question moot**: the physical inputs are the declaration,
+and `u` and `μ` become derived quantities that any future equilibrium gets for free. Note that
+re-deriving them will shift the numbers by the percentages in the table, so test reference values
+move and it wants its own diff.
+
+## The full zero Larmor radius Hamiltonian for `GyroKinetics4d`
+
+`H₀ = ½u² + μ|B| + φ` is implemented. The notes the module follows give the zero Larmor radius
+Hamiltonian, which carries ``A_\parallel`` and ``\langle \tilde A_\parallel \rangle^2`` terms on
+top of that; adding them changes `β` and `γ` as well, so it is a larger job than the potential was.
 
 
 ---
@@ -184,19 +249,21 @@ observed order of a few would be cheap and would validate the subsystem integrat
 * `test/guiding_center_3d_tests.jl` has ~150 lines of commented-out test blocks. Every equilibrium
   they cover — `TokamakMediumCylindrical`, `TokamakSmall{Cartesian,Cylindrical,Toroidal}`,
   `SolovevSymmetricField` — has `b₁ = 0` at its initial condition, so all are blocked on the
-  constraint-formulation item above. `Dipole3d` and `QuadraticPotentials3d` are *not* blocked and
-  have no test block at all; they should get one now.
-* Per-equilibrium docstrings. Most modules have a one-line description and state neither the
-  coordinate system, nor the equilibrium parameters, nor where the hard-coded `μ` and `u` of their
-  `initial_conditions_*` came from (e.g. `uᵢ = -0.00045135897235326736`).
+  constraint-formulation item above.
+* Per-equilibrium docstrings: the coordinate system and the equilibrium parameters are now stated
+  everywhere. The provenance of the hard-coded `μ` and `u` is not, because it is unknown — see
+  *One initial-conditions layer for all models* above, which subsumes this. If the derivation
+  exists somewhere outside the repository, recording it would settle the question without the
+  refactor.
 * `docs/src/initialization.md` documents a non-standard pitch-angle convention
   (`W⊥ = W sin α` rather than `W sin²α`). Self-consistent and now flagged, but worth deciding
-  whether to move to the textbook convention.
-* The `κ`-dependent "dg" formulation (`guiding_center_4d_dg`) now builds and its `ḡ` is verified
-  against finite differences, but it has never been integrated in a test. Add one, or record why
-  not.
-* `compute_invariant_error` returns a `(value, error)` tuple, which is easy to misuse. Worth a line
-  in the diagnostics docstrings.
+  whether to move to the textbook convention. Changing it perturbs every shipped initial condition,
+  so it wants doing deliberately and on its own.
+* `SolovevSymmetricField` has no `GyroKinetics4d` counterpart, and cannot have one as things stand:
+  `SolovevSymmetric.@code` injects the equilibrium parameters `α` and `β` into the module, and `β`
+  collides with the vector potential `β` of `gc_common.jl`. Fixing it means renaming one of the
+  two — the model's `β` comes from the notes and is exported, the field's from
+  `ElectromagneticFields` — so neither rename is local to this package.
 
 
 ---
@@ -206,24 +273,11 @@ observed order of a few would be cheap and would validate the subsystem integrat
 Observations from reviewing the audit that were not defects and so were not fixed with it. Recorded
 here rather than lost in a pull request thread.
 
-* **`test/quiet_solver_warnings.jl` is described as a tripwire but cannot trip.** `runtests.jl`
-  reports the suppressed-warning count with `@info` and nothing asserts on it, so a tolerance
-  slipping back below a residual floor would show up only if somebody read the log. It would become
-  a real tripwire with an assertion — `@test suppressed_warning_count() < N` for some generous `N`
-  — but that needs a number that is stable across platforms first, and the count is
-  platform-dependent by construction, which is the whole reason the warnings are filtered. Worth
-  deciding: either pick a loose bound and assert it, or drop the word "tripwire" from the comment.
-* **Integration coverage of `GuidingCenter3d` is two equilibria of eleven**, and the structure
-  tests, which cover all of them, do not integrate. This is a consequence of the `b₁ = 0`
-  singularity rather than of anything the audit did — the other nine could not be started before it
-  either — but it means the 3D model's *dynamics* is exercised on `SolovevIterXpoint` and
-  `TokamakMediumCartesian` alone. Fixing the constraint pair fixes the coverage too; until then it
-  is worth knowing how thin it is.
-* **`plot_fieldlines` assumes an axisymmetric cylindrical equilibrium.** It contours
-  `equ.A₃(0, x, y, 0) / x`, i.e. the poloidal flux ψ = R A_φ, which is meaningless for the cartesian
-  and toroidal equilibria. Nothing stops it being called on them — `plot_trajectory_poloidal(R, Z,
-  equ)` forwards any `equ` — and it draws a plausible-looking wrong picture rather than failing.
-  Either restrict it or compute ψ from the coordinate system.
+* **Integration coverage of `GuidingCenter3d` is four equilibria of eleven** — `SolovevIterXpoint`,
+  `TokamakMediumCartesian`, and now `Dipole3d` and `QuadraticPotentials3d`. The structure tests
+  cover all eleven but do not integrate. The remaining seven are blocked by the `b₁ = 0`
+  singularity rather than by anything the audit did; fixing the constraint pair fixes the coverage
+  too, and until then it is worth knowing how thin it is.
 * **The SciML reformat landed in the same commits as the semantic changes**, which makes several
   equilibrium modules read as whole-file rewrites; `git diff -w` is the way to review them. Worth
   keeping formatting sweeps to their own commit next time, now that `.JuliaFormatter.toml` exists
@@ -237,7 +291,22 @@ here rather than lost in a pull request thread.
 Recorded so a future session does not re-open them.
 
 **Constraint pair.** Not a mistake — the implemented variant comes from an earlier version of the
-paper, and the others are simply missing. Generalising is a planned task; see above.
+paper, and the others are simply missing. Generalising is a planned task; see above. The shape is
+settled too: `Val{:g31}`-style dispatch, not hand-written pairs or symbolic generation.
+
+**The suppressed-warning count is not a tripwire.** It is reported by `@info` and nothing asserts
+on it. A threshold was considered and rejected: which orbits exhaust the solver's iteration budget
+is platform-dependent by construction, which is the whole reason the warnings are filtered, so any
+bound tight enough to catch a regression would also flake. The comments in
+`test/quiet_solver_warnings.jl` and `test/guiding_center_3d_tests.jl` now say so instead of
+claiming otherwise.
+
+**The noncanonical charged particle's `SODE` stays cartesian.** Making the model curvilinear made
+the frozen-position kick quadratic in `v`, so the Boris/Cayley map is no longer its exact flow. The
+constructor now throws for a non-trivial metric rather than silently integrating the cartesian
+system; `TokamakSmallNoncanonical` is the one equilibrium affected. Generalising the splitting
+would mean giving up either exactness or the Boris structure, which is a different design, not a
+fix.
 
 **`GyroKinetics4d` coordinate transformation.** It was intended as preconditioning for the
 nonlinear solver. Removing it from the default problem constructors was correct; it belongs inside a

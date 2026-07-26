@@ -10,7 +10,7 @@ It follows the notes *A volume preserving particle pusher for gyrokinetic PIC co
 
 ## The characteristics
 
-With gyrocentre phase-space variables ``Z = (R, V_{\parallel}, \mu, \theta)``, the single-particle
+With gyrocentre phasespace variables ``Z = (R, V_{\parallel}, \mu, \theta)``, the single-particle
 Lagrangian of a species of mass ``m`` and charge ``q`` is
 ```math
 L (Z, \dot{Z}) = q \, A^{\star} \cdot \dot{R} + \frac{m}{q} \, \mu \, \dot{\theta} - H ,
@@ -36,7 +36,7 @@ This is the same system the [4D guiding centre model](guiding_center_4d.md) inte
 
 ## Rescaled time
 
-The phase-space volume element is ``dZ = B^{\star}_{\parallel} \, dR \, dV_{\parallel} \, d\mu \, d\theta``,
+The phasespace volume element is ``dZ = B^{\star}_{\parallel} \, dR \, dV_{\parallel} \, d\mu \, d\theta``,
 so it is ``B^{\star}_{\parallel} f`` rather than ``f`` that is transported in the flat measure.
 Introducing ``\tilde{f} = B^{\star}_{\parallel} f`` clears the denominator above and leaves
 ```math
@@ -68,7 +68,7 @@ The point of the rescaling is that the new right-hand side is divergence-free,
 \nabla \cdot \bigg( B^{\star}_{\parallel} \dfrac{dR}{dt} \bigg)
 + \dfrac{\partial}{\partial V_{\parallel}} \bigg( B^{\star}_{\parallel} \dfrac{dV_{\parallel}}{dt} \bigg) = 0 ,
 ```
-so its flow preserves phase-space volume, and a suitable discretisation can preserve it exactly.
+so its flow preserves phasespace volume, and a suitable discretisation can preserve it exactly.
 
 
 ## Potentials and splitting
@@ -113,7 +113,7 @@ integrator to each subsystem preserves the volume of that subsystem exactly, so 
 them is volume preserving; a symmetric composition of second-order methods gives a second-order
 volume-preserving scheme.
 
-The full field is `guiding_center_4d_ode`, the splitting `guiding_center_4d_sode`.
+The full field is `odeproblem`, the splitting `sodeproblem`.
 
 
 ## Noncanonical Hamiltonian structure
@@ -140,11 +140,11 @@ using GeometricIntegrators
 using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
 
 # volume-preserving Strang composition of the six subsystems
-problem  = guiding_center_4d_sode(initial_conditions_deeply_passing()...)
+problem  = sodeproblem(initial_conditions_deeply_passing())
 solution = integrate(problem, Composition(Tuple(Gauss(1) for _ in 1:6), Strang()))
 
 # or the full vector field
-problem  = guiding_center_4d_ode(initial_conditions_deeply_passing()...)
+problem  = odeproblem(initial_conditions_deeply_passing())
 solution = integrate(problem, Gauss(2))
 ```
 
@@ -172,8 +172,31 @@ rather than a change of variables in the model, so it belongs inside an integrat
 integrator exists yet; see `TODO.md` in the repository root for the design.
 
 
+## Equilibria
+
+```@docs
+ChargedParticleDynamics.GyroKinetics4d
+```
+
+Each equilibrium is its own module, and each one `include`s the same `gc_common.jl`,
+`gc_equations.jl` and `coordinate_transformations.jl`, so the model's functions below are documented
+once, under `GuidingCenter4dTokamakSmallCylindrical`, and hold verbatim for all eight. What differs
+between them is the chart, the equilibrium parameters and the rescaled default time step, which is
+what these docstrings record:
+
+```@docs
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallCartesian
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallToroidal
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakMediumCartesian
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakMediumCylindrical
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakIterCylindrical
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIter
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
+```
+
+
 ## Module
 
 ```@autodocs
-Modules = [ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint]
+Modules = [ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallCylindrical]
 ```

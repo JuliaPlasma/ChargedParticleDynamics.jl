@@ -13,14 +13,14 @@ export hamiltonian, toroidal_momentum
 
 AxisymmetricTokamakCartesian.@code() # inject magnetic field code
 
-# const Δt = 0.1
-# const tspan = (0.0, 1E2)
+# const DEFAULT_TIMESTEP = 0.1
+# const DEFAULT_TIMESPAN = (0.0, 1E2)
 
-const Δt = 200.0
-const tspan = (0.0, 2E6)
+const DEFAULT_TIMESTEP = 200.0
+const DEFAULT_TIMESPAN = (0.0, 2E6)
 
-# const Δt = 500.0
-# const tspan = (0.0, 5E6)
+# const DEFAULT_TIMESTEP = 500.0
+# const DEFAULT_TIMESPAN = (0.0, 5E6)
 
 initial_conditions_default() = merge(initial_conditions(0, [1.05, 0.0, -0.005, 0.000045]), (params=(μ=3.2e-7,),))
 initial_conditions_barely_passing() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 8.117E-4]), (params=(μ=2.448E-6,),))
@@ -69,7 +69,6 @@ export default_parameters
 "The magnetic moment μ this equilibrium is set up for."
 default_parameters(::Type{T}=Float64) where {T} = (μ = T(3.2e-7),)
 
-const parameters = default_parameters()
 
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_canonical.jl")

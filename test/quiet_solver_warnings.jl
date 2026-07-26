@@ -5,12 +5,17 @@
 # trip it depends on the floating-point details of the platform. Only the count is reported, at the
 # end of the run.
 #
-# That count is also a tripwire. It used to sit above fifty thousand because the tests requested an
-# `f_abstol` below the round-off floor of the ITER-scale residuals, so Newton could not converge and
-# ran to its iteration limit on nearly half of all steps; see the comment on `options` in
-# `guiding_center_3d_tests.jl`. With the tolerances now in use the blocks that pass those options
-# contribute none of them, so a sharp rise means a tolerance has slipped below a residual floor
-# again.
+# The count is worth reading, but it is *not* a tripwire and nothing asserts on it. It used to sit
+# above fifty thousand because the tests requested an `f_abstol` below the round-off floor of the
+# ITER-scale residuals, so Newton could not converge and ran to its iteration limit on nearly half
+# of all steps; see the comment on `options` in `guiding_center_3d_tests.jl`. With the tolerances
+# now in use the blocks that pass those options contribute none of them, so a sharp rise means a
+# tolerance has slipped below a residual floor again — but that has to be noticed by reading the
+# log, not by a failing test.
+#
+# Asserting a bound was considered and rejected: which orbits exhaust the budget depends on the
+# floating-point details of the platform, which is the whole reason the warnings are filtered here,
+# so any threshold tight enough to catch a regression would also flake across platforms.
 #
 # The residue that remains comes from `structure_tests.jl` and `plots_tests.jl`, which deliberately
 # integrate without passing `options` in order to exercise the library defaults — and those defaults

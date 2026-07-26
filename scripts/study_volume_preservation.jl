@@ -1,7 +1,7 @@
 #
-# Does the six-way splitting of the gyrokinetic characteristics preserve phase-space volume?
+# Does the six-way splitting of the gyrokinetic characteristics preserve phasespace volume?
 #
-# The construction in `GyroKinetics4d` absorbs the phase-space Jacobian into the distribution
+# The construction in `GyroKinetics4d` absorbs the phasespace Jacobian into the distribution
 # function, which makes the right-hand side divergence-free, and then splits it into six subsystems
 # that each freeze two of the four variables and are symplectic in the remaining two. A symplectic
 # method applied to each therefore preserves the volume of that subsystem *exactly*, at any step
@@ -27,10 +27,10 @@ const GK = ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoi
 strang() = Composition(Tuple(Gauss(1) for _ in 1:6), Strang())
 
 step_split(q, params, Δs, method) =
-    integrate(GK.guiding_center_4d_sode(q, params; tstep = Δs, tspan = (0.0, Δs)), method).q[end]
+    integrate(GK.sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)), method).q[end]
 
 step_full(q, params, Δs, method) =
-    integrate(GK.guiding_center_4d_ode(q, params; tstep = Δs, tspan = (0.0, Δs)), method).q[end]
+    integrate(GK.odeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)), method).q[end]
 
 """
 Determinant of the Jacobian of the one-step map, by central differences.

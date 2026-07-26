@@ -41,7 +41,7 @@ function initial_conditions(x₀, v₀)
     vper = v₀ .- vpar
     μ = vper' * vper / 2 / B(0, x₀)
 
-    (x₀, vpar, (μ=μ,))
+    (q = x₀, v = vpar, params = (μ = μ,))
 end
 
 
@@ -98,59 +98,98 @@ function pauli_particle_3d_iode_g(g, t, q, v, λ, params)
 end
 
 
-function pauli_particle_3d_pode(q₀, v₀, parameters; tspan=tspan, tstep=Δt)
+"""
+    podeproblem(q₀, v₀; kwargs...)
+    podeproblem(ics::NamedTuple; kwargs...)
+    podeproblem(; kwargs...)
+
+The Pauli particle as a `PODEProblem`.
+
+!!! note "`v₀` is the parallel velocity"
+    The state is the position and the *parallel* velocity, not the full one, and `μ` is the moment
+    of the perpendicular part. `initial_conditions(x₀, v₀)` performs that split and returns both,
+    which is why the no-argument form goes through it rather than handing the module's `vᵢ` to the
+    constructor directly.
+
+The second form takes the named tuple `initial_conditions` returns; the third splits the module's
+own `(qᵢ, vᵢ)`.
+"""
+function podeproblem(q₀::AbstractVector, v₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
+                     timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
     PODEProblem(
         pauli_particle_3d_pode_v,
         pauli_particle_3d_pode_f,
-        tspan, tstep, q₀, pauli_particle_3d_pᵢ(tspan[begin], q₀, v₀);
+        timespan, timestep, q₀, pauli_particle_3d_pᵢ(timespan[begin], q₀, v₀);
         parameters=parameters,
         invariants=(h=hamiltonian,)
     )
 end
 
-pauli_particle_3d_pode(qᵢ=qᵢ, vᵢ=vᵢ; kwargs...) = pauli_particle_3d_pode(initial_conditions(qᵢ, vᵢ)...; kwargs...)
 
+"""
+    hodeproblem(q₀, v₀; kwargs...)
+    hodeproblem(ics::NamedTuple; kwargs...)
 
-function pauli_particle_3d_hode(q₀, v₀, parameters; tspan=tspan, tstep=Δt)
+The Pauli particle as an `HODEProblem`; see [`podeproblem`](@ref) for the argument forms.
+"""
+function hodeproblem(q₀::AbstractVector, v₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
+                     timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
     HODEProblem(
         pauli_particle_3d_pode_v,
         pauli_particle_3d_pode_f,
         hamiltonian,
-        tspan, tstep, q₀, pauli_particle_3d_pᵢ(tspan[begin], q₀, v₀);
+        timespan, timestep, q₀, pauli_particle_3d_pᵢ(timespan[begin], q₀, v₀);
         parameters=parameters)
 end
 
-pauli_particle_3d_hode(q₀::AbstractVector, v₀::AbstractVector, μ::Real; kwargs...) = pauli_particle_3d_hode(q₀, v₀, (μ=μ,); kwargs...)
-pauli_particle_3d_hode(qᵢ=qᵢ, vᵢ=vᵢ; kwargs...) = pauli_particle_3d_hode(initial_conditions(qᵢ, vᵢ)...; kwargs...)
 
+"""
+    iodeproblem(q₀, v₀; kwargs...)
+    iodeproblem(ics::NamedTuple; kwargs...)
 
-function pauli_particle_3d_iode(q₀::AbstractVector, v₀::AbstractVector, parameters::NamedTuple; tspan=tspan, tstep=Δt)
+The Pauli particle as an `IODEProblem`; see [`podeproblem`](@ref) for the argument forms.
+"""
+function iodeproblem(q₀::AbstractVector, v₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
+                     timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
     IODEProblem(
         pauli_particle_3d_iode_ϑ,
         pauli_particle_3d_iode_f,
         pauli_particle_3d_iode_g,
-        tspan, tstep, q₀, pauli_particle_3d_pᵢ(tspan[begin], q₀, v₀);
+        timespan, timestep, q₀, pauli_particle_3d_pᵢ(timespan[begin], q₀, v₀);
         parameters=parameters,
         invariants=(h=hamiltonian,),
         v̄=pauli_particle_3d_pode_v)
 end
 
-pauli_particle_3d_iode(q₀::AbstractVector, v₀::AbstractVector, μ::Real; kwargs...) = pauli_particle_3d_iode(q₀, v₀, (μ=μ,); kwargs...)
 
-pauli_particle_3d_iode(qᵢ=qᵢ, vᵢ=vᵢ; kwargs...) = pauli_particle_3d_iode(initial_conditions(qᵢ, vᵢ)...; kwargs...)
+for problem in (:podeproblem, :hodeproblem, :iodeproblem)
+    # `μ` on its own, for callers that have the moment rather than a parameter tuple
+    @eval $problem(q₀::AbstractVector, v₀::AbstractVector, μ::Real; kwargs...) =
+        $problem(q₀, v₀; parameters = (μ = μ,), kwargs...)
+
+    # the named tuple `initial_conditions` returns, whose `v` is already the parallel velocity
+    @eval $problem(ics::NamedTuple; kwargs...) =
+        $problem(ics.q, ics.v; parameters = ics.params, kwargs...)
+
+    # no arguments: split the module's own `(qᵢ, vᵢ)`. This must go through `initial_conditions`
+    # rather than defaulting `v₀ = vᵢ` in the signature above — `vᵢ` is the *full* velocity, and
+    # handing it to the constructor as if it were the parallel one puts the particle on a
+    # trajectory the solver cannot follow.
+    @eval $problem(; kwargs...) = $problem(initial_conditions(qᵢ, vᵢ); kwargs...)
+end
 
 
-# function pauli_particle_3d_lode(q₀::AbstractVector, v₀::AbstractVector, parameters::NamedTuple; tspan = tspan, tstep = Δt)
+# function lodeproblem(q₀::AbstractVector, v₀::AbstractVector, parameters::NamedTuple; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP)
 #     LODEProblem(
 #         pauli_particle_3d_iode_ϑ,
 #         pauli_particle_3d_iode_f,
 #         pauli_particle_3d_iode_g,
 #         pauli_particle_3d_ω, lagrangian,
-#         tspan, step, q₀, pauli_particle_3d_pᵢ(q₀, v₀);
+#         timespan, step, q₀, pauli_particle_3d_pᵢ(q₀, v₀);
 #         parameters = parameters,
 #         invariants = (h = hamiltonian,))
 # end
 
-# pauli_particle_3d_lode(q₀::AbstractVector, v₀::AbstractVector, μ::Real) = pauli_particle_3d_lode(q₀, v₀, (μ=μ,))
+# lodeproblem(q₀::AbstractVector, v₀::AbstractVector, μ::Real) = lodeproblem(q₀, v₀, (μ=μ,))
 
-# pauli_particle_3d_lode(qᵢ=qᵢ, vᵢ=vᵢ) = pauli_particle_3d_lode(initial_conditions(qᵢ, vᵢ)...)
+# lodeproblem(qᵢ=qᵢ, vᵢ=vᵢ) = lodeproblem(initial_conditions(qᵢ, vᵢ)...)

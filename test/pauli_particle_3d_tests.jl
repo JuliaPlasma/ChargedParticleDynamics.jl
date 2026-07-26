@@ -30,15 +30,15 @@ end
     using ChargedParticleDynamics.PauliParticle3d.SolovevIter
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(SolovevIter.pauli_particle_3d_hode(initial_conditions_barely_passing()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIter.pauli_particle_3d_hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIter.pauli_particle_3d_hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIter.pauli_particle_3d_hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
+    test_pauli_particle_3d(SolovevIter.hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIter.hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIter.hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIter.hodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E2), timestep=0.1))
 
-    test_pauli_particle_3d(SolovevIter.pauli_particle_3d_iode(initial_conditions_barely_passing()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIter.pauli_particle_3d_iode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIter.pauli_particle_3d_iode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIter.pauli_particle_3d_iode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
+    test_pauli_particle_3d(SolovevIter.iodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIter.iodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIter.iodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIter.iodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E2), timestep=0.1))
 
 end
 
@@ -48,15 +48,15 @@ end
     using ChargedParticleDynamics.PauliParticle3d.SolovevIterXpoint
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_hode(initial_conditions_barely_passing()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_hode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_hode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_hode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
+    test_pauli_particle_3d(SolovevIterXpoint.hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIterXpoint.hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIterXpoint.hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIterXpoint.hodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E2), timestep=0.1))
 
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_iode(initial_conditions_barely_passing()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_iode(initial_conditions_barely_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_iode(initial_conditions_deeply_passing()...; tspan=(0.0, 1E2), tstep=0.1))
-    test_pauli_particle_3d(SolovevIterXpoint.pauli_particle_3d_iode(initial_conditions_deeply_trapped()...; tspan=(0.0, 1E2), tstep=0.1))
+    test_pauli_particle_3d(SolovevIterXpoint.iodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIterXpoint.iodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIterXpoint.iodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E2), timestep=0.1))
+    test_pauli_particle_3d(SolovevIterXpoint.iodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E2), timestep=0.1))
 
 end
 
@@ -66,9 +66,9 @@ end
     using ChargedParticleDynamics.PauliParticle3d.SymmetricField
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(SymmetricField.pauli_particle_3d_pode())
-    test_pauli_particle_3d(SymmetricField.pauli_particle_3d_hode())
-    test_pauli_particle_3d(SymmetricField.pauli_particle_3d_iode())
+    test_pauli_particle_3d(SymmetricField.podeproblem())
+    test_pauli_particle_3d(SymmetricField.hodeproblem())
+    test_pauli_particle_3d(SymmetricField.iodeproblem())
 
 end
 
@@ -81,9 +81,9 @@ end
 
     # the momentum is constant along the initial trajectory, so the default Hermite
     # extrapolation of the initial guess is degenerate
-    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_pode(); initialguess=MidpointExtrapolation(5))
-    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_hode(); initialguess=MidpointExtrapolation(5))
-    test_pauli_particle_3d(ThetaPinchField.pauli_particle_3d_iode(); initialguess=MidpointExtrapolation(5))
+    test_pauli_particle_3d(ThetaPinchField.podeproblem(); initialguess=MidpointExtrapolation(5))
+    test_pauli_particle_3d(ThetaPinchField.hodeproblem(); initialguess=MidpointExtrapolation(5))
+    test_pauli_particle_3d(ThetaPinchField.iodeproblem(); initialguess=MidpointExtrapolation(5))
 
 end
 
@@ -93,9 +93,9 @@ end
     using ChargedParticleDynamics.PauliParticle3d.TokamakIterCylindrical
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(TokamakIterCylindrical.pauli_particle_3d_pode())
-    test_pauli_particle_3d(TokamakIterCylindrical.pauli_particle_3d_hode())
-    test_pauli_particle_3d(TokamakIterCylindrical.pauli_particle_3d_iode())
+    test_pauli_particle_3d(TokamakIterCylindrical.podeproblem())
+    test_pauli_particle_3d(TokamakIterCylindrical.hodeproblem())
+    test_pauli_particle_3d(TokamakIterCylindrical.iodeproblem())
 
 end
 
@@ -104,9 +104,9 @@ end
     using ChargedParticleDynamics.PauliParticle3d.TokamakSmallCartesian
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(TokamakSmallCartesian.pauli_particle_3d_pode(tspan=(0.0, 1E3), tstep=10.0))
-    test_pauli_particle_3d(TokamakSmallCartesian.pauli_particle_3d_hode(tspan=(0.0, 1E3), tstep=10.0))
-    test_pauli_particle_3d(TokamakSmallCartesian.pauli_particle_3d_iode())
+    test_pauli_particle_3d(TokamakSmallCartesian.podeproblem(timespan=(0.0, 1E3), timestep=10.0))
+    test_pauli_particle_3d(TokamakSmallCartesian.hodeproblem(timespan=(0.0, 1E3), timestep=10.0))
+    test_pauli_particle_3d(TokamakSmallCartesian.iodeproblem())
 
 end
 
@@ -115,9 +115,9 @@ end
     using ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_pode(tspan=(0.0, 1E3), tstep=10.0))
-    test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_hode(tspan=(0.0, 1E3), tstep=10.0))
-    test_pauli_particle_3d(TokamakSmallCylindrical.pauli_particle_3d_iode(tspan=(0.0, 1E3), tstep=10.0))
+    test_pauli_particle_3d(TokamakSmallCylindrical.podeproblem(timespan=(0.0, 1E3), timestep=10.0))
+    test_pauli_particle_3d(TokamakSmallCylindrical.hodeproblem(timespan=(0.0, 1E3), timestep=10.0))
+    test_pauli_particle_3d(TokamakSmallCylindrical.iodeproblem(timespan=(0.0, 1E3), timestep=10.0))
 
 end
 
@@ -126,8 +126,8 @@ end
     using ChargedParticleDynamics.PauliParticle3d.TokamakSmallToroidal
     using ..PauliParticle3dTests
 
-    test_pauli_particle_3d(TokamakSmallToroidal.pauli_particle_3d_pode(tspan=(0.0, 1E3), tstep=10.0))
-    test_pauli_particle_3d(TokamakSmallToroidal.pauli_particle_3d_hode(tspan=(0.0, 1E3), tstep=10.0))
-    test_pauli_particle_3d(TokamakSmallToroidal.pauli_particle_3d_iode(tspan=(0.0, 1E3), tstep=10.0))
+    test_pauli_particle_3d(TokamakSmallToroidal.podeproblem(timespan=(0.0, 1E3), timestep=10.0))
+    test_pauli_particle_3d(TokamakSmallToroidal.hodeproblem(timespan=(0.0, 1E3), timestep=10.0))
+    test_pauli_particle_3d(TokamakSmallToroidal.iodeproblem(timespan=(0.0, 1E3), timestep=10.0))
 
 end

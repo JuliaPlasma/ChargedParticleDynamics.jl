@@ -49,8 +49,8 @@ module SymmetricField
 
     SymmetricQuadratic.@code() # inject magnetic field code
 
-    const Δt = 1.0
-    const tspan = (0.0, 1000.0)
+    const DEFAULT_TIMESTEP = 1.0
+    const DEFAULT_TIMESPAN = (0.0, 1000.0)
 
     μ_loop() = 1E-2
     μ_surface() = 1E-2
@@ -95,7 +95,6 @@ module SymmetricField
     "The magnetic moment μ this equilibrium is set up for."
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
 
-    const parameters = default_parameters()
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")

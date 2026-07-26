@@ -1,8 +1,18 @@
+@doc raw"""
+ITER-size axisymmetric tokamak equilibrium, in cylindrical coordinates ``(R, Z, \varphi)``.
+
+Major radius ``R_{0} = 6.2``, magnetic field on axis ``B_{0} = 5.3`` and safety factor
+``q_{0} = \sqrt{2}`` — the ITER parameters of `ElectromagneticFields`.
+
+The hard-coded `μ` and `u` of the `initial_conditions_*` below are inherited from earlier work on
+this package and their provenance is not recorded; they are known-good starting points for the
+Pauli particle model rather than values derived here.
+"""
 module TokamakIterCylindrical
 
     import ElectromagneticFields.AxisymmetricTokamakCylindrical
 
-    export pauli_particle_3d_pode, hamiltonian, toroidal_momentum
+    export podeproblem, hamiltonian, toroidal_momentum
 
     AxisymmetricTokamakCylindrical.@code_iter() # inject magnetic field code
 
@@ -17,16 +27,15 @@ module TokamakIterCylindrical
     The magnetic moment μ of the default initial condition `(qᵢ, vᵢ)`, obtained by splitting
     `vᵢ` into its parallel and perpendicular parts at `qᵢ`.
     """
-    default_parameters(::Type{T}=Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ)[3].μ),)
+    default_parameters(::Type{T}=Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ).params.μ),)
 
-    const parameters = default_parameters()
 
-    const Δt = 1.0
-    const tspan = (0.0, 100.0)
+    const DEFAULT_TIMESTEP = 1.0
+    const DEFAULT_TIMESPAN = (0.0, 100.0)
 
     function initial_conditions(x₀, u₀, μ)
         v₀ = u₀ * [b¹(0, x₀), b²(0, x₀), b³(0, x₀)]
-        (x₀, v₀, (μ = μ,))
+        (q = x₀, v = v₀, params = (μ = μ,))
     end
 
     initial_conditions_barely_trapped() = initial_conditions(from_cartesian(0, [2.5, 0., 0.]), 3.375E-1, 1E-2)

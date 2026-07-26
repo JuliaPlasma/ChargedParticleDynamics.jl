@@ -3,7 +3,7 @@
 #
 # `GyroKinetics4d` and `GuidingCenter4d` describe the same physics — same equilibrium Hamiltonian,
 # same generalised vector potential — but the gyrokinetic module integrates the characteristics
-# with the phase-space Jacobian B*∥ cleared from the denominator, which is what makes its
+# with the phasespace Jacobian B*∥ cleared from the denominator, which is what makes its
 # right-hand side divergence-free and its splitting volume preserving.
 #
 # The notes write that step as R̃ = B*∥ R, which reads like a change of variables. It is not one:
@@ -73,8 +73,8 @@ function orbits()
 
     previous = NaN
     for s_end in (4E-3, 2E-3, 1E-3, 5E-4)
-        gk = integrate(GK.guiding_center_4d_ode(q₀, params; tstep = s_end / 2000, tspan = (0.0, s_end)), Gauss(2))
-        gc = integrate(GC.guiding_center_4d_ode(q₀, params; tstep = Bpar * s_end / 2000, tspan = (0.0, Bpar * s_end)), Gauss(2))
+        gk = integrate(GK.odeproblem(q₀; parameters = params, timestep = s_end / 2000, timespan = (0.0, s_end)), Gauss(2))
+        gc = integrate(GC.odeproblem(q₀; parameters = params, timestep = Bpar * s_end / 2000, timespan = (0.0, Bpar * s_end)), Gauss(2))
         d  = maximum(abs.(gk.q[end] .- gc.q[end]))
         @printf("  %-12.0e %-14.2e %s\n", s_end, d, isnan(previous) ? "" : @sprintf("%.1f", previous / d))
         previous = d

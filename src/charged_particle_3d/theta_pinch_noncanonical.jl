@@ -1,8 +1,15 @@
+@doc raw"""
+Charged particle in a uniform magnetic field of the form ``B(x,y,z) = B_{0} e_{z}``, in the
+noncanonical formulation on the phasespace ``z = (x, v)``.
+
+The same equilibrium as `ThetaPinchCanonical`, in cartesian coordinates, so the metric is trivial
+and the Boris splitting of `sodeproblem` is a valid splitting of the model here.
+"""
 module ThetaPinchNoncanonical
 
     import ElectromagneticFields.ThetaPinch
 
-    export charged_particle_3d_ode, charged_particle_3d_sode, charged_particle_3d_iode,
+    export odeproblem, sodeproblem, iodeproblem,
            hamiltonian, toroidal_momentum, ϑ
 
     const qᵢ = [2.5, 0.0, 0.0, 0.0, 0.2, 0.1]
@@ -22,6 +29,5 @@ module ThetaPinchNoncanonical
     """
     default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
 
-    const parameters = default_parameters()
     
 end

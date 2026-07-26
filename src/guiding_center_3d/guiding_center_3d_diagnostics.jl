@@ -22,6 +22,16 @@ compute_energy(t::SolutionTimes, q::DataSeries, p::DataSeries, params) =
 compute_energy(sol::GeometricSolution, params=GeometricEquations.parameters(sol.problem)) =
     compute_energy(sol.t, sol.q, sol.p, params)
 
+"""
+    compute_energy_error(sol)
+
+!!! note "Returns a `(value, error)` pair"
+    Like every `compute_*_error` here, this forwards to `GeometricSolutions.compute_invariant_error`
+    and so returns **two** series, not one: the invariant itself and its relative error. Destructure
+    it — `h, e = compute_energy_error(sol)` — rather than passing the result somewhere a single
+    series is expected. [`compute_constraints`](@ref) is the exception: the constraints start at
+    zero, so it returns the values alone.
+"""
 compute_energy_error(t::SolutionTimes, q::DataSeries, p::DataSeries, params) =
     compute_invariant_error(t, q, p, params, hamiltonian)
 compute_energy_error(sol::GeometricSolution, params=GeometricEquations.parameters(sol.problem)) =
@@ -35,6 +45,11 @@ compute_toroidal_momentum(t::SolutionTimes, q::DataSeries, p::DataSeries, params
 compute_toroidal_momentum(sol::GeometricSolution, params=GeometricEquations.parameters(sol.problem)) =
     compute_toroidal_momentum(sol.t, sol.q, sol.p, params)
 
+"""
+    compute_toroidal_momentum_error(sol)
+
+Returns a `(value, error)` pair; see [`compute_energy_error`](@ref).
+"""
 compute_toroidal_momentum_error(t::SolutionTimes, q::DataSeries, p::DataSeries, params) =
     compute_invariant_error(t, q, p, params, (t, q, p, params) -> toroidal_momentum(t, q, p))
 compute_toroidal_momentum_error(sol::GeometricSolution, params=GeometricEquations.parameters(sol.problem)) =
@@ -49,8 +64,8 @@ momentum equals the guiding centre one-form, returned as a named tuple of two `D
 
 They vanish identically along the continuous flow, so their magnitude measures how far a numerical
 solution has drifted off that manifold — the quantity the approximately symplectic methods of Li,
-Zhang and Liu are designed to keep bounded, and the one that decides whether `hode_canonical`
-agrees with `hode`. Since they start at zero, the absolute value is the meaningful one; there is no
+Zhang and Liu are designed to keep bounded, and the one that decides whether `hodeproblem_canonical`
+agrees with `hodeproblem`. Since they start at zero, the absolute value is the meaningful one; there is no
 relative-error variant.
 """
 function compute_constraints(t::SolutionTimes, q::DataSeries, p::DataSeries)

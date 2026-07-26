@@ -22,7 +22,7 @@ using SafeTestsets
     # `ElectromagneticFields.@code`, so `equ.R`, `equ.X`, … are its functions.
     equ = ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCylindrical
 
-    prob = guiding_center_4d_ode(initial_conditions_deeply_passing()...)
+    prob = odeproblem(initial_conditions_deeply_passing())
     sol = integrate(prob, Gauss(2))
 
     @testset "Diagnostics" begin
@@ -53,12 +53,34 @@ using SafeTestsets
         @test plot_fieldlines(equ; xrange = (1.0, 2.5), yrange = (-0.8, 0.8), ngrid = (40, 30)) isa Tuple
     end
 
+    # `plot_fieldlines` contours ψ = R A_φ, which is only meaningful in an axisymmetric cylindrical
+    # chart. It used to accept any equilibrium and draw a plausible-looking wrong picture for the
+    # cartesian and toroidal ones; it now refuses, and so does `plot_trajectory_poloidal(R, Z, equ)`,
+    # which forwards its equilibrium here.
+    @testset "Field lines reject charts they are not valid in" begin
+        cylindrical = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical
+        cartesian   = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian
+        toroidal    = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallToroidal
+
+        @test is_axisymmetric_cylindrical(cylindrical)
+        @test !is_axisymmetric_cylindrical(cartesian)
+        @test !is_axisymmetric_cylindrical(toroidal)
+
+        for bad in (cartesian, toroidal)
+            @test_throws ArgumentError plot_fieldlines(bad; xrange = (1.0, 2.5), yrange = (-0.8, 0.8), ngrid = (4, 4))
+            @test_throws ArgumentError plot_trajectory_poloidal([1.0, 1.1], [0.0, 0.1], bad)
+        end
+
+        # Without an equilibrium the trajectory still plots, which is the documented way out.
+        @test plot_trajectory_poloidal([1.0, 1.1], [0.0, 0.1]) isa Tuple
+    end
+
     @testset "Poincaré integral invariants" begin
         # The first invariant on the PoincareInvariants 0.5 interface: a noncanonical `FirstPI`
         # built from the guiding centre one-form, advected as an ensemble of loop points.
-        pinv = guiding_center_4d_poincare_invariant_1st(100)
-        lprob = guiding_center_4d_loop_iode(; tspan = (0.0, 10.0), tstep = 2.5)
-        lsol = integrate(guiding_center_4d_loop_ensemble(lprob, pinv), VPRKGauss(2))
+        pinv = poincare_invariant_1st(100)
+        lprob = loop_iodeproblem(; timespan = (0.0, 10.0), timestep = 2.5)
+        lsol = integrate(loop_ensemble(lprob, pinv), VPRKGauss(2))
         I₁ = compute!(pinv, lsol, parameters(lprob))
 
         @test I₁ isa Vector
@@ -67,9 +89,9 @@ using SafeTestsets
         @test maximum(abs, (I₁ .- I₁[begin]) ./ I₁[begin]) < 1E-2
 
         # The second invariant, on a finite-difference grid so that the surface can be plotted.
-        pinv2 = guiding_center_4d_poincare_invariant_2nd((8, 8); plan = PoincareInvariants.SecondFinDiffPlan)
-        sprob = guiding_center_4d_surface_iode(; tspan = (0.0, 10.0), tstep = 2.5)
-        ssol = integrate(guiding_center_4d_surface_ensemble(sprob, pinv2), VPRKGauss(2))
+        pinv2 = poincare_invariant_2nd((8, 8); plan = PoincareInvariants.SecondFinDiffPlan)
+        sprob = surface_iodeproblem(; timespan = (0.0, 10.0), timestep = 2.5)
+        ssol = integrate(surface_ensemble(sprob, pinv2), VPRKGauss(2))
         I₂ = compute!(pinv2, ssol, parameters(sprob))
 
         @test I₂ isa Vector

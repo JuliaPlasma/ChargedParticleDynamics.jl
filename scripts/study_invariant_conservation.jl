@@ -29,11 +29,11 @@ function guiding_centre_4d()
     println("4D guiding centre — ODEProblem, Gauss(2)\n")
     @printf("  %-30s %-14s %s\n", "equilibrium", "|ΔH/H|", "|Δp_φ/p_φ|")
 
-    for (name, M, kw) in (("TokamakSmallCylindrical", G4.TokamakSmallCylindrical, (tstep = 10.0, tspan = (0.0, 1E3))),
-                          ("TokamakSmallToroidal",    G4.TokamakSmallToroidal,    (tstep = 10.0, tspan = (0.0, 1E3))),
-                          ("TokamakSmallCartesian",   G4.TokamakSmallCartesian,   (tstep = 10.0, tspan = (0.0, 1E3))),
-                          ("SolovevIterXpoint",       G4.SolovevIterXpoint,       (tstep = 1.0,  tspan = (0.0, 1E2))))
-        sol = integrate(M.guiding_center_4d_ode(M.initial_conditions_barely_passing()...; kw...), Gauss(2))
+    for (name, M, kw) in (("TokamakSmallCylindrical", G4.TokamakSmallCylindrical, (timestep = 10.0, timespan = (0.0, 1E3))),
+                          ("TokamakSmallToroidal",    G4.TokamakSmallToroidal,    (timestep = 10.0, timespan = (0.0, 1E3))),
+                          ("TokamakSmallCartesian",   G4.TokamakSmallCartesian,   (timestep = 10.0, timespan = (0.0, 1E3))),
+                          ("SolovevIterXpoint",       G4.SolovevIterXpoint,       (timestep = 1.0,  timespan = (0.0, 1E2))))
+        sol = integrate(M.odeproblem(M.initial_conditions_barely_passing(); kw...), Gauss(2))
         _, eerr = M.compute_energy_error(sol)
         _, perr = M.compute_toroidal_momentum_error(sol)
         @printf("  %-30s %-14.2e %.2e\n", name, mx(eerr), mx(perr))
@@ -46,7 +46,7 @@ function guiding_centre_3d()
 
     for (name, M) in (("SolovevIterXpoint",      G3.SolovevIterXpoint),
                       ("TokamakMediumCartesian", G3.TokamakMediumCartesian))
-        prob = M.hode(M.initial_conditions_barely_passing()...; tstep = 0.1, tspan = (0.0, 1E2))
+        prob = M.hodeproblem(M.initial_conditions_barely_passing(); timestep = 0.1, timespan = (0.0, 1E2))
         sol  = integrate(prob, PartitionedGauss(2); initialguess = MidpointExtrapolation(5))
         _, eerr = M.compute_energy_error(sol)
         c = M.compute_constraints(sol)
@@ -71,11 +71,11 @@ function gyrokinetics()
     M = GK.GuidingCenter4dSolovevIterXpoint
     q₀, params = M.initial_conditions_deeply_passing()
 
-    sol = integrate(M.guiding_center_4d_ode(q₀, params), Gauss(2))
+    sol = integrate(M.odeproblem(q₀; parameters = params), Gauss(2))
     _, e = M.compute_energy_error(sol)
     @printf("  %-30s %.2e\n", "Gauss(2), full field", mx(e))
 
-    sol = integrate(M.guiding_center_4d_sode(q₀, params),
+    sol = integrate(M.sodeproblem(q₀; parameters = params),
                     Composition(Tuple(Gauss(1) for _ in 1:6), Strang()))
     _, e = M.compute_energy_error(sol)
     @printf("  %-30s %.2e\n", "Strang split, volume pres.", mx(e))

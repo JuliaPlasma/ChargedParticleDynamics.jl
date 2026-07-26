@@ -6,7 +6,7 @@ module ThetaPinchCanonical
 
     import ElectromagneticFields.ThetaPinch
 
-    export charged_particle_3d_iode, hamiltonian, angular_momentum
+    export iodeproblem, hamiltonian, angular_momentum
 
     ThetaPinch.@code() # inject magnetic field code
 
@@ -21,7 +21,6 @@ module ThetaPinchCanonical
     """
     default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
 
-    const parameters = default_parameters()
 
     const qᵢ = [2.5, 0.0, 0.0]
     const vᵢ = [0.0, 0.2, 0.1]

@@ -6,15 +6,15 @@ module SymmetricField
 
     import ElectromagneticFields.SymmetricQuadratic
 
-    export pauli_particle_3d_pode, hamiltonian, toroidal_momentum
+    export podeproblem, hamiltonian, toroidal_momentum
 
     SymmetricQuadratic.@code() # inject magnetic field code
 
     const qᵢ = [1., 0., 0.]
     const vᵢ = [0., 1., 1.]
 
-    const Δt = 1.0
-    const tspan = (0.0, 1000.0)
+    const DEFAULT_TIMESTEP = 1.0
+    const DEFAULT_TIMESPAN = (0.0, 1000.0)
 
     include("pauli_particle_3d.jl")
 
@@ -24,8 +24,7 @@ module SymmetricField
     The magnetic moment μ of the default initial condition `(qᵢ, vᵢ)`, obtained by splitting
     `vᵢ` into its parallel and perpendicular parts at `qᵢ`.
     """
-    default_parameters(::Type{T}=Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ)[3].μ),)
+    default_parameters(::Type{T}=Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ).params.μ),)
 
-    const parameters = default_parameters()
 
 end
