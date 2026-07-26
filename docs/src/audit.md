@@ -234,6 +234,12 @@ and additionally accept the named tuple that every `initial_conditions_*` return
   `src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl` as the starting point; it is not
   included by any module and does not compile against the current `GeometricIntegrators`.
 * Give `GyroKinetics4d` the full zero Larmor radius Hamiltonian, not just ``H_{0}``.
+* Route the equilibrium modules through one initial-conditions layer. Each carries its ``u`` and
+  ``\mu`` as hard-coded literals, although `src/utils/initial_conditions.jl` already provides
+  `InitialConditions` to derive them from a position, a pitch angle and an energy, together with
+  per-model converters — and no equilibrium module calls any of it. The literals are not
+  reproducible from those functions either, and their provenance is not recorded; see
+  [Initialization](@ref).
 * `lodeproblem_formal_lagrangian` is a verbatim copy of `lodeproblem` rather than the formal
   Lagrangian of the equations of motion in noncanonical Hamiltonian form.
 

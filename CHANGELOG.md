@@ -158,6 +158,17 @@ deprecation shims; see *Changed* below for the mapping.
   rest but not fixed: it should be the formal Lagrangian of the equations of motion in noncanonical
   Hamiltonian form, `L(z, y, ż) = yⁱ (Ωᵢⱼ(z) żʲ + ∂ᵢH(z))` on the doubled state `(z, y)`, which is
   an eight-dimensional problem rather than the four-dimensional one it builds. See `TODO.md`.
+- **The equilibrium modules hard-code `u` and `μ` and their provenance is unknown.**
+  `src/utils/initial_conditions.jl` already provides `InitialConditions`, which derives both from a
+  position, a pitch angle and an energy, along with per-model converters — and no equilibrium module
+  calls any of it; the only callers are two documentation pages and one script. The literals are not
+  reproducible from those functions either: on the small tokamak in cartesian coordinates the
+  parallel velocity comes out at `0.00042987` against a hard-coded `0.00045136`, and `|v⊥|²/2B` at
+  `2.31459E-6` against a hard-coded `2.310E-6` — the latter a nearby but different number, not the
+  same one rounded. The docstrings added in this release say the provenance is unrecorded rather
+  than inventing one. Routing every module through a single initial-conditions layer is the fix and
+  is filed in `TODO.md`; it would shift the shipped values by those percentages, so it wants its own
+  diff.
 
 
 ## [0.2.0] - 2026-07-25

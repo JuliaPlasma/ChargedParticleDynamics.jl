@@ -164,6 +164,26 @@ ChargedParticleDynamics.jl provides the `InitialConditions` module for the compu
 Three functions are provided that return the initial conditions for the different models.
 For charged particles the initial conditions are $(x', v')$, for the Pauli particle we have $(X', v_{\parallel}', \mu)$ and for the guiding center we use $(X', u', \mu)$ with $u' = \vert v_{\parallel}' \vert$.
 
+!!! warning "The equilibrium modules do not use this"
+    Everything on this page describes machinery that is available but not wired up. Each
+    equilibrium module carries its `u` and `μ` as hard-coded literals rather than deriving them
+    from a position, a pitch angle and an energy through `InitialConditions`. The only callers of
+    these functions are this page, the [ITER Equilibrium in Cylindrical Coordinates](@ref) example
+    and `scripts/guiding_center_3d.jl`.
+
+    The literals are also not reproducible from the functions here. For the small tokamak in
+    cartesian coordinates, whose Pauli module declares `xᵢ = [1.05, 0, 0]` and
+    `vᵢ = [2.1e-3, 4.3e-4, 0]`, the parallel velocity ``v \cdot b`` comes out at `0.00042987`
+    against a hard-coded `0.00045136`, and ``\vert v_{\perp} \vert^{2} / 2B`` at `2.31459e-6`
+    against a hard-coded `2.310e-6` — the latter being a nearby but *different* number rather than
+    the same one rounded. Where the shipped values came from is not recorded anywhere in the
+    repository, so the per-equilibrium docstrings say so rather than inventing a derivation.
+
+    Routing the equilibrium modules through this layer is the fix, and is the task *One
+    initial-conditions layer for all models* in `TODO.md`. It would make `u` and `μ` derived
+    quantities that a new equilibrium gets for free, at the cost of shifting the shipped values by
+    the percentages above.
+
 ```@autodocs
 Modules = [ChargedParticleDynamics]
 Order   = [:type, :function]

@@ -121,6 +121,90 @@ every line of it. Do not open this again as a three-way choice.
 Once it works, re-enable the commented-out 3D test blocks in `test/guiding_center_3d_tests.jl`
 (~150 lines, all of them blocked on exactly this).
 
+## One initial-conditions layer for all models
+
+**The equilibrium modules should not carry `u` and `μ` as literals.** Each one should declare its
+initial conditions in *physical* terms — a position, a pitch angle and an energy — and let a shared
+layer derive the state each model actually needs. Today all forty-odd modules hard-code the
+derived numbers instead, and where those numbers came from is no longer known; see *Provenance*
+below for why that is more than an aesthetic complaint.
+
+### Most of the layer already exists
+
+`src/utils/initial_conditions.jl` has the pieces and nothing uses them:
+
+* `InitialConditions` — a struct holding the physical state once: `x`, `X`, `ρ`, `vvec`, `vpar`,
+  `vper`, `v`, `u`, `μ`, `θ`, `α`, `ω`, `mass`, `energy`, `charge`.
+* `InitialConditions(X, θ, α, E, M, C, â, b̂, ĉ, b, B, g̅, DF̄, J; l₀)` — builds it from a gyro-centre
+  position, gyro angle, pitch angle and an energy in eV, doing the parallel/perpendicular split
+  against the equilibrium's own field and metric. `InitialConditionsGC(X, θ, u, μ, …)` is the
+  variant that starts from `(u, μ)` instead.
+* `charged_particle(ics)`, `guiding_center(ics)`, `pauli_particle(ics)` — per-model converters.
+
+**No equilibrium module calls any of it.** The only callers are `docs/src/initialization.md`,
+`docs/src/examples/iter_cylindrical.md` and `scripts/guiding_center_3d.jl`. So there is a function
+that computes `u` and `μ` from physical inputs, and forty modules that hard-code them anyway.
+
+### What is missing
+
+* **A 3D guiding centre converter.** That model's state is `(q, p)` with `p = ϑ(q)`, so it needs
+  `guiding_center_3d(ics)` alongside the three above; at present the modules reach the momentum
+  through the model-local `initial_conditions(tᵢ, Qᵢ)` in `guiding_center_3d_equations.jl`.
+* **A gyrokinetic converter.** `GyroKinetics4d` shares the 4D state, so this is `guiding_center`
+  plus the rescaled time step — the factor `B^{\star}_{\parallel}` that its `DEFAULT_TIMESTEP`
+  carries and that must not be copied between equilibria.
+* **The uniform return shape.** The three converters return bare tuples. Every constructor now
+  takes `(q = …, params = …)`, plus `p` or `v` where the model has one, so the converters should
+  return that directly and the modules should be one line each:
+
+  ```julia
+  initial_conditions_deeply_passing() = guiding_center(InitialConditions(x₀, θ, α, E, md, 1, …))
+  ```
+
+* **The per-equilibrium field arguments.** `InitialConditions` takes nine field functions
+  positionally. Since they are all injected into the module by `@code`, a small wrapper per module —
+  or a macro alongside the injection — would remove that boilerplate.
+
+### Provenance: why the literals cannot simply be documented
+
+Two different number styles sit side by side, which is the first sign they have different origins:
+
+```julia
+const uᵢ = -0.00045135897235326736                              # 17 digits: a Float64 round-trip
+initial_conditions_pauli() = (q = [1.05, 0., 0., 4.3E-4], params = (μ = 2.310E-6,))   # 4 digits
+```
+
+The first is machine output that was printed and pasted; the second is hand-rounded. Neither is
+reproducible from the package's own helpers. Taking the small tokamak in cartesian coordinates,
+with the `xᵢ = [1.05, 0, 0]` and `vᵢ = [2.1E-3, 4.3E-4, 0]` its Pauli module declares:
+
+| Quantity | What the helpers give | What is hard-coded | |
+|---|---|---|---|
+| ``v \cdot b`` | `0.00042987` | `0.00045136` | 5 % apart |
+| ``\vert v_\perp \vert^{2} / 2B`` | `2.31459E-6` | `2.310E-6` | 0.2 % apart |
+
+The second is the telling one: `2.31459E-6` does not round to `2.310E-6` — it rounds to
+`2.315E-6`. It is not the same number at lower precision, it is a nearby but different number. So
+the literals are near-misses against every derivation this repository can perform, and one of the
+following is true, with no way to tell which from the code:
+
+* they were computed for a slightly different position or field configuration than the modules now
+  use;
+* they predate a change of normalisation or of the parallel/perpendicular split;
+* they were derived outside the repository and transcribed.
+
+The consequences are practical rather than cosmetic. Nobody can produce the corresponding numbers
+for a *new* equilibrium without redoing whatever the original derivation was. Nobody can say
+whether "barely passing" versus "deeply passing" reflects a computed trapped-passing boundary or a
+value that was tuned until the orbit looked right. And a genuine transcription error would be
+indistinguishable from the discrepancies above.
+
+The docstrings therefore say the provenance is unrecorded rather than inventing one. **Building the
+layer above resolves this by making the question moot**: the physical inputs are the declaration,
+and `u` and `μ` become derived quantities that any future equilibrium gets for free. Note that
+re-deriving them will shift the numbers by the percentages in the table, so test reference values
+move and it wants its own diff.
+
 ## The full zero Larmor radius Hamiltonian for `GyroKinetics4d`
 
 `H₀ = ½u² + μ|B| + φ` is implemented. The notes the module follows give the zero Larmor radius
@@ -167,9 +251,10 @@ observed order of a few would be cheap and would validate the subsystem integrat
   `SolovevSymmetricField` — has `b₁ = 0` at its initial condition, so all are blocked on the
   constraint-formulation item above.
 * Per-equilibrium docstrings: the coordinate system and the equilibrium parameters are now stated
-  everywhere, but the provenance of the hard-coded `μ` and `u` of the `initial_conditions_*` is
-  still unknown (e.g. `uᵢ = -0.00045135897235326736`) and the docstrings say so rather than
-  inventing one. If the derivation exists somewhere outside the repository, record it.
+  everywhere. The provenance of the hard-coded `μ` and `u` is not, because it is unknown — see
+  *One initial-conditions layer for all models* above, which subsumes this. If the derivation
+  exists somewhere outside the repository, recording it would settle the question without the
+  refactor.
 * `docs/src/initialization.md` documents a non-standard pitch-angle convention
   (`W⊥ = W sin α` rather than `W sin²α`). Self-consistent and now flagged, but worth deciding
   whether to move to the textbook convention. Changing it perturbs every shipped initial condition,
