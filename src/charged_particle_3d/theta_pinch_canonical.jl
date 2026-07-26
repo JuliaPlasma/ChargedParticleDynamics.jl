@@ -6,7 +6,7 @@ module ThetaPinchCanonical
 
     import ElectromagneticFields.ThetaPinch
 
-    export charged_particle_3d_iode, hamiltonian, angular_momentum
+    export iodeproblem, hamiltonian, angular_momentum
 
     ThetaPinch.@code() # inject magnetic field code
 

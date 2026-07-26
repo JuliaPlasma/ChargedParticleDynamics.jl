@@ -26,8 +26,8 @@ import ElectromagneticFields.ThetaPinch
 
 ThetaPinch.@code() # inject magnetic field code
 
-const Δt = 1.0
-const tspan = (0.0, 1000.0)
+const DEFAULT_TIMESTEP = 1.0
+const DEFAULT_TIMESPAN = (0.0, 1000.0)
 
 μ_loop() = 2.5E-6
 

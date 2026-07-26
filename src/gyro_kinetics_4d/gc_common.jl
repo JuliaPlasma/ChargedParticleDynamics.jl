@@ -9,15 +9,28 @@ export hamiltonian, ϑ, ω, ωabs, β, γ, v
 end
 
 
+@doc raw"""
+The equilibrium guiding centre Hamiltonian,
+
+```math
+H_{0} = \tfrac{1}{2} u^{2} + \mu \vert B \vert + \varphi ,
+```
+
+matching `GuidingCenter4d`. The notes this module follows give the zero Larmor radius
+Hamiltonian ``H^{\mathrm{zlr}}``, which carries ``A_{\parallel}`` and
+``\langle \tilde{A}_{\parallel} \rangle^{2}`` terms on top of this and would change ``β`` and ``γ``
+as well; only ``H_{0}`` is implemented. See `TODO.md`.
+"""
 function hamiltonian(t, q, params)
     @unpack μ = params
-    0.5 * u(t,q)^2 + μ*B(t,q)
+    0.5 * u(t,q)^2 + μ*B(t,q) + φ(t,q)
 end
 
 
-dHdx₁(t,q,μ) = μ * dBdx₁(t,q)
-dHdx₂(t,q,μ) = μ * dBdx₂(t,q)
-dHdx₃(t,q,μ) = μ * dBdx₃(t,q)
+# ∂φ/∂xᵢ = -Eᵢ, hence the minus sign; ∂²φ/∂xᵢ∂xⱼ = -∂Eⱼ/∂xᵢ below.
+dHdx₁(t,q,μ) = μ * dBdx₁(t,q) - E₁(t,q)
+dHdx₂(t,q,μ) = μ * dBdx₂(t,q) - E₂(t,q)
+dHdx₃(t,q,μ) = μ * dBdx₃(t,q) - E₃(t,q)
 dHdx₄(t,q,μ) = u(t,q)
 
 function dH(dH, t, q, params)
@@ -30,17 +43,17 @@ function dH(dH, t, q, params)
 end
 
 
-d²Hdx₁dx₁(t, q, μ) = μ * d²Bdx₁dx₁(t,q)
-d²Hdx₁dx₂(t, q, μ) = μ * d²Bdx₁dx₂(t,q)
-d²Hdx₁dx₃(t, q, μ) = μ * d²Bdx₁dx₃(t,q)
+d²Hdx₁dx₁(t, q, μ) = μ * d²Bdx₁dx₁(t,q) - dE₁dx₁(t,q)
+d²Hdx₁dx₂(t, q, μ) = μ * d²Bdx₁dx₂(t,q) - dE₂dx₁(t,q)
+d²Hdx₁dx₃(t, q, μ) = μ * d²Bdx₁dx₃(t,q) - dE₃dx₁(t,q)
 d²Hdx₁dx₄(t, q, μ) = zero(eltype(q))
-d²Hdx₂dx₁(t, q, μ) = μ * d²Bdx₂dx₁(t,q)
-d²Hdx₂dx₂(t, q, μ) = μ * d²Bdx₂dx₂(t,q)
-d²Hdx₂dx₃(t, q, μ) = μ * d²Bdx₂dx₃(t,q)
+d²Hdx₂dx₁(t, q, μ) = μ * d²Bdx₂dx₁(t,q) - dE₁dx₂(t,q)
+d²Hdx₂dx₂(t, q, μ) = μ * d²Bdx₂dx₂(t,q) - dE₂dx₂(t,q)
+d²Hdx₂dx₃(t, q, μ) = μ * d²Bdx₂dx₃(t,q) - dE₃dx₂(t,q)
 d²Hdx₂dx₄(t, q, μ) = zero(eltype(q))
-d²Hdx₃dx₁(t, q, μ) = μ * d²Bdx₃dx₁(t,q)
-d²Hdx₃dx₂(t, q, μ) = μ * d²Bdx₃dx₂(t,q)
-d²Hdx₃dx₃(t, q, μ) = μ * d²Bdx₃dx₃(t,q)
+d²Hdx₃dx₁(t, q, μ) = μ * d²Bdx₃dx₁(t,q) - dE₁dx₃(t,q)
+d²Hdx₃dx₂(t, q, μ) = μ * d²Bdx₃dx₂(t,q) - dE₂dx₃(t,q)
+d²Hdx₃dx₃(t, q, μ) = μ * d²Bdx₃dx₃(t,q) - dE₃dx₃(t,q)
 d²Hdx₃dx₄(t, q, μ) = zero(eltype(q))
 d²Hdx₄dx₁(t, q, μ) = zero(eltype(q))
 d²Hdx₄dx₂(t, q, μ) = zero(eltype(q))

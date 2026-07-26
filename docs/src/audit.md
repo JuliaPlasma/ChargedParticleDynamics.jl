@@ -49,12 +49,15 @@ but no model exposes the two prefactors, and none is expected to. Every model us
 ``\hat{\rho}_{\mathrm{th}} = \hat{l}``, ``e \hat{\phi} = m v_{\mathrm{th}}^{2}``; the drift-kinetic
 and gyrokinetic orderings are recorded on that page for reference, not offered as a choice.
 
-### The 4D guiding centre has no electrostatic potential
+### The gyrokinetic Hamiltonian is the equilibrium one
 
-`GuidingCenter4d` uses ``H = \tfrac{1}{2} u^{2} + \mu \vert B \vert``, with no ``\varphi`` and no
-``E`` in ``\nabla H``. `GuidingCenter3d` includes both, and both reference papers carry
-``\Phi(X)``. The two guiding centre families therefore describe different systems whenever the
-equilibrium has a non-zero electrostatic potential. This is the largest remaining physics gap.
+Every model now carries the electrostatic potential: ``H = \tfrac{1}{2} u^{2} + \mu \vert B \vert
++ \varphi``, with ``-E`` in ``\nabla H``. `GuidingCenter4d` and `GyroKinetics4d` used to omit it.
+
+What remains is one level up. `GyroKinetics4d` implements ``H_{0}``, while the notes it follows
+give the zero Larmor radius Hamiltonian ``H^{\mathrm{zlr}}``, which carries ``A_{\parallel}`` and
+``\langle \tilde{A}_{\parallel} \rangle^{2}`` terms on top of it and changes ``\beta`` and
+``\gamma`` as well. See `TODO.md`.
 
 ### Metrics are diagonal
 
@@ -70,18 +73,30 @@ equilibrium has a non-zero electrostatic potential. This is the largest remainin
     off-diagonal sums. It will be generalised when a non-orthogonal coordinate system is actually
     needed.
 
-### The 3D charged particle in noncanonical form mixes conventions
+### The noncanonical charged particle's splitting is cartesian only
 
-`charged_particle_3d_noncanonical.jl` builds its one-form, Hamiltonian, two-form and Jacobian from
-the metric, but `charged_particle_3d_v` is the plain cartesian Lorentz force
-``\dot{v} = E + v \times B``, with no metric or Christoffel terms, and `dH` differentiates a
-Hamiltonian without the metric derivative terms that `hamiltonian` actually has. The
-`charged_particle_3d_sode` splitting is cartesian for the same reason.
+The formulation itself is now fully curvilinear: `charged_particle_3d_v` is derived from
+``\Omega \dot{z} = - \nabla H`` using the same metric-carrying ``\omega`` as the one-form,
+Hamiltonian and Jacobian beside it, rather than being the plain cartesian Lorentz force it used to
+be. `dH` and `charged_particle_3d_iode_f` carry the metric-derivative terms to match. All four
+equilibria — including the toroidal `TokamakSmallNoncanonical` — are self-consistent.
 
-**Only cartesian configurations of this formulation are self-consistent.** Of the four equilibria
-that use it, `SingularField`, `SymmetricField` and `ThetaPinchNoncanonical` are cartesian and
-therefore fine; `TokamakSmallNoncanonical` is toroidal and is the one that is not.
-The canonical formulation (`charged_particle_3d_canonical.jl`) is fully curvilinear and correct.
+!!! warning "`sodeproblem` requires a trivial metric"
+    The Boris splitting does not generalise. At frozen position the curvilinear kick is *quadratic*
+    in ``v``, so the Cayley transform is no longer its exact flow and the splitting has no exact
+    solution map. `sodeproblem` therefore throws an `ArgumentError` unless the metric is trivial,
+    rather than silently integrating the cartesian system in a chart where that is a different
+    model. In practice this excludes `TokamakSmallNoncanonical`; use `odeproblem` or `iodeproblem`
+    there.
+
+### `plot_fieldlines` is restricted to axisymmetric cylindrical equilibria
+
+It contours the poloidal flux ``\psi = R A_{\varphi}`` as `equ.A₃(0, x, y, 0) / x`, which reads the
+first two coordinates as ``(R, Z)`` and the third as the toroidal angle. That is meaningless for a
+cartesian or toroidal equilibrium, and it used to draw a plausible-looking wrong picture for them
+rather than failing. It now rejects any chart it is not valid in, and so does
+`plot_trajectory_poloidal(R, Z, equ)`, which forwards its equilibrium to it. The predicate is
+`is_axisymmetric_cylindrical`, decided from the coordinate ranges the field code injects.
 
 ### The magnetic moment is a fixed parameter
 
@@ -113,7 +128,7 @@ pair ``(g^{1}, g^{2})``, and ``b_{1} [ \cdots ]`` for the pair ``(g^{1}, g^{3})`
 ``b_{1} = 0``.
 
 **Seven of the eleven equilibria have ``b_{1} = 0`` exactly at the initial condition the package
-ships**, so the multipliers are infinite and `hode` cannot be started there at all — the Newton
+ships**, so the multipliers are infinite and `hodeproblem` cannot be started there at all — the Newton
 solver hits a NaN on the first step. This is not confined to the curvilinear cases:
 `TokamakSmallCartesian` fails too, because its initial condition sits at ``y = z = 0`` where
 ``B_{x} = 0``. What decides it is where the initial condition lies relative to the field, not the
@@ -147,7 +162,7 @@ All models use
 ```math
 \Omega_{ij} = \frac{\partial \vartheta_{i}}{\partial z^{j}} - \frac{\partial \vartheta_{j}}{\partial z^{i}} ,
 ```
-on the phase space ``z``, which is the convention `GeometricProblems` documents for
+on the phasespace ``z``, which is the convention `GeometricProblems` documents for
 `MasslessChargedParticle`, `LotkaVolterra2d` and `PointVortices`. With it, the Euler-Lagrange
 equations of ``L = \vartheta \cdot \dot{z} - H`` read ``\Omega \, \dot{z} = - \nabla H``.
 
@@ -186,22 +201,40 @@ tuple, so that every problem in the package can be constructed the same way.
 | [Normalization](@ref) | Complete. Derives the normalisation used by every model. |
 | [Initialization](@ref) | Complete. Note the non-standard pitch-angle convention flagged there. |
 | [Charged Particles in 3D](@ref) | Complete for both formulations. Reads ``m``, ``e`` symbolically; they are one in the code. |
-| [Guiding Center Dynamics in 3D](@ref) | Complete: constraints, multipliers, both `hode` and `hode_canonical`. |
-| [Guiding Center Dynamics in 4D](@ref) | Complete, but the Hamiltonian shown omits ``\varphi``, matching the code (see above). |
+| [Guiding Center Dynamics in 3D](@ref) | Complete: constraints, multipliers, both `hodeproblem` and `hodeproblem_canonical`. |
+| [Guiding Center Dynamics in 4D](@ref) | Complete. |
 | [Pauli Particles in 3D](@ref) | Complete. |
 | [Gyrokinetic Guiding Centre Dynamics in 4D](@ref) | Complete. Note that its independent variable is the rescaled time, not the physical time. |
-| Equilibrium modules | Mostly a one-line docstring. `symmetric_quadratic.jl` and `theta_pinch.jl` document their Poincaré loop and surface in full; the rest state neither the coordinate system, the equilibrium parameters, nor the provenance of the hard-coded ``\mu`` and ``u`` values of their `initial_conditions_*`. |
+| Equilibrium modules | Each states its coordinate system and equilibrium parameters. The provenance of the hard-coded ``\mu`` and ``u`` of the `initial_conditions_*` is not recorded anywhere in the repository, and the docstrings say so rather than inventing one. |
+
+
+## Interface
+
+Problem constructors follow the `GeometricProblems` scheme — `odeproblem`, `iodeproblem`,
+`lodeproblem`, `podeproblem`, `sodeproblem`, `hodeproblem`, with a suffix only where two
+formulations coexist in one module (`hodeproblem` vs `hodeproblem_canonical`). They take
+
+```julia
+odeproblem(q₀; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
+               parameters = default_parameters())
+```
+
+and additionally accept the named tuple that every `initial_conditions_*` returns —
+`(q = …, params = …)`, plus `p` or `v` where the model has one — so that
+`odeproblem(initial_conditions_deeply_passing())` carries that condition's own ``\mu``.
 
 
 ## Open work
 
-* Add ``\varphi`` and ``E`` to the 4D guiding centre Hamiltonian and its gradient. The same gap
-  applies to `GyroKinetics4d`, where the notes give the zero Larmor radius Hamiltonian with the
-  ``\phi`` and ``A_{\parallel}`` terms but only ``H_{0}`` is implemented.
-* Make `charged_particle_3d_noncanonical` consistently curvilinear, or restrict it to cartesian
-  equilibria.
-* Make the 3D guiding centre constraint pair selectable.
-* Provide more than the one equilibrium for `GyroKinetics4d`, and write the coordinate-transforming
-  `IRK` integrator that its `coordinate_transformations.jl` is waiting for.
-* Rename the problem constructors to the `GeometricProblems` scheme (`odeproblem`, `iodeproblem`,
-  `lodeproblem`, …) and the keyword arguments to `timespan`/`timestep`.
+* Make the 3D guiding centre constraint pair selectable. This is the sharpest remaining limitation:
+  seven of the eleven equilibria have ``b_{1} = 0`` at their shipped initial condition and cannot be
+  started at all.
+* Write the coordinate-transforming `IRK` integrator that `coordinate_transformations.jl` is waiting
+  for. The 0.x-era sketch is on file at
+  `src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl` as the starting point; it is not
+  included by any module and does not compile against the current `GeometricIntegrators`.
+* Give `GyroKinetics4d` the full zero Larmor radius Hamiltonian, not just ``H_{0}``.
+* `lodeproblem_formal_lagrangian` is a verbatim copy of `lodeproblem` rather than the formal
+  Lagrangian of the equations of motion in noncanonical Hamiltonian form.
+
+See `TODO.md` for the details of each.

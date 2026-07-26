@@ -1,6 +1,7 @@
 
 function plot_fieldlines_figure end
 function plot_fieldlines end
+function is_axisymmetric_cylindrical end
 function plot_invariant end
 function plot_invariant_error end
 function plot_poloidal_figure end
@@ -23,7 +24,7 @@ function plot_poincare_loop end
 function plot_poincare_surface end
 function plot_poincare_trajectories end
 
-export plot_fieldlines
+export plot_fieldlines, is_axisymmetric_cylindrical
 export plot_invariant, plot_invariant_error
 export plot_components, plot_components!
 export plot_trajectory_cartesian, plot_trajectory_cylindrical

@@ -12,8 +12,8 @@ export hamiltonian, toroidal_momentum
 
 AxisymmetricTokamakCylindrical.@code(2.0, 5.0, 2.0) # inject magnetic field code
 
-const Δt = 0.1
-const tspan = (0.0, 1E2)
+const DEFAULT_TIMESTEP = 0.1
+const DEFAULT_TIMESPAN = (0.0, 1E2)
 
 initial_conditions_barely_passing() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.1, 0.0])..., 3.425E-1]), (params=(μ=1E-2,),)) # Δt=2.5, nt=50
 initial_conditions_barely_trapped() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.1, 0.0])..., 3.375E-1]), (params=(μ=1E-2,),)) # Δt=3.0, nt=100

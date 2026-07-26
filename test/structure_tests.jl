@@ -98,14 +98,14 @@ end
     using Test
 
     ctors = Dict(
-        :GuidingCenter4d   => ["guiding_center_4d_ode", "guiding_center_4d_iode",
-                               "guiding_center_4d_lode", "guiding_center_4d_iode_λ",
-                               "guiding_center_4d_dg", "guiding_center_4d_formal_lagrangian"],
-        :GuidingCenter3d   => ["hode", "hode_canonical"],
-        :ChargedParticle3d => ["charged_particle_3d_ode", "charged_particle_3d_iode",
-                               "charged_particle_3d_lode", "charged_particle_3d_pode"],
-        :PauliParticle3d   => ["pauli_particle_3d_pode", "pauli_particle_3d_hode",
-                               "pauli_particle_3d_iode"],
+        :GuidingCenter4d   => ["odeproblem", "iodeproblem",
+                               "lodeproblem", "iodeproblem_λ",
+                               "iodeproblem_dg", "lodeproblem_formal_lagrangian"],
+        :GuidingCenter3d   => ["hodeproblem", "hodeproblem_canonical"],
+        :ChargedParticle3d => ["odeproblem", "iodeproblem",
+                               "lodeproblem", "podeproblem"],
+        :PauliParticle3d   => ["podeproblem", "hodeproblem",
+                               "iodeproblem"],
     )
 
     icsnames = (:initial_conditions_barely_passing, :initial_conditions_deeply_passing,
@@ -123,10 +123,17 @@ end
             end
         end
         ics === nothing && return
-        args = ics isa NamedTuple ? values(ics) : ics
+
+        # Every family now returns the same shape — `(q = …, params = …)`, plus `p` or `v` where
+        # the model has one — and every constructor takes that named tuple directly. This used to
+        # branch on `ics isa NamedTuple` and splat, because the 3D guiding centre returned a named
+        # tuple while the other three returned a bare tuple.
+        @test ics isa NamedTuple
+        @test haskey(ics, :q) && haskey(ics, :params)
+
         for c in ctors[fam]
             isdefined(M, Symbol(c)) || continue
-            @test (getfield(M, Symbol(c))(args...); true)
+            @test (getfield(M, Symbol(c))(ics); true)
             n += 1
         end
     end
@@ -142,15 +149,29 @@ end
     # The noncanonical modules define no `initial_conditions_*`, so the constructor sweep above
     # skips them entirely and none of their problems was covered. Every constructor here defaults
     # its argument to the module's `qᵢ`.
-    for M in (ChargedParticle3d.SingularField,
-              ChargedParticle3d.SymmetricField,
-              ChargedParticle3d.ThetaPinchNoncanonical,
-              ChargedParticle3d.TokamakSmallNoncanonical)
+    cartesian = (ChargedParticle3d.SingularField,
+                 ChargedParticle3d.SymmetricField,
+                 ChargedParticle3d.ThetaPinchNoncanonical)
+    curvilinear = (ChargedParticle3d.TokamakSmallNoncanonical,)
 
-        @test (M.charged_particle_3d_ode(); true)
-        @test (M.charged_particle_3d_iode(); true)
-        @test (M.charged_particle_3d_lode(); true)
-        @test (M.charged_particle_3d_sode(); true)
+    for M in (cartesian..., curvilinear...)
+        @test (M.odeproblem(); true)
+        @test (M.iodeproblem(); true)
+        @test (M.lodeproblem(); true)
+    end
+
+    # The Boris splitting is the splitting of the *cartesian* Lorentz force. In a curvilinear chart
+    # the frozen-position kick is quadratic in v, so the Cayley transform does not solve it and the
+    # splitting has no exact flow; the constructor refuses rather than integrating a different
+    # model. This is the assertion that fails if that guard is ever dropped.
+    for M in curvilinear
+        @test !M.has_trivial_metric(0.0, collect(float.(M.qᵢ)))
+        @test_throws ArgumentError M.sodeproblem()
+    end
+
+    for M in cartesian
+        @test M.has_trivial_metric(0.0, collect(float.(M.qᵢ)))
+        @test (M.sodeproblem(); true)
 
         # The two maps of the splitting must sum to the full vector field. To first order in h,
         #     (fv(q₀) - q₀)/h + (fx(q₀) - q₀)/h  →  charged_particle_3d_v(q₀) ,
@@ -175,9 +196,44 @@ end
         @test isapprox((qx .- q₀) ./ h, vx; rtol = 1e-5, atol = 1e-9)
 
         # The SODE integrates through a composition of the two exact-solution maps.
-        sol = integrate(M.charged_particle_3d_sode(; tspan = (0.0, 1.0), tstep = 0.1),
+        sol = integrate(M.sodeproblem(; timespan = (0.0, 1.0), timestep = 0.1),
                         Composition(Strang()))
         @test sol isa GeometricSolution
+    end
+end
+
+
+@safetestset "Noncanonical charged particle: the vector field is the one its own ω and H generate            " begin
+    using ChargedParticleDynamics.ChargedParticle3d
+    using LinearAlgebra
+    using Test
+
+    # `charged_particle_3d_v` used to be the plain cartesian Lorentz force while `ω`, `dϑ`, `ϑ` and
+    # `hamiltonian` beside it all carried the metric, so the toroidal equilibrium integrated a
+    # system inconsistent with its own structure. It is now derived from Ω ż = -∇H, and these are
+    # the two assertions that hold it there:
+    #
+    #   * `dH` really is the gradient of `hamiltonian` — it used to be the gradient of a different,
+    #     metric-free Hamiltonian, and referred to a `dφdxᵢ` that the field-code generator does not
+    #     even emit, so it raised an `UndefVarError` on every call;
+    #   * the vector field really is -Ω⁻¹∇H for the module's own `ω`.
+    for M in (ChargedParticle3d.SingularField,
+              ChargedParticle3d.SymmetricField,
+              ChargedParticle3d.ThetaPinchNoncanonical,
+              ChargedParticle3d.TokamakSmallNoncanonical)
+
+        # displaced off the initial condition, which sits on a symmetry axis where several of the
+        # metric derivatives vanish and would not exercise the new terms
+        q = collect(float.(M.qᵢ)) .+ 0.01 .* [1.0, 2.0, 3.0, 1.0, 2.0, 3.0]
+
+        g = zeros(6); M.dH(g, 0.0, q)
+        fd = [(M.hamiltonian(0.0, (h = zeros(6); h[i] = 1e-6; q .+ h)) -
+               M.hamiltonian(0.0, (h = zeros(6); h[i] = 1e-6; q .- h))) / 2e-6 for i in 1:6]
+        @test isapprox(g, fd; rtol = 1e-6, atol = 1e-10)
+
+        Ω = zeros(6, 6); M.ω(Ω, 0.0, q, NamedTuple())
+        v = zeros(6);    M.charged_particle_3d_v(v, 0.0, q, NamedTuple())
+        @test isapprox(v, -Ω \ g; rtol = 1e-10, atol = 1e-14)
     end
 end
 
@@ -316,13 +372,13 @@ end
     #
     # The tolerances below are far tighter than the old definition could ever reach, which is the
     # point of the test; they are loose relative to what the integrator achieves.
-    cases = ((GuidingCenter4d.TokamakSmallCylindrical, (tstep = 10.0, tspan = (0.0, 1e3)), 1e-10),
-             (GuidingCenter4d.TokamakSmallToroidal,    (tstep = 10.0, tspan = (0.0, 1e3)), 1e-10),
-             (GuidingCenter4d.TokamakSmallCartesian,   (tstep = 10.0, tspan = (0.0, 1e3)), 1e-8),
-             (GuidingCenter4d.SolovevIterXpoint,       (tstep = 1.0,  tspan = (0.0, 1e2)), 1e-10))
+    cases = ((GuidingCenter4d.TokamakSmallCylindrical, (timestep = 10.0, timespan = (0.0, 1e3)), 1e-10),
+             (GuidingCenter4d.TokamakSmallToroidal,    (timestep = 10.0, timespan = (0.0, 1e3)), 1e-10),
+             (GuidingCenter4d.TokamakSmallCartesian,   (timestep = 10.0, timespan = (0.0, 1e3)), 1e-8),
+             (GuidingCenter4d.SolovevIterXpoint,       (timestep = 1.0,  timespan = (0.0, 1e2)), 1e-10))
 
     for (M, kw, tol) in cases
-        prob = M.guiding_center_4d_ode(M.initial_conditions_barely_passing()...; kw...)
+        prob = M.odeproblem(M.initial_conditions_barely_passing(); kw...)
         sol  = integrate(prob, Gauss(2))
         _, perr = M.compute_toroidal_momentum_error(sol)
         @test maximum(abs(perr[i]) for i in eachindex(perr)) < tol
@@ -354,7 +410,7 @@ end
     options = (f_abstol = 8eps(), max_iterations = 50, warn_iterations = 50)
 
     for M in (GuidingCenter3d.SolovevIterXpoint, GuidingCenter3d.TokamakMediumCartesian)
-        prob = M.hode(M.initial_conditions_barely_passing()...; tstep = 0.1, tspan = (0.0, 1e2))
+        prob = M.hodeproblem(M.initial_conditions_barely_passing(); timestep = 0.1, timespan = (0.0, 1e2))
         sol  = integrate(prob, PartitionedGauss(2); initialguess = MidpointExtrapolation(5), options...)
 
         _, eerr = M.compute_energy_error(sol)

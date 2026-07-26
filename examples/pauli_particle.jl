@@ -26,12 +26,12 @@ method = Gauss(1)
 options = Options(x_reltol = 1E-14, f_abstol = 1E-14, f_reltol = 1E-14)
 
 # Create partitioned ODE (Hamilton's equations) and implicit ODE (Euler-Lagrange equations)
-pode = prob.pauli_particle_3d_pode()
-iode = prob.pauli_particle_3d_iode()
+pode = prob.podeproblem()
+iode = prob.iodeproblem()
 
-# You may want to adapt the keyword arguments tspan = (t₀,t₁) and tstep = Δt, e.g.
-# pode = prob.pauli_particle_3d_pode(tspan = (0.0, 1E4), tstep = 0.1)
-# iode = prob.pauli_particle_3d_iode(tspan = (0.0, 1E4), tstep = 0.1)
+# You may want to adapt the keyword arguments timespan = (t₀,t₁) and timestep = Δt, e.g.
+# pode = prob.podeproblem(timespan = (0.0, 1E4), timestep = 0.1)
+# iode = prob.iodeproblem(timespan = (0.0, 1E4), timestep = 0.1)
 
 # Integrate pode and iode
 psol = integrate(pode, method; options = options)

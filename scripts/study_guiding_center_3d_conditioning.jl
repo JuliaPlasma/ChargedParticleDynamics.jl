@@ -66,7 +66,7 @@ function main()
     println("""
 
     Seven of the eleven equilibria have b₁ = 0 *exactly* at their shipped initial condition, so λₒ
-    vanishes and both multipliers are ±Inf or NaN. The model cannot be started there at all: `hode`
+    vanishes and both multipliers are ±Inf or NaN. The model cannot be started there at all: `hodeproblem`
     fails immediately with a NaN in the Newton direction.
 
     This is not confined to the curvilinear equilibria. TokamakSmallCartesian fails too — its

@@ -4,9 +4,9 @@ using GeometricSolutions: GeometricSolution, DataSeries, ScalarDataSeries, TimeS
 using GeometricSolutions: compute_invariant, compute_invariant_error
 
 
-const Δt = 0.01
+const DEFAULT_TIMESTEP = 0.01
 const tᵢ = 0.0
-const tspan = (tᵢ, 10.0)
+const DEFAULT_TIMESPAN = (tᵢ, 10.0)
 
 ϑ₁(t, q, v) = g₁₁(t, q) * v[1] + A₁(t, q)
 ϑ₂(t, q, v) = g₂₂(t, q) * v[2] + A₂(t, q)
@@ -39,8 +39,8 @@ dϑ₃dx₂(t, q, v) = dg₃₃dx₂(t, q) * v[3] + dA₃dx₂(t, q)
 dϑ₃dx₃(t, q, v) = dg₃₃dx₃(t, q) * v[3] + dA₃dx₃(t, q)
 
 # L = ½ gᵢⱼ vⁱ vʲ + A·v - φ. The A·v term is what makes ϑ = ∂L/∂v the one-form above; without it
-# the Lagrangian is not the Legendre dual of `hamiltonian` and `charged_particle_3d_lode` describes
-# a different system than `charged_particle_3d_pode`.
+# the Lagrangian is not the Legendre dual of `hamiltonian` and `lodeproblem` describes
+# a different system than `podeproblem`.
 lagrangian(t, q, v) = (g₁₁(t, q) * v[1]^2 + g₂₂(t, q) * v[2]^2 + g₃₃(t, q) * v[3]^2) / 2 +
                       A₁(t, q) * v[1] + A₂(t, q) * v[2] + A₃(t, q) * v[3] - φ(t, q)
 hamiltonian(t, q, p) = (g₁₁(t, q) * v¹(t, q, p)^2 + g₂₂(t, q) * v²(t, q, p)^2 + g₃₃(t, q) * v³(t, q, p)^2) / 2 + φ(t, q)
@@ -129,38 +129,49 @@ function ω(Ω, t, q, v, params)
 end
 
 
-# function charged_particle_3d_pode(q₀=qᵢ, v₀=vᵢ)
+# function podeproblem(q₀=qᵢ, v₀=vᵢ)
 #     PODE(charged_particle_3d_pode_v, charged_particle_3d_pode_f, q₀, charged_particle_3d_pᵢ(q₀, v₀))
 # end
-function charged_particle_3d_pode(q₀=qᵢ, p₀=pᵢ; tspan=tspan, tstep=Δt)
+function podeproblem(q₀ = qᵢ, p₀ = pᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
     PODEProblem(
         charged_particle_3d_pode_v,
         charged_particle_3d_pode_f,
-        tspan, tstep, q₀, p₀;
+        timespan, timestep, q₀, p₀;
+        parameters=parameters,
         invariants=(h=hamiltonian,))
 end
 
 
-function charged_particle_3d_iode(q₀=qᵢ, p₀=pᵢ; tspan=tspan, tstep=Δt)
+function iodeproblem(q₀ = qᵢ, p₀ = pᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
     IODEProblem(
         charged_particle_3d_iode_ϑ,
         charged_particle_3d_iode_f,
         charged_particle_3d_iode_g,
-        tspan, tstep, q₀, p₀;
+        timespan, timestep, q₀, p₀;
+        parameters=parameters,
         invariants=(h=hamiltonian,),
         v̄=charged_particle_3d_pode_v
     )
 end
 
-function charged_particle_3d_lode(q₀=qᵢ, p₀=pᵢ; tspan=tspan, tstep=Δt)
+function lodeproblem(q₀ = qᵢ, p₀ = pᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
     LODEProblem(
         charged_particle_3d_iode_ϑ,
         charged_particle_3d_iode_f,
         charged_particle_3d_iode_g,
         ω, lagrangian,
-        tspan, tstep, q₀, p₀;
+        timespan, timestep, q₀, p₀;
+        parameters=parameters,
         invariants=(h=hamiltonian,),
         v̄=charged_particle_3d_pode_v)
+end
+
+
+# `initial_conditions_*` returns `(q = …, p = …, params = …)`; take it directly. The charged
+# particle takes no parameters — the field is injected as code — so `params` is an empty named
+# tuple, but it is carried anyway so that every family is constructed the same way.
+for problem in (:podeproblem, :iodeproblem, :lodeproblem)
+    @eval $problem(ics::NamedTuple; kwargs...) = $problem(ics.q, ics.p; parameters = ics.params, kwargs...)
 end
 
 
@@ -170,5 +181,14 @@ end
 compute_energy(t::Union{TimeSeries, ScalarDataSeries}, q::DataSeries, p::DataSeries, params) = compute_invariant(t, q, p, params, hamiltonian)
 compute_energy(sol::GeometricSolution) = compute_energy(sol.t, sol.q, sol.p, GeometricEquations.parameters(sol.problem))
 
+"""
+    compute_energy_error(sol)
+
+!!! note "Returns a `(value, error)` pair"
+    This forwards to `GeometricSolutions.compute_invariant_error` and so returns **two** series, not
+    one: the Hamiltonian itself and its relative error. Destructure it —
+    `h, e = compute_energy_error(sol)` — rather than passing the result somewhere a single series is
+    expected.
+"""
 compute_energy_error(t::Union{TimeSeries, ScalarDataSeries}, q::DataSeries, p::DataSeries, params) = compute_invariant_error(t, q, p, params, hamiltonian)
 compute_energy_error(sol::GeometricSolution) = compute_energy_error(sol.t, sol.q, sol.p, GeometricEquations.parameters(sol.problem))

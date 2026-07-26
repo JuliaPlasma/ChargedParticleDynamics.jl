@@ -5,8 +5,8 @@ using GeometricSolutions: GeometricSolution, DataSeries, ScalarDataSeries, TimeS
 using GeometricSolutions: compute_invariant, compute_invariant_error
 
 
-const Δt = 0.01
-const tspan = (0.0, 10.0)
+const DEFAULT_TIMESTEP = 0.01
+const DEFAULT_TIMESPAN = (0.0, 10.0)
 
 ϑ₁(t, q) = g₁₁(t,q) * q[4] + A₁(t,q)
 ϑ₂(t, q) = g₂₂(t,q) * q[5] + A₂(t,q)
@@ -43,7 +43,7 @@ end
 @doc raw"""
 The symplectic two-form of the noncanonical formulation,
 ``\Omega_{ij} = \partial \vartheta_{i} / \partial z^{j} - \partial \vartheta_{j} / \partial z^{i}``
-on the phase space ``z = (x, v)``, which is the convention shared with the 4D guiding centre and
+on the phasespace ``z = (x, v)``, which is the convention shared with the 4D guiding centre and
 with `GeometricProblems`.
 
 The velocity block is ``\partial \vartheta_{i} / \partial v^{j} = g_{ij}``, the metric — not the
@@ -76,7 +76,7 @@ end
 
 
 @doc raw"""
-The Jacobian of the one-form on the phase space ``z = (x, v)``,
+The Jacobian of the one-form on the phasespace ``z = (x, v)``,
 ``(\mathrm{d}\vartheta)_{ij} = \partial \vartheta_{i} / \partial z^{j}``.
 
 The velocity block is ``\partial \vartheta_{i} / \partial v^{j} = g_{ij}``; it was previously
@@ -117,12 +117,21 @@ hamiltonian(t,q,p,params) = hamiltonian(t,q)
 lagrangian(t,q,v,params) = ϑ₁(t, q) * v[1] + ϑ₂(t, q) * v[2] + ϑ₃(t, q) * v[3] - hamiltonian(t,q)
 
 
-dHdx₁(t, q) = dφdx₁(t,q)
-dHdx₂(t, q) = dφdx₂(t,q)
-dHdx₃(t, q) = dφdx₃(t,q)
-dHdx₄(t, q) = q[4]
-dHdx₅(t, q) = q[5]
-dHdx₆(t, q) = q[6]
+# The gradient of the `hamiltonian` above. Two things were wrong with it:
+#
+#   * the position components were `dφdxᵢ` alone and the velocity components the bare `q[3+i]`,
+#     i.e. the gradient of a Hamiltonian without the metric — a different function from the one
+#     defined four lines up, in every curvilinear coordinate system;
+#   * `dφdxᵢ` **does not exist**. The field-code generator emits `φ`, `Eᵢ` and `dEᵢdxⱼ`, never a
+#     derivative of the potential, so every one of these raised an `UndefVarError`. It went
+#     unnoticed because `dH` had no callers: the vector field below used to be the explicit
+#     cartesian Lorentz force and never consulted it. The potential enters through `∂φ/∂xᵢ = -Eᵢ`.
+dHdx₁(t, q) = (dg₁₁dx₁(t,q) * q[4]^2 + dg₂₂dx₁(t,q) * q[5]^2 + dg₃₃dx₁(t,q) * q[6]^2) / 2 - E₁(t,q)
+dHdx₂(t, q) = (dg₁₁dx₂(t,q) * q[4]^2 + dg₂₂dx₂(t,q) * q[5]^2 + dg₃₃dx₂(t,q) * q[6]^2) / 2 - E₂(t,q)
+dHdx₃(t, q) = (dg₁₁dx₃(t,q) * q[4]^2 + dg₂₂dx₃(t,q) * q[5]^2 + dg₃₃dx₃(t,q) * q[6]^2) / 2 - E₃(t,q)
+dHdx₄(t, q) = g₁₁(t,q) * q[4]
+dHdx₅(t, q) = g₂₂(t,q) * q[5]
+dHdx₆(t, q) = g₃₃(t,q) * q[6]
 
 function dH(dH, t, q)
     dH[1] = dHdx₁(t, q)
@@ -135,12 +144,41 @@ function dH(dH, t, q)
 end
 
 
+@doc raw"""
+The vector field, obtained from the noncanonical Hamiltonian form ``\Omega \, \dot{z} = - \nabla H``
+with the ``\Omega`` of [`ω`](@ref) above. Writing that in blocks, with
+``G = \mathrm{diag}(g_{11}, g_{22}, g_{33})`` and
+``\Omega^{xx}_{ij} = \partial_{j} \vartheta_{i} - \partial_{i} \vartheta_{j}``,
+
+```math
+\begin{pmatrix} \Omega^{xx} & G \\ -G & 0 \end{pmatrix}
+\begin{pmatrix} \dot{x} \\ \dot{v} \end{pmatrix}
+= - \begin{pmatrix} \nabla_{x} H \\ \nabla_{v} H \end{pmatrix} ,
+```
+
+whose lower block gives ``\dot{x}^{i} = v^{i}`` and whose upper block gives
+
+```math
+\dot{v}^{i} = \frac{1}{g_{ii}} \bigg( - \frac{\partial H}{\partial x^{i}}
+              - \sum_{j} \Omega^{xx}_{ij} \, v^{j} \bigg) .
+```
+
+The contraction with ``\Omega^{xx}`` is a cross product with the generalised magnetic field
+``\beta = \nabla \times \vartheta`` of `β₁`–`β₃`, so the result keeps the shape of
+the Lorentz force with ``B`` replaced by ``\beta``, ``E`` by ``-\nabla_{x} H``, and an overall
+factor ``1/g_{ii}``.
+
+This was previously the plain cartesian Lorentz force ``\dot{v} = E + v \times B``, which is what
+this expression reduces to when ``g_{ii} = 1`` and ``\partial_{j} g_{ii} = 0`` — so the three
+cartesian equilibria are unaffected, while `TokamakSmallNoncanonical`, which is toroidal, was
+integrating a system inconsistent with its own one-form, Hamiltonian and two-form.
+"""
 v₁(t, q, v) = q[4]
 v₂(t, q, v) = q[5]
 v₃(t, q, v) = q[6]
-v₄(t, q, v) = E₁(t,q) + q[5] * B₃(t,q) - q[6] * B₂(t,q)
-v₅(t, q, v) = E₂(t,q) + q[6] * B₁(t,q) - q[4] * B₃(t,q)
-v₆(t, q, v) = E₃(t,q) + q[4] * B₂(t,q) - q[5] * B₁(t,q)
+v₄(t, q, v) = (-dHdx₁(t,q) + q[5] * β₃(t,q) - q[6] * β₂(t,q)) / g₁₁(t,q)
+v₅(t, q, v) = (-dHdx₂(t,q) + q[6] * β₁(t,q) - q[4] * β₃(t,q)) / g₂₂(t,q)
+v₆(t, q, v) = (-dHdx₃(t,q) + q[4] * β₂(t,q) - q[5] * β₁(t,q)) / g₃₃(t,q)
 
 
 # `GeometricEquations` recognises periodicity only as a `(xmin, xmax)` tuple of arrays
@@ -151,14 +189,19 @@ v₆(t, q, v) = E₃(t,q) + q[4] * B₂(t,q) - q[5] * B₁(t,q)
 # `rangemin`/`rangemax` injected with the field code — the same mechanism the guiding centre models
 # use. Hard-coding the third coordinate to [0, 2π) would have wrapped `z` in the cartesian
 # equilibria once the periodicity started taking effect. The velocities are never periodic.
+#
+# `rangemin`/`rangemax` take an evaluation point only for uniformity with the other generated field
+# functions. The range of a coordinate is a property of the chart, and `minx¹`…`maxx³` are baked in
+# as literals when the field code is injected, so the argument is discarded; pass the origin rather
+# than the `±Inf` that `xmin`/`xmax` are initialised to.
 function charged_particle_3d_periodicity(qᵢ, periodic=true)
     T    = eltype(qᵢ)
     xmin = -T(Inf) * ones(T, size(qᵢ, 1))
     xmax = +T(Inf) * ones(T, size(qᵢ, 1))
 
     if periodic
-        xmin[1:3] .= rangemin(xmin[1:3])
-        xmax[1:3] .= rangemax(xmax[1:3])
+        xmin[1:3] .= rangemin(zeros(T, 3))
+        xmax[1:3] .= rangemax(zeros(T, 3))
     end
 
     return (xmin, xmax)
@@ -189,17 +232,23 @@ charged_particle_3d_v(v, t, q, p, params) = charged_particle_3d_v(v, t, q, param
 charged_particle_3d_iode_ϑ(θ, t, q, v, params) = ϑ(θ, t, q)
 
 
+# fᵢ = ∂L/∂zⁱ for L = ϑ(z)·ż - H(z), i.e. (∂ϑⱼ/∂zⁱ) żʲ - ∂H/∂zⁱ.
+#
+# Both blocks were written for a one-form and a Hamiltonian without the metric: the position block
+# used `dAⱼdxᵢ` where `dϑⱼdxᵢ` also carries `∂gⱼⱼ/∂xᵢ vʲ`, and `+ Eᵢ` where the full `- dHdxᵢ` also
+# carries the metric-derivative term; the velocity block was the identity where `∂ϑⱼ/∂vⁱ = gᵢᵢ δᵢⱼ`.
+# That is the same convention `dϑ`, `ω` and `charged_particle_3d_iode_g` were corrected to.
 function charged_particle_3d_iode_f(f, t, q, v, params)
-    f[1] = dA₁dx₁(t,q) * v[1] + dA₂dx₁(t,q) * v[2] + dA₃dx₁(t,q) * v[3] + E₁(t,q)
-    f[2] = dA₁dx₂(t,q) * v[1] + dA₂dx₂(t,q) * v[2] + dA₃dx₂(t,q) * v[3] + E₂(t,q)
-    f[3] = dA₁dx₃(t,q) * v[1] + dA₂dx₃(t,q) * v[2] + dA₃dx₃(t,q) * v[3] + E₃(t,q)
-    f[4] = v[1] - q[4]
-    f[5] = v[2] - q[5]
-    f[6] = v[3] - q[6]
+    f[1] = dϑ₁dx₁(t,q) * v[1] + dϑ₂dx₁(t,q) * v[2] + dϑ₃dx₁(t,q) * v[3] - dHdx₁(t,q)
+    f[2] = dϑ₁dx₂(t,q) * v[1] + dϑ₂dx₂(t,q) * v[2] + dϑ₃dx₂(t,q) * v[3] - dHdx₂(t,q)
+    f[3] = dϑ₁dx₃(t,q) * v[1] + dϑ₂dx₃(t,q) * v[2] + dϑ₃dx₃(t,q) * v[3] - dHdx₃(t,q)
+    f[4] = g₁₁(t,q) * (v[1] - q[4])
+    f[5] = g₂₂(t,q) * (v[2] - q[5])
+    f[6] = g₃₃(t,q) * (v[3] - q[6])
     nothing
 end
 
-# The projection force is gᵢ = (∂ϑⱼ/∂zⁱ) λʲ on the phase space z = (x, v), i.e. the transpose of
+# The projection force is gᵢ = (∂ϑⱼ/∂zⁱ) λʲ on the phasespace z = (x, v), i.e. the transpose of
 # `dϑ` above contracted with λ, evaluated at the same point — the velocities carried in `q[4:6]`.
 #
 # Both blocks used to be written for a one-form without the metric: the position block omitted the
@@ -269,8 +318,9 @@ Together with `charged_particle_3d_sode_fx`, which advances ``\dot{x} = v`` at f
 velocity, this covers the whole of `charged_particle_3d_v`. The electric field used to be missing
 from both halves, so the splitting integrated the ``E = 0`` system regardless of the equilibrium.
 
-As with `charged_particle_3d_v`, this is the cartesian Lorentz force; see the model audit for the
-note on curvilinear coordinates.
+This is the cartesian Lorentz force. `charged_particle_3d_v` is no longer — it is now derived from
+``\Omega \dot{z} = - \nabla H`` and carries the metric — so the two agree only where the metric is
+trivial, which is exactly where [`sodeproblem`](@ref) will build a problem at all.
 """
 function charged_particle_3d_sode_fv(q₁::AbstractArray{DT}, t₁, q₀::AbstractArray{DT}, t₀, params) where {DT}
     @assert axes(q₁) == axes(q₀)
@@ -316,52 +366,102 @@ function charged_particle_3d_sode_vv(v, t, q, params)
 end
 
 
-function charged_particle_3d_ode(qᵢ=qᵢ; tspan=tspan, tstep=Δt, periodic=true)
+function odeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic = true)
     if periodic
-        ODEProblem(charged_particle_3d_v, tspan, tstep, qᵢ; invariants=(h=hamiltonian,), periodicity=charged_particle_3d_periodicity(qᵢ))
+        ODEProblem(charged_particle_3d_v, timespan, timestep, qᵢ; parameters=parameters, invariants=(h=hamiltonian,), periodicity=charged_particle_3d_periodicity(qᵢ))
     else
-        ODEProblem(charged_particle_3d_v, tspan, tstep, qᵢ; invariants=(h=hamiltonian,))
+        ODEProblem(charged_particle_3d_v, timespan, timestep, qᵢ; parameters=parameters, invariants=(h=hamiltonian,))
     end
 end
 
-# Both the vector fields and their exact solution maps are supplied, index by index, which is the
-# form `SODE` is happiest with: a composition method then uses the exact flows, while anything that
-# wants to sub-integrate a substep has the vector field available.
-#
-# Passing `nothing` for the vector fields, as this used to, does not work: the typed constructor
-# requires `v::Tuple`, and the fallback `SODEProblem(v, args...) = SODEProblem(v, nothing, args...)`
-# then recurses on itself forever, so the constructor overflowed the stack rather than building.
-function charged_particle_3d_sode(qᵢ=qᵢ; tspan=tspan, tstep=Δt, periodic=true)
+"""
+    has_trivial_metric(t, q)
+
+Whether the coordinate system is metrically flat at `q`, i.e. ``g_{ii} = 1`` and
+``\\partial_{j} g_{ii} = 0``. True for the cartesian equilibria, false for the toroidal one.
+
+This is the condition under which the Boris push of [`charged_particle_3d_sode_fv`](@ref) is the
+exact flow of its own substep, and hence the condition under which
+[`sodeproblem`](@ref) is a valid splitting of the model.
+"""
+function has_trivial_metric(t, q)
+    all(isone, (g₁₁(t,q), g₂₂(t,q), g₃₃(t,q))) &&
+        all(iszero, (dg₁₁dx₁(t,q), dg₁₁dx₂(t,q), dg₁₁dx₃(t,q),
+                     dg₂₂dx₁(t,q), dg₂₂dx₂(t,q), dg₂₂dx₃(t,q),
+                     dg₃₃dx₁(t,q), dg₃₃dx₂(t,q), dg₃₃dx₃(t,q)))
+end
+
+
+@doc raw"""
+    sodeproblem(qᵢ; kwargs...)
+
+The Boris splitting of the model into a drift at frozen velocity and a kick at frozen position.
+
+Both the vector fields and their exact solution maps are supplied, index by index, which is the
+form `SODE` is happiest with: a composition method then uses the exact flows, while anything that
+wants to sub-integrate a substep has the vector field available.
+
+!!! warning "Cartesian equilibria only"
+    The kick is solved by the Boris push, which is exact because
+    ``\dot{v} = E + v \times B`` is *linear* in ``v``. In a curvilinear chart the kick picks up the
+    metric-derivative terms of `v₄`–`v₆` and becomes **quadratic** in ``v``, so no
+    Cayley transform solves it and the splitting has no exact flow. Rather than silently
+    integrating the cartesian system in a chart where that is a different model, this constructor
+    throws for any equilibrium whose metric is not trivial — in practice
+    `TokamakSmallNoncanonical`, the one toroidal module of the four. Use
+    `odeproblem` or `iodeproblem` there.
+
+Passing `nothing` for the vector fields, as this used to, does not work: the typed constructor
+requires `v::Tuple`, and the fallback `SODEProblem(v, args...) = SODEProblem(v, nothing, args...)`
+then recurses on itself forever, so the constructor overflowed the stack rather than building.
+"""
+function sodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic = true)
+    has_trivial_metric(timespan[begin], qᵢ) || throw(ArgumentError(
+        "sodeproblem is the Boris splitting of the cartesian Lorentz force and is " *
+        "only a valid splitting where the metric is trivial; this equilibrium is curvilinear, " *
+        "where the frozen-position kick is quadratic in v and has no exact flow. Use " *
+        "odeproblem or iodeproblem instead."))
+
     if periodic
         SODEProblem((charged_particle_3d_sode_vv, charged_particle_3d_sode_vx),
                     (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
-                    tspan, tstep, qᵢ, periodicity=charged_particle_3d_periodicity(qᵢ))
+                    timespan, timestep, qᵢ, periodicity=charged_particle_3d_periodicity(qᵢ))
     else
         SODEProblem((charged_particle_3d_sode_vv, charged_particle_3d_sode_vx),
                     (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
-                    tspan, tstep, qᵢ)
+                    timespan, timestep, qᵢ)
     end
 end
 
-function charged_particle_3d_iode(qᵢ=qᵢ; tspan=tspan, tstep=Δt)
+function iodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
     IODEProblem(
         charged_particle_3d_iode_ϑ,
         charged_particle_3d_iode_f,
         charged_particle_3d_iode_g,
-        tspan, tstep, qᵢ, charged_particle_3d_pᵢ(tspan[begin], qᵢ);
+        timespan, timestep, qᵢ, charged_particle_3d_pᵢ(timespan[begin], qᵢ);
+        parameters = parameters,
         invariants = (h = hamiltonian,),
         v̄ = charged_particle_3d_v)
 end
 
-function charged_particle_3d_lode(qᵢ=qᵢ; tspan=tspan, tstep=Δt)
+function lodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
     LODEProblem(
         charged_particle_3d_iode_ϑ,
         charged_particle_3d_iode_f,
         charged_particle_3d_iode_g,
         ω, lagrangian,
-        tspan, tstep, qᵢ, charged_particle_3d_pᵢ(tspan[begin], qᵢ);
+        timespan, timestep, qᵢ, charged_particle_3d_pᵢ(timespan[begin], qᵢ);
+        parameters = parameters,
         invariants = (h = hamiltonian,),
         v̄ = charged_particle_3d_v)
+end
+
+
+# The noncanonical modules define no `initial_conditions_*` of their own — the state is the
+# six-component `qᵢ` — but the named-tuple form is accepted so that all four families are called
+# the same way.
+for problem in (:odeproblem, :sodeproblem, :iodeproblem, :lodeproblem)
+    @eval $problem(ics::NamedTuple; kwargs...) = $problem(ics.q; parameters = ics.params, kwargs...)
 end
 
 
@@ -371,5 +471,14 @@ end
 compute_energy(t::Union{TimeSeries, ScalarDataSeries}, q::DataSeries, params) = compute_invariant(t, q, params, hamiltonian)
 compute_energy(sol::GeometricSolution) = compute_energy(sol.t, sol.q, GeometricEquations.parameters(sol.problem))
 
+"""
+    compute_energy_error(sol)
+
+!!! note "Returns a `(value, error)` pair"
+    This forwards to `GeometricSolutions.compute_invariant_error` and so returns **two** series, not
+    one: the Hamiltonian itself and its relative error. Destructure it —
+    `h, e = compute_energy_error(sol)` — rather than passing the result somewhere a single series is
+    expected.
+"""
 compute_energy_error(t::Union{TimeSeries, ScalarDataSeries}, q::DataSeries, params) = compute_invariant_error(t, q, params, hamiltonian)
 compute_energy_error(sol::GeometricSolution) = compute_energy_error(sol.t, sol.q, GeometricEquations.parameters(sol.problem))

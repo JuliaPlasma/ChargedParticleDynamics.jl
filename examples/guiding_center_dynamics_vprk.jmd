@@ -34,7 +34,7 @@ q0, params = initial_conditions_trapped()
 
 ```julia
 ref = getTableauERK4()
-ode = guiding_center_4d_ode(q0, params)
+ode = odeproblem(q0; parameters = params)
 sol = Solution(ode, Δt, nt)
 int = Integrator(ode, ref, Δt)
 integrate!(int, sol)
@@ -52,7 +52,7 @@ plotenergyerror(sol, energy = (t,q) -> hamiltonian(t,q,params))
 
 ```julia
 ref = getTableauGLRK(1)
-ode = guiding_center_4d_ode(q0, params)
+ode = odeproblem(q0; parameters = params)
 sol = Solution(ode, Δt, nt)
 int = Integrator(ode, ref, Δt)
 integrate!(int, sol)
@@ -76,7 +76,7 @@ set_config(:nls_nmax, 20);
 
 ```julia
 vtab = getTableauVPGLRK(1)
-iode = guiding_center_4d_iode(q0, params)
+iode = iodeproblem(q0; parameters = params)
 vsol = Solution(iode, Δt, nt)
 vint = IntegratorVPRKpSymmetric(iode, vtab, Δt)
 integrate!(vint, vsol)

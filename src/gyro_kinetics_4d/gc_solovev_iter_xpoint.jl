@@ -24,14 +24,14 @@ module GuidingCenter4dSolovevIterXpoint
     # Jacobian left off the vector field as well, integrated a different system entirely.
     function solovev_xpoint_iter_initial_conditions(t₀, q₀, μ)
         local params = (μ=μ, R₀=R₀, ω₀=ωabs(t₀, q₀))
-        (q₀, params)
+        (q = q₀, params = params)
     end
 
     # In the rescaled time s, with dt = B*∥ ds and B*∥ ≈ 2·10² here, this span covers a few
     # hundred units of physical time — comparable to the defaults of the 4D guiding centre model,
     # whose `Δt = 1.0` would be a factor of B*∥ too large for this system.
-    const Δt = 1E-3
-    const tspan = (0.0, 1.0)
+    const DEFAULT_TIMESTEP = 1E-3
+    const DEFAULT_TIMESPAN = (0.0, 1.0)
 
     const x₀ = from_cartesian(0, [2.5, 0., 0.])
     const μ₀ = 1E-2

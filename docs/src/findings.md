@@ -47,7 +47,7 @@ At the shipped initial condition of each equilibrium:
 | TokamakSmallToroidal     | toroidal    | 0.000e+00  | 0.000e+00  | **Inf**   | **-Inf**  |
 
 **Seven of eleven equilibria have `b₁ = 0` exactly at the initial condition the package ships**, so
-`λₒ` vanishes and the multipliers are infinite. `hode` cannot be started there at all — the Newton
+`λₒ` vanishes and the multipliers are infinite. `hodeproblem` cannot be started there at all — the Newton
 solver hits a NaN in the direction vector on the first step.
 
 Two things about this are worth recording:
@@ -111,7 +111,7 @@ a new coordinate system.
 `scripts/study_gyrokinetic_rescaling.jl`
 
 `GyroKinetics4d` and `GuidingCenter4d` implement the same physics — same equilibrium Hamiltonian,
-same generalised vector potential — but the gyrokinetic module clears the phase-space Jacobian
+same generalised vector potential — but the gyrokinetic module clears the phasespace Jacobian
 `B*∥` from the denominator of the characteristics, which is what makes its right-hand side
 divergence-free and its splitting volume preserving.
 
@@ -153,7 +153,7 @@ proportionality above.
 `scripts/study_volume_preservation.jl`
 
 The point of the six-way splitting is that each subsystem freezes two of the four variables and is
-symplectic in the remaining two, so a symplectic method applied to each preserves phase-space
+symplectic in the remaining two, so a symplectic method applied to each preserves phasespace
 volume *exactly*, at any step size — not to the order of the method. That is a claim about the
 discrete map, so it is worth measuring rather than assuming.
 
@@ -273,12 +273,12 @@ Once the tolerance is sound the remaining cost has nothing to do with ITER:
 
 | workload | ms/step | mean iters |
 |---|---|---|
-| GC3d SolovevIterXpoint `hode` + extrapolation      | 17.9 | 1.0 |
-| GC3d TokamakMediumCartesian `hode` + extrapolation | 23.8 | 1.0 |
+| GC3d SolovevIterXpoint `hodeproblem` + extrapolation      | 17.9 | 1.0 |
+| GC3d TokamakMediumCartesian `hodeproblem` + extrapolation | 23.8 | 1.0 |
 | GC4d SolovevIterXpoint `iode`                      |  0.3 | 2.0 |
 | Pauli3d SolovevIter `iode`                         |  0.1 | 2.9 |
 
-`TokamakMediumCartesian` is *slower* than the ITER Solov'ev, and the 3D `hode` path costs two
+`TokamakMediumCartesian` is *slower* than the ITER Solov'ev, and the 3D `hodeproblem` path costs two
 orders of magnitude more per step than the Pauli one even though Newton converges in a single
 iteration. The cost is nested `ForwardDiff`: the second derivatives of the 3D Hamiltonian
 differentiate field functions that are themselves AD-generated, and `MidpointExtrapolation(5)`

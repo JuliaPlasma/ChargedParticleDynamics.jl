@@ -13,8 +13,8 @@ export hamiltonian, toroidal_momentum
 
 Solovev.@code_iter_xpoint() # inject magnetic field code
 
-const Δt = 1.0
-const tspan = (0.0, 1000.0)
+const DEFAULT_TIMESTEP = 1.0
+const DEFAULT_TIMESPAN = (0.0, 1000.0)
 
 const xᵢ = [7.0 - 1.4, 0.0, 0.0]
 const qᵢ = [from_cartesian(0, xᵢ)..., 2.8166280889939737]

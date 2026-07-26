@@ -6,6 +6,160 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+**This release renames every problem constructor and their keyword arguments.** There are no
+deprecation shims; see *Changed* below for the mapping.
+
+### Added
+
+- **Seven more equilibria for `GyroKinetics4d`**, which previously shipped only the ITER-like
+  Solov'ev equilibrium with X-point: `SolovevIter`, `TokamakIterCylindrical`,
+  `TokamakMedium{Cartesian,Cylindrical}`, `TokamakSmall{Cartesian,Cylindrical,Toroidal}`. Each
+  mirrors the `GuidingCenter4d` module of the same equilibrium and reuses its initial conditions.
+  Their default time steps are the 4D guiding centre's divided by `B*∥` at their own initial
+  condition, because the module integrates in the rescaled time with `dt = B*∥ ds`; the factor is
+  computed per equilibrium and asserted in the tests, since getting it wrong by `B*∥ ≈ 2E2` is the
+  bug the audit found in the one shipped module.
+
+  Three of the eleven `GuidingCenter4d` equilibria have no counterpart. `SymmetricField` and
+  `ThetaPinchField` carry only a Poincaré loop and surface parameterisation and no point initial
+  condition, and this model has no loop/surface machinery. `SolovevSymmetricField` cannot have one:
+  `SolovevSymmetric.@code` injects the equilibrium parameters `α` and `β` into the module and `β`
+  collides with the vector potential `β` of `gc_common.jl`.
+- **The electrostatic potential in the 4D guiding centre and gyrokinetic models.** Both used
+  `H = ½u² + μ|B|`; they now carry `+ φ` in the Hamiltonian and `- Eᵢ` in its gradient, matching
+  `GuidingCenter3d`, the charged particle and the Pauli particle. `GyroKinetics4d` additionally
+  carries `- dEⱼdxᵢ` in its second derivatives. No shipped equilibrium of either model has a
+  non-zero `φ` — the only `ElectromagneticFields` configurations that do are `QuadraticPotentials`,
+  the three Penning traps and `EzCosZPerturbation`, and of those only `QuadraticPotentials` is used
+  here, by `GuidingCenter3d` — so `φ`, `E` and `dE` are all *exactly* zero and no result changed.
+  It becomes a behaviour change the moment such an equilibrium is added.
+- **Named-tuple constructors.** Every problem constructor accepts the named tuple that
+  `initial_conditions_*` returns directly: `odeproblem(initial_conditions_deeply_passing())`, with
+  that condition's own `μ` travelling in `params`.
+- **Test blocks for `Dipole3d` and `QuadraticPotentials3d`** in the 3D guiding centre suite. Neither
+  is blocked by the `b₁ = 0` singularity — `b₁` is -0.41 and 2E-3 at their initial conditions — and
+  neither had a test block at all, so the 3D model's dynamics now runs on four equilibria of eleven
+  rather than two. `QuadraticPotentials3d` is the only shipped equilibrium with a non-zero
+  potential, so it is also the only integration test that exercises the `φ` and `E` terms on a field
+  where they do not vanish.
+- **An integration test for the κ-dependent "dg" formulation** (`iodeproblem_dg`) at κ = 0, ½ and 1.
+  Its `ḡ` was checked against finite differences but it had never been integrated, and κ = 0 — the
+  default — reduces it to the plain `iodeproblem`, so the κ terms were entirely unexercised.
+- **A test that the noncanonical charged particle's vector field is the one its own `ω` and `H`
+  generate**, comparing it against `-Ω⁻¹∇H` and `dH` against central differences of `hamiltonian`.
+- **A test sweeping every `GyroKinetics4d` equilibrium** for integration and volume preservation.
+  The determinant of the one-step map stays at 1 to ~1E-9 in all eight, including the cylindrical
+  and toroidal charts: the formulation is intrinsic — `ϑᵢ = Aᵢ + u bᵢ` in covariant components and
+  `Ω = dϑ` need no metric, and the Liouville measure is `√det Ω = B*∥` in any chart — so the
+  volume-preserving splitting carries over unchanged.
+- **`src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl`**, the 0.x-era sketch of the
+  coordinate-transforming Runge-Kutta integrator, tracked as reference material for the port onto
+  the current `IRK`. It had existed only in one working tree, which is why the 0.2.0 entry below
+  records it as not being in the repository. It is not `include`d by any module and does not
+  compile against the current `GeometricIntegrators`; a header comment says so, and `TODO.md`
+  records what of it survives the port and what has to be rewritten. Renamed from
+  `firk_with_coordinate_transformation.jl` to match the current integrator naming.
+- Docstrings for the twelve charged particle and Pauli particle equilibrium modules that had none,
+  and the coordinate system and equilibrium parameters throughout. The provenance of the hard-coded
+  `μ` and `u` of the `initial_conditions_*` is not recorded anywhere in the repository; the
+  docstrings say so rather than inventing one.
+
+### Changed
+
+- **Every problem constructor is renamed to the `GeometricProblems` scheme.** No deprecation shims.
+
+  | Module | Was | Is |
+  |---|---|---|
+  | `GuidingCenter3d` | `hode`, `hode_canonical` | `hodeproblem`, `hodeproblem_canonical` |
+  | `GuidingCenter4d` | `guiding_center_4d_{ode,iode,iode_λ,lode,dg,formal_lagrangian}` | `odeproblem`, `iodeproblem`, `iodeproblem_λ`, `lodeproblem`, `iodeproblem_dg`, `lodeproblem_formal_lagrangian` |
+  | `GuidingCenter4d` | `guiding_center_4d_{loop,surface}_{ode,iode,lode}` | `{loop,surface}_{ode,iode,lode}problem` |
+  | `GuidingCenter4d` | `guiding_center_4d_{loop,surface}_ensemble`, `..._poincare_invariant_{1st,2nd}` | `{loop,surface}_ensemble`, `poincare_invariant_{1st,2nd}` |
+  | `GyroKinetics4d` | `guiding_center_4d_{ode,sode}` | `odeproblem`, `sodeproblem` |
+  | `ChargedParticle3d` | `charged_particle_3d_{ode,pode,iode,lode,sode}` | `odeproblem`, `podeproblem`, `iodeproblem`, `lodeproblem`, `sodeproblem` |
+  | `PauliParticle3d` | `pauli_particle_3d_{pode,hode,iode}` | `podeproblem`, `hodeproblem`, `iodeproblem` |
+
+  Internal callbacks (`charged_particle_3d_v`, `guiding_center_4d_ϑ`, …) keep their prefixes.
+- **`tspan`/`tstep` → `timespan`/`timestep`**, and the module constants `const tspan`/`const Δt` →
+  `const DEFAULT_TIMESPAN`/`const DEFAULT_TIMESTEP` in all 35 equilibrium modules. This removes the
+  `tspan=tspan` shadowing hazard, where the keyword default and a module constant shared a name —
+  and which, in the two `hode(x₀, parameters; tspan=tspan, …)` forwarding methods, would have
+  silently pinned the forwarded span to the module default had the rename not been done together.
+- **`parameters` is a keyword argument** defaulting to `default_parameters()`, matching
+  `GeometricProblems`. It was the second positional argument.
+- **Every `initial_conditions_*` returns the same named tuple**, `(q = …, params = …)` plus `p` or
+  `v` where the model has one. The 4D guiding centre, gyrokinetic, Pauli and charged particle
+  families returned bare tuples of two or three elements. `test/structure_tests.jl` no longer
+  branches on `ics isa NamedTuple`; it asserts the shape instead.
+- **`charged_particle_3d_sode` now throws for a curvilinear equilibrium.** See *Fixed* below.
+- The two 4D guiding centre testsets for `SymmetricField` and `ThetaPinchField` ran **zero tests**:
+  their contents were commented out because the calls passed sampling counts positionally —
+  `loop_odeproblem(nl)` — which the `PoincareInvariants` 0.5 rewrite replaced with keyword-only
+  constructors. They are restored and now exercise the loop and surface problems.
+- `test/quiet_solver_warnings.jl` no longer calls the suppressed-warning count a "tripwire".
+  Nothing asserts on it and nothing should: which orbits exhaust the solver's iteration budget is
+  platform-dependent by construction, which is why the warnings are filtered in the first place, so
+  any threshold tight enough to catch a regression would also flake. Both comments now say that
+  plainly.
+- "phase space" and "phase-space" are normalised to **"phasespace"** throughout the documentation,
+  source comments, tests and scripts — the one-word spelling the package uses, which until now
+  appeared only in `docs/src/charged_particle_3d.md` and `docs/src/normalization.md`. Comments and
+  prose only; no code changes.
+- The `*_periodicity` helpers pass the origin to `rangemin`/`rangemax` rather than the `±Inf` they
+  had just filled `xmin`/`xmax` with. Those two take an evaluation point only for uniformity with
+  the other generated field functions — a coordinate's range is a property of the chart, and
+  `minx¹`…`maxx³` are baked in as literals — so nothing changes, but the code no longer reads as if
+  the range were being asked for at the point at infinity.
+
+### Fixed
+
+- **`charged_particle_3d_noncanonical` integrated a system inconsistent with its own structure.**
+  Its one-form, Hamiltonian, two-form and Jacobian all carried the metric while
+  `charged_particle_3d_v` was the plain cartesian Lorentz force and `dH` was the gradient of a
+  different, metric-free Hamiltonian. The vector field is now derived from `Ω ż = -∇H` using the
+  module's own `ω`,
+
+      ẋⁱ = vⁱ ,    v̇ⁱ = ( -∂H/∂xⁱ + (v × β)ⁱ ) / gᵢᵢ ,
+
+  with `β = ∇ × ϑ` the generalised magnetic field — the shape of the Lorentz force with `B` replaced
+  by `β`, `E` by `-∇ₓH` and an overall `1/gᵢᵢ`. `dH` gains the metric-derivative terms and the
+  `gᵢᵢ` factor on its velocity components, and `charged_particle_3d_iode_f` likewise. This reduces
+  *exactly* to the old expression when the metric is trivial, so `SingularField`, `SymmetricField`
+  and `ThetaPinchNoncanonical` are bit-identical; only `TokamakSmallNoncanonical`, which is
+  toroidal, changes — and it changes because it was wrong.
+- **`dH` of the noncanonical charged particle referred to a `dφdxᵢ` that does not exist.** The
+  field-code generator emits `φ`, `Eᵢ` and `dEᵢdxⱼ`, never a derivative of the potential, so every
+  component raised an `UndefVarError`. It went unnoticed because `dH` had no callers until the
+  vector field above started consulting it. The potential enters as `∂φ/∂xᵢ = -Eᵢ`.
+- **`charged_particle_3d_sode` is restricted to cartesian equilibria.** At frozen position the
+  curvilinear kick is *quadratic* in `v`, so the Boris/Cayley map is no longer its exact flow and
+  the splitting has no exact solution map. Rather than integrate the cartesian system in a chart
+  where that is a different model, the constructor throws unless the metric is trivial;
+  `TokamakSmallNoncanonical` no longer exports it. The other three are unaffected.
+- **`plot_fieldlines` accepted equilibria it is meaningless for.** It contours `equ.A₃(0,x,y,0)/x`,
+  the poloidal flux `ψ = R A_φ`, which assumes an axisymmetric cylindrical chart; for the cartesian
+  and toroidal equilibria it drew a plausible-looking wrong picture rather than failing, and
+  `plot_trajectory_poloidal(R, Z, equ)` forwarded any `equ` to it. Both now throw an
+  `ArgumentError`. The new `is_axisymmetric_cylindrical` decides this from the coordinate ranges the
+  field code injects — the chart whose *third* coordinate is angular and whose first two are not —
+  so it needs no hard-coded list and classifies all eleven 4D equilibria correctly.
+- **`hamiltonian_u` of the 3D guiding centre omitted `φ`**, unlike the `hamiltonian` beside it,
+  which made the two incomparable for an equilibrium with a potential. `TODO.md` recorded it as
+  unused; it is not — four scripts plot it against `hamiltonian` as a measure of constraint drift,
+  which is exactly the comparison the omission broke. This changes the value it reports for
+  `QuadraticPotentials3d`, the one equilibrium where `φ ≠ 0`.
+- Docstring cross-references that could not resolve, and `lodeproblem`, `odeproblem`,
+  `iodeproblem` and `iodeproblem_λ` of the 4D guiding centre, which had no docstrings at all.
+
+### Known issues
+
+- `lodeproblem_formal_lagrangian` is still a verbatim copy of `lodeproblem`. It was renamed with the
+  rest but not fixed: it should be the formal Lagrangian of the equations of motion in noncanonical
+  Hamiltonian form, `L(z, y, ż) = yⁱ (Ωᵢⱼ(z) żʲ + ∂ᵢH(z))` on the doubled state `(z, y)`, which is
+  an eight-dimensional problem rather than the four-dimensional one it builds. See `TODO.md`.
+
+
 ## [0.2.0] - 2026-07-25
 
 ### Added

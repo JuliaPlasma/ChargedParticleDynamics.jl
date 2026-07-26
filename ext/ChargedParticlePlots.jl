@@ -6,7 +6,7 @@ using LaTeXStrings
 using Makie
 
 import ChargedParticleDynamics: plot_invariant, plot_invariant_error
-import ChargedParticleDynamics: plot_fieldlines_figure, plot_fieldlines
+import ChargedParticleDynamics: plot_fieldlines_figure, plot_fieldlines, is_axisymmetric_cylindrical
 import ChargedParticleDynamics: plot_poloidal_figure, plot_trajectory_poloidal, plot_trajectory_poloidal!, plot_trajectory_scatter!
 import ChargedParticleDynamics: plot_components_figure, plot_components, plot_components!
 import ChargedParticleDynamics: plot_trajectory_cartesian, plot_trajectory_cylindrical

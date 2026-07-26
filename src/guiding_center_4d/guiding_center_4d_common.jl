@@ -229,18 +229,31 @@ end
 # end
 
 
+@doc raw"""
+The guiding centre Hamiltonian,
+
+```math
+H = \tfrac{1}{2} u^{2} + \mu \vert B \vert + \varphi ,
+```
+
+the parallel kinetic energy, the magnetic moment term and the electrostatic potential. The
+potential is the same one `GuidingCenter3d` carries; it is zero for every equilibrium this package
+ships, so adding it changed no result, but the model is now the one both reference papers write.
+"""
 function hamiltonian(t, q, params)
     @unpack μ = params
-    0.5 * u(t,q)^2 + μ*B(t,q)
+    0.5 * u(t,q)^2 + μ*B(t,q) + φ(t,q)
 end
 
 hamiltonian(t,q,p,params) = hamiltonian(t,q, params)
 lagrangian(t,q,v,params) = ϑ₁(t, q) * v[1] + ϑ₂(t, q) * v[2] + ϑ₃(t, q) * v[3] - hamiltonian(t,q,params)
 
 
-dHdx₁(t, q, μ) = μ * dBdx₁(t,q)
-dHdx₂(t, q, μ) = μ * dBdx₂(t,q)
-dHdx₃(t, q, μ) = μ * dBdx₃(t,q)
+# ∂φ/∂xᵢ = -Eᵢ, so the electric field enters the gradient with a minus sign, as in
+# `guiding_center_3d_equations.jl`.
+dHdx₁(t, q, μ) = μ * dBdx₁(t,q) - E₁(t,q)
+dHdx₂(t, q, μ) = μ * dBdx₂(t,q) - E₂(t,q)
+dHdx₃(t, q, μ) = μ * dBdx₃(t,q) - E₃(t,q)
 dHdx₄(t, q, μ) = u(t,q)
 
 function dH(dH, t, q, params)

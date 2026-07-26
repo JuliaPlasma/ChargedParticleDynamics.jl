@@ -692,17 +692,30 @@ function guiding_center_3d_canonical_f(f, t, q, p, params)
 end
 
 
-function hode_canonical(q₀, p₀, parameters; tspan=tspan, tstep=Δt, periodic=true)
-    # println("3D Guiding Center model initial constraints g₁ = $(g₁(t₀, q₀, p₀)) and g₂ = $(g₂(t₀, q₀, p₀))")
+"""
+    hodeproblem_canonical(q₀, p₀; kwargs...)
+    hodeproblem_canonical(x₀ = qᵢ; kwargs...)
+    hodeproblem_canonical(ics::NamedTuple; kwargs...)
+
+The canonicalised guiding centre system, `H̄ = H + λ₁ g₁ + λ₂ g₂`, which agrees with
+[`hodeproblem`](@ref) on the constraint manifold but is genuinely canonical. Same three argument
+forms as `hodeproblem`.
+"""
+function hodeproblem_canonical(q₀::AbstractVector, p₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
+                               timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic = true)
     HODEProblem(
         guiding_center_3d_canonical_v,
         guiding_center_3d_canonical_f,
         hamiltonian_canonical,
-        tspan, tstep, q₀, p₀;
+        timespan, timestep, q₀, p₀;
         parameters=parameters,
         periodicity=guiding_center_3d_periodicity(q₀, periodic))
 end
 
-function hode_canonical(x₀, parameters; tspan=tspan, kwargs...)
-    hode_canonical(initial_conditions(tspan[begin], x₀)..., parameters; tspan=tspan, kwargs...)
+function hodeproblem_canonical(x₀::AbstractVector = qᵢ; timespan = DEFAULT_TIMESPAN, kwargs...)
+    ics = initial_conditions(timespan[begin], x₀)
+    hodeproblem_canonical(ics.q, ics.p; timespan = timespan, kwargs...)
 end
+
+hodeproblem_canonical(ics::NamedTuple; kwargs...) =
+    hodeproblem_canonical(ics.q, ics.p; parameters = ics.params, kwargs...)

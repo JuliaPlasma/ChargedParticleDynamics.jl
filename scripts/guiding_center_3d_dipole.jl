@@ -10,9 +10,9 @@ include("rk3.jl")
 
 const options = (f_abstol=8eps(), verbosity=1)
 
-equ = hode(initial_conditions_dipole()...)
-# equ = hode(initial_conditions_dipole()...; tstep=0.003)
-# equ = hode(initial_conditions_dipole()...; tstep=0.3, tspan=(0.0, 300.0))
+equ = hodeproblem(initial_conditions_dipole())
+# equ = hodeproblem(initial_conditions_dipole(); timestep=0.003)
+# equ = hodeproblem(initial_conditions_dipole(); timestep=0.3, timespan=(0.0, 300.0))
 
 sol = integrate(equ, PartitionedGauss(1); options...)
 # sol = integrate(equ, PartitionedGauss(1); initialguess=NoInitialGuess(), options...)

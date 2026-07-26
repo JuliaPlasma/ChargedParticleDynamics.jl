@@ -2,7 +2,7 @@ module ThetaPinchNoncanonical
 
     import ElectromagneticFields.ThetaPinch
 
-    export charged_particle_3d_ode, charged_particle_3d_sode, charged_particle_3d_iode,
+    export odeproblem, sodeproblem, iodeproblem,
            hamiltonian, toroidal_momentum, ϑ
 
     const qᵢ = [2.5, 0.0, 0.0, 0.0, 0.2, 0.1]

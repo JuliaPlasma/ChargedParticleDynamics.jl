@@ -18,7 +18,7 @@ carried in `params`, ``\tilde{q} = \omega_{0} \, q``, and its inverse
     The notes this module follows write the rescaled characteristics as
     ``\tilde{R} = B^{\star}_{\parallel} R``, ``\tilde{V}_{\parallel} = B^{\star}_{\parallel}
     V_{\parallel}``, which reads like a change of variables but is not one: what the derivation
-    actually does is absorb the phase-space Jacobian into the distribution function,
+    actually does is absorb the phasespace Jacobian into the distribution function,
     ``\tilde{f} = B^{\star}_{\parallel} f``, leaving the *same trajectories* traversed in the
     reparametrised time ``dt = B^{\star}_{\parallel} \, ds``. That factor is already carried by
     the vector field [`v`](@ref); rescaling the state on top of it describes a different system.

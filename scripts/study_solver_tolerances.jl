@@ -186,17 +186,17 @@ const TOLERANCE_SETTINGS = (("f_abstol=1E-15, f_reltol=1E-15", (f_abstol = 1E-15
                             ("f_abstol=1E-12, f_reltol=1E-12", (f_abstol = 1E-12, f_reltol = 1E-12)))
 
 const SWEEP_CASES = (("GC4d SolovevIterXpoint iode",
-                      () -> GC4.SolovevIterXpoint.guiding_center_4d_iode(
-                          GC4.SolovevIterXpoint.initial_conditions_barely_passing()...;
-                          tspan = (0.0, 20.0), tstep = 0.1), VPRKGauss(2)),
+                      () -> GC4.SolovevIterXpoint.iodeproblem(
+                          GC4.SolovevIterXpoint.initial_conditions_barely_passing();
+                          timespan = (0.0, 20.0), timestep = 0.1), VPRKGauss(2)),
                      ("Pauli3d SolovevIter iode",
-                      () -> P3.SolovevIter.pauli_particle_3d_iode(
-                          P3.SolovevIter.initial_conditions_barely_passing()...;
-                          tspan = (0.0, 20.0), tstep = 0.1), VPRKGauss(2)),
+                      () -> P3.SolovevIter.iodeproblem(
+                          P3.SolovevIter.initial_conditions_barely_passing();
+                          timespan = (0.0, 20.0), timestep = 0.1), VPRKGauss(2)),
                      ("GC4d TokamakMediumCartesian iode",
-                      () -> GC4.TokamakMediumCartesian.guiding_center_4d_iode(
-                          GC4.TokamakMediumCartesian.initial_conditions_barely_passing()...;
-                          tspan = (0.0, 20.0), tstep = 0.1), VPRKGauss(2)))
+                      () -> GC4.TokamakMediumCartesian.iodeproblem(
+                          GC4.TokamakMediumCartesian.initial_conditions_barely_passing();
+                          timespan = (0.0, 20.0), timestep = 0.1), VPRKGauss(2)))
 
 function tolerance_sweep()
     println("""
@@ -234,40 +234,40 @@ end
 # 3. Per-step cost by model, formulation and integrator
 # ---------------------------------------------------------------------------------------------
 
-const COST_CASES = (("GC3d SolovevIterXpoint hode +extrapolation",
-                     () -> GC3.SolovevIterXpoint.hode(
-                         GC3.SolovevIterXpoint.initial_conditions_barely_passing()...;
-                         tspan = (0.0, 10.0), tstep = 0.1), PartitionedGauss(2),
+const COST_CASES = (("GC3d SolovevIterXpoint hodeproblem +extrapolation",
+                     () -> GC3.SolovevIterXpoint.hodeproblem(
+                         GC3.SolovevIterXpoint.initial_conditions_barely_passing();
+                         timespan = (0.0, 10.0), timestep = 0.1), PartitionedGauss(2),
                      (initialguess = MidpointExtrapolation(5),)),
-                    ("GC3d SolovevIterXpoint hode",
-                     () -> GC3.SolovevIterXpoint.hode(
-                         GC3.SolovevIterXpoint.initial_conditions_barely_passing()...;
-                         tspan = (0.0, 10.0), tstep = 0.1), PartitionedGauss(2), NamedTuple()),
-                    ("GC3d TokamakMediumCartesian hode +extrapolation",
-                     () -> GC3.TokamakMediumCartesian.hode(
-                         GC3.TokamakMediumCartesian.initial_conditions_barely_passing()...;
-                         tspan = (0.0, 10.0), tstep = 0.1), PartitionedGauss(2),
+                    ("GC3d SolovevIterXpoint hodeproblem",
+                     () -> GC3.SolovevIterXpoint.hodeproblem(
+                         GC3.SolovevIterXpoint.initial_conditions_barely_passing();
+                         timespan = (0.0, 10.0), timestep = 0.1), PartitionedGauss(2), NamedTuple()),
+                    ("GC3d TokamakMediumCartesian hodeproblem +extrapolation",
+                     () -> GC3.TokamakMediumCartesian.hodeproblem(
+                         GC3.TokamakMediumCartesian.initial_conditions_barely_passing();
+                         timespan = (0.0, 10.0), timestep = 0.1), PartitionedGauss(2),
                      (initialguess = MidpointExtrapolation(5),)),
-                    ("GC3d TokamakMediumCartesian hode",
-                     () -> GC3.TokamakMediumCartesian.hode(
-                         GC3.TokamakMediumCartesian.initial_conditions_barely_passing()...;
-                         tspan = (0.0, 10.0), tstep = 0.1), PartitionedGauss(2), NamedTuple()),
+                    ("GC3d TokamakMediumCartesian hodeproblem",
+                     () -> GC3.TokamakMediumCartesian.hodeproblem(
+                         GC3.TokamakMediumCartesian.initial_conditions_barely_passing();
+                         timespan = (0.0, 10.0), timestep = 0.1), PartitionedGauss(2), NamedTuple()),
                     ("GC4d SolovevIterXpoint ode",
-                     () -> GC4.SolovevIterXpoint.guiding_center_4d_ode(
-                         GC4.SolovevIterXpoint.initial_conditions_barely_passing()...;
-                         tspan = (0.0, 200.0), tstep = 1.0), Gauss(2), NamedTuple()),
+                     () -> GC4.SolovevIterXpoint.odeproblem(
+                         GC4.SolovevIterXpoint.initial_conditions_barely_passing();
+                         timespan = (0.0, 200.0), timestep = 1.0), Gauss(2), NamedTuple()),
                     ("GC4d SolovevIterXpoint iode",
-                     () -> GC4.SolovevIterXpoint.guiding_center_4d_iode(
-                         GC4.SolovevIterXpoint.initial_conditions_barely_passing()...;
-                         tspan = (0.0, 20.0), tstep = 0.1), VPRKGauss(2), NamedTuple()),
-                    ("Pauli3d SolovevIter hode",
-                     () -> P3.SolovevIter.pauli_particle_3d_hode(
-                         P3.SolovevIter.initial_conditions_barely_passing()...;
-                         tspan = (0.0, 10.0), tstep = 0.1), PartitionedGauss(2), NamedTuple()),
+                     () -> GC4.SolovevIterXpoint.iodeproblem(
+                         GC4.SolovevIterXpoint.initial_conditions_barely_passing();
+                         timespan = (0.0, 20.0), timestep = 0.1), VPRKGauss(2), NamedTuple()),
+                    ("Pauli3d SolovevIter hodeproblem",
+                     () -> P3.SolovevIter.hodeproblem(
+                         P3.SolovevIter.initial_conditions_barely_passing();
+                         timespan = (0.0, 10.0), timestep = 0.1), PartitionedGauss(2), NamedTuple()),
                     ("Pauli3d SolovevIter iode",
-                     () -> P3.SolovevIter.pauli_particle_3d_iode(
-                         P3.SolovevIter.initial_conditions_barely_passing()...;
-                         tspan = (0.0, 10.0), tstep = 0.1), VPRKGauss(2), NamedTuple()))
+                     () -> P3.SolovevIter.iodeproblem(
+                         P3.SolovevIter.initial_conditions_barely_passing();
+                         timespan = (0.0, 10.0), timestep = 0.1), VPRKGauss(2), NamedTuple()))
 
 function step_costs()
     println("""
@@ -289,8 +289,8 @@ function step_costs()
 
     println("""
 
-    Once the tolerance is sound, the remaining spread has nothing to do with ITER. The 3D `hode`
-    path costs orders of magnitude more per step than the Pauli `hode` even though Newton converges
+    Once the tolerance is sound, the remaining spread has nothing to do with ITER. The 3D `hodeproblem`
+    path costs orders of magnitude more per step than the Pauli `hodeproblem` even though Newton converges
     in one iteration, and `TokamakMediumCartesian` is *slower* than the ITER Solov'ev — so the two
     ten-minute 3D blocks in CI were a step-count and per-step-cost problem, not a convergence one.
     The cost is nested ForwardDiff: the second derivatives of the 3D Hamiltonian differentiate field

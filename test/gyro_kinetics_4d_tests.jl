@@ -45,16 +45,16 @@ end
     q, params = initial_conditions_trapped()
     @test transform_q̃_to_q(0.0, transform_q_to_q̃(0.0, q, params), params) ≈ q atol = 1E-6
 
-    test_gyro_kinetics_4d_erk4(guiding_center_4d_ode(initial_conditions_trapped()...))
-    test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_trapped()...))
-    test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_passing()...))
-    test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_barely_trapped()...))
-    test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_passing()...))
-    test_gyro_kinetics_4d_glrk(guiding_center_4d_ode(initial_conditions_deeply_trapped()...))
+    test_gyro_kinetics_4d_erk4(odeproblem(initial_conditions_trapped()))
+    test_gyro_kinetics_4d_glrk(odeproblem(initial_conditions_trapped()))
+    test_gyro_kinetics_4d_glrk(odeproblem(initial_conditions_barely_passing()))
+    test_gyro_kinetics_4d_glrk(odeproblem(initial_conditions_barely_trapped()))
+    test_gyro_kinetics_4d_glrk(odeproblem(initial_conditions_deeply_passing()))
+    test_gyro_kinetics_4d_glrk(odeproblem(initial_conditions_deeply_trapped()))
 
-    test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_trapped()...))
-    test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_barely_passing()...))
-    test_gyro_kinetics_4d_strang(guiding_center_4d_sode(initial_conditions_deeply_passing()...))
+    test_gyro_kinetics_4d_strang(sodeproblem(initial_conditions_trapped()))
+    test_gyro_kinetics_4d_strang(sodeproblem(initial_conditions_barely_passing()))
+    test_gyro_kinetics_4d_strang(sodeproblem(initial_conditions_deeply_passing()))
 
 end
 
@@ -65,7 +65,7 @@ end
     using ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint
     using Test
 
-    # The notes absorb the phase-space Jacobian into the distribution function, f̃ = B*∥ f, which
+    # The notes absorb the phasespace Jacobian into the distribution function, f̃ = B*∥ f, which
     # multiplies the guiding centre characteristics through by B*∥. The two vector fields must
     # therefore be exactly proportional, with B*∥ = `ωabs` the factor — same orbits, traversed in
     # the reparametrised time dt = B*∥ ds.
@@ -101,7 +101,7 @@ end
 end
 
 
-@safetestset "Gyrokinetic GC Model: the splitting preserves phase-space volume                                     " begin
+@safetestset "Gyrokinetic GC Model: the splitting preserves phasespace volume                                      " begin
 
     using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
     using ..GyroKinetics4dTests
@@ -110,10 +110,11 @@ end
     using Test
 
     # Each subsystem freezes two of the four variables and is symplectic in the other two, so a
-    # symplectic method applied to each preserves phase-space volume *exactly*, at any step size.
+    # symplectic method applied to each preserves phasespace volume *exactly*, at any step size.
     # A generic method preserves it only to its order. Build the Jacobian of the one-step map by
     # central differences and compare the determinant of the two.
-    q₀, params = initial_conditions_deeply_passing()
+    ics = initial_conditions_deeply_passing()
+    q₀, params = ics.q, ics.params
 
     function jacdet(step, Δs; h=1E-5)
         J = zeros(4, 4)
@@ -125,9 +126,9 @@ end
         det(J)
     end
 
-    split(q, Δs) = integrate(guiding_center_4d_sode(q, params; tstep=Δs, tspan=(0.0, Δs)),
+    split(q, Δs) = integrate(sodeproblem(q; parameters=params, timestep=Δs, timespan=(0.0, Δs)),
                              strang_composition()).q[end]
-    euler(q, Δs) = integrate(guiding_center_4d_ode(q, params; tstep=Δs, tspan=(0.0, Δs)),
+    euler(q, Δs) = integrate(odeproblem(q; parameters=params, timestep=Δs, timespan=(0.0, Δs)),
                              ExplicitEuler()).q[end]
 
     # The central differences bottom out around 1E-11; the splitting sits there for every step size
@@ -138,5 +139,61 @@ end
 
     @test abs(jacdet(euler, 1E-2) - 1) > 1E-7
     @test abs(jacdet(euler, 3E-2) / jacdet(euler, 1E-2) - 1) > 0   # grows with the step
+
+end
+
+
+@safetestset "Gyrokinetic GC Model: every equilibrium integrates and preserves volume                " begin
+
+    using ChargedParticleDynamics
+    using ChargedParticleDynamics.GyroKinetics4d
+    using ..GyroKinetics4dTests
+    using GeometricIntegrators
+    using LinearAlgebra
+    using Test
+
+    # Sweeps the whole set rather than the one equilibrium the blocks above cover. The point is the
+    # curvilinear ones: `gc_common.jl` carries no metric, because the formulation is intrinsic —
+    # ϑᵢ = Aᵢ + u bᵢ in covariant components and Ω = dϑ need none — and the Liouville measure is
+    # √det Ω = B*∥ in any chart. So the volume-preserving splitting must work unchanged in
+    # cylindrical and toroidal coordinates, and this is the assertion that says so.
+    #
+    # Each module's time step is the 4D guiding centre's divided by B*∥ at its own initial
+    # condition, since the independent variable is the rescaled time with dt = B*∥ ds. Getting that
+    # factor wrong by ~2·10² is exactly the bug the audit found in the one shipped equilibrium.
+    equilibria = sort(filter(n -> isa(getfield(GyroKinetics4d, n), Module) && n !== :GyroKinetics4d,
+                             names(GyroKinetics4d, all = true)))
+
+    @test length(equilibria) == 8
+
+    for name in equilibria
+        M = getfield(GyroKinetics4d, name)
+        ics = M.initial_conditions_deeply_passing()
+        q₀, params = ics.q, ics.params
+        Δs = M.DEFAULT_TIMESTEP
+
+        @test integrate(M.odeproblem(ics), Gauss(2)) isa GeometricSolution
+        @test integrate(M.sodeproblem(ics), strang_composition()) isa GeometricSolution
+
+        # The rescaled step really is the physical one divided by B*∥: multiplying it back by
+        # B*∥ must recover the step of the corresponding 4D guiding centre module, which is the
+        # same equilibrium in physical time. This is what catches a step copied from a sibling —
+        # the audit found the shipped one wrong by a factor of B*∥ ≈ 2·10².
+        short = Symbol(replace(string(name), "GuidingCenter4d" => ""))
+        G = getfield(ChargedParticleDynamics.GuidingCenter4d, short)
+        Bpar = M.ωabs(0.0, q₀, params)
+        @test 0.1 < Δs * Bpar / G.DEFAULT_TIMESTEP < 10.0
+
+        step(q) = integrate(M.sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)),
+                            strang_composition()).q[end]
+        h = 1E-7 * max(1.0, maximum(abs, q₀))
+        J = zeros(4, 4)
+        for j in 1:4
+            qp = copy(q₀); qp[j] += h
+            qm = copy(q₀); qm[j] -= h
+            J[:, j] = (step(qp) .- step(qm)) ./ 2h
+        end
+        @test abs(det(J) - 1) < 1E-7
+    end
 
 end

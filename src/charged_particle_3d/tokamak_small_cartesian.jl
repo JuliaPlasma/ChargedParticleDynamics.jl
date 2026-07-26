@@ -1,8 +1,18 @@
+@doc raw"""
+Small axisymmetric tokamak equilibrium, in cartesian coordinates ``(x, y, z)``.
+
+Major radius ``R_{0} = 1``, magnetic field on axis ``B_{0} = 1`` and safety factor
+``q_{0} = 2``.
+
+The hard-coded `μ` and `u` of the `initial_conditions_*` below are inherited from earlier work on
+this package and their provenance is not recorded; they are known-good starting points for the
+charged particle model rather than values derived here.
+"""
 module TokamakSmallCartesian
 
     import ElectromagneticFields.AxisymmetricTokamakCartesian
 
-    export charged_particle_3d_pode, charged_particle_3d_iode,
+    export podeproblem, iodeproblem,
            hamiltonian, toroidal_momentum
 
     AxisymmetricTokamakCartesian.@code() # inject magnetic field code

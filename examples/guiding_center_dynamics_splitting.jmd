@@ -32,7 +32,7 @@ q0, params = initial_conditions_trapped()
 
 ```julia
 ref = getTableauERK4()
-ode = guiding_center_4d_ode(q0, params)
+ode = odeproblem(q0; parameters = params)
 sol = Solution(ode, Δt, nt)
 int = Integrator(ode, ref, Δt)
 integrate!(int, sol)
@@ -55,7 +55,7 @@ plotenergyerror(sol, energy = (t,q) -> hamiltonian(t,q,params))
 set_config(:nls_stol_break, Inf);
 
 ref = getTableauGLRK(1)
-ode = guiding_center_4d_ode(q0, params)
+ode = odeproblem(q0; parameters = params)
 sol = Solution(ode, Δt, nt)
 int = Integrator(ode, ref, Δt)
 integrate!(int, sol)
@@ -80,7 +80,7 @@ set_config(:nls_rtol, 1E-14)
 set_config(:nls_nmax, 20);
 
 stab = getTableauStrang()
-sode = guiding_center_4d_sode(q0, params)
+sode = sodeproblem(q0; parameters = params)
 ssol = Solution(sode, Δt, nt)
 ints = Tuple(IntegratorConstructor(eltype(q0), ndims(sode), ref) for i in 1:6)
 sint = IntegratorComposition(sode, ints, stab, Δt)

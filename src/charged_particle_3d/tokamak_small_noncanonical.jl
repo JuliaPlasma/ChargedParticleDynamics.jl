@@ -2,7 +2,10 @@ module TokamakSmallNoncanonical
 
     import ElectromagneticFields.AxisymmetricTokamakToroidal
 
-    export charged_particle_3d_ode, charged_particle_3d_sode, charged_particle_3d_iode,
+    # `sodeproblem` is deliberately not exported here: this equilibrium is toroidal,
+    # and the Boris splitting is only a valid splitting of the model where the metric is trivial.
+    # The constructor throws if called anyway; see its docstring.
+    export odeproblem, iodeproblem,
            hamiltonian, toroidal_momentum, ϑ
 
     AxisymmetricTokamakToroidal.@code() # inject magnetic field code

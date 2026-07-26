@@ -41,13 +41,13 @@ options = (f_abstol = 1E-14, max_iterations = 10_000)#, linesearch = Bisection()
 Δt3 = 1.0
 Δt4 = 10.0
 Δt5 = 50.0
-# tspan = (0., 5_000.)
-# tspan = (0., 10_000.)
-tspan = (0., 50_000.)
+# timespan = (0., 5_000.)
+# timespan = (0., 10_000.)
+timespan = (0., 50_000.)
 tspan_long = (0., 1_000_000.);
 
 
-g3ode = GuidingCenter3d.TokamakIterCylindrical.hode(q3₀, parameters; tstep=Δt3, tspan=tspan)#(0., 19_189.)
+g3ode = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(q3₀; parameters = parameters, timestep=Δt3, timespan=timespan)#(0., 19_189.)
 g3sol = integrate(g3ode, PartitionedGauss(1); initialguess=NoInitialGuess(),options...)
 # g3sol = integrate(g3ode, PartitionedGauss(1); options...)
 g3car = cartesian_solution(g3sol, GuidingCenter3d.TokamakIterCylindrical);

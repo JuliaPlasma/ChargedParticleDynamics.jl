@@ -46,7 +46,7 @@ so that the dynamics is governed by
 \end{aligned}
 ```
 where the Lagrange multipliers ``\lambda_{1}`` and ``\lambda_{2}`` are determined algebraically by requiring ``\dot{g}_{1} = \dot{g}_{2} = 0``.
-Since the multipliers are explicit functions of ``(r,p)``, this is a Hamiltonian system in the sense of a [`HODEProblem`](https://juliagni.github.io/GeometricEquations.jl/stable/), constructed by `hode`.
+Since the multipliers are explicit functions of ``(r,p)``, this is a Hamiltonian system in the sense of a [`HODEProblem`](https://juliagni.github.io/GeometricEquations.jl/stable/), constructed by `hodeproblem`.
 
 
 ## Canonicalised Formulation
@@ -64,19 +64,19 @@ Differentiating ``\bar{H}`` produces additional terms proportional to the constr
 \end{aligned}
 ```
 which vanish for exact initial data but not for a numerical solution that drifts off the constraint manifold.
-This genuinely canonical system is constructed by `hode_canonical`, whose Hamiltonian is ``\bar{H}``; it requires the second derivatives of the magnetic field and is correspondingly more expensive to evaluate.
+This genuinely canonical system is constructed by `hodeproblem_canonical`, whose Hamiltonian is ``\bar{H}``; it requires the second derivatives of the magnetic field and is correspondingly more expensive to evaluate.
 
 
 ## Usage
 
 Each equilibrium is wrapped in its own module, which injects the magnetic field code and provides
-`initial_conditions` for converting ``(r,u)`` into ``(r,p)`` as well as `hode` and `hode_canonical`:
+`initial_conditions` for converting ``(r,u)`` into ``(r,p)`` as well as `hodeproblem` and `hodeproblem_canonical`:
 
 ```julia
 using GeometricIntegrators
 using ChargedParticleDynamics.GuidingCenter3d.Dipole3d
 
-problem = hode(initial_conditions_dipole()...)
+problem = hodeproblem(initial_conditions_dipole())
 solution = integrate(problem, PartitionedGauss(1))
 ```
 

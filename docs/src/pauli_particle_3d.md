@@ -37,7 +37,7 @@ The Pauli particle sits between the [charged particle](charged_particle_3d.md) a
 | guiding centre | ``L = ( A(x) + u \, b(x) ) \cdot \dot{x} - \tfrac{1}{2} u^{2} - \mu \vert B(x) \vert - \phi (x)``, with ``u = \dot{x} \cdot b(x)`` |
 
 It differs from the charged particle only by the ``\mu \vert B \vert`` term, so it retains the full
-six-dimensional phase space and a *regular* Lagrangian — unlike the guiding centre model, whose
+six-dimensional phasespace and a *regular* Lagrangian — unlike the guiding centre model, whose
 Lagrangian is degenerate.
 That is the point: the Pauli particle can be integrated with ordinary symplectic or variational
 partitioned Runge-Kutta methods, with no projection onto a constraint manifold.
@@ -86,8 +86,8 @@ v_{\perp} = v_{0} - v_{\parallel} , \qquad
 and returns `(x₀, v∥, (μ = μ,))`, ready to be splatted into a problem constructor.
 See [Initialization](@ref) for the route from an energy and a pitch angle instead.
 
-The problem is available in partitioned (`pauli_particle_3d_pode`), Hamiltonian
-(`pauli_particle_3d_hode`) and implicit (`pauli_particle_3d_iode`) form.
+The problem is available in partitioned (`podeproblem`), Hamiltonian
+(`hodeproblem`) and implicit (`iodeproblem`) form.
 
 
 ## Usage
@@ -96,7 +96,7 @@ The problem is available in partitioned (`pauli_particle_3d_pode`), Hamiltonian
 using GeometricIntegrators
 using ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical
 
-problem  = pauli_particle_3d_hode(initial_conditions_pauli()...)
+problem  = hodeproblem(initial_conditions_pauli())
 solution = integrate(problem, PartitionedGauss(1))
 ```
 
