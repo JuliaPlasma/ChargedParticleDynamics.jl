@@ -1,7 +1,5 @@
 using GeometricIntegrators
 using CairoMakie
-using SimpleSolvers: Options
-using Test
 
 
 # Choose problem
@@ -22,8 +20,15 @@ method = Gauss(1)
 # method = LobattoIIIAIIIB(2) # leapfrog
 # method = LobattoIIIBIIIA(2) # leapfrog
 
-# Solver options
-options = Options(x_reltol = 1E-14, f_abstol = 1E-14, f_reltol = 1E-14)
+# Solver options, splatted into `integrate` as keywords.
+#
+# `f_abstol` is an absolute bound on the residual and has to stay above its round-off floor. The
+# Pauli residual carries the momentum equation `p = ϑ(q)`, whose scale is set by the one-form, so
+# that floor is `‖ϑ‖ eps` — of order 1E-14 for the ITER-scale equilibria. Asking for 1E-14, as this
+# script used to, leaves the solver no reachable criterion and it runs to its iteration limit on
+# most steps. `f_reltol` is deliberately left at the `SimpleSolvers` default: its relative term is
+# what lets a large-magnitude solve converge at all. See `test/guiding_center_3d_tests.jl`.
+options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 
 # Create partitioned ODE (Hamilton's equations) and implicit ODE (Euler-Lagrange equations)
 pode = prob.podeproblem()
@@ -34,8 +39,8 @@ iode = prob.iodeproblem()
 # iode = prob.iodeproblem(timespan = (0.0, 1E4), timestep = 0.1)
 
 # Integrate pode and iode
-psol = integrate(pode, method; options = options)
-isol = integrate(iode, method; options = options)
+psol = integrate(pode, method; options...)
+isol = integrate(iode, method; options...)
 
 # Plot solution and energy error
 function plot_solution(prob, ode, sol, prefix)
