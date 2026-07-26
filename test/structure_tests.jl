@@ -101,7 +101,7 @@ end
         :GuidingCenter4d   => ["odeproblem", "iodeproblem",
                                "lodeproblem", "iodeproblem_λ",
                                "iodeproblem_dg", "lodeproblem_formal_lagrangian"],
-        :GuidingCenter3d   => ["hodeproblem", "hodeproblem_canonical"],
+        :GuidingCenter3d   => ["hodeproblem", "hodeproblem_canonical", "hodeproblem_compact"],
         :ChargedParticle3d => ["odeproblem", "iodeproblem",
                                "lodeproblem", "podeproblem"],
         :PauliParticle3d   => ["podeproblem", "hodeproblem",
@@ -271,6 +271,140 @@ end
 end
 
 
+@safetestset "3D guiding centre: constraint derivatives match finite differences                                  " begin
+    using ChargedParticleDynamics.GuidingCenter3d
+    using ..StructureTestUtils
+    using Test
+
+    # The three constraints and every one of their first and second derivatives come from one indexed
+    # definition each in `guiding_center_3d_constraints.jl`, so a sign or an index that is wrong is
+    # wrong for all three pairs at once — and only two of the three used to exist at all. This checks
+    # each of them against a central difference of the derivative one order below, for every index
+    # combination, in three charts.
+    for M in (GuidingCenter3d.SolovevIterXpoint,        # cylindrical
+              GuidingCenter3d.TokamakMediumCartesian,   # cartesian
+              GuidingCenter3d.TokamakSmallToroidal)     # toroidal
+        ic = M.initial_conditions_barely_passing()
+        t, q, p = 0.0, ic.q, ic.p
+
+        # A central difference at h = 1e-6 of a quantity of size s carries about `eps * s / h ≈
+        # 2E-10 s` of round-off, and several entries of these Hessians vanish exactly, so the
+        # comparison needs an absolute floor scaled to the problem rather than a fixed one. `s` is
+        # bounded by the momentum, which runs from 1E-3 on the toroidal tokamak to 15 on ITER.
+        atol = 1e-8 * max(1.0, maximum(abs, p))
+
+        for ki in 1:3, li in 1:3
+            k, l = Val(ki), Val(li)
+
+            # ∂gᵏ/∂qₗ and ∂gᵏ/∂pₗ against a difference of gᵏ itself
+            @test isapprox(M.dgᵏdqₗ(k, l, t, q, p),
+                           central_difference(x -> M.gᵏ(k, t, x, p), q, li); rtol = 1e-5, atol = atol)
+            @test isapprox(M.dgᵏdpₗ(k, l, t, q, p),
+                           central_difference(y -> M.gᵏ(k, t, q, y), p, li); rtol = 1e-5, atol = atol)
+
+            for mi in 1:3
+                m = Val(mi)
+
+                # ∂²gᵏ/∂qₗ∂qₘ has to reproduce a difference of ∂gᵏ/∂qₗ, and to be symmetric in the
+                # two indices.
+                @test isapprox(M.d²gᵏdqₗdqₘ(k, l, m, t, q, p),
+                               central_difference(x -> M.dgᵏdqₗ(k, l, t, x, p), q, mi);
+                               rtol = 1e-4, atol = atol)
+                @test isapprox(M.d²gᵏdqₗdqₘ(k, l, m, t, q, p),
+                               M.d²gᵏdqₗdqₘ(k, m, l, t, q, p); rtol = 1e-12, atol = 1e-14)
+
+                # ∂²gᵏ/∂qₗ∂pₘ likewise, differentiated from either side
+                @test isapprox(M.d²gᵏdqₗdpₘ(k, l, m, t, q, p),
+                               central_difference(y -> M.dgᵏdqₗ(k, l, t, q, y), p, mi);
+                               rtol = 1e-4, atol = atol)
+                @test isapprox(M.d²gᵏdqₗdpₘ(k, l, m, t, q, p),
+                               central_difference(x -> M.dgᵏdpₗ(k, m, t, x, p), q, li);
+                               rtol = 1e-4, atol = atol)
+            end
+        end
+
+        # `{cᵢ, cⱼ}(m) = bₘ D` with the same `D` for all three `m`. This is what lets the compact form
+        # replace the singular factor `bₘ / {cᵢ, cⱼ}` by `1/D`, and it is the one step of that
+        # derivation that is not pure algebra — it has to hold in every chart, which is exactly what
+        # cannot be read off the paper, since Eq. (29) is written in cartesian coordinates. Checked
+        # here in all three chart types.
+        D = M.compact_denominator(t, q, p)
+        for m in (Val(1), Val(2), Val(3))
+            b = M.bᵢ(m, t, q)
+            iszero(b) && continue
+            @test M.bracket_cc(m, t, q, p) / b ≈ D rtol = 1e-10
+        end
+
+        # b·(b×v) = 0 identically, which in the paper's labelling reads b₁g² - b₂g¹ + b₃g³ = 0. It is
+        # the identity the compact form uses to remove the singular factor, and it must hold whether
+        # or not the constraints themselves do.
+        for y in (p, p .+ 0.1)
+            @test isapprox(M.b₁(t, q) * M.g₂(t, q, y) - M.b₂(t, q) * M.g₁(t, q, y) +
+                           M.b₃(t, q) * M.g₃(t, q, y), 0.0; atol = 1e-12)
+        end
+    end
+end
+
+
+@safetestset "3D guiding centre: the compact form reproduces the paper's Eq. (29)                                 " begin
+    using ChargedParticleDynamics.GuidingCenter3d
+    using LinearAlgebra
+    using Test
+
+    # `guiding_center_3d_compact.jl` does not port Eq. (29) of Li, Zhang & Liu — that equation is
+    # written with cartesian vector identities and `H = ½Σ(pᵢ-Aᵢ)²`, and eight of the thirteen
+    # equilibria here are curvilinear — but derives an equivalent from the model's own objects. This
+    # pins that derivation against the paper by spelling Eq. (29) out directly from the injected field
+    # functions, which is only possible in the cartesian charts, where the metric is the identity.
+    for M in (GuidingCenter3d.Dipole3d, GuidingCenter3d.QuadraticPotentials3d,
+              GuidingCenter3d.TokamakMediumCartesian)
+        ic = isdefined(M, :initial_conditions_dipole) ? M.initial_conditions_dipole() :
+             isdefined(M, :initial_conditions_quadratic) ? M.initial_conditions_quadratic() :
+             M.initial_conditions_barely_passing()
+        t, q, p, par = 0.0, ic.q, ic.p, ic.params
+
+        @test (M.g¹¹(t, q), M.g²²(t, q), M.g³³(t, q)) == (1, 1, 1)
+
+        b = [M.b₁(t, q), M.b₂(t, q), M.b₃(t, q)]
+        A = [M.A₁(t, q), M.A₂(t, q), M.A₃(t, q)]
+        v = p .- A
+        db = [M.db₁dx₁(t, q) M.db₁dx₂(t, q) M.db₁dx₃(t, q)
+              M.db₂dx₁(t, q) M.db₂dx₂(t, q) M.db₂dx₃(t, q)
+              M.db₃dx₁(t, q) M.db₃dx₂(t, q) M.db₃dx₃(t, q)]
+        dA = [M.dA₁dx₁(t, q) M.dA₁dx₂(t, q) M.dA₁dx₃(t, q)
+              M.dA₂dx₁(t, q) M.dA₂dx₂(t, q) M.dA₂dx₃(t, q)
+              M.dA₃dx₁(t, q) M.dA₃dx₂(t, q) M.dA₃dx₃(t, q)]
+        ∇B = [M.dBdx₁(t, q), M.dBdx₂(t, q), M.dBdx₃(t, q)]
+        # `E = -∇Φ`: `hamiltonian` carries `+φ` while `dHdqᵢ` subtracts `Eᵢ`.
+        ∇Φ = -[M.E₁(t, q), M.E₂(t, q), M.E₃(t, q)]
+        ∇xb = [db[3, 2] - db[2, 3], db[1, 3] - db[3, 1], db[2, 1] - db[1, 2]]
+
+        # The scalar denominator of Eq. (24), which `compact_denominator` reaches without ever
+        # dividing by a component of b.
+        D = M.B(t, q) + dot(v, ∇xb)
+        @test M.compact_denominator(t, q, p) ≈ D rtol = 1e-12
+
+        ξ = cross(v, db * v)                                                             # Eq. (26)
+        Ẋ = v .+ (ξ .+ par.μ .* cross(b, ∇B) .+ cross(b, ∇Φ)) ./ D                       # Eq. (29a)
+        u = (p[3] - A[3]) / b[3]                                                         # the (g¹,g²) pair
+        ṗ = -par.μ .* ∇B .- ∇Φ .+ dA' * Ẋ .+
+            db' * ((u .* ξ .+ cross(v, par.μ .* ∇B .+ ∇Φ)) ./ D)                         # Eq. (29b)
+
+        for constraints in (:g12, :parallel)
+            # The two branches differ only in how they evaluate the parallel velocity and the
+            # denominator, which agree on the constraint manifold the initial condition sits on.
+            m = M.compact_index(constraints)
+            v̄ = zeros(3); f̄ = zeros(3)
+            M.guiding_center_3d_compact_v(v̄, t, q, p, par, m)
+            M.guiding_center_3d_compact_f(f̄, t, q, p, par, m)
+
+            @test isapprox(v̄, Ẋ; rtol = 1e-10)
+            @test isapprox(f̄, ṗ; rtol = 1e-10, atol = 1e-14)
+        end
+    end
+end
+
+
 @safetestset "4D guiding centre: ḡ matches finite differences of the one-form gradient                            " begin
     using ChargedParticleDynamics.GuidingCenter4d
     using ..StructureTestUtils
@@ -420,9 +554,35 @@ end
         _, eerr = M.compute_energy_error(sol)
         @test mx(eerr) < 1e-8
 
+        # All three components of `v × b` vanish along the flow, not only the two the problem's
+        # constraint pair retains, so all three are asserted on — but not to the same bound. The
+        # identity `b₁g² - b₂g¹ + b₃g³ = 0` holds pointwise, so it determines the omitted constraint
+        # from the retained two divided by `bₘ`, the component of `b` the pair's multipliers divide by:
+        #
+        #     |g_omitted| ≲ max |g_retained| / min|bₘ|
+        #
+        # with the minimum taken along the orbit, not at the initial condition. Both equilibria here
+        # cross the surface where `bₘ` is small — `min|b₁|` is 1E-5 on the ITER Solov'ev X-point and
+        # 3.5E-4 on the medium tokamak — and the omitted `g²` duly comes out three orders of magnitude
+        # larger than the retained pair on the latter. It is the sharpest argument for picking the pair
+        # whose `bₘ` is largest, and the reason `compute_constraints` reports all three.
         c = M.compute_constraints(sol)
-        @test mx(c.g₁) < 1e-8
-        @test mx(c.g₂) < 1e-8
+        gs = (c.g₁, c.g₂, c.g₃)
+        bs = (M.b₁, M.b₂, M.b₃)
+
+        retained = map(v -> only(typeof(v).parameters), M.constraint_pair(M.default_constraints()))
+        omitted = only(setdiff(1:3, retained))
+
+        # `compact_index` is the component of `b` the pair divides by, which is not `omitted`: the
+        # labelling of the `gᵏ` is not the antisymmetric one, so `(g³, g¹)` omits `g²` but divides by
+        # `b₁`.
+        m = only(typeof(M.compact_index(M.default_constraints())).parameters)
+        bmin = minimum(abs(bs[m](sol.t[i], sol.q[i])) for i in eachindex(sol.t))
+
+        for k in retained
+            @test mx(gs[k]) < 1e-8
+        end
+        @test mx(gs[omitted]) < 1e-8 / bmin
 
         if isdefined(M, :toroidal_momentum)
             _, perr = M.compute_toroidal_momentum_error(sol)

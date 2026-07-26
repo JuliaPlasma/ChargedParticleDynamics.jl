@@ -59,18 +59,25 @@ compute_toroidal_momentum_error(sol::GeometricSolution, params=GeometricEquation
 @doc raw"""
     compute_constraints(sol)
 
-The two constraints ``g_{1}`` and ``g_{2}`` that confine the solution to the manifold on which the
-momentum equals the guiding centre one-form, returned as a named tuple of two `DataSeries`.
+All three constraints ``g^{1}``, ``g^{2}``, ``g^{3}`` that confine the solution to the manifold on
+which the momentum equals the guiding centre one-form, returned as a named tuple of three
+`DataSeries`.
+
+Any two of the three make up the constraint pair a problem was built with — see
+[`constraint_pair`](@ref) — but all three vanish along the flow whichever pair that was, so
+reporting all three is independent of the choice and shows a drift that is invisible in the retained
+pair alone.
 
 They vanish identically along the continuous flow, so their magnitude measures how far a numerical
 solution has drifted off that manifold — the quantity the approximately symplectic methods of Li,
 Zhang and Liu are designed to keep bounded, and the one that decides whether `hodeproblem_canonical`
-agrees with `hodeproblem`. Since they start at zero, the absolute value is the meaningful one; there is no
-relative-error variant.
+and `hodeproblem_compact` agree with `hodeproblem`. Since they start at zero, the absolute value is
+the meaningful one; there is no relative-error variant.
 """
 function compute_constraints(t::SolutionTimes, q::DataSeries, p::DataSeries)
     (g₁=DataSeries([g₁(t[i], q[i], p[i]) for i in eachindex(t)]),
-     g₂=DataSeries([g₂(t[i], q[i], p[i]) for i in eachindex(t)]))
+     g₂=DataSeries([g₂(t[i], q[i], p[i]) for i in eachindex(t)]),
+     g₃=DataSeries([g₃(t[i], q[i], p[i]) for i in eachindex(t)]))
 end
 
 compute_constraints(sol::GeometricSolution) = compute_constraints(sol.t, sol.q, sol.p)

@@ -20,10 +20,18 @@ initial_conditions_barely_trapped() = merge(initial_conditions(0, [2.5, 0.0, 0.0
 initial_conditions_deeply_passing() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 5E-1]), (params=(μ=1E-2,),))     # Δt=2.5, nt=25
 initial_conditions_deeply_trapped() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 1E-1]), (params=(μ=1E-2,),))     # Δt=5.0, nt=50
 
-export default_parameters
+export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
 default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+
+"""
+The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+
+Both `b₁` and `b₃` vanish at the initial conditions of this equilibrium,
+where `b = e₂`, which leaves `(g², g³)` as the only regular pair.
+"""
+default_constraints() = :g23
 
 
 include("guiding_center_3d_equations.jl")

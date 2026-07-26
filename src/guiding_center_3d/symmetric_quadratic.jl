@@ -90,10 +90,18 @@ function f_surface(s, t)
     return q
 end
 
-export default_parameters
+export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
 default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+
+"""
+The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+
+`b = e₃` throughout this equilibrium, which leaves `(g¹, g²)` as the
+only regular pair.
+"""
+default_constraints() = :g12
 
 
 include("guiding_center_3d_equations.jl")
