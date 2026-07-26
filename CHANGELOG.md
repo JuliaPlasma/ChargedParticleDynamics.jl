@@ -64,7 +64,24 @@ deprecation shims; see *Changed* below for the mapping.
 - Docstrings for the twelve charged particle and Pauli particle equilibrium modules that had none,
   and the coordinate system and equilibrium parameters throughout. The provenance of the hard-coded
   `μ` and `u` of the `initial_conditions_*` is not recorded anywhere in the repository; the
-  docstrings say so rather than inventing one.
+  docstrings say so rather than inventing one. `ThetaPinchNoncanonical` and
+  `TokamakSmallNoncanonical` were missed in that sweep and are covered now, as are the five model
+  modules `ChargedParticle3d`, `PauliParticle3d`, `GuidingCenter3d`, `GuidingCenter4d` and
+  `GyroKinetics4d`, none of which had one. Every module in the package now carries a docstring.
+- **A check that every module is documented and reaches the manual**, in `docs/make.jl`. It walks
+  every submodule of the package and warns when one has no docstring of its own, or is named in no
+  `@docs`/`@autodocs` block. Adding an equilibrium and forgetting the page is now a warning instead
+  of silence — which is how the seven new `GyroKinetics4d` equilibria came to be documented in the
+  source and absent from the manual without anything noticing.
+
+  Documenter's own missing-docs check cannot serve this purpose here, and the reason is structural.
+  Enabling it means passing `modules`, and `Documenter.DocumentBlueprint` keeps
+  `submodules(modules; ignore = checkdocs_ignored_modules)` in one field used for two jobs: the
+  bindings that *must* be documented, and the filter on what a `@docs`/`@autodocs` block is
+  *allowed* to render. Because every equilibrium module carries its own copy of the shared model
+  docstrings, passing all of them reports 382 docstrings as missing when each is excluded by design,
+  and narrowing the set with `checkdocs_ignored_modules` makes the `@docs` blocks that name those
+  modules fail with "no docs found" instead. The check above does the job directly.
 
 ### Changed
 
@@ -111,9 +128,35 @@ deprecation shims; see *Changed* below for the mapping.
   the other generated field functions — a coordinate's range is a property of the chart, and
   `minx¹`…`maxx³` are baked in as literals — so nothing changes, but the code no longer reads as if
   the range were being asked for at the point at infinity.
+- **The model pages document the shared model code once instead of once per equilibrium.** Every
+  equilibrium module `include`s the same model source, so each of the fifty-odd modules carries its
+  own copy of every shared docstring — and each page listed all of its modules in one `@autodocs`
+  block, rendering the same functions ten or thirteen times over. `gyro_kinetics_4d.md` crossed
+  Documenter's 200 KiB hard `size_threshold` and failed the build outright once the seven new
+  equilibria were added to it; `guiding_center_4d.md` was 4 KiB short of the same fate. Each page now
+  renders the shared API once, from a `TokamakSmallCylindrical` anchor, and lists the remaining
+  modules in a `@docs` block, which emits each module's own docstring and nothing else. The pages
+  drop from 204/196/136/116 KiB to well under the warning threshold and no page is near the limit.
+- The example page `docs/src/examples/iter_cylindrical.md` asked for `f_abstol = 1E-15` with a
+  1000-iteration budget. That tolerance is below the round-off floor of the ITER-scale residual,
+  `‖ϑ‖ eps`, so the solver had no reachable stopping criterion and the line search ran to its limit
+  on every step — the same defect the scripts were fixed for. It now uses the tolerances the test
+  suite does.
+
+### Removed
+
+- **`const parameters` in all 52 equilibrium modules.** It was the second positional argument's
+  default; with `parameters` now a keyword defaulting to `default_parameters()`, nothing referenced
+  it any more. Call `default_parameters()` instead. Leaving a module constant with the same name as
+  a keyword argument is the hazard the `tspan=tspan` note above describes.
 
 ### Fixed
 
+- **`sodeproblem` of the noncanonical charged particle accepted `parameters` and dropped it.**
+  Neither `SODEProblem` branch forwarded the keyword, so it — and anything the named-tuple form put
+  into `ics.params` — was silently discarded, unlike in `odeproblem` beside it and in the
+  `GyroKinetics4d` `sodeproblem`. Inert while these modules are parameter-free; now asserted in
+  `test/structure_tests.jl`.
 - **`charged_particle_3d_noncanonical` integrated a system inconsistent with its own structure.**
   Its one-form, Hamiltonian, two-form and Jacobian all carried the metric while
   `charged_particle_3d_v` was the plain cartesian Lorentz force and `dH` was the gradient of a

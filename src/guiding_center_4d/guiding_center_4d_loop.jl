@@ -37,7 +37,7 @@ of the four-dimensional guiding centre dynamics, sampling the loop `f_loop` of t
 
 The guiding centre one-form ``\vartheta = A + u b`` is state-dependent, so this is a *noncanonical*
 `FirstPoincareInvariant` built from `ϑ`, not the canonical variant. Pair it with one of
-`loop_odeproblem`, `..._iode` or `..._lode` through
+`loop_odeproblem`, `loop_iodeproblem` or `loop_lodeproblem` through
 [`loop_ensemble`](@ref):
 
 ```julia

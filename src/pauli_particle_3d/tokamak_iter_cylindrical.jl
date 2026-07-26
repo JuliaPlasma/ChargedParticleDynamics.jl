@@ -29,7 +29,6 @@ module TokamakIterCylindrical
     """
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ).params.μ),)
 
-    const parameters = default_parameters()
 
     const DEFAULT_TIMESTEP = 1.0
     const DEFAULT_TIMESPAN = (0.0, 100.0)

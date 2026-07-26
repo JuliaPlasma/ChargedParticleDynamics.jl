@@ -173,6 +173,10 @@ end
         @test M.has_trivial_metric(0.0, collect(float.(M.qᵢ)))
         @test (M.sodeproblem(); true)
 
+        # `sodeproblem` used to accept `parameters` and then not forward it to `SODEProblem`, so
+        # the keyword — and anything the named-tuple form put into it — was silently dropped.
+        @test parameters(M.sodeproblem(; parameters = (a = 1,))) == (a = 1,)
+
         # The two maps of the splitting must sum to the full vector field. To first order in h,
         #     (fv(q₀) - q₀)/h + (fx(q₀) - q₀)/h  →  charged_particle_3d_v(q₀) ,
         # which is the Lie-Trotter consistency condition, and is what pins the splitting to the

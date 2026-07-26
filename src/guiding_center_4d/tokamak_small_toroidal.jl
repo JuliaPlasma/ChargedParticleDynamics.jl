@@ -67,7 +67,6 @@ module TokamakSmallToroidal
     "The magnetic moment μ this equilibrium is set up for."
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.314593645825811e-6),)
 
-    const parameters = default_parameters()
 
     include("guiding_center_4d_common.jl")
     include("guiding_center_4d_equations.jl")

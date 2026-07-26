@@ -28,7 +28,6 @@ module TokamakSmallToroidal
     """
     default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
 
-    const parameters = default_parameters()
 
     const xᵢ = [1.05, 0.0, 0.0]
     const qᵢ = from_cartesian(0, xᵢ)

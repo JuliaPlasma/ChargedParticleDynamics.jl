@@ -172,8 +172,31 @@ rather than a change of variables in the model, so it belongs inside an integrat
 integrator exists yet; see `TODO.md` in the repository root for the design.
 
 
+## Equilibria
+
+```@docs
+ChargedParticleDynamics.GyroKinetics4d
+```
+
+Each equilibrium is its own module, and each one `include`s the same `gc_common.jl`,
+`gc_equations.jl` and `coordinate_transformations.jl`, so the model's functions below are documented
+once, under `GuidingCenter4dTokamakSmallCylindrical`, and hold verbatim for all eight. What differs
+between them is the chart, the equilibrium parameters and the rescaled default time step, which is
+what these docstrings record:
+
+```@docs
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallCartesian
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallToroidal
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakMediumCartesian
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakMediumCylindrical
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakIterCylindrical
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIter
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
+```
+
+
 ## Module
 
 ```@autodocs
-Modules = [ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint]
+Modules = [ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallCylindrical]
 ```

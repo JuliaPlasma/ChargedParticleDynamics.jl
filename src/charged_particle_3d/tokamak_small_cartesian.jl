@@ -28,7 +28,6 @@ module TokamakSmallCartesian
     """
     default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
 
-    const parameters = default_parameters()
 
     const qᵢ = [1.05,   0.0,    0.0]
     const vᵢ = [2.1E-3, 4.3E-4, 0.0]

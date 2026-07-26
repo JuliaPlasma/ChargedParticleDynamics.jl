@@ -1,7 +1,7 @@
 @doc raw"""
 Small axisymmetric tokamak equilibrium, in toroidal coordinates ``(r, \theta, \varphi)``.
 
-The gyrokinetic counterpart of [`GuidingCenter4d.TokamakSmallToroidal`](@ref), sharing its initial
+The gyrokinetic counterpart of `GuidingCenter4d.TokamakSmallToroidal`, sharing its initial
 conditions. The independent variable is the rescaled time ``s``, with
 ``dt = B^{\star}_{\parallel} \, ds`` and ``B^{\star}_{\parallel} \approx 5 \times 10^{-2}`` at the
 deeply passing initial condition — the smallest of the shipped equilibria, so the rescaled step is
@@ -37,7 +37,6 @@ module GuidingCenter4dTokamakSmallToroidal
     """
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.314593645825811e-6),)
 
-    const parameters = default_parameters()
 
     const qᵢ = [x₀..., -0.00045135897235326736]
 

@@ -1,7 +1,7 @@
 @doc raw"""
 Small axisymmetric tokamak equilibrium, in cylindrical coordinates ``(R, Z, \varphi)``.
 
-The gyrokinetic counterpart of [`GuidingCenter4d.TokamakSmallCylindrical`](@ref), sharing its
+The gyrokinetic counterpart of `GuidingCenter4d.TokamakSmallCylindrical`, sharing its
 initial conditions. The independent variable is the rescaled time ``s``, with
 ``dt = B^{\star}_{\parallel} \, ds``; here ``B^{\star}_{\parallel} \approx 1.0`` at the deeply
 passing initial condition, so the rescaling is close to a no-op.
@@ -36,7 +36,6 @@ module GuidingCenter4dTokamakSmallCylindrical
     """
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.314593645825811e-6),)
 
-    const parameters = default_parameters()
 
     const qᵢ = [x₀..., -0.00045135897235326736]
 

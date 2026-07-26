@@ -28,7 +28,6 @@ module TokamakIterCylindrical
     """
     default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
 
-    const parameters = default_parameters()
 
     const qᵢ = [7.0, 0.0, 0.0]
     const vᵢ = [3.43E-3, 6.75, -3.41E-1]

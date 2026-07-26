@@ -41,7 +41,6 @@ module SolovevIterXpoint
     """
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ).params.μ),)
 
-    const parameters = default_parameters()
 
     function initial_conditions(x₀, u₀, μ)
         v₀ = u₀ * [b¹(0, x₀), b²(0, x₀), b³(0, x₀)]

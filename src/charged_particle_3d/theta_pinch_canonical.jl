@@ -21,7 +21,6 @@ module ThetaPinchCanonical
     """
     default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
 
-    const parameters = default_parameters()
 
     const qᵢ = [2.5, 0.0, 0.0]
     const vᵢ = [0.0, 0.2, 0.1]

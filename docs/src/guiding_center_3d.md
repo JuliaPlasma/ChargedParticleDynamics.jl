@@ -83,18 +83,32 @@ solution = integrate(problem, PartitionedGauss(1))
 
 ## Modules
 
+```@docs
+ChargedParticleDynamics.GuidingCenter3d
+```
+
+Each equilibrium is its own module, and every one of them `include`s the same
+`guiding_center_3d_equations.jl`, `guiding_center_3d_canonical.jl` and
+`guiding_center_3d_diagnostics.jl`. The model's functions are therefore documented once, below,
+under `TokamakSmallCylindrical`, and hold verbatim for all thirteen. What differs between the
+modules is the chart, the equilibrium parameters and the initial conditions, which is what these
+docstrings record:
+
+```@docs
+ChargedParticleDynamics.GuidingCenter3d.Dipole3d
+ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d
+ChargedParticleDynamics.GuidingCenter3d.SymmetricField
+ChargedParticleDynamics.GuidingCenter3d.ThetaPinchField
+ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCartesian
+ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal
+ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian
+ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical
+ChargedParticleDynamics.GuidingCenter3d.TokamakIterCylindrical
+ChargedParticleDynamics.GuidingCenter3d.SolovevSymmetricField
+ChargedParticleDynamics.GuidingCenter3d.SolovevIter
+ChargedParticleDynamics.GuidingCenter3d.SolovevIterXpoint
+```
+
 ```@autodocs
-Modules = [ChargedParticleDynamics.GuidingCenter3d.Dipole3d,
-           ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d,
-           ChargedParticleDynamics.GuidingCenter3d.SymmetricField,
-           ChargedParticleDynamics.GuidingCenter3d.ThetaPinchField,
-           ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCartesian,
-           ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCylindrical,
-           ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal,
-           ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian,
-           ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical,
-           ChargedParticleDynamics.GuidingCenter3d.TokamakIterCylindrical,
-           ChargedParticleDynamics.GuidingCenter3d.SolovevSymmetricField,
-           ChargedParticleDynamics.GuidingCenter3d.SolovevIter,
-           ChargedParticleDynamics.GuidingCenter3d.SolovevIterXpoint]
+Modules = [ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCylindrical]
 ```

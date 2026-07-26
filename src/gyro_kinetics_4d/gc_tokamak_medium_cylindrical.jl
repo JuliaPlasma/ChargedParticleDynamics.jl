@@ -2,7 +2,7 @@
 Medium-size axisymmetric tokamak equilibrium, in cylindrical coordinates ``(R, Z, \varphi)``, with
 major radius ``R_{0} = 2``, magnetic field ``B_{0} = 5`` and safety factor ``q_{0} = 2``.
 
-The gyrokinetic counterpart of [`GuidingCenter4d.TokamakMediumCylindrical`](@ref), sharing its
+The gyrokinetic counterpart of `GuidingCenter4d.TokamakMediumCylindrical`, sharing its
 initial conditions. The independent variable is the rescaled time ``s``, with
 ``dt = B^{\star}_{\parallel} \, ds`` and ``B^{\star}_{\parallel} \approx 11`` at the deeply passing
 initial condition.
@@ -35,7 +35,6 @@ module GuidingCenter4dTokamakMediumCylindrical
     """
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
 
-    const parameters = default_parameters()
 
     const qᵢ = [x₀..., 5E-1]
 

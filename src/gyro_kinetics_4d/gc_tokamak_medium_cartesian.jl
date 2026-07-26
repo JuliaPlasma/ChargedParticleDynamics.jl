@@ -2,7 +2,7 @@
 Medium-size axisymmetric tokamak equilibrium, in cartesian coordinates, with major radius
 ``R_{0} = 2``, magnetic field ``B_{0} = 5`` and safety factor ``q_{0} = 2``.
 
-The gyrokinetic counterpart of [`GuidingCenter4d.TokamakMediumCartesian`](@ref), sharing its initial
+The gyrokinetic counterpart of `GuidingCenter4d.TokamakMediumCartesian`, sharing its initial
 conditions. The independent variable is the rescaled time ``s``, with
 ``dt = B^{\star}_{\parallel} \, ds`` and ``B^{\star}_{\parallel} \approx 3.8`` at the deeply passing
 initial condition.
@@ -36,7 +36,6 @@ module GuidingCenter4dTokamakMediumCartesian
     """
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
 
-    const parameters = default_parameters()
 
     const qᵢ = [2.5, 0.0, 0.0, 5E-1]
 

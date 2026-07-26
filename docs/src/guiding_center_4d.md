@@ -51,15 +51,30 @@ With it the Euler-Lagrange equations of ``L = \vartheta \cdot \dot{q} - H`` read
 
 ## Modules
 
+```@docs
+ChargedParticleDynamics.GuidingCenter4d
+```
+
+Each equilibrium is its own module, and every one of them `include`s the same
+`guiding_center_4d_common.jl` and `guiding_center_4d_equations.jl` — plus
+`guiding_center_4d_loop.jl` and `guiding_center_4d_surface.jl` where the equilibrium defines a
+Poincaré loop or surface. The model's functions are therefore documented once, below, under
+`TokamakSmallCylindrical`, and hold verbatim for all eleven. What differs between the modules is the
+chart, the equilibrium parameters and the initial conditions, which is what these docstrings record:
+
+```@docs
+ChargedParticleDynamics.GuidingCenter4d.SymmetricField
+ChargedParticleDynamics.GuidingCenter4d.ThetaPinchField
+ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian
+ChargedParticleDynamics.GuidingCenter4d.TokamakSmallToroidal
+ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCartesian
+ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCylindrical
+ChargedParticleDynamics.GuidingCenter4d.TokamakIterCylindrical
+ChargedParticleDynamics.GuidingCenter4d.SolovevSymmetricField
+ChargedParticleDynamics.GuidingCenter4d.SolovevIter
+ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint
+```
+
 ```@autodocs
-Modules = [ChargedParticleDynamics.GuidingCenter4d.SymmetricField,
-           ChargedParticleDynamics.GuidingCenter4d.ThetaPinchField,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakSmallToroidal,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCartesian,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCylindrical,
-           ChargedParticleDynamics.GuidingCenter4d.TokamakIterCylindrical,
-           ChargedParticleDynamics.GuidingCenter4d.SolovevIter,
-           ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint]
+Modules = [ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical]
 ```

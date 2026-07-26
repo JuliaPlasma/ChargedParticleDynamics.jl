@@ -49,7 +49,6 @@ module GuidingCenter4dSolovevIterXpoint
     default_parameters(::Type{T}=Float64) where {T} =
         (μ = T(μ₀), R₀ = T(R₀), ω₀ = T(ωabs(0, [x₀..., 5.0E-1])))
 
-    const parameters = default_parameters()
 
     initial_conditions_barely_passing() = solovev_xpoint_iter_initial_conditions(0, [x₀..., 3.425E-1], μ₀)
     initial_conditions_barely_trapped() = solovev_xpoint_iter_initial_conditions(0, [x₀..., 3.375E-1], μ₀)

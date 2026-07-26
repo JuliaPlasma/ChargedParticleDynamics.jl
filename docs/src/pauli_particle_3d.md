@@ -83,7 +83,8 @@ v_{\parallel} = u_{0} \, b (x_{0}) , \qquad
 v_{\perp} = v_{0} - v_{\parallel} , \qquad
 \mu = \dfrac{\vert v_{\perp} \vert^{2}}{2 \vert B (x_{0}) \vert} ,
 ```
-and returns `(x₀, v∥, (μ = μ,))`, ready to be splatted into a problem constructor.
+and returns `(q = x₀, v = v∥, params = (μ = μ,))`, which every problem constructor of this module
+takes directly — `podeproblem(initial_conditions(x₀, v₀))`.
 See [Initialization](@ref) for the route from an energy and a pitch angle instead.
 
 The problem is available in partitioned (`podeproblem`), Hamiltonian
@@ -128,13 +129,25 @@ The three models can therefore be compared directly on the same physical orbit.
 
 ## Modules
 
+```@docs
+ChargedParticleDynamics.PauliParticle3d
+```
+
+Each equilibrium is its own module, and every one of them `include`s the same
+`pauli_particle_3d.jl`. The model's functions are therefore documented once, below, under
+`TokamakSmallCylindrical`, and hold verbatim for all eight. What differs between the modules is the
+chart, the equilibrium parameters and the initial conditions, which is what these docstrings record:
+
+```@docs
+ChargedParticleDynamics.PauliParticle3d.SymmetricField
+ChargedParticleDynamics.PauliParticle3d.ThetaPinchField
+ChargedParticleDynamics.PauliParticle3d.TokamakSmallCartesian
+ChargedParticleDynamics.PauliParticle3d.TokamakSmallToroidal
+ChargedParticleDynamics.PauliParticle3d.TokamakIterCylindrical
+ChargedParticleDynamics.PauliParticle3d.SolovevIter
+ChargedParticleDynamics.PauliParticle3d.SolovevIterXpoint
+```
+
 ```@autodocs
-Modules = [ChargedParticleDynamics.PauliParticle3d.SymmetricField,
-           ChargedParticleDynamics.PauliParticle3d.ThetaPinchField,
-           ChargedParticleDynamics.PauliParticle3d.TokamakSmallCartesian,
-           ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical,
-           ChargedParticleDynamics.PauliParticle3d.TokamakSmallToroidal,
-           ChargedParticleDynamics.PauliParticle3d.TokamakIterCylindrical,
-           ChargedParticleDynamics.PauliParticle3d.SolovevIter,
-           ChargedParticleDynamics.PauliParticle3d.SolovevIterXpoint]
+Modules = [ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical]
 ```

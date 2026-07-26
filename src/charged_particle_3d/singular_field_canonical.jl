@@ -24,7 +24,6 @@ module SingularFieldCanonical
     """
     default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
 
-    const parameters = default_parameters()
 
     const qᵢ = [1.,  0., 0.]
     const vᵢ = [0., -1., 0.]

@@ -77,16 +77,31 @@ B_3 & 0 & - B_1 \\
 
 ## Modules
 
+```@docs
+ChargedParticleDynamics.ChargedParticle3d
+```
+
+Each equilibrium is its own module, and each `include`s one of the two formulations —
+`charged_particle_3d_canonical.jl` on the phasespace ``(x, p)`` or
+`charged_particle_3d_noncanonical.jl` on ``(x, v)``. Each formulation's functions are therefore
+documented once, below, under `TokamakSmallCylindrical` and `TokamakSmallNoncanonical`
+respectively, and hold verbatim for every module sharing it. What differs between the modules is the
+chart, the equilibrium parameters and the initial conditions, which is what these docstrings record:
+
+```@docs
+ChargedParticleDynamics.ChargedParticle3d.SingularField
+ChargedParticleDynamics.ChargedParticle3d.SingularFieldCanonical
+ChargedParticleDynamics.ChargedParticle3d.SymmetricField
+ChargedParticleDynamics.ChargedParticle3d.ThetaPinchCanonical
+ChargedParticleDynamics.ChargedParticle3d.ThetaPinchNoncanonical
+ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCartesian
+ChargedParticleDynamics.ChargedParticle3d.TokamakSmallToroidal
+ChargedParticleDynamics.ChargedParticle3d.TokamakIterCylindrical
+ChargedParticleDynamics.ChargedParticle3d.SolovevIter
+ChargedParticleDynamics.ChargedParticle3d.SolovevIterXpoint
+```
+
 ```@autodocs
-Modules = [ChargedParticleDynamics.ChargedParticle3d.SingularField,
-           ChargedParticleDynamics.ChargedParticle3d.SymmetricField,
-           ChargedParticleDynamics.ChargedParticle3d.ThetaPinchCanonical,
-           ChargedParticleDynamics.ChargedParticle3d.ThetaPinchNoncanonical,
-           ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCartesian,
-           ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCylindrical,
-           ChargedParticleDynamics.ChargedParticle3d.TokamakSmallToroidal,
-           ChargedParticleDynamics.ChargedParticle3d.TokamakSmallNoncanonical,
-           ChargedParticleDynamics.ChargedParticle3d.TokamakIterCylindrical,
-           ChargedParticleDynamics.ChargedParticle3d.SolovevIter,
-           ChargedParticleDynamics.ChargedParticle3d.SolovevIterXpoint]
+Modules = [ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCylindrical,
+           ChargedParticleDynamics.ChargedParticle3d.TokamakSmallNoncanonical]
 ```

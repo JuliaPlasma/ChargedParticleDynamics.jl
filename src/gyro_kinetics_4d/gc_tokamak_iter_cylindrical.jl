@@ -1,7 +1,7 @@
 @doc raw"""
 ITER-size axisymmetric tokamak equilibrium, in cylindrical coordinates ``(R, Z, \varphi)``.
 
-The gyrokinetic counterpart of [`GuidingCenter4d.TokamakIterCylindrical`](@ref), sharing its initial
+The gyrokinetic counterpart of `GuidingCenter4d.TokamakIterCylindrical`, sharing its initial
 conditions. The independent variable is the rescaled time ``s``, with
 ``dt = B^{\star}_{\parallel} \, ds`` and ``B^{\star}_{\parallel} \approx 36`` at the deeply passing
 initial condition.
@@ -35,7 +35,6 @@ module GuidingCenter4dTokamakIterCylindrical
     """
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
 
-    const parameters = default_parameters()
 
     const qᵢ = [x₀..., 5E-1]
 

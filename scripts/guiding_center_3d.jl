@@ -34,7 +34,11 @@ q3₀
 
 parameters = (μ=μ,)
 
-options = (f_abstol = 1E-14, max_iterations = 10_000)#, linesearch = Bisection()
+# `f_abstol` is an absolute bound on the residual and has to stay above its round-off floor, which
+# for these ITER-scale models is `‖ϑ‖ eps`. The 1E-14 this script used to ask for is below it, so
+# the solver had no reachable stopping criterion and the line search ran to its iteration limit on
+# every step.
+options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)#, linesearch = Bisection()
 
 Δt1 = 0.01
 Δt2 = 0.1
@@ -44,7 +48,7 @@ options = (f_abstol = 1E-14, max_iterations = 10_000)#, linesearch = Bisection()
 # timespan = (0., 5_000.)
 # timespan = (0., 10_000.)
 timespan = (0., 50_000.)
-tspan_long = (0., 1_000_000.);
+timespan_long = (0., 1_000_000.);
 
 
 g3ode = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(q3₀; parameters = parameters, timestep=Δt3, timespan=timespan)#(0., 19_189.)

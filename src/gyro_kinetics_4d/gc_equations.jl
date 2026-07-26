@@ -30,7 +30,8 @@ guiding_center_4d_periodicity(::AbstractArray{T}, periodic=true) where {T<:Numbe
 
 
 @doc raw"""
-    odeproblem(qᵢ, parameters; kwargs...)
+    odeproblem(qᵢ; kwargs...)
+    odeproblem(ics::NamedTuple; kwargs...)
 
 The gyrokinetic guiding centre characteristics in the rescaled time of the volume-preserving
 formulation,
@@ -53,6 +54,9 @@ That factor is the phasespace Jacobian, absorbed into the distribution function 
 ``\tilde{f} = B^{\star}_{\parallel} f``. What it buys is that the right-hand side is then
 divergence-free, which is what makes the splitting of [`sodeproblem`](@ref) volume
 preserving.
+
+The second form takes the named tuple that every `initial_conditions_*` of this module returns,
+whose `params` carry that condition's own magnetic moment `μ`.
 """
 function odeproblem(qᵢ=qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic=true)
     ODEProblem(
@@ -66,7 +70,8 @@ end
 
 
 @doc raw"""
-    sodeproblem(qᵢ, parameters; kwargs...)
+    sodeproblem(qᵢ; kwargs...)
+    sodeproblem(ics::NamedTuple; kwargs...)
 
 The same characteristics as [`odeproblem`](@ref), split into the six subsystems
 

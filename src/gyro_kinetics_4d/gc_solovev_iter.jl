@@ -1,7 +1,7 @@
 @doc raw"""
 Analytic ITER-like Solov'ev equilibrium, in cylindrical coordinates ``(R, Z, \varphi)``.
 
-The gyrokinetic counterpart of [`GuidingCenter4d.SolovevIter`](@ref), sharing its initial
+The gyrokinetic counterpart of `GuidingCenter4d.SolovevIter`, sharing its initial
 conditions. Its independent variable is the rescaled time ``s``, with
 ``dt = B^{\star}_{\parallel} \, ds``; here ``B^{\star}_{\parallel} \approx 2 \times 10^{2}`` at the
 deeply passing initial condition, so the defaults below are the 4D guiding centre's divided by that.
@@ -39,7 +39,6 @@ module GuidingCenter4dSolovevIter
     """
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(μ₀),)
 
-    const parameters = default_parameters()
 
     const qᵢ = [x₀..., 5.0E-1]
 

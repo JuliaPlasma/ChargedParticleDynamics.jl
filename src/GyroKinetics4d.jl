@@ -1,3 +1,11 @@
+@doc raw"""
+The characteristics of the gyrokinetic Vlasov equation, in the rescaled time of the
+volume-preserving formulation with ``dt = B^{\star}_{\parallel} \, ds``.
+
+The same physics as `GuidingCenter4d`, written so that the right-hand side is divergence-free and
+admits an exactly volume-preserving splitting. See the
+[Gyrokinetic Guiding Centre Dynamics in 4D](@ref) page.
+"""
 module GyroKinetics4d
 
     # The gyrokinetic guiding centre model, one module per equilibrium, mirroring `GuidingCenter4d`.

@@ -1,7 +1,7 @@
 @doc raw"""
 Small axisymmetric tokamak equilibrium, in cartesian coordinates.
 
-The gyrokinetic counterpart of [`GuidingCenter4d.TokamakSmallCartesian`](@ref), sharing its initial
+The gyrokinetic counterpart of `GuidingCenter4d.TokamakSmallCartesian`, sharing its initial
 conditions. The independent variable is the rescaled time ``s``, with
 ``dt = B^{\star}_{\parallel} \, ds``; here ``B^{\star}_{\parallel} \approx 0.95`` at the deeply
 passing initial condition, so the rescaling is close to a no-op and the defaults nearly match the
@@ -35,7 +35,6 @@ module GuidingCenter4dTokamakSmallCartesian
     """
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.314593645825811e-6),)
 
-    const parameters = default_parameters()
 
     const qᵢ = [1.05, 0.0, 0.0, 0.00045135897235326736]
 

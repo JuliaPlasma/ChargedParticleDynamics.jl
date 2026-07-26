@@ -27,6 +27,5 @@ module SymmetricField
     """
     default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
 
-    const parameters = default_parameters()
 
 end

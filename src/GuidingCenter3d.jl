@@ -1,3 +1,10 @@
+@doc raw"""
+The guiding centre dynamics in three dimensions: the gyro-averaged motion in the position and its
+conjugate momentum, with the parallel velocity eliminated by the two constraints ``v \times b = 0``.
+
+A constrained canonical system, available as `hodeproblem` and `hodeproblem_canonical`. See the
+[Guiding Center Dynamics in 3D](@ref) page.
+"""
 module GuidingCenter3d
 
     # Based on

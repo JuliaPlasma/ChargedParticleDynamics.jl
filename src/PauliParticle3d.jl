@@ -1,3 +1,10 @@
+@doc raw"""
+The Pauli particle in three dimensions: the charged particle plus the ``\mu \vert B \vert`` term of
+the guiding centre, on the full six-dimensional phasespace.
+
+It sits between the charged particle and the guiding centre — it keeps a *regular* Lagrangian, so it
+needs no projection onto a constraint manifold. See the [Pauli Particles in 3D](@ref) page.
+"""
 module PauliParticle3d
 
     include("pauli_particle_3d/symmetric_field.jl")

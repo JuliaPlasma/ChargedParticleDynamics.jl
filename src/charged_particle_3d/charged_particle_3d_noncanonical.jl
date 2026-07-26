@@ -172,6 +172,13 @@ This was previously the plain cartesian Lorentz force ``\dot{v} = E + v \times B
 this expression reduces to when ``g_{ii} = 1`` and ``\partial_{j} g_{ii} = 0`` — so the three
 cartesian equilibria are unaffected, while `TokamakSmallNoncanonical`, which is toroidal, was
 integrating a system inconsistent with its own one-form, Hamiltonian and two-form.
+
+!!! note "Singular where the chart is"
+    The ``1 / g_{ii}`` is a new singularity that the cartesian expression did not have: in the
+    toroidal chart ``g_{22} = r^{2}`` vanishes on the magnetic axis, so the vector field blows up
+    there. That is a property of the coordinate system rather than of the dynamics — the same
+    orbit is perfectly regular in cartesian coordinates — but an orbit that approaches ``r = 0``
+    will lose accuracy and eventually fail in the toroidal module.
 """
 v₁(t, q, v) = q[4]
 v₂(t, q, v) = q[5]
@@ -425,11 +432,12 @@ function sodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAUL
     if periodic
         SODEProblem((charged_particle_3d_sode_vv, charged_particle_3d_sode_vx),
                     (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
-                    timespan, timestep, qᵢ, periodicity=charged_particle_3d_periodicity(qᵢ))
+                    timespan, timestep, qᵢ; parameters=parameters,
+                    periodicity=charged_particle_3d_periodicity(qᵢ))
     else
         SODEProblem((charged_particle_3d_sode_vv, charged_particle_3d_sode_vx),
                     (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
-                    timespan, timestep, qᵢ)
+                    timespan, timestep, qᵢ; parameters=parameters)
     end
 end
 
