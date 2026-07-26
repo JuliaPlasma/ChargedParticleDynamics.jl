@@ -151,6 +151,121 @@ for i in 1:3
 end
 
 
+#
+# The same for the second derivatives, which only the canonicalised formulation needs.
+#
+# `guiding_center_3d_canonical.jl` differentiates the Lagrange multipliers, so it reaches
+# `d²Aᵢdxⱼdxₖ`, `d²bᵢdxⱼdxₖ`, `d²gⁱⁱdxⱼdxₖ`, `d²Bdxᵢdxⱼ` and `dEᵢdxⱼ` — and reaches them far more
+# often than it has distinct values to read, because `dλ₁dqⱼ` and `dλ₂dqⱼ` recompute `λₒ` and its
+# derivative for each of the three components. `d²b₁dx₁dx₁` is 6231 statements and 1789 ns on the
+# ITER Solov'ev X-point, so the repetition is the whole cost of that formulation.
+#
+# Held separately from `FieldValues` rather than merged into it: `hodeproblem` and
+# `hodeproblem_compact` never touch a second derivative, and filling these ninety-nine slots would
+# cost them more than the first-derivative caching saves.
+#
+struct SecondFieldValues{T,F<:FieldValues{T}}
+    first::F
+    d²A::NTuple{3,NTuple{3,NTuple{3,T}}}
+    d²b::NTuple{3,NTuple{3,NTuple{3,T}}}
+    d²g::NTuple{3,NTuple{3,NTuple{3,T}}}
+    d²B::NTuple{3,NTuple{3,T}}
+    dE ::NTuple{3,NTuple{3,T}}
+end
+
+Base.getindex(::SecondFieldValues, i::Integer) = error(
+    "a `SecondFieldValues` was passed to an `ElectromagneticFields` field function as a coordinate " *
+    "vector. Some expression on the right-hand side names an injected function that has no " *
+    "`SecondFieldValues` method; add one beside the others in `guiding_center_3d_constraints.jl`.")
+
+"""
+    secondfieldvalues(t, q)
+
+[`fieldvalues`](@ref) together with every second derivative the canonicalised right-hand side needs.
+Pass it where that right-hand side expects `q`; it answers everything a `FieldValues` does.
+
+The mixed derivatives are stored for all twenty-seven index triples rather than for the eighteen the
+symmetry of `∂²/∂xⱼ∂xₖ` leaves independent. `ElectromagneticFields` expands each one separately, so
+`d²b₁dx₁dx₂` and `d²b₁dx₂dx₁` are different floating-point expressions of the same quantity and need
+not agree in the last bit; reading one for the other would change the trajectory.
+"""
+@inline function secondfieldvalues(t, q)
+    F = fieldvalues(t, q)
+    T = eltype(q)
+    c(x) = convert(T, x)
+
+    SecondFieldValues{T,typeof(F)}(F,
+        (((c(d²A₁dx₁dx₁(t, q)), c(d²A₁dx₁dx₂(t, q)), c(d²A₁dx₁dx₃(t, q))),
+          (c(d²A₁dx₂dx₁(t, q)), c(d²A₁dx₂dx₂(t, q)), c(d²A₁dx₂dx₃(t, q))),
+          (c(d²A₁dx₃dx₁(t, q)), c(d²A₁dx₃dx₂(t, q)), c(d²A₁dx₃dx₃(t, q)))),
+         ((c(d²A₂dx₁dx₁(t, q)), c(d²A₂dx₁dx₂(t, q)), c(d²A₂dx₁dx₃(t, q))),
+          (c(d²A₂dx₂dx₁(t, q)), c(d²A₂dx₂dx₂(t, q)), c(d²A₂dx₂dx₃(t, q))),
+          (c(d²A₂dx₃dx₁(t, q)), c(d²A₂dx₃dx₂(t, q)), c(d²A₂dx₃dx₃(t, q)))),
+         ((c(d²A₃dx₁dx₁(t, q)), c(d²A₃dx₁dx₂(t, q)), c(d²A₃dx₁dx₃(t, q))),
+          (c(d²A₃dx₂dx₁(t, q)), c(d²A₃dx₂dx₂(t, q)), c(d²A₃dx₂dx₃(t, q))),
+          (c(d²A₃dx₃dx₁(t, q)), c(d²A₃dx₃dx₂(t, q)), c(d²A₃dx₃dx₃(t, q))))),
+        (((c(d²b₁dx₁dx₁(t, q)), c(d²b₁dx₁dx₂(t, q)), c(d²b₁dx₁dx₃(t, q))),
+          (c(d²b₁dx₂dx₁(t, q)), c(d²b₁dx₂dx₂(t, q)), c(d²b₁dx₂dx₃(t, q))),
+          (c(d²b₁dx₃dx₁(t, q)), c(d²b₁dx₃dx₂(t, q)), c(d²b₁dx₃dx₃(t, q)))),
+         ((c(d²b₂dx₁dx₁(t, q)), c(d²b₂dx₁dx₂(t, q)), c(d²b₂dx₁dx₃(t, q))),
+          (c(d²b₂dx₂dx₁(t, q)), c(d²b₂dx₂dx₂(t, q)), c(d²b₂dx₂dx₃(t, q))),
+          (c(d²b₂dx₃dx₁(t, q)), c(d²b₂dx₃dx₂(t, q)), c(d²b₂dx₃dx₃(t, q)))),
+         ((c(d²b₃dx₁dx₁(t, q)), c(d²b₃dx₁dx₂(t, q)), c(d²b₃dx₁dx₃(t, q))),
+          (c(d²b₃dx₂dx₁(t, q)), c(d²b₃dx₂dx₂(t, q)), c(d²b₃dx₂dx₃(t, q))),
+          (c(d²b₃dx₃dx₁(t, q)), c(d²b₃dx₃dx₂(t, q)), c(d²b₃dx₃dx₃(t, q))))),
+        (((c(d²g¹¹dx₁dx₁(t, q)), c(d²g¹¹dx₁dx₂(t, q)), c(d²g¹¹dx₁dx₃(t, q))),
+          (c(d²g¹¹dx₂dx₁(t, q)), c(d²g¹¹dx₂dx₂(t, q)), c(d²g¹¹dx₂dx₃(t, q))),
+          (c(d²g¹¹dx₃dx₁(t, q)), c(d²g¹¹dx₃dx₂(t, q)), c(d²g¹¹dx₃dx₃(t, q)))),
+         ((c(d²g²²dx₁dx₁(t, q)), c(d²g²²dx₁dx₂(t, q)), c(d²g²²dx₁dx₃(t, q))),
+          (c(d²g²²dx₂dx₁(t, q)), c(d²g²²dx₂dx₂(t, q)), c(d²g²²dx₂dx₃(t, q))),
+          (c(d²g²²dx₃dx₁(t, q)), c(d²g²²dx₃dx₂(t, q)), c(d²g²²dx₃dx₃(t, q)))),
+         ((c(d²g³³dx₁dx₁(t, q)), c(d²g³³dx₁dx₂(t, q)), c(d²g³³dx₁dx₃(t, q))),
+          (c(d²g³³dx₂dx₁(t, q)), c(d²g³³dx₂dx₂(t, q)), c(d²g³³dx₂dx₃(t, q))),
+          (c(d²g³³dx₃dx₁(t, q)), c(d²g³³dx₃dx₂(t, q)), c(d²g³³dx₃dx₃(t, q))))),
+        ((c(d²Bdx₁dx₁(t, q)), c(d²Bdx₁dx₂(t, q)), c(d²Bdx₁dx₃(t, q))),
+         (c(d²Bdx₂dx₁(t, q)), c(d²Bdx₂dx₂(t, q)), c(d²Bdx₂dx₃(t, q))),
+         (c(d²Bdx₃dx₁(t, q)), c(d²Bdx₃dx₂(t, q)), c(d²Bdx₃dx₃(t, q)))),
+        ((c(dE₁dx₁(t, q)), c(dE₁dx₂(t, q)), c(dE₁dx₃(t, q))),
+         (c(dE₂dx₁(t, q)), c(dE₂dx₂(t, q)), c(dE₂dx₃(t, q))),
+         (c(dE₃dx₁(t, q)), c(dE₃dx₂(t, q)), c(dE₃dx₃(t, q)))))
+end
+
+# Building a cache from a cache is the identity, which is what lets the canonicalised right-hand side
+# hand its `SecondFieldValues` straight to `guiding_center_3d_v` instead of having it fill a second
+# one from the coordinate vector it no longer has.
+@inline fieldvalues(t, F::FieldValues) = F
+@inline fieldvalues(t, S::SecondFieldValues) = S
+
+for i in 1:3
+    @eval @inline Aᵢ(::Val{$i}, t, S::SecondFieldValues) = S.first.A[$i]
+    @eval @inline bᵢ(::Val{$i}, t, S::SecondFieldValues) = S.first.b[$i]
+
+    @eval @inline $(Symbol("A", INDEX_SUBSCRIPTS[i]))(t, S::SecondFieldValues) = S.first.A[$i]
+    @eval @inline $(Symbol("b", INDEX_SUBSCRIPTS[i]))(t, S::SecondFieldValues) = S.first.b[$i]
+
+    @eval @inline $(Symbol("g", INDEX_SUPERSCRIPTS[i], INDEX_SUPERSCRIPTS[i]))(t, S::SecondFieldValues) = S.first.g[$i]
+    @eval @inline $(Symbol("dBdx", INDEX_SUBSCRIPTS[i]))(t, S::SecondFieldValues) = S.first.dB[$i]
+    @eval @inline $(Symbol("E", INDEX_SUBSCRIPTS[i]))(t, S::SecondFieldValues) = S.first.E[$i]
+
+    for j in 1:3
+        @eval @inline dAᵢdxⱼ(::Val{$i}, ::Val{$j}, t, S::SecondFieldValues) = S.first.dA[$i][$j]
+        @eval @inline dbᵢdxⱼ(::Val{$i}, ::Val{$j}, t, S::SecondFieldValues) = S.first.db[$i][$j]
+
+        @eval @inline $(Symbol("dg", INDEX_SUPERSCRIPTS[i], INDEX_SUPERSCRIPTS[i], "dx", INDEX_SUBSCRIPTS[j]))(t, S::SecondFieldValues) = S.first.dg[$i][$j]
+
+        @eval @inline $(Symbol("d²Bdx", INDEX_SUBSCRIPTS[i], "dx", INDEX_SUBSCRIPTS[j]))(t, S::SecondFieldValues) = S.d²B[$i][$j]
+        @eval @inline $(Symbol("dE", INDEX_SUBSCRIPTS[i], "dx", INDEX_SUBSCRIPTS[j]))(t, S::SecondFieldValues) = S.dE[$i][$j]
+
+        for k in 1:3
+            @eval @inline d²Aᵢdxⱼdxₖ(::Val{$i}, ::Val{$j}, ::Val{$k}, t, S::SecondFieldValues) = S.d²A[$i][$j][$k]
+            @eval @inline d²bᵢdxⱼdxₖ(::Val{$i}, ::Val{$j}, ::Val{$k}, t, S::SecondFieldValues) = S.d²b[$i][$j][$k]
+
+            @eval @inline $(Symbol("d²g", INDEX_SUPERSCRIPTS[i], INDEX_SUPERSCRIPTS[i], "dx", INDEX_SUBSCRIPTS[j], "dx", INDEX_SUBSCRIPTS[k]))(t, S::SecondFieldValues) = S.d²g[$i][$j][$k]
+        end
+    end
+end
+
+
 vᵢ(::Val{i}, t, q, p) where {i} = p[i] - Aᵢ(Val(i), t, q)
 
 dvᵢdqⱼ(i::Val, j::Val, t, q, p) = -dAᵢdxⱼ(i, j, t, q)

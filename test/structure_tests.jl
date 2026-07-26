@@ -302,6 +302,32 @@ end
                 @test M.dgᵏdpₗ(Val(k), Val(i), t, F, p) == M.dgᵏdpₗ(Val(k), Val(i), t, q, p)
             end
         end
+
+        # The canonicalised formulation's cache, which answers everything the first-derivative one
+        # does and the second derivatives besides. The mixed ones are stored for all twenty-seven
+        # index triples rather than the eighteen symmetry leaves independent, because
+        # `ElectromagneticFields` expands `d²b₁dx₁dx₂` and `d²b₁dx₂dx₁` separately and they need not
+        # agree in the last bit — so both orderings are asserted here.
+        S = M.secondfieldvalues(t, q)
+
+        @test isconcretetype(typeof(S))
+        @test M.λₒ(t, S, p, c) == M.λₒ(t, q, p, c)
+
+        for i in 1:3, j in 1:3
+            @test M.dAᵢdxⱼ(Val(i), Val(j), t, S) == M.dAᵢdxⱼ(Val(i), Val(j), t, q)
+            @test M.dbᵢdxⱼ(Val(i), Val(j), t, S) == M.dbᵢdxⱼ(Val(i), Val(j), t, q)
+
+            for k in 1:3
+                @test M.d²Aᵢdxⱼdxₖ(Val(i), Val(j), Val(k), t, S) == M.d²Aᵢdxⱼdxₖ(Val(i), Val(j), Val(k), t, q)
+                @test M.d²bᵢdxⱼdxₖ(Val(i), Val(j), Val(k), t, S) == M.d²bᵢdxⱼdxₖ(Val(i), Val(j), Val(k), t, q)
+                @test M.d²gᵏdqₗdqₘ(Val(i), Val(j), Val(k), t, S, p) == M.d²gᵏdqₗdqₘ(Val(i), Val(j), Val(k), t, q, p)
+                @test M.d²Hdqᵢdqⱼ(Val(i), Val(j), t, S, p, ic.params) == M.d²Hdqᵢdqⱼ(Val(i), Val(j), t, q, p, ic.params)
+                @test M.d²Hdqᵢdpⱼ(Val(i), Val(j), t, S, p, ic.params) == M.d²Hdqᵢdpⱼ(Val(i), Val(j), t, q, p, ic.params)
+            end
+
+            @test M.dλ₁dqⱼ(Val(i), t, S, p, ic.params, c) == M.dλ₁dqⱼ(Val(i), t, q, p, ic.params, c)
+            @test M.dλ₂dpⱼ(Val(i), t, S, p, ic.params, c) == M.dλ₂dpⱼ(Val(i), t, q, p, ic.params, c)
+        end
     end
 end
 
