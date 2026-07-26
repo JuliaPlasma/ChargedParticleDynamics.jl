@@ -121,30 +121,41 @@ g^{3} &= b_{1} v_{2} - b_{2} v_{1} ,
 ```
 
 and shows (§4.1–4.2) that the Lagrange multipliers carry
-``\{ g^{1}, g^{2} \} = b_{3} [ B + (p - A) \cdot (\nabla \times b) ]`` in their denominator for the
-pair ``(g^{1}, g^{2})``, and ``b_{1} [ \cdots ]`` for the pair ``(g^{1}, g^{3})``.
+``\{ g_{1}, g_{2} \} = b_{m} [ B + (p - A) \cdot (\nabla \times b) ]`` in their denominator, with
+``m`` the index of the constraint the pair leaves out: ``b_{3}`` for ``(g^{1}, g^{2})``, ``b_{1}``
+for ``(g^{3}, g^{1})``, ``b_{2}`` for ``(g^{2}, g^{3})``. Each pair is therefore singular on a
+different surface.
 
-**This implementation uses the pair ``(g^{3}, g^{1})``**, so the multipliers are singular wherever
-``b_{1} = 0``.
-
-**Seven of the eleven equilibria have ``b_{1} = 0`` exactly at the initial condition the package
-ships**, so the multipliers are infinite and `hodeproblem` cannot be started there at all — the Newton
-solver hits a NaN on the first step. This is not confined to the curvilinear cases:
-`TokamakSmallCartesian` fails too, because its initial condition sits at ``y = z = 0`` where
+The implementation once used ``(g^{3}, g^{1})`` alone, and **seven of the eleven equilibria have
+``b_{1} = 0`` exactly at the initial condition the package ships**, so the multipliers were infinite
+and `hodeproblem` could not be started there at all. This was not confined to the curvilinear cases:
+`TokamakSmallCartesian` failed too, because its initial condition sits at ``y = z = 0`` where
 ``B_{x} = 0``. What decides it is where the initial condition lies relative to the field, not the
 coordinate system.
 
-The four that do work — `Dipole3d`, `QuadraticPotentials3d`, `TokamakMediumCartesian` and
-`SolovevIterXpoint` — are exactly the ones the test suite and the scripts exercise. The remaining
-3D test blocks are commented out for this reason, and `scripts/guiding_center_3d.jl` displaces its
-initial condition off the midplane by `sqrt(eps())` to work around it. Even `SolovevIterXpoint` is
-only marginal, at ``b_{1} \approx 5.9 \times 10^{-3}``.
+**All three pairs are now implemented and selectable** through the `constraints` keyword, and each
+equilibrium declares a `default_constraints` that is regular at its own initial conditions. Nine of
+the eleven equilibria integrate as a result, and the two that do not — `SymmetricField` and
+`ThetaPinchField` — ship Poincaré-invariant loops rather than point initial conditions and never had
+integration tests. `SolovevSymmetricField` is the case that made all three necessary rather than two:
+``b = e_{2}`` there, so ``b_{1}`` and ``b_{3}`` vanish together and only ``(g^{2}, g^{3})`` survives.
 
-Choosing ``(g^{1}, g^{2})`` instead puts ``b_{3} = b_{\varphi}`` in the denominator — the largest
-component of a tokamak field, and non-zero on the midplane — which would make most of these
-equilibria usable. The choice is hard-coded, with the alternative commented out beside it in
-`guiding_center_3d_equations.jl`. See [Findings](@ref) for the measurements and `TODO.md` for the
-proposed fix.
+Two residual limitations are worth knowing about, neither of them removable by choosing a pair.
+
+* **A pair that is regular at the initial condition can still be badly conditioned along the orbit.**
+  `Dipole3d` is regular for all three, but its orbit takes ``b_{1}`` and ``b_{2}`` through zero, and
+  the two pairs that divide by them lose the orbit entirely past ``t = 30``. Its default is chosen on
+  the conditioning along the orbit for that reason; the other ten are chosen on regularity at the
+  initial condition alone. See `TODO.md`.
+* **The omitted constraint is conserved ``1/b_{m}`` times worse than the retained pair**, since
+  ``b_{1} g^{2} - b_{2} g^{1} + b_{3} g^{3} = 0`` determines it from them pointwise. This is why
+  `compute_constraints` reports all three components rather than the two the pair retains.
+
+The compact form of the paper's Eq. (29), `hodeproblem_compact`, is free of the ``b_{m}``
+denominator altogether and does not depend on the pair; see
+[Guiding Center Dynamics in 3D](@ref) for the derivation, which had to be redone
+coordinate-generally because Eq. (29) as printed is cartesian. See [Findings](@ref) for the
+measurements.
 
 ### The two-form of the 4D guiding centre
 
@@ -226,9 +237,9 @@ and additionally accept the named tuple that every `initial_conditions_*` return
 
 ## Open work
 
-* Make the 3D guiding centre constraint pair selectable. This is the sharpest remaining limitation:
-  seven of the eleven equilibria have ``b_{1} = 0`` at their shipped initial condition and cannot be
-  started at all.
+* Choose each 3D guiding centre equilibrium's `default_constraints` on the conditioning of the pair
+  along its orbit rather than on regularity at the initial condition. Only `Dipole3d`, where the
+  difference is four orders of magnitude, is currently chosen that way.
 * Write the coordinate-transforming `IRK` integrator that `coordinate_transformations.jl` is waiting
   for. The 0.x-era sketch is on file at
   `src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl` as the starting point; it is not

@@ -15,7 +15,7 @@ All numbers below were produced on the state of the branch at the time of writin
 reproducible but not pinned by a test, so treat small differences as normal.
 
 
-## Conditioning of the 3D guiding centre constraint pair
+## Conditioning of the 3D guiding centre constraint formulations
 
 `scripts/study_guiding_center_3d_conditioning.jl`
 
@@ -26,45 +26,136 @@ by two of the three independent components of `v × b = 0`,
 g¹ = b₁ v₃ - b₃ v₁ ,    g² = b₂ v₃ - b₃ v₂ ,    g³ = b₁ v₂ - b₂ v₁ ,
 ```
 
-and the Poisson bracket in the denominator of both Lagrange multipliers is
-`b₃ [B + (p-A)·(∇×b)]` for the pair `(g¹, g²)` and `b₁ [ … ]` for `(g¹, g³)`. This package uses
-`(g³, g¹)`, so it is singular wherever `b₁ = 0`.
+and the Poisson bracket in the denominator of both Lagrange multipliers carries a factor of the
+`b`-component belonging to the constraint the pair leaves out: `b₁` for `(g³, g¹)` (`constraints =
+:g31`), `b₃` for `(g¹, g²)` (`:g12`), `b₂` for `(g², g³)` (`:g23`). The package once implemented
+`(g³, g¹)` alone, so it was singular wherever `b₁ = 0`.
 
-At the shipped initial condition of each equilibrium:
 
-| equilibrium | coords | b₁ | λₒ | λ₁ | λ₂ |
-|---|---|---|---|---|---|
-| Dipole3d                 | cartesian   | -4.082e-01 | -3.402e+01 | 7.779e-03 | 5.874e-15 |
-| QuadraticPotentials3d    | cartesian   | 2.000e-03  | 2.000e-01  | 1.514e+00 | 6.500e-03 |
-| TokamakSmallCartesian    | cartesian   | -0.000e+00 | 0.000e+00  | **-Inf**  | **Inf**   |
-| TokamakMediumCartesian   | cartesian   | -3.966e-02 | -1.537e-01 | 5.232e-02 | -4.172e-01 |
-| TokamakSmallCylindrical  | cylindrical | 0.000e+00  | 0.000e+00  | **Inf**   | **-Inf**  |
-| TokamakMediumCylindrical | cylindrical | 0.000e+00  | 0.000e+00  | **Inf**   | **-Inf**  |
-| TokamakIterCylindrical   | cylindrical | 0.000e+00  | 0.000e+00  | **Inf**   | **Inf**   |
-| SolovevIter              | cylindrical | 0.000e+00  | 0.000e+00  | **Inf**   | **Inf**   |
-| SolovevIterXpoint        | cylindrical | 5.926e-03  | 1.207e+00  | 7.113e-01 | 7.470e-03 |
-| SolovevSymmetricField    | cylindrical | -0.000e+00 | 0.000e+00  | **NaN**   | **-Inf**  |
-| TokamakSmallToroidal     | toroidal    | 0.000e+00  | 0.000e+00  | **Inf**   | **-Inf**  |
+### Which pairs are usable
+
+At the shipped initial condition of each equilibrium. `λₒ = {g₁, g₂}` is the bracket both
+multipliers divide by; `D` is the same quantity as the compact form computes it, as a weighted mean
+over all three pairs that never divides by a single component of `b`.
+
+| equilibrium | coords | b₁ | b₂ | b₃ | λₒ(:g31) | λₒ(:g12) | λₒ(:g23) | D | default |
+|---|---|---|---|---|---|---|---|---|---|
+| Dipole3d                 | cartesian   | -4.082e-01 | -8.165e-01 | 4.082e-01  | -3.402e+01 | 3.402e+01  | 6.804e+01  | 8.333e+01 | `:g12` |
+| QuadraticPotentials3d    | cartesian   | 2.000e-03  | -3.000e-03 | 1.000e+00  | 2.000e-01  | 9.999e+01  | 3.000e-01  | 9.999e+01 | `:g31` |
+| TokamakSmallCartesian    | cartesian   | **0**      | 9.997e-01  | 2.499e-02  | **0**      | 2.379e-02  | -9.516e-01 | 9.519e-01 | `:g23` |
+| TokamakMediumCartesian   | cartesian   | -3.966e-02 | 9.914e-01  | 1.245e-01  | -1.537e-01 | 4.827e-01  | -3.843e+00 | 3.876e+00 | `:g31` |
+| TokamakSmallCylindrical  | cylindrical | **0**      | -2.499e-02 | -1.050e+00 | **0**      | -1.051e+00 | 2.502e-02  | 1.001e+00 | `:g12` |
+| TokamakMediumCylindrical | cylindrical | **0**      | -1.245e-01 | -2.483e+00 | **0**      | -2.596e+01 | 1.302e+00  | 1.046e+01 | `:g12` |
+| TokamakIterCylindrical   | cylindrical | **0**      | 3.888e-01  | -2.303e+00 | **0**      | -8.281e+01 | -1.398e+01 | 3.595e+01 | `:g12` |
+| SolovevIter              | cylindrical | **0**      | 2.387e-02  | -2.500e+00 | **0**      | -5.093e+02 | -4.862e+00 | 2.037e+02 | `:g12` |
+| SolovevIterXpoint        | cylindrical | 5.926e-03  | 2.626e-02  | -2.500e+00 | 1.207e+00  | -5.093e+02 | -5.349e+00 | 2.037e+02 | `:g31` |
+| SolovevSymmetricField    | cylindrical | **0**      | 1.000e+00  | **0**      | **0**      | **0**      | -2.278e+02 | 2.278e+02 | `:g23` |
+| TokamakSmallToroidal     | toroidal    | **0**      | -1.498e-03 | -1.054e+00 | **0**      | -5.780e-02 | 8.213e-05  | 5.482e-02 | `:g12` |
 
 **Seven of eleven equilibria have `b₁ = 0` exactly at the initial condition the package ships**, so
-`λₒ` vanishes and the multipliers are infinite. `hodeproblem` cannot be started there at all — the Newton
-solver hits a NaN in the direction vector on the first step.
+`λₒ` vanishes for `(g³, g¹)` and its multipliers are infinite. Those problems cannot be started at
+all — the Newton solver hits a NaN in its direction vector on the first step — which is why the
+package used to integrate on four equilibria of eleven. `SolovevSymmetricField` is the case that
+made all three pairs necessary rather than two: `b = e₂` there, so `b₁` and `b₃` vanish together and
+only `(g², g³)` survives.
 
 Two things about this are worth recording:
 
-* **It is not a curvilinear-coordinates problem.** `TokamakSmallCartesian` fails too: its initial
-  condition sits at `y = z = 0`, where `B_x = 0`. What decides the outcome is where the initial
-  condition lies relative to the field, not the coordinate system. The four survivors are simply
-  the ones whose initial condition is off the symmetry plane.
-* **The survivors are exactly the equilibria the test suite exercises**, plus the two toy problems
-  that have their own scripts. That is not a coincidence — the other 3D test blocks were commented
-  out, and `scripts/guiding_center_3d.jl` displaces its initial condition off the midplane by
-  `sqrt(eps())`, both of which are workarounds for this.
+* **It is not a curvilinear-coordinates problem.** `TokamakSmallCartesian` fails for `(g³, g¹)` too:
+  its initial condition sits at `y = z = 0`, where `B_x = 0`. What decides the outcome is where the
+  initial condition lies relative to the field, not the coordinate system.
+* **`D` is finite everywhere**, including where two of the three pairs are singular. The three
+  ratios `{cᵢ,cⱼ}(m) / bₘ` it averages agree to machine precision wherever they are all defined, in
+  every chart — which is what makes the average a faithful stand-in for the singular ratio rather
+  than a fudge, and is the numerical check on the derivation in
+  `src/guiding_center_3d/guiding_center_3d_compact.jl`.
 
-Switching to `(g¹, g²)` puts `b₃ = b_φ` in the denominator — the largest component of a tokamak
-field, and non-zero on the midplane — which would make most of these equilibria usable. The choice
-is hard-coded in `guiding_center_3d_equations.jl`, with the alternative commented out beside it.
-See `TODO.md` in the repository root.
+
+### The formulations agree where they are all usable
+
+A hundred steps at min(`DEFAULT_TIMESTEP`, 0.1) with `PartitionedGauss(2)`. `Δy` is the relative
+deviation of the final `(q, p)` from the compact form in its `:parallel` variant, which is used as
+the reference because it is the only one of the six defined for every equilibrium.
+
+| equilibrium | variant | Δy | \|ΔH/H\| | max\|gᵏ\| |
+|---|---|---|---|---|
+| TokamakMediumCartesian | hode `:g31`         | 2.243e-10 | 6.016e-11 | 8.239e-10 |
+|                        | hode `:g12`         | 1.930e-09 | 6.028e-11 | 9.677e-09 |
+|                        | hode `:g23`         | 5.666e-09 | 6.018e-11 | 2.638e-08 |
+|                        | canonical `:g31`    | 7.480e-09 | 7.658e-09 | 1.329e-08 |
+|                        | compact `:g31`      | 3.414e-11 | 5.807e-11 | 1.321e-10 |
+|                        | compact `:parallel` | —         | 5.745e-11 | 1.345e-10 |
+
+`TokamakMediumCartesian` is the only equilibrium for which no component of `b` vanishes at the
+initial condition, so it is the only one where all three pairs can be compared directly. They agree
+to 6e-9 — the accuracy of the nonlinear solve at this tolerance — which is the substantive check
+that the three pairs parameterise the same constrained system and that the compact form is equivalent
+to the Hamilton-Dirac one it was derived from. The same holds on every other equilibrium for the
+pairs that are regular there; the full table is in the script's output.
+
+Two entries in that table are not agreements. `Dipole3d` disagrees by 2e-4 between its
+well-conditioned pair and its two badly conditioned ones, which is the subject of the next section.
+And `SolovevSymmetricField` cannot run `hodeproblem_canonical` at all: its pair is well conditioned,
+`λₒ ≈ -228` and never below -173 along the orbit, but the `∂λ/∂q`, `∂λ/∂p` terms the canonicalised
+form adds amplify the constraint drift enough that Newton meets a NaN after some thirty steps. The
+same orbit runs to completion under `hodeproblem` and `hodeproblem_compact`. It is the only
+equilibrium where this happens, and it is a property of that formulation rather than of the
+constraint pair.
+
+
+### Regular is not the same as well conditioned
+
+`Dipole3d` is where that distinction bites. All three pairs are regular at its initial condition —
+`λₒ` is -34, 34 and 68 — but the orbit takes `b₁` and `b₂` through zero:
+
+| variant | max\|gᵏ\| at t = 3 | \|ΔH/H\| at t = 3 | \|ΔH/H\| at t = 30 |
+|---|---|---|---|
+| hode `:g31` | 1.30e-03 | 4.06e-05 | 2e+03 |
+| hode `:g23` | 1.69e-03 | 3.98e-05 | not measured |
+| hode `:g12` | 1.83e-08 | 1.98e-09 | 1.98e-09 |
+| canonical `:g31` | 3.27e-05 | 8.11e-07 | NaN in the Newton direction |
+| canonical `:g12` | 5.62e-06 | 1.57e-08 | 1.57e-08 |
+
+Four orders of magnitude at `t = 3`, and past `t = 30` the badly conditioned pair loses the orbit
+altogether — `|ΔH/H| = 2e+03` is not an error estimate, it is a destroyed trajectory. With `:g12`
+both the Hamilton-Dirac and the canonicalised form hold their levels out to `t = 300`.
+
+`Dipole3d` is therefore the one equilibrium whose `default_constraints` is chosen on the conditioning
+of the pair *along the orbit* rather than at the initial condition. The others were left where
+regularity put them; see `TODO.md`.
+
+The related effect is that the constraint the pair omits is conserved `1/bₘ` times worse than the two
+it retains, since `b₁g² - b₂g¹ + b₃g³ = 0` determines it from them pointwise. Over a thousand steps
+of `TokamakMediumCartesian` with `:g31` the retained pair holds to 2e-9 while the omitted `g²`
+reaches 1.4e-6, the orbit having passed through `b₁ = 3.5e-4`. That is why `compute_constraints`
+reports all three.
+
+
+### What the formulations cost
+
+Per step, taking the Hamilton-Dirac form as unity. Measured across all eleven equilibria; the spread
+between them is a few percent.
+
+| formulation | relative cost | why |
+|---|---|---|
+| compact, literal pair | 0.86 – 0.95 | replaces both multipliers by a single bracket ratio; no second derivatives |
+| Hamilton-Dirac | 1 | two multipliers over six bracket terms |
+| compact, `:parallel` | 1.21 – 1.44 | the regularised `D` averages all three brackets, so nine terms rather than three |
+| canonicalised | 8.9 – 29.6 | `∂λ/∂q` and `∂λ/∂p` need every second derivative of the field |
+
+The three pairs cost the same as each other to within noise — they are the same expressions with
+permuted indices — so the pair should be chosen on conditioning alone. The order of magnitude on the
+canonicalised form is the number worth remembering: it buys exact symplecticity rather than
+approximate, and gives up two to three orders of magnitude of energy and constraint conservation for
+it at these step sizes. Its spread is wider than the others because part of the cost is the harder
+nonlinear solve, not only the right-hand side: `Dipole3d`, the worst case at 29.6, is also the only
+one where Newton needs more than one iteration per stage on average.
+
+Separately, the rewrite of the constraints made the Hamilton-Dirac right-hand side **2.7× faster**:
+the old code evaluated `λ₁` and `λ₂` once per component, so the multipliers and the six bracket
+terms behind them were computed three times per call. A hundred steps of `Dipole3d` went from
+1383 ms to 517 ms, and `hodeproblem_canonical` from 11.9 s to 10.1 s, with allocations and compile
+time unchanged.
 
 
 ## The toroidal momentum of the guiding centre models
@@ -195,18 +286,30 @@ the equations of motion agree.
 | SolovevIterXpoint       | 1.39e-15 | 4.69e-13 |
 
 3D guiding centre, `HODEProblem` with PartitionedGauss(2). The informative column is not the energy
-but the two constraints: they vanish along the exact flow, so their magnitude is the drift off the
+but the constraints: they vanish along the exact flow, so their magnitude is the drift off the
 manifold on which `p = ϑ` — the quantity the approximately symplectic methods are designed to keep
-bounded, and the reason `compute_constraints` was added to the diagnostics.
+bounded, and the reason `compute_constraints` was added to the diagnostics. The constraint the pair
+omits is listed separately from the two it retains, because it is the retained pair's drift amplified
+by `1/bₘ`.
 
-| equilibrium | \|ΔH/H\| | \|g₁\| | \|g₂\| | \|Δp_φ/p_φ\| |
-|---|---|---|---|---|
-| SolovevIterXpoint      | 5.74e-15 | 1.13e-15 | 1.47e-13 | 0.00e+00 |
-| TokamakMediumCartesian | 3.23e-10 | 7.07e-10 | 1.78e-09 | — |
+| equilibrium | pair | \|ΔH/H\| | \|gᵏ\| retained | \|gᵏ\| omitted | \|Δp_φ/p_φ\| |
+|---|---|---|---|---|---|
+| SolovevIterXpoint        | `:g31` | 5.39e-15 | 1.49e-13 | 9.33e-13 | 0.00e+00 |
+| TokamakMediumCartesian   | `:g31` | 3.23e-10 | 1.78e-09 | 1.45e-06 | — |
+| TokamakSmallCylindrical  | `:g12` | 6.84e-15 | 1.31e-15 | 1.11e-18 | 0.00e+00 |
+| TokamakMediumCylindrical | `:g12` | 2.04e-13 | 7.43e-13 | 2.62e-14 | 0.00e+00 |
+| TokamakSmallToroidal     | `:g12` | 1.12e-15 | 1.22e-17 | 1.50e-20 | 0.00e+00 |
 
-Only the two equilibria that can be started at all appear; see the conditioning section above.
-`p_φ` is conserved *exactly* for the cylindrical case because φ is cyclic and the partitioned
-symplectic method conserves the conjugate momentum of a cyclic coordinate to round-off.
+The three equilibria at the bottom are ones that could not be started at all before the constraint
+pair became selectable. `SolovevSymmetricField`, which also could not, still cannot be run over a
+thousand steps: it is the stiffest equilibrium in the package at `‖ϑ‖ ≈ 256` and the drift takes
+Newton into a NaN a few hundred steps in. The `:g12` rows show the amplification working the *other*
+way — `b₃` is the large component there, so the omitted constraint comes out better conserved than
+the retained pair rather than worse. `TokamakMediumCartesian` is the case where it hurts: `b₁` falls
+to 3.5e-4 along that orbit.
+
+`p_φ` is conserved *exactly* for the cylindrical and toroidal cases because φ is cyclic and the
+partitioned symplectic method conserves the conjugate momentum of a cyclic coordinate to round-off.
 
 Gyrokinetic guiding centre, over the module's default span (~200 units of physical time):
 

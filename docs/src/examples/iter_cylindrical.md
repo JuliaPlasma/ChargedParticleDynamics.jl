@@ -59,11 +59,12 @@ Obtain guiding center initial conditions:
 q₀, μ = guiding_center(ics)
 ```
 
-Modify guiding center initial conditions for 3D models to avoid singularities:
+The 3D model can use the guiding centre initial condition as it stands. It used to need displacing
+off the midplane by `sqrt(eps())`, because the only constraint pair it implemented divides by
+`b₁ = b_R`, which vanishes there; `TokamakIterCylindrical` now defaults to the pair that divides by
+`b₃ = b_φ` instead.
 ```@example 1
-q3₀ = copy(q₀)
-q3₀[2] = sqrt(eps())
-q3₀
+q3₀ = q₀
 ```
 
 Parameters:

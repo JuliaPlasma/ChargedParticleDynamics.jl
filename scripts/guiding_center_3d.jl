@@ -28,10 +28,6 @@ p₀ = ChargedParticle3d.TokamakIterCylindrical.charged_particle_3d_pᵢ(0, x₀
 
 q₀, μ = guiding_center(ics)
 
-q3₀ = copy(q₀)
-q3₀[2] = sqrt(eps())
-q3₀
-
 parameters = (μ=μ,)
 
 # `f_abstol` is an absolute bound on the residual and has to stay above its round-off floor, which
@@ -51,7 +47,12 @@ timespan = (0., 50_000.)
 timespan_long = (0., 1_000_000.);
 
 
-g3ode = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(q3₀; parameters = parameters, timestep=Δt3, timespan=timespan)#(0., 19_189.)
+# `q₀` sits on the midplane, where `b₁ = b_R = 0`. That used to be fatal — the only constraint pair
+# the model had was `(g³, g¹)`, whose Lagrange multipliers divide by `b₁` — and this script displaced
+# the initial condition off the plane by `sqrt(eps())` to work around it. `TokamakIterCylindrical`
+# now defaults to `(g¹, g²)`, which divides by `b₃ = b_φ` instead, so the physical initial condition
+# can be used as it stands.
+g3ode = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(q₀; parameters = parameters, timestep=Δt3, timespan=timespan)#(0., 19_189.)
 g3sol = integrate(g3ode, PartitionedGauss(1); initialguess=NoInitialGuess(),options...)
 # g3sol = integrate(g3ode, PartitionedGauss(1); options...)
 g3car = cartesian_solution(g3sol, GuidingCenter3d.TokamakIterCylindrical);
