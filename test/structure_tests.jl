@@ -346,6 +346,47 @@ end
 end
 
 
+@safetestset "3D guiding centre: multiplier derivatives match finite differences                                  " begin
+    using ChargedParticleDynamics.GuidingCenter3d
+    using ..StructureTestUtils
+    using Test
+
+    # `∂λ/∂q` and `∂λ/∂p` are the only *composed* derivatives in the model — everything else is read
+    # straight off the injected field functions — and they are what separates `hodeproblem_canonical`
+    # from `hodeproblem`. `dλ₂` carried the `∂λₒ` term with the wrong sign, which this catches.
+    #
+    # The test point has to sit *off* the constraint manifold. In the right-hand side both `∂λ/∂q g`
+    # terms are multiplied by a constraint, so at the shipped initial condition the sign of the `∂λₒ`
+    # term is invisible: `λ₁` and `λ₂` themselves are still finite and correct there, and only their
+    # derivatives are wrong. Displacing `q` breaks `v × b = 0` and makes the term measurable.
+    for M in (GuidingCenter3d.SolovevIterXpoint,        # cylindrical
+              GuidingCenter3d.TokamakMediumCartesian,   # cartesian
+              GuidingCenter3d.TokamakSmallToroidal)     # toroidal
+        ic = M.initial_conditions_barely_passing()
+        t, p, par = 0.0, ic.p, ic.params
+        q = ic.q .+ 0.01 .* [1.0, 2.0, 3.0]
+        c = M.constraint_pair(M.default_constraints())
+
+        # Same reasoning as the constraint block above: a central difference at h = 1e-6 carries about
+        # `eps * s / h` of round-off, and the multipliers run over several orders of magnitude between
+        # these equilibria, so the floor is scaled to the problem rather than fixed.
+        atol = 1e-8 * max(1.0, maximum(abs, p))
+
+        for (λ, dλdq, dλdp) in ((M.λ₁, M.dλ₁dqⱼ, M.dλ₁dpⱼ), (M.λ₂, M.dλ₂dqⱼ, M.dλ₂dpⱼ))
+            for ji in 1:3
+                j = Val(ji)
+                @test isapprox(dλdq(j, t, q, p, par, c),
+                               central_difference(x -> λ(t, x, p, par, c), q, ji);
+                               rtol = 1e-5, atol = atol)
+                @test isapprox(dλdp(j, t, q, p, par, c),
+                               central_difference(y -> λ(t, q, y, par, c), p, ji);
+                               rtol = 1e-5, atol = atol)
+            end
+        end
+    end
+end
+
+
 @safetestset "3D guiding centre: the compact form reproduces the paper's Eq. (29)                                 " begin
     using ChargedParticleDynamics.GuidingCenter3d
     using LinearAlgebra
@@ -570,19 +611,33 @@ end
         gs = (c.g₁, c.g₂, c.g₃)
         bs = (M.b₁, M.b₂, M.b₃)
 
-        retained = map(v -> only(typeof(v).parameters), M.constraint_pair(M.default_constraints()))
+        retained = map(M.unval, M.constraint_pair(M.default_constraints()))
         omitted = only(setdiff(1:3, retained))
 
         # `compact_index` is the component of `b` the pair divides by, which is not `omitted`: the
         # labelling of the `gᵏ` is not the antisymmetric one, so `(g³, g¹)` omits `g²` but divides by
         # `b₁`.
-        m = only(typeof(M.compact_index(M.default_constraints())).parameters)
+        m = M.unval(M.compact_index(M.default_constraints()))
         bmin = minimum(abs(bs[m](sol.t[i], sol.q[i])) for i in eachindex(sol.t))
 
         for k in retained
             @test mx(gs[k]) < 1e-8
         end
-        @test mx(gs[omitted]) < 1e-8 / bmin
+
+        # The bound is anchored to what the retained pair actually achieved rather than to the 1E-8 it
+        # is merely required to stay under. Dividing the requirement by `bmin` gives 9E-4 on the ITER
+        # Solov'ev X-point against an observed 9E-13 — nine orders of slack, which asserts nothing.
+        # Anchoring closes that to five: the retained pair does 1.5E-13 there, five orders better than
+        # required.
+        #
+        # The factor is for the relation above being an inequality with no constant attached. Measured,
+        # the two sides are within 0.3 on the medium tokamak and 7E-5 on the X-point, so 10 leaves the
+        # tighter of the two about 35× of headroom — enough for a solver or platform difference, little
+        # enough that a real regression in the omitted constraint trips it. The floor is for the `:g12`
+        # equilibria, where `bₘ` is the *large* component of `b` and the omitted constraint comes out
+        # better conserved than the retained pair, so the ratio bound goes below round-off.
+        retained_max = maximum(mx(gs[k]) for k in retained)
+        @test mx(gs[omitted]) < max(1e-12, 10 * retained_max / bmin)
 
         if isdefined(M, :toroidal_momentum)
             _, perr = M.compute_toroidal_momentum_error(sol)

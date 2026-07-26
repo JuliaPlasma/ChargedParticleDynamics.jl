@@ -27,8 +27,11 @@ default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.5E-3),)
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
 
-All three pairs are well conditioned in this equilibrium, so this keeps the
-historical choice.
+All three pairs are regular at the initial condition, and this is the worst conditioned of them:
+`b₁ = 2E-3` gives `λₒ = 0.2`, against 100 for `(g¹, g²)` and 0.3 for `(g², g³)`. It is kept because it
+is the pair the package has always used here and because the numbers in `docs/src/findings.md` were
+measured with it, not because it is the best available — see the conditioning table there, and the open
+item in `TODO.md` about choosing the defaults on conditioning along the orbit.
 """
 default_constraints() = :g31
 

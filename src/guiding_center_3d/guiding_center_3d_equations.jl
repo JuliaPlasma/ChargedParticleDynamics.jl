@@ -9,7 +9,8 @@ export hodeproblem, hodeproblem_canonical
 
 # The constraints and the index accessors every generic expression below is written with. Included
 # from here rather than from the equilibrium modules so that adding it did not need thirteen edits;
-# `include` resolves relative to the file containing the call.
+# `include` resolves relative to the file containing the call. The compact form is pulled in the same
+# way at the foot of this file.
 include("guiding_center_3d_constraints.jl")
 
 
@@ -145,9 +146,13 @@ end
     λₒ(t, q, p, c = default_constraint_pair())
 
 The Poisson bracket `{g₁, g₂}` of the two constraints of the pair `c`, which divides both Lagrange
-multipliers. It equals `bₘ [B + (p-A)·(∇×b)]` with `m` the index of the constraint the pair omits, so
+multipliers. It equals `±bₘ [B + (p-A)·(∇×b)]` with `m` the index of the constraint the pair omits, so
 it is where the formulation becomes singular — see
 `scripts/study_guiding_center_3d_conditioning.jl`.
+
+The sign depends on the pair's ordering and is `+` for `:g31` and `:g12`, `-` for `:g23`; see
+[`constraint_pair`](@ref). Only `λₒ = 0` matters for whether the pair is usable, so nothing turns on
+it, but `λₒ` and `bₘ` do not always share a sign and the tabulated values reflect that.
 """
 λₒ(t, q, p, c = default_constraint_pair()) = bracket_gg(c[1], c[2], t, q, p)
 
@@ -243,3 +248,9 @@ function hodeproblem(x₀::AbstractVector = qᵢ; timespan = DEFAULT_TIMESPAN, k
 end
 
 hodeproblem(ics::NamedTuple; kwargs...) = hodeproblem(ics.q, ics.p; parameters = ics.params, kwargs...)
+
+
+# The compact form, Eq. (29), which drops the constraint-proportional terms from the right-hand side.
+# It needs the brackets, the Hamiltonian gradients and `u` from this file, and nothing at all from
+# `guiding_center_3d_canonical.jl` — no second derivatives — so it is included here rather than there.
+include("guiding_center_3d_compact.jl")

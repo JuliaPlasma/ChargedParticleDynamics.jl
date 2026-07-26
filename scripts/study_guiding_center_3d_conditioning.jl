@@ -10,9 +10,13 @@
 # and show that the Poisson bracket {g₁, g₂} in the denominator of both Lagrange multipliers carries
 # a factor of the b-component belonging to the constraint the pair leaves out:
 #
-#     pair (g³, g¹) → b₁ [B + (p-A)·(∇×b)]     selected by  constraints = :g31
-#     pair (g¹, g²) → b₃ [ ... ]                            constraints = :g12
-#     pair (g², g³) → b₂ [ ... ]                            constraints = :g23
+#     pair (g³, g¹) → +b₁ [B + (p-A)·(∇×b)]    selected by  constraints = :g31
+#     pair (g¹, g²) → +b₃ [ ... ]                           constraints = :g12
+#     pair (g², g³) → -b₂ [ ... ]                           constraints = :g23
+#
+# The minus on the last of those comes from the ordering of that pair rather than from anything
+# physical — reversing a pair flips λₒ and both multipliers together — so only |λₒ| is meaningful in
+# the table below. It is spelled out because λₒ and bₘ then do not always share a sign.
 #
 # The package used to implement only (g³, g¹), so it was singular wherever b₁ = 0. In cylindrical
 # coordinates b₁ = b_R, which vanishes on the midplane of an axisymmetric equilibrium — exactly where
@@ -360,15 +364,18 @@ function costs()
       compact, literal    0.86-0.95   it drops the multipliers for a single bracket ratio
       compact, :parallel  1.21-1.44   the regularised denominator averages all three brackets, so it
                                       evaluates nine bracket terms where the literal form evaluates three
-      canonicalised       8.9-29.6    ∂λ/∂q and ∂λ/∂p need every second derivative of the field
+      canonicalised       8.9-18.8    ∂λ/∂q and ∂λ/∂p need every second derivative of the field
 
     The order of magnitude on the canonicalised form is the number worth remembering: it buys exact
-    symplecticity rather than approximate, and section 2 shows it giving up two to three orders of
-    magnitude of energy and constraint conservation for it at these step sizes. Its spread is wider
-    than the others because part of the cost is the harder nonlinear solve rather than the right-hand
-    side — Dipole3d, the worst case, is also the only equilibrium whose mean iteration count exceeds
-    one. The regularisation of the compact form costs about half as much again as the literal one,
-    which is a cheap price for never dividing by a component of b.""")
+    symplecticity rather than approximate, and section 2 shows it giving up as much as two or three
+    orders of magnitude of energy conservation and four or five of constraint conservation for it at
+    these step sizes. Those are worst cases and not typical ones — on five of the eleven it is within a
+    factor of two on both, and on TokamakSmallCartesian it conserves energy slightly better.
+
+    Its cost spread is wider than the others' because part of the cost is the harder nonlinear solve
+    rather than the right-hand side — Dipole3d, the worst case, is also the only equilibrium whose mean
+    iteration count exceeds one. The regularisation of the compact form costs about half as much again
+    as the literal one, which is a cheap price for never dividing by a component of b.""")
 end
 
 

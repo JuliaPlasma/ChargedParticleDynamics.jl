@@ -9,8 +9,9 @@
 #
 # Any two of them may serve as the constraint pair. The Poisson bracket `{gⁱ, gʲ}` that divides both
 # Lagrange multipliers carries a factor of the `b`-component belonging to the *omitted* constraint —
-# `b₃` for the pair `(g¹, g²)`, `b₁` for `(g³, g¹)`, `b₂` for `(g², g³)` — so which pair is usable is
-# a property of the equilibrium and of where the orbit sits in it. See `constraint_pair` below.
+# `+b₃` for the pair `(g¹, g²)`, `+b₁` for `(g³, g¹)`, `-b₂` for `(g², g³)` — so which pair is usable
+# is a property of the equilibrium and of where the orbit sits in it. The sign varies with the pair's
+# ordering and does not matter; see `constraint_pair` below.
 #
 # The three are one indexed family, `gᵏ = b_i v_j - b_j v_i` with `(i, j)` from
 # `constraint_indices`, and so are their derivatives. Writing them out per index is what made
@@ -69,16 +70,37 @@ constraint_indices(::Val{3}) = (Val(1), Val(2))
 
 
 """
+    unval(::Val{i})
+
+The integer a `Val` index carries. `constraint_pair` and `compact_index` hand out `Val`s so that the
+right-hand side stays specialised on them, and nothing inside the right-hand side ever needs the
+integer back; this is for the callers outside it — the test suite and the scripts — that have to index
+a tuple of data series by a constraint index.
+
+Deliberately not defined for the `nothing` that `compact_index(:parallel)` returns: `:parallel` retains
+no pair, so there is no index to unwrap and asking for one is a mistake rather than a special case.
+"""
+unval(::Val{i}) where {i} = i
+
+
+"""
     constraint_pair(constraints::Symbol)
 
 The two constraints selected by the `constraints` keyword of the problem constructors, in the order
 they enter the multipliers:
 
-| symbol | pair | multiplier denominator |
+| symbol | pair | multiplier denominator `{g₁, g₂}` |
 |---|---|---|
-| `:g31` | `(g³, g¹)` | `b₁ [B + (p-A)·(∇×b)]` |
-| `:g12` | `(g¹, g²)` | `b₃ [B + (p-A)·(∇×b)]` |
-| `:g23` | `(g², g³)` | `b₂ [B + (p-A)·(∇×b)]` |
+| `:g31` | `(g³, g¹)` | `+b₁ [B + (p-A)·(∇×b)]` |
+| `:g12` | `(g¹, g²)` | `+b₃ [B + (p-A)·(∇×b)]` |
+| `:g23` | `(g², g³)` | `-b₂ [B + (p-A)·(∇×b)]` |
+
+The sign is not uniform, and the minus on `:g23` is not a typo: in the antisymmetric labelling
+`c₁ = g²`, `c₂ = -g¹`, `c₃ = g³` the bracket over a cyclic pair is `+bₘ [ … ]`, and `(g², g³)` is the
+one of the three whose ordering here reverses that cycle — `{g², g³} = {c₁, c₃} = -{c₃, c₁}`. It makes
+no difference to the dynamics, since reversing a pair's order flips `λₒ` and both multipliers together
+and the products `λ₁ ∂g₁ + λ₂ ∂g₂` are invariant, but it does mean `λₒ` and `bₘ` need not share a sign.
+The measured values in `docs/src/findings.md` show it.
 
 `:g31` is the pair the package implemented before the others existed. Which of the three is usable
 is a property of the equilibrium, so each one declares its own `default_constraints` beside its

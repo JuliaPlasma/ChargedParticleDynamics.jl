@@ -27,7 +27,7 @@ The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
 All three pairs are regular at the initial condition, but only this one stays that way. The orbit
 takes `b₁` and `b₂` through zero, so `(g³, g¹)` and `(g², g³)` — which divide by them — hold the
 constraints to 1E-3 and the energy to 4E-5 over a hundred steps, and lose the orbit entirely past a
-few hundred: `|ΔH/H|` reaches 2E3 by `t = 30`, and `hodeproblem_canonical` meets a NaN there.
+few hundred: `|ΔH/H|` reaches 2E3 by `t = 30`, and 7.6E5 under `hodeproblem_canonical`.
 `(g¹, g²)` divides by `b₃`, which does not vanish along this orbit, and holds both to 2E-8 out to
 `t = 300`. This is the one equilibrium in the package where the pair has to be chosen on its
 conditioning along the orbit rather than at the initial condition.

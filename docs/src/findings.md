@@ -27,9 +27,13 @@ g¹ = b₁ v₃ - b₃ v₁ ,    g² = b₂ v₃ - b₃ v₂ ,    g³ = b₁ v�
 ```
 
 and the Poisson bracket in the denominator of both Lagrange multipliers carries a factor of the
-`b`-component belonging to the constraint the pair leaves out: `b₁` for `(g³, g¹)` (`constraints =
-:g31`), `b₃` for `(g¹, g²)` (`:g12`), `b₂` for `(g², g³)` (`:g23`). The package once implemented
+`b`-component belonging to the constraint the pair leaves out: `+b₁` for `(g³, g¹)` (`constraints =
+:g31`), `+b₃` for `(g¹, g²)` (`:g12`), `-b₂` for `(g², g³)` (`:g23`). The package once implemented
 `(g³, g¹)` alone, so it was singular wherever `b₁ = 0`.
+
+The minus on the third of those follows from that pair's ordering, not from the physics — reversing a
+pair flips `λₒ` and both multipliers together — so only `|λₒ|` is meaningful. It is worth noting when
+reading the table below, where `λₒ(:g23)` and `b₂` come out with opposite signs throughout.
 
 
 ### Which pairs are usable
@@ -82,7 +86,7 @@ the reference because it is the only one of the six defined for every equilibriu
 | TokamakMediumCartesian | hode `:g31`         | 2.243e-10 | 6.016e-11 | 8.239e-10 |
 |                        | hode `:g12`         | 1.930e-09 | 6.028e-11 | 9.677e-09 |
 |                        | hode `:g23`         | 5.666e-09 | 6.018e-11 | 2.638e-08 |
-|                        | canonical `:g31`    | 7.480e-09 | 7.658e-09 | 1.329e-08 |
+|                        | canonical `:g31`    | 2.248e-09 | 2.198e-09 | 1.318e-08 |
 |                        | compact `:g31`      | 3.414e-11 | 5.807e-11 | 1.321e-10 |
 |                        | compact `:parallel` | —         | 5.745e-11 | 1.345e-10 |
 
@@ -113,12 +117,13 @@ constraint pair.
 | hode `:g31` | 1.30e-03 | 4.06e-05 | 2e+03 |
 | hode `:g23` | 1.69e-03 | 3.98e-05 | not measured |
 | hode `:g12` | 1.83e-08 | 1.98e-09 | 1.98e-09 |
-| canonical `:g31` | 3.27e-05 | 8.11e-07 | NaN in the Newton direction |
-| canonical `:g12` | 5.62e-06 | 1.57e-08 | 1.57e-08 |
+| canonical `:g31` | 3.27e-05 | 8.16e-07 | 7.6e+05 |
+| canonical `:g12` | 5.63e-06 | 1.59e-08 | 1.66e-08 |
 
 Four orders of magnitude at `t = 3`, and past `t = 30` the badly conditioned pair loses the orbit
-altogether — `|ΔH/H| = 2e+03` is not an error estimate, it is a destroyed trajectory. With `:g12`
-both the Hamilton-Dirac and the canonicalised form hold their levels out to `t = 300`.
+altogether under both formulations — `|ΔH/H|` of 2e+03 and 7.6e+05 are not error estimates, they are
+destroyed trajectories. With `:g12` both the Hamilton-Dirac and the canonicalised form hold their
+levels out to `t = 300`.
 
 `Dipole3d` is therefore the one equilibrium whose `default_constraints` is chosen on the conditioning
 of the pair *along the orbit* rather than at the initial condition. The others were left where
@@ -141,15 +146,23 @@ between them is a few percent.
 | compact, literal pair | 0.86 – 0.95 | replaces both multipliers by a single bracket ratio; no second derivatives |
 | Hamilton-Dirac | 1 | two multipliers over six bracket terms |
 | compact, `:parallel` | 1.21 – 1.44 | the regularised `D` averages all three brackets, so nine terms rather than three |
-| canonicalised | 8.9 – 29.6 | `∂λ/∂q` and `∂λ/∂p` need every second derivative of the field |
+| canonicalised | 8.9 – 18.8 | `∂λ/∂q` and `∂λ/∂p` need every second derivative of the field |
 
 The three pairs cost the same as each other to within noise — they are the same expressions with
 permuted indices — so the pair should be chosen on conditioning alone. The order of magnitude on the
 canonicalised form is the number worth remembering: it buys exact symplecticity rather than
-approximate, and gives up two to three orders of magnitude of energy and constraint conservation for
-it at these step sizes. Its spread is wider than the others because part of the cost is the harder
-nonlinear solve, not only the right-hand side: `Dipole3d`, the worst case at 29.6, is also the only
-one where Newton needs more than one iteration per stage on average.
+approximate, and gives up as much as two or three orders of magnitude of energy conservation and four
+or five of constraint conservation for it at these step sizes. The spread there is wide — on five of
+the eleven equilibria it is within a factor of two of the Hamilton-Dirac form on both, and on
+`TokamakSmallCartesian` it conserves energy slightly better — so the figure to expect is the worst
+case, not the typical one.
+
+Its cost spread is wider than the other formulations' for the same reason: part of it is the harder
+nonlinear solve rather than the right-hand side. `Dipole3d`, the worst case at 18.8, is the only
+equilibrium where Newton needs more than one iteration per stage on average — 2.6, against 1.0
+everywhere else. That row read 29.6 before the sign error in `∂λ₂/∂q` and `∂λ₂/∂p` was fixed, which
+had Newton at 3.8 iterations per stage and a peak of 50; the right-hand side itself costs the same
+either way.
 
 Separately, the rewrite of the constraints made the Hamilton-Dirac right-hand side **2.7× faster**:
 the old code evaluated `λ₁` and `λ₂` once per component, so the multipliers and the six bracket

@@ -289,12 +289,18 @@ dλ₁dpⱼ(j::Val, t, q, p, params, c) =
     -dλₒdpⱼ(j, t, q, p, c) * λ₁(t, q, p, params, c) / λₒ(t, q, p, c) +
     dbracket_gH_dpⱼ(c[2], j, t, q, p, params) / λₒ(t, q, p, c)
 
+# Both multipliers are a bracket over `λₒ`, so both carry the same `-λ ∂λₒ/λₒ` term regardless of the
+# sign of the numerator: for `λ = N/λₒ`, `∂λ = ∂N/λₒ - λ ∂λₒ/λₒ`. `dλ₂` carried that term with a `+`,
+# which is the sign the quotient rule gives before `-{g₁,H}` is folded back into `λ₂`. The error is
+# proportional to `∂λₒ`, and the whole term is multiplied by a constraint in the right-hand side, so
+# it vanished on the constraint manifold and showed up only as constraint drift — see the
+# finite-difference test in `test/structure_tests.jl`.
 dλ₂dqⱼ(j::Val, t, q, p, params, c) =
-    +dλₒdqⱼ(j, t, q, p, c) * λ₂(t, q, p, params, c) / λₒ(t, q, p, c) -
+    -dλₒdqⱼ(j, t, q, p, c) * λ₂(t, q, p, params, c) / λₒ(t, q, p, c) -
     dbracket_gH_dqⱼ(c[1], j, t, q, p, params) / λₒ(t, q, p, c)
 
 dλ₂dpⱼ(j::Val, t, q, p, params, c) =
-    +dλₒdpⱼ(j, t, q, p, c) * λ₂(t, q, p, params, c) / λₒ(t, q, p, c) -
+    -dλₒdpⱼ(j, t, q, p, c) * λ₂(t, q, p, params, c) / λₒ(t, q, p, c) -
     dbracket_gH_dpⱼ(c[1], j, t, q, p, params) / λₒ(t, q, p, c)
 
 
@@ -355,7 +361,3 @@ end
 
 hodeproblem_canonical(ics::NamedTuple; kwargs...) =
     hodeproblem_canonical(ics.q, ics.p; parameters = ics.params, kwargs...)
-
-
-# The compact form, Eq. (29), which drops the constraint-proportional terms from the right-hand side.
-include("guiding_center_3d_compact.jl")

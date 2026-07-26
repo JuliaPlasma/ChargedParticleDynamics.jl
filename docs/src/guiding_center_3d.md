@@ -61,15 +61,17 @@ Any two of the three ``g^{k}`` confine the solution to the same manifold, and th
 ```
 and the Poisson bracket in the denominator evaluates to (Eq. 22)
 ```math
-\{ g_{1} , g_{2} \} = b_{m} \left[ \vert B \vert + (p - A) \cdot (\nabla \times b) \right] ,
+\{ g_{1} , g_{2} \} = \pm \, b_{m} \left[ \vert B \vert + (p - A) \cdot (\nabla \times b) \right] ,
 ```
 where ``m`` is the index of the constraint the pair leaves out. So each pair is singular on the surface where one particular component of ``b`` vanishes:
 
-| `constraints` | pair | singular where |
-|---|---|---|
-| `:g31` | ``(g^{3}, g^{1})`` | ``b_{1} = 0`` |
-| `:g12` | ``(g^{1}, g^{2})`` | ``b_{3} = 0`` |
-| `:g23` | ``(g^{2}, g^{3})`` | ``b_{2} = 0`` |
+| `constraints` | pair | ``\{ g_{1}, g_{2} \}`` | singular where |
+|---|---|---|---|
+| `:g31` | ``(g^{3}, g^{1})`` | ``+ b_{1} [ \cdots ]`` | ``b_{1} = 0`` |
+| `:g12` | ``(g^{1}, g^{2})`` | ``+ b_{3} [ \cdots ]`` | ``b_{3} = 0`` |
+| `:g23` | ``(g^{2}, g^{3})`` | ``- b_{2} [ \cdots ]`` | ``b_{2} = 0`` |
+
+The sign follows the pair's ordering, not the physics: in the antisymmetric labelling ``c_{k}`` below the bracket over a cyclic pair is ``+ b_{m} [ \cdots ]``, and ``(g^{2}, g^{3})`` is the one pair whose ordering here reverses that cycle. Reversing a pair flips ``\lambda_{\mathrm{o}}`` and both multipliers together, and the products ``\lambda_{1} \partial g_{1} + \lambda_{2} \partial g_{2}`` are unchanged, so only ``\lambda_{\mathrm{o}} = 0`` matters. It is worth stating because ``\lambda_{\mathrm{o}}`` and ``b_{m}`` then do not always share a sign, as the tabulated values in [Findings](@ref) show.
 
 This is not a fine point. In cylindrical coordinates ``b_{1} = b_{R}`` vanishes on the midplane of an axisymmetric equilibrium, which is exactly where most of the initial conditions in this package sit: seven of the eleven equilibria that ship an initial condition have ``b_{1} = 0`` there exactly, and `SolovevSymmetricField` has ``b_{1} = b_{3} = 0`` at once, leaving `:g23` as its only usable pair. The package once implemented ``(g^{3}, g^{1})`` alone and could not be started on any of them.
 
@@ -123,7 +125,7 @@ which agrees with ``H`` on the constraint manifold. Differentiating ``\tilde{H}`
 \dot{p} (t) &= - \dfrac{\partial H}{\partial r} - \lambda_{1} \dfrac{\partial g_{1}}{\partial r} - \lambda_{2} \dfrac{\partial g_{2}}{\partial r} - \dfrac{\partial \lambda_{1}}{\partial r} g_{1} - \dfrac{\partial \lambda_{2}}{\partial r} g_{2} ,
 \end{aligned}
 ```
-which vanish for exact initial data but not for a numerical solution that has drifted off the manifold. This system is genuinely canonical, so a symplectic method applied to it is symplectic exactly. The price is the second derivatives of the field, needed for ``\partial \lambda / \partial r`` and ``\partial \lambda / \partial p``, and a right-hand side that amplifies rather than ignores the constraint drift. It is by a wide margin the most expensive of the three — nine to thirty times the Hamilton-Dirac form per step, the wide spread coming from the harder nonlinear solve as much as from the right-hand side — and the least robust: at the step sizes the test suite uses it conserves energy and the constraints two to three orders of magnitude *worse* than the form it was derived from, and on `SolovevSymmetricField` it is the one formulation that cannot complete an orbit at all. Section 3 of `scripts/study_guiding_center_3d_conditioning.jl` has the numbers.
+which vanish for exact initial data but not for a numerical solution that has drifted off the manifold. This system is genuinely canonical, so a symplectic method applied to it is symplectic exactly. The price is the second derivatives of the field, needed for ``\partial \lambda / \partial r`` and ``\partial \lambda / \partial p``, and a right-hand side that amplifies rather than ignores the constraint drift. It is by a wide margin the most expensive of the three — nine to nineteen times the Hamilton-Dirac form per step, the wide spread coming from the harder nonlinear solve as much as from the right-hand side — and the least robust: at the step sizes the test suite uses it gives up as much as two or three orders of magnitude of energy conservation and four or five of constraint conservation against the form it was derived from, and on `SolovevSymmetricField` it is the one formulation that cannot complete an orbit at all. Those are worst cases across the eleven equilibria rather than typical ones; on five of them it is within a factor of two on both. Section 3 of `scripts/study_guiding_center_3d_conditioning.jl` has the numbers.
 
 ### Compact — `hodeproblem_compact`, Eq. (29)
 
@@ -146,7 +148,7 @@ Eq. (29) as printed cannot be ported here. It is written with cartesian vector i
   ```math
   D = \frac{\sum_{m} b_{m} \, \{ c_{i} , c_{j} \}(m)}{\sum_{m} b_{m} b_{m}} ,
   ```
-  whose denominator cannot vanish because ``\vert b \vert = 1``. This is `compact_denominator`, and in a cartesian chart it reduces to ``\vert B \vert + (p-A) \cdot (\nabla \times b)`` as it should.
+  whose denominator cannot vanish. Not because it is one: the ``b_{i}`` are covariant components, so what is normalised is ``\sum_{i} g^{ii} b_{i} b_{i} = 1``, and ``\sum_{i} b_{i} b_{i}`` is 6.25 on the ITER Solov'ev X-point and 1.11 on the toroidal tokamak. It cannot vanish because the metric is positive definite, so the normalisation forbids every ``b_{i}`` being zero at once. A weighted mean is exact for any positive weights, so the choice of ``b_{m} b_{m}`` costs nothing in accuracy and needs nothing the model does not already have. This is `compact_denominator`, and in a cartesian chart it reduces to ``\vert B \vert + (p-A) \cdot (\nabla \times b)`` as it should.
 * The momentum equation follows the same way. Splitting ``\partial c_{k} / \partial q_{l}`` into its ``\partial b / \partial x`` and ``\partial A / \partial x`` parts, the second contracts straight back into ``C``, and the first does too once ``v_{a} = u \, b_{a}`` is used on the manifold. What is left is
   ```math
   \dot{r}_{l} = \frac{\partial H}{\partial p_{l}} + C_{l} ,
@@ -158,11 +160,20 @@ Two things about this are worth stating plainly, because they are departures fro
 
 First, **the compact form is independent of the constraint pair.** Eq. (29) depends on the pair only through the factor ``(p_{m} - A_{m}) / b_{m}``, which is the parallel velocity in three different spellings, all equal on the constraint manifold. Using ``u = b \cdot v`` — the `u(t, q, p)` the model already has, regular everywhere — makes the dependence disappear. This is what `constraints = :parallel`, the default of `hodeproblem_compact`, selects.
 
-Second, **the literal Eq. (29) is still singular.** ``(p_{m} - A_{m}) / b_{m}`` is ``0/0`` exactly where the pair was singular to begin with, so the ``\nu_{j}`` and ``\omega_{j}`` terms are not the only obstruction. Passing `:g31`, `:g12` or `:g23` to `hodeproblem_compact` reproduces the paper's expressions for that pair, singularity included; section 1 of `scripts/study_guiding_center_3d_conditioning.jl` shows both side by side.
+Second, **the literal Eq. (29) is still singular.** ``(p_{m} - A_{m}) / b_{m}`` is ``0/0`` exactly where the pair was singular to begin with, so the ``\nu_{j}`` and ``\omega_{j}`` terms are not the only obstruction.
 
-The equivalence is pinned by a test: `test/structure_tests.jl` spells Eq. (29) out directly from the injected field functions for the three cartesian equilibria — including `QuadraticPotentials3d`, the one with a non-zero electrostatic potential — and checks it against `guiding_center_3d_compact_v`/`_f` to round-off.
+Passing `:g31`, `:g12` or `:g23` to `hodeproblem_compact` exhibits that dependence, and does so in *two* places rather than one, which is worth being precise about because only one of them is the paper's:
 
-On cost, the literal form is the cheapest of the three formulations, 0.86 to 0.95 of the Hamilton-Dirac form per step across the eleven equilibria: it replaces the two multipliers by a single bracket ratio and needs no second derivatives at all. The regularisation costs about half as much again, because ``D`` averages the bracket over all three ``m`` and so evaluates nine bracket terms where the literal form evaluates three. That leaves `:parallel` at 1.2 to 1.45 times the Hamilton-Dirac form — a cheap price for never dividing by a component of ``b``, and an order of magnitude below the canonicalised system.
+| | `:parallel` | a pair symbol |
+|---|---|---|
+| multiplier scale | ``-1/D``, from `compact_denominator` | ``-b_{m} / \{ c_{i}, c_{j} \}(m)`` |
+| parallel velocity | ``u(t, q, p)`` | ``(p_{m} - A_{m}) / b_{m}`` |
+
+The second row is Eq. (29) as printed. The first is not: the paper evaluates the scale from ``D`` written out as ``\vert B \vert + (p-A) \cdot (\nabla \times b)``, which is regular everywhere, so its Eq. (29) carries one ``b_{m}`` denominator and the pair variants here carry two. Taking the scale from the pair's own bracket instead is a choice made in this implementation. Both denominators vanish on the same surface, so it changes nothing about *where* the variant is singular — but it does mean these variants are not a literal transcription, and the reason to keep them is to exhibit the pair dependence of Eq. (29), not to integrate with. Section 1 of `scripts/study_guiding_center_3d_conditioning.jl` shows the regularised and the pair-dependent denominators side by side.
+
+The equivalence is pinned by a test: `test/structure_tests.jl` spells Eq. (29) out directly from the injected field functions for the three cartesian equilibria — including `QuadraticPotentials3d`, the one with a non-zero electrostatic potential — and checks both variants against it to round-off.
+
+On cost, the pair-dependent variant is the cheapest of the three formulations, 0.86 to 0.95 of the Hamilton-Dirac form per step across the eleven equilibria: it replaces the two multipliers by a single bracket ratio and needs no second derivatives at all. That saving is exactly the choice above — one bracket rather than the three ``D`` averages — so it is not available to `:parallel`, which lands at 1.2 to 1.45 times the Hamilton-Dirac form. A cheap price for never dividing by a component of ``b``, and an order of magnitude below the canonicalised system.
 
 
 ## Which symbol is which
@@ -207,8 +218,9 @@ ChargedParticleDynamics.GuidingCenter3d
 
 Each equilibrium is its own module, and every one of them `include`s the same
 `guiding_center_3d_equations.jl`, `guiding_center_3d_canonical.jl` and
-`guiding_center_3d_diagnostics.jl` — the first of which pulls in
-`guiding_center_3d_constraints.jl` and the second `guiding_center_3d_compact.jl`. The model's
+`guiding_center_3d_diagnostics.jl` — the first of which pulls in both
+`guiding_center_3d_constraints.jl` and `guiding_center_3d_compact.jl`, since neither of those depends
+on the canonicalised system. The model's
 functions are therefore documented once, below, under `TokamakSmallCylindrical`, and hold verbatim
 for all thirteen. What differs between the modules is the chart, the equilibrium parameters, the
 initial conditions and the constraint pair they default to, which is what these docstrings record:

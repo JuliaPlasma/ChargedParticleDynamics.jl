@@ -121,10 +121,12 @@ g^{3} &= b_{1} v_{2} - b_{2} v_{1} ,
 ```
 
 and shows (§4.1–4.2) that the Lagrange multipliers carry
-``\{ g_{1}, g_{2} \} = b_{m} [ B + (p - A) \cdot (\nabla \times b) ]`` in their denominator, with
-``m`` the index of the constraint the pair leaves out: ``b_{3}`` for ``(g^{1}, g^{2})``, ``b_{1}``
-for ``(g^{3}, g^{1})``, ``b_{2}`` for ``(g^{2}, g^{3})``. Each pair is therefore singular on a
-different surface.
+``\{ g_{1}, g_{2} \} = \pm b_{m} [ B + (p - A) \cdot (\nabla \times b) ]`` in their denominator, with
+``m`` the index of the constraint the pair leaves out: ``+b_{3}`` for ``(g^{1}, g^{2})``, ``+b_{1}``
+for ``(g^{3}, g^{1})``, ``-b_{2}`` for ``(g^{2}, g^{3})``. Each pair is therefore singular on a
+different surface. The sign is a consequence of how each pair is ordered rather than of anything
+physical — see `constraint_pair` — but it is spelled out because it means ``\lambda_{\mathrm{o}}`` and
+``b_{m}`` need not share a sign in the tabulated values.
 
 The implementation once used ``(g^{3}, g^{1})`` alone, and **seven of the eleven equilibria have
 ``b_{1} = 0`` exactly at the initial condition the package ships**, so the multipliers were infinite

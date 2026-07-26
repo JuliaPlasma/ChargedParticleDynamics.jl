@@ -31,8 +31,12 @@
 #
 #     D = Σₘ bₘ {cᵢ, cⱼ}(m) / Σₘ bₘ bₘ ,                                                    (iii)
 #
-# whose denominator cannot vanish, since `|b| = 1`. What is left is free of every `bₘ` denominator
-# and no longer depends on which pair was chosen.
+# whose denominator cannot vanish: the `bᵢ` are covariant components, so what is normalised is
+# `Σᵢ gⁱⁱ bᵢ bᵢ = 1` rather than `Σᵢ bᵢ bᵢ` — the latter is 6.25 on the ITER Solov'ev X-point and 1.11
+# on the toroidal tokamak — but the metric is positive definite, so `Σᵢ bᵢ bᵢ` can only vanish where
+# every `bᵢ` does, which the normalisation forbids. (iii) is a weighted mean and therefore exact for
+# any positive weights; `Σₘ bₘ bₘ` is chosen because it needs nothing the model does not already have.
+# What is left is free of every `bₘ` denominator and no longer depends on which pair was chosen.
 #
 # The momentum equation follows the same way. Splitting `∂cₖ/∂qₗ` into its `∂b/∂x` and `∂A/∂x` parts,
 # the second contracts straight back into `C` through (i), and the first does too once `vₐ = u bₐ` is
@@ -42,10 +46,25 @@
 #
 # `u` is the parallel velocity. Eq. (29) as printed uses `(pₘ-Aₘ)/bₘ` for it, which is `0/0` exactly
 # where the formulation was singular to begin with; `u(t, q, p)` is the same quantity on the manifold
-# — `vₐ = bₐ u` and `|b| = 1` give `Σₐ vₐ gᵃᵃ bₐ = u` — and is regular everywhere. Passing
-# `constraints = :parallel`, the default, uses it together with (iii). Passing one of the pair
-# symbols reproduces the paper literally, singularity included, which is what
-# `scripts/study_guiding_center_3d_conditioning.jl` measures.
+# — `vₐ = bₐ u` and `Σₐ gᵃᵃ bₐ bₐ = 1` give `Σₐ vₐ gᵃᵃ bₐ = u` — and is regular everywhere.
+#
+# So there are two places the pair can enter, and `constraints` selects between them together:
+#
+#   * `:parallel`, the default, takes the scale from (iii) and the parallel velocity from `u(t, q, p)`.
+#     Neither divides by a component of `b`, so the whole right-hand side is regular and independent of
+#     the pair.
+#   * a pair symbol takes the scale from that pair's own bracket, `bₘ / {cᵢ, cⱼ}(m)`, and the parallel
+#     velocity from `(pₘ-Aₘ)/bₘ`. *Both* of those are `0/0` where the pair's multipliers were singular,
+#     so this variant inherits the singularity twice over rather than once.
+#
+# Only the second of those two is Eq. (29) as printed: the paper evaluates the scale from `D` written
+# out as `|B| + (p-A)·(∇×b)`, which is regular. Taking it from the pair's own bracket instead is a
+# choice made here, and the reason this variant is the cheapest of the three formulations — three
+# bracket terms rather than the nine that (iii) averages, which is where the 0.86-0.95 relative cost in
+# `docs/src/findings.md` comes from. It is kept because it is the only way to exhibit the pair
+# dependence of Eq. (29) at all, which is what
+# `scripts/study_guiding_center_3d_conditioning.jl` measures; `test/structure_tests.jl` pins both
+# variants against Eq. (29) spelled out from the field functions.
 #
 
 export hodeproblem_compact
@@ -80,7 +99,10 @@ end
     σ * bracket_gH(k, t, q, p, params)
 end
 
-# {cᵢ, cⱼ} over the cyclic complement of `m`, which equals `bₘ [B + (p-A)·(∇×b)]`.
+# {cᵢ, cⱼ} over the cyclic complement of `m`, which equals `bₘ [B + (p-A)·(∇×b)]`. Unsigned, unlike
+# `λₒ`: the cyclic ordering of the antisymmetric labelling fixes the sign here, whereas `λₒ` is the
+# bracket of a pair of `gᵏ` in the order the multipliers see them, and that ordering puts a minus in
+# front of `b₂` for `(g², g³)`. See `constraint_pair`.
 @inline function bracket_cc(m::Val, t, q, p)
     i, j = cyclic_complement(m)
     kᵢ, σᵢ = cross_constraint(i)
@@ -95,13 +117,22 @@ end
 The scalar `D = B + (p-A)·(∇×b)` of Eq. (29), obtained as `Σₘ bₘ {cᵢ, cⱼ}(m) / Σₘ bₘ bₘ` so that no
 single component of `b` ever divides. The three ratios `{cᵢ, cⱼ}(m) / bₘ` agree on the constraint
 manifold; this weighted mean of them is the combination that stays finite off it as well.
+
+`Σₘ bₘ bₘ` cannot vanish, but not because it is one — the `bₘ` are covariant components, so the
+normalisation is `Σₘ gᵐᵐ bₘ bₘ = 1` and `Σₘ bₘ bₘ` is 6.25 on `SolovevIterXpoint`. It cannot vanish
+because the metric is positive definite, so the normalisation forbids every `bₘ` being zero at once.
+The mean is exact for any positive weights, so this makes no difference to `D`; in a cartesian chart
+the two coincide.
 """
 compact_denominator(t, q, p) = contract(m -> bᵢ(m, t, q) * bracket_cc(m, t, q, p)) /
                                contract(m -> bᵢ(m, t, q)^2)
 
 
-# The scalar the three brackets `{cₗ, H}` are divided by, Eq. (ii) above: regularised for
-# `:parallel`, literal for a constraint pair whose omitted index is `m`.
+# The scalar the three brackets `{cₗ, H}` are divided by, Eq. (ii) above. `:parallel` takes it from the
+# pair-independent `D`; a pair takes it from that pair's own bracket, which is `0/0` at `bₘ = 0`. The
+# paper computes it from `D` written out in cartesian form and so has no singularity here — this is the
+# first of the two `bₘ` denominators the pair variants carry, and the one that is a choice made here.
+# See the header.
 @inline compact_scale(t, q, p, ::Nothing) = -inv(compact_denominator(t, q, p))
 @inline compact_scale(t, q, p, m::Val) = -bᵢ(m, t, q) / bracket_cc(m, t, q, p)
 
@@ -171,8 +202,13 @@ the constraint manifold. Same three argument forms as `hodeproblem`.
 `constraints` defaults to `:parallel`, the derivation at the top of
 `src/guiding_center_3d/guiding_center_3d_compact.jl`: coordinate-general, independent of the
 constraint pair, and free of the `bₘ = 0` singularity, which is the point of this formulation.
-Passing `:g31`, `:g12` or `:g23` instead reproduces the paper's expressions literally for that pair,
-`bₘ` in the denominator included.
+
+Passing `:g31`, `:g12` or `:g23` instead ties the right-hand side to that pair in two places — the
+multiplier scale `bₘ/{cᵢ,cⱼ}(m)` and the parallel velocity `(pₘ-Aₘ)/bₘ`, both `0/0` where the pair's
+multipliers were singular. Only the second of the two is Eq. (29) as printed; the paper evaluates the
+scale from `D` in its cartesian form, which is regular. Taking it from the pair's own bracket is a
+choice made here, and is what makes this the cheapest of the three formulations. Use it to exhibit the
+pair dependence of Eq. (29), not to integrate with.
 """
 function hodeproblem_compact(q₀::AbstractVector, p₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
                              timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic = true,

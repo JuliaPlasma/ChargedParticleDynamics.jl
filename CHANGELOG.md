@@ -124,6 +124,12 @@ deprecation shims; see *Changed* below for the mapping.
   equilibrium modules now mean the paper's ``g^1``, ``g^2`` rather than the two members of the one
   hard-coded pair, which were ``g^3`` and ``g^1``. Anything that read `c.g₁`/`c.g₂` still reads a
   constraint that vanishes along the flow, but not the same one.
+
+  In the same vein, `λₒ(t, q, p)`, `λ₁(t, q, p, params)` and `λ₂(t, q, p, params)` — the short forms
+  the scripts in `scripts/` use — take the constraint pair as a trailing argument now and default it to
+  the equilibrium's own `default_constraints()`. For the eight modules whose default is no longer
+  ``(g^3, g^1)`` those calls therefore return the multipliers of a different pair than before. Pass
+  `constraint_pair(:g31)` explicitly to get the old quantity.
 - **Every problem constructor is renamed to the `GeometricProblems` scheme.** No deprecation shims.
 
   | Module | Was | Is |
@@ -191,6 +197,29 @@ deprecation shims; see *Changed* below for the mapping.
 
 ### Fixed
 
+- **``\partial\lambda_{2}/\partial q`` and ``\partial\lambda_{2}/\partial p`` of the 3D guiding centre
+  carried the wrong sign** on the term proportional to ``\partial \{ g_{1}, g_{2} \} / \partial\cdot``.
+  Both multipliers are a bracket over ``\lambda_{\mathrm{o}} = \{ g_{1}, g_{2} \}``, so both derivatives
+  carry ``-\lambda \, \partial\lambda_{\mathrm{o}} / \lambda_{\mathrm{o}}`` whatever the sign of the
+  numerator; ``\lambda_{1}`` had it, ``\lambda_{2}`` had the ``+`` the quotient rule gives before the
+  minus of ``-\{ g_{1}, H \}`` is folded back in. The error was off by exactly
+  ``2 \lambda_{2} \, \partial\lambda_{\mathrm{o}} / \lambda_{\mathrm{o}}``.
+
+  Only `hodeproblem_canonical` uses these, and only multiplied by a constraint, so it vanished on the
+  constraint manifold — which is why the canonicalised form still agreed with `hodeproblem` to 1E-8 and
+  why nothing caught it. What it cost was accuracy and solver work. `TokamakMediumCartesian` now
+  conserves energy to 2.2E-9 over a hundred steps where it managed 7.7E-9 before, and `Dipole3d` — the
+  one equilibrium whose canonicalised solve needs more than one Newton iteration per stage — drops from
+  3.8 iterations per stage to 2.6, peak 50 to 9, and from 29.6× to 18.8× the cost of the Hamilton-Dirac
+  form. The right-hand side itself costs the same either way; the whole difference is the solve. The
+  cost table in [Findings](docs/src/findings.md) is updated accordingly.
+
+  It does *not* account for the canonicalised form's other weaknesses — `SolovevSymmetricField` still
+  cannot complete an orbit under it, and `Dipole3d`'s conservation is unchanged — so the comparisons
+  between the three formulations stand as written.
+
+  Now pinned by a finite-difference test on all four multiplier derivatives in three charts, at a point
+  displaced off the constraint manifold, since on it either sign passes.
 - **`sodeproblem` of the noncanonical charged particle accepted `parameters` and dropped it.**
   Neither `SODEProblem` branch forwarded the keyword, so it — and anything the named-tuple form put
   into `ics.params` — was silently discarded, unlike in `odeproblem` beside it and in the

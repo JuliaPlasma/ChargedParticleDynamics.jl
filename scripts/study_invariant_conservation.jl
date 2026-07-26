@@ -71,7 +71,7 @@ function guiding_centre_3d()
         # the retained pair divided by the component bₘ of b the pair leaves out, so the omitted one
         # drifts 1/bₘ times as much. Reporting the two separately is what makes that visible.
         gs = (c.g₁, c.g₂, c.g₃)
-        retained = map(v -> only(typeof(v).parameters), M.constraint_pair(M.default_constraints()))
+        retained = map(M.unval, M.constraint_pair(M.default_constraints()))
         omitted = only(setdiff(1:3, retained))
 
         @printf("  %-30s %-8s %-14.2e %-14.2e %-14.2e %s\n", name, M.default_constraints(),
