@@ -131,6 +131,34 @@ Two things this left open, neither of them about the constraint pair:
   where `:g23` would give ``-3.8``, because changing them moves numbers that findings.md tabulates.
   A sweep of ``\min |b_m|`` along each shipped orbit would settle all eleven properly.
 
+## ~~The per-step cost of the 3D guiding centre model~~ — done here, one part upstream
+
+Never tracked as an item: `docs/src/findings.md` recorded the 3D `hodeproblem` at two orders of
+magnitude more per step than the Pauli model, explained it as "nested `ForwardDiff`: the second
+derivatives of the 3D Hamiltonian differentiate field functions that are themselves AD-generated,
+and the backtracking line search re-evaluates them", and left it there.
+
+That explanation was wrong in every part, and profiling says so. `ElectromagneticFields` generates
+its field functions symbolically with SymEngine at precompile time and does not depend on
+`ForwardDiff`; `hodeproblem` never evaluates a second derivative of the Hamiltonian, only
+`hodeproblem_canonical` does, and those are hand-written closed forms rather than differentiated;
+and of the roughly ninety-eight right-hand side evaluations per step, four are on `Dual`, the line
+search being 8 % of wall clock against the Jacobian's 13 %.
+
+Two of the three real costs are fixed here. `MidpointExtrapolation(5)`, which is not the default for
+either method, was 70 % of wall clock and is no longer requested. The right-hand side no longer
+re-enters the generated field code once per bracket term: `fieldvalues` evaluates each injected
+function once into a `FieldValues`, and `SecondFieldValues` does the same for the second derivatives
+the canonicalised form needs. `hodeproblem` on `SolovevIterXpoint` goes from 6.18 ms/step to 0.31 and
+`hodeproblem_canonical` from 76.9 to 2.2, with every trajectory bit-identical.
+
+The third is the expression swell itself and lives upstream:
+[JuliaPlasma/ElectromagneticFields.jl#10](https://github.com/JuliaPlasma/ElectromagneticFields.jl/pull/10)
+adds common subexpression elimination to the generated code, which takes `db₁dx₁` from 566 ns to 83
+and `d²b₁dx₁dx₁` from 1749 to 137. **This package sees none of that until `ElectromagneticFields`
+makes a release**; `scripts/Project.toml` deliberately no longer sources it from a local path, and
+should not be changed back.
+
 ## One initial-conditions layer for all models
 
 **The equilibrium modules should not carry `u` and `μ` as literals.** Each one should declare its

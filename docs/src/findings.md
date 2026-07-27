@@ -385,22 +385,37 @@ nothing.
 Note this also rules out simply dropping the options: the library default is `f_abstol = 8 eps() =
 1.8e-15`, itself below the ITER floor.
 
-Once the tolerance is sound the remaining cost has nothing to do with ITER. This is the measurement
-that prompted the work described below; the ratios are what matter, since the absolute figures are
-from the machine of the day:
+Once the tolerance is sound the remaining cost has nothing to do with ITER. Before and after the work
+described below, both columns measured in one sitting on the same machine so that they can be
+compared with each other; the 4D guiding centre and Pauli rows are untouched by any of it and serve
+as the control:
 
-| workload | ms/step | mean iters |
-|---|---|---|
-| GC3d SolovevIterXpoint `hodeproblem` + extrapolation      | 17.9 | 1.0 |
-| GC3d TokamakMediumCartesian `hodeproblem` + extrapolation | 23.8 | 1.0 |
-| GC4d SolovevIterXpoint `iode`                      |  0.3 | 2.0 |
-| Pauli3d SolovevIter `iode`                         |  0.1 | 2.9 |
+| workload | before | after | |
+|---|---|---|---|
+| GC3d SolovevIterXpoint `hodeproblem` + extrapolation      | 11.40 | 1.72 | 6.6× |
+| GC3d SolovevIterXpoint `hodeproblem`                      |  3.37 | 0.49 | 6.9× |
+| GC3d SolovevIterXpoint `hodeproblem_compact`              |  4.67 | 0.52 | 9.0× |
+| GC3d SolovevIterXpoint `hodeproblem_canonical`            | 42.33 | 3.45 | 12.3× |
+| GC3d TokamakMediumCartesian `hodeproblem` + extrapolation | 14.51 | 2.56 | 5.7× |
+| GC3d TokamakMediumCartesian `hodeproblem`                 |  4.24 | 0.76 | 5.6× |
+| GC3d TokamakMediumCartesian `hodeproblem_canonical`       | 62.40 | 8.26 | 7.6× |
+| GC4d SolovevIterXpoint `ode`                              |  0.19 | 0.20 | — |
+| GC4d SolovevIterXpoint `iode`                             |  0.24 | 0.24 | — |
+| Pauli3d SolovevIter `hodeproblem`                         |  0.14 | 0.13 | — |
+| Pauli3d SolovevIter `iode`                                |  0.08 | 0.08 | — |
 
-`TokamakMediumCartesian` is *slower* than the ITER Solov'ev, and the 3D `hodeproblem` path cost two
-orders of magnitude more per step than the Pauli one even though Newton converges in a single
-iteration.
+ms/step, Newton at 1.0 iterations on every 3D row throughout. What the test suite actually ran before
+was the first row and what it runs now is the second, so the figure it sees is **23×**; and the gap to
+the Pauli `hodeproblem` that prompted the comparison closes from 83× to 3.8×.
 
-This was for a long time attributed to "nested `ForwardDiff`: the second derivatives of the 3D
+`TokamakMediumCartesian` is *slower* than the ITER Solov'ev, in both columns and for a reason that
+has nothing to do with the solver: in a cartesian chart the metric is the identity, so `dgⁱʲdxₖ` and
+its second derivatives fold away to literal zeros — but the *field* then carries the whole
+`sqrt(x²+y²)` toroidal geometry into every component of `db`, which is where the cost is. In the
+curvilinear charts that geometry sits in the metric instead, which is diagonal and cheap.
+
+The 3D `hodeproblem` path cost two orders of magnitude more per step than the Pauli one even though
+Newton converges in a single iteration. That was for a long time attributed to "nested `ForwardDiff`: the second derivatives of the 3D
 Hamiltonian differentiate field functions that are themselves AD-generated, and the backtracking
 line search re-evaluates them". **Every part of that is wrong for this path**, and profiling says so:
 
