@@ -360,21 +360,31 @@ function costs()
 
     Between the formulations there is a great deal to choose. Taking the Hamilton-Dirac form as unity:
 
-      compact, literal    0.86-0.95   it drops the multipliers for a single bracket ratio
-      compact, :parallel  1.21-1.44   the regularised denominator averages all three brackets, so it
+      compact, literal    0.98-1.11   it drops the multipliers for a single bracket ratio
+      compact, :parallel  1.09-1.22   the regularised denominator averages all three brackets, so it
                                       evaluates nine bracket terms where the literal form evaluates three
-      canonicalised       8.9-18.8    ∂λ/∂q and ∂λ/∂p need every second derivative of the field
+      canonicalised        4.5-6.0    ∂λ/∂q and ∂λ/∂p need every second derivative of the field
 
-    The order of magnitude on the canonicalised form is the number worth remembering: it buys exact
-    symplecticity rather than approximate, and section 2 shows it giving up as much as two or three
-    orders of magnitude of energy conservation and four or five of constraint conservation for it at
-    these step sizes. Those are worst cases and not typical ones — on five of the eleven it is within a
-    factor of two on both, and on TokamakSmallCartesian it conserves energy slightly better.
+    Those first two read 0.86-0.95 and 1.21-1.44, and the canonicalised form 8.9-18.8, before the
+    right-hand side stopped re-entering the generated field code on every bracket term. The compact
+    form is no longer cheaper than Hamilton-Dirac at all: it won by evaluating three bracket terms
+    rather than six, each of which re-entered dbᵢdxⱼ from the top, and now that the field values are
+    read once per call and shared, what shows instead is the extra work it does for its parallel
+    velocity and the contraction in its momentum equation.
 
-    Its cost spread is wider than the others' because part of the cost is the harder nonlinear solve
-    rather than the right-hand side — Dipole3d, the worst case, is also the only equilibrium whose mean
-    iteration count exceeds one. The regularisation of the compact form costs about half as much again
-    as the literal one, which is a cheap price for never dividing by a component of b.""")
+    The canonicalised form is still the one that matters: it buys exact symplecticity rather than
+    approximate, and section 2 shows it giving up as much as two or three orders of magnitude of energy
+    conservation and four or five of constraint conservation for it at these step sizes. Those are
+    worst cases and not typical ones — on five of the eleven it is within a factor of two on both, and
+    on TokamakSmallCartesian it conserves energy slightly better.
+
+    Two rows sit outside that 4.5-6.0 because their cost is the nonlinear solve rather than the
+    right-hand side, which is why the canonicalised spread was always the widest: Dipole3d at 9.9 with
+    Newton at 3.0 iterations per stage, and SolovevSymmetricField at 36.6 with 45.5 and a peak of 50,
+    the equilibrium where this formulation diverges. Every other row runs at exactly 1.0. For the same
+    reason the compact :parallel form comes out *cheaper* than Hamilton-Dirac on Dipole3d, at 0.69: it
+    is the only variant there that converges in one iteration, against 1.9 for the pair it is compared
+    with.""")
 end
 
 

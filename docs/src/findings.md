@@ -141,28 +141,42 @@ reports all three.
 Per step, taking the Hamilton-Dirac form as unity. Measured across all eleven equilibria; the spread
 between them is a few percent.
 
-| formulation | relative cost | why |
-|---|---|---|
-| compact, literal pair | 0.86 – 0.95 | replaces both multipliers by a single bracket ratio; no second derivatives |
-| Hamilton-Dirac | 1 | two multipliers over six bracket terms |
-| compact, `:parallel` | 1.21 – 1.44 | the regularised `D` averages all three brackets, so nine terms rather than three |
-| canonicalised | 8.9 – 18.8 | `∂λ/∂q` and `∂λ/∂p` need every second derivative of the field |
+| formulation | relative cost | was | why |
+|---|---|---|---|
+| compact, literal pair | 0.98 – 1.11 | 0.86 – 0.95 | replaces both multipliers by a single bracket ratio; no second derivatives |
+| Hamilton-Dirac | 1 | 1 | two multipliers over six bracket terms |
+| compact, `:parallel` | 1.09 – 1.22 | 1.21 – 1.44 | the regularised `D` averages all three brackets, so nine terms rather than three |
+| canonicalised | 4.5 – 6.0 | 8.9 – 18.8 | `∂λ/∂q` and `∂λ/∂p` need every second derivative of the field |
+
+The *was* column is the same measurement before the right-hand side stopped re-entering the generated
+field code on every bracket term, and the two are worth comparing: **the compact form is no longer
+cheaper than Hamilton-Dirac at all.** It won before by evaluating three bracket terms where the
+Hamilton-Dirac form evaluates six, and each of those terms re-entered `dbᵢdxⱼ` from the top. Now the
+field values are read once per call and shared, the bracket-term count barely registers, and what
+shows instead is the extra work the compact form does — the parallel velocity, and the contraction
+over `∂A/∂x + u ∂b/∂x` in its momentum equation. The two variants of it have converged on each other
+for the same reason: averaging nine brackets rather than three used to cost 21–44 % and now costs
+9–22 %.
 
 The three pairs cost the same as each other to within noise — they are the same expressions with
-permuted indices — so the pair should be chosen on conditioning alone. The order of magnitude on the
-canonicalised form is the number worth remembering: it buys exact symplecticity rather than
-approximate, and gives up as much as two or three orders of magnitude of energy conservation and four
-or five of constraint conservation for it at these step sizes. The spread there is wide — on five of
-the eleven equilibria it is within a factor of two of the Hamilton-Dirac form on both, and on
-`TokamakSmallCartesian` it conserves energy slightly better — so the figure to expect is the worst
-case, not the typical one.
+permuted indices — so the pair should be chosen on conditioning alone. The canonicalised form is
+still the one that matters: it buys exact symplecticity rather than approximate, and gives up as much
+as two or three orders of magnitude of energy conservation and four or five of constraint
+conservation for it at these step sizes. The spread is wide — on five of the eleven equilibria it is
+within a factor of two of the Hamilton-Dirac form on both, and on `TokamakSmallCartesian` it
+conserves energy slightly better — so the figure to expect is the worst case, not the typical one.
 
-Its cost spread is wider than the other formulations' for the same reason: part of it is the harder
-nonlinear solve rather than the right-hand side. `Dipole3d`, the worst case at 18.8, is the only
-equilibrium where Newton needs more than one iteration per stage on average — 2.6, against 1.0
-everywhere else. That row read 29.6 before the sign error in `∂λ₂/∂q` and `∂λ₂/∂p` was fixed, which
-had Newton at 3.8 iterations per stage and a peak of 50; the right-hand side itself costs the same
-either way.
+Two rows are excluded from that 4.5–6.0, both because the cost is the nonlinear solve rather than the
+right-hand side, which is also why the canonicalised spread was always wider than the others'.
+`Dipole3d` comes out at 9.9 with Newton at 3.0 iterations per stage, and `SolovevSymmetricField` at
+36.6 with 45.5 and a peak of 50 — it is the equilibrium where the canonicalised form diverges, which
+`TODO.md` still records as open. Every other row runs at exactly 1.0 iterations. The `Dipole3d` figure
+read 29.6 before the sign error in `∂λ₂/∂q` and `∂λ₂/∂p` was fixed, which had Newton at 3.8 per stage;
+the right-hand side itself costs the same either way.
+
+One curiosity in the same table: the compact `:parallel` form is *cheaper* than Hamilton-Dirac on
+`Dipole3d`, at 0.69. That is not a right-hand side effect either — it is the only variant there that
+converges in one iteration, against 1.9 for the pair it is compared with.
 
 Separately, the rewrite of the constraints made the Hamilton-Dirac right-hand side **2.7× faster**:
 the old code evaluated `λ₁` and `λ₂` once per component, so the multipliers and the six bracket
