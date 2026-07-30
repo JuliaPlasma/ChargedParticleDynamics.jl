@@ -55,20 +55,26 @@ end
 #
 # Everything below — the constraints, their derivatives, the Hamiltonian gradients, the Poisson
 # brackets — is written against the accessors above, and each of them calls straight through to an
-# `ElectromagneticFields.@code()`-injected function. Those are the expensive part: the generated code
-# carries no common subexpression elimination, so `db₁dx₁` on the ITER Solov'ev X-point is 1905
-# statements containing 108 separate evaluations of `log(x₁)`, and costs 566 ns against 0.5 ns for
-# `g¹¹`. A single evaluation of the Hamilton-Dirac right-hand side used to call `dbᵢdxⱼ` more than
-# seventy times, because every one of the twelve Poisson bracket terms re-entered it from the top.
+# `ElectromagneticFields.@code()`-injected function. Those are the expensive part, by a wide margin:
+# `db₁dx₁` for the ITER Solov'ev X-point costs 57 ns against a `g¹¹` that folds to a constant, and a
+# single evaluation of the Hamilton-Dirac right-hand side used to call `dbᵢdxⱼ` more than seventy
+# times, because every one of the twelve Poisson bracket terms re-entered it from the top.
+#
+# It used to be worse. On `ElectromagneticFields` 0.6.2 that same `db₁dx₁` was 1905 statements
+# containing 108 separate evaluations of `log(x₁)` and cost 549 ns, because `convert(Expr, ::Basic)`
+# wrote out SymEngine's expanded tree verbatim and SymEngine shares nothing. 0.6.3 eliminates common
+# subexpressions in what it emits, which is why the figure above is 57 and not 549; `Project.toml`
+# requires it. The values are unchanged — every field function this package injects is bit-identical
+# between the two versions.
 #
 # `FieldValues` holds one evaluation of each. The functions that consume it need no changes at all:
 # they are already generic in their `q` argument, so passing a `FieldValues` where the coordinate
 # vector would go picks up the methods defined below by dispatch, and every field read becomes a
-# tuple index. This is what makes the right-hand side 4.5x faster; the values are identical, so the
-# trajectories are too (`max|Δv| = 3.5E-18` on `SolovevIterXpoint`).
+# tuple index. That took `guiding_center_3d_v` from 24.7 µs to 3.6 µs — 6.9x, and 32x once 0.6.3 is
+# counted too, at 770 ns. The values are identical, so the trajectories are as well, bit for bit.
 #
 # It is parametric because the integrator evaluates the right-hand side on `ForwardDiff.Dual` as well
-# as `Float64` — four of the roughly eighteen calls per step, for the Newton Jacobian.
+# as `Float64` — four of the roughly twenty-two calls per step, for the Newton Jacobian.
 #
 
 struct FieldValues{T}
@@ -157,8 +163,9 @@ end
 # `guiding_center_3d_canonical.jl` differentiates the Lagrange multipliers, so it reaches
 # `d²Aᵢdxⱼdxₖ`, `d²bᵢdxⱼdxₖ`, `d²gⁱⁱdxⱼdxₖ`, `d²Bdxᵢdxⱼ` and `dEᵢdxⱼ` — and reaches them far more
 # often than it has distinct values to read, because `dλ₁dqⱼ` and `dλ₂dqⱼ` recompute `λₒ` and its
-# derivative for each of the three components. `d²b₁dx₁dx₁` is 6231 statements and 1789 ns on the
-# ITER Solov'ev X-point, so the repetition is the whole cost of that formulation.
+# derivative for each of the three components. `d²b₁dx₁dx₁` costs 80 ns for the ITER Solov'ev
+# X-point, and 1733 on `ElectromagneticFields` 0.6.2 where it was 6231 statements, so the repetition
+# is the whole cost of that formulation.
 #
 # Held separately from `FieldValues` rather than merged into it: `hodeproblem` and
 # `hodeproblem_compact` never touch a second derivative, and filling these ninety-nine slots would

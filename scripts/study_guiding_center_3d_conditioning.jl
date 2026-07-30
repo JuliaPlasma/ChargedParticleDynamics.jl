@@ -103,7 +103,9 @@ mutable struct IterationLogger <: AbstractLogger
 end
 
 Logging.shouldlog(::IterationLogger, level, _module, group, id) = true
-Logging.min_enabled_level(::IterationLogger) = Logging.Debug
+# `Warn`, not `Debug`: the messages this harvests are warnings, and enabling `Debug` globally would
+# switch on every `@debug` in the integrator stack for the duration.
+Logging.min_enabled_level(::IterationLogger) = Logging.Warn
 Logging.catch_exceptions(::IterationLogger) = false
 
 function Logging.handle_message(logger::IterationLogger, level, message, _module, group, id,
@@ -224,7 +226,11 @@ function solve(M, ic, makeproblem)
         return (y = y,
                 energy = mx(e),
                 constraints = maximum(mx(getproperty(c, k)) for k in (:g₁, :g₂, :g₃)))
-    catch
+    catch e
+        # Reported rather than swallowed: a bare `catch` here renders a `MethodError` or a
+        # misconfigured environment as `diverged`, so a broken run reads as a result about the
+        # formulation. A genuine divergence is a `SolverException` or a non-finite state.
+        println(stderr, "solve: ", sprint(showerror, e))
         return nothing
     end
 end
@@ -297,24 +303,63 @@ end
 """
     cost(makeproblem, ic)
 
-Per-step cost of one variant and the Newton iteration statistics behind it. A first integration is
-discarded so that compilation does not land in the timing. Returns `nothing` for a variant that
-cannot be integrated.
+Per-step cost of one variant and the Newton iteration statistics behind it. Returns `nothing` for a
+variant that cannot be integrated, having said on stderr why.
+
+Three things here are deliberate, and were not always so.
+
+The iteration counts come from a **separate, untimed** integration. `warn_iterations = 1` makes
+`SimpleSolvers` warn once per solve, and `IterationLogger` string-matches every one of those
+warnings; inside the timed region that is a fixed per-step cost which does not shrink when the
+right-hand side gets cheaper, so it silently compresses every ratio this section reports toward one.
+
+`@timed` rather than `@elapsed`, over several samples, reporting the minimum. `@elapsed` includes
+garbage collection, and one sample against the ~20 % run-to-run spread of these workloads cannot
+resolve the differences between the formulations that this table exists to show.
+
+The `catch` reports rather than swallowing. A bare one turns a `MethodError`, a typo or a
+misconfigured environment into an indistinguishable `diverged`, so a broken measurement reads as a
+result about the physics.
 """
-function cost(makeproblem, ic)
+function cost(makeproblem, ic; reps = 5)
+    local problem, nsteps
+
     try
         problem = makeproblem(ic)
         nsteps = GeometricIntegrators.GeometricBase.ntime(problem)
-        integrate(problem, METHOD; warn_iterations = 1, OPTIONS...)
-        empty!(ITERLOG.iterations)
-        elapsed = @elapsed integrate(problem, METHOD; warn_iterations = 1, OPTIONS...)
-        its = copy(ITERLOG.iterations)
-        return (ms_per_step = elapsed / nsteps * 1E3,
-                mean_iterations = mean(its),
-                peak_iterations = isempty(its) ? 0 : maximum(its))
-    catch
+
+        integrate(problem, METHOD; OPTIONS...)     # warm-up, discarded: compiles every path
+    catch e
+        println(stderr, "cost: setup or warm-up failed: ", sprint(showerror, e))
         return nothing
     end
+
+    samples = try
+        map(1:reps) do _
+            s = @timed integrate(problem, METHOD; OPTIONS...)
+
+            s.compile_time / s.time < 1e-3 ||
+                error("compilation entered a timed sample ($(round(1e3 * s.compile_time, digits = 1)) ms)")
+
+            s.time
+        end
+    catch e
+        println(stderr, "cost: timing failed: ", sprint(showerror, e))
+        return nothing
+    end
+
+    its = try
+        empty!(ITERLOG.iterations)
+        integrate(problem, METHOD; warn_iterations = 1, OPTIONS...)
+        copy(ITERLOG.iterations)
+    catch e
+        println(stderr, "cost: iteration count failed: ", sprint(showerror, e))
+        Int[]
+    end
+
+    (ms_per_step = minimum(samples) / nsteps * 1E3,
+     mean_iterations = mean(its),
+     peak_iterations = isempty(its) ? 0 : maximum(its))
 end
 
 function costs()
@@ -360,17 +405,21 @@ function costs()
 
     Between the formulations there is a great deal to choose. Taking the Hamilton-Dirac form as unity:
 
-      compact, literal    0.98-1.11   it drops the multipliers for a single bracket ratio
-      compact, :parallel  1.09-1.22   the regularised denominator averages all three brackets, so it
+      compact, literal    1.02-1.10   it drops the multipliers for a single bracket ratio
+      compact, :parallel  1.11-1.37   the regularised denominator averages all three brackets, so it
                                       evaluates nine bracket terms where the literal form evaluates three
-      canonicalised        4.5-6.0    ∂λ/∂q and ∂λ/∂p need every second derivative of the field
+      canonicalised        4.8-7.2    ∂λ/∂q and ∂λ/∂p need every second derivative of the field
 
-    Those first two read 0.86-0.95 and 1.21-1.44, and the canonicalised form 8.9-18.8, before the
-    right-hand side stopped re-entering the generated field code on every bracket term. The compact
-    form is no longer cheaper than Hamilton-Dirac at all: it won by evaluating three bracket terms
-    rather than six, each of which re-entered dbᵢdxⱼ from the top, and now that the field values are
-    read once per call and shared, what shows instead is the extra work it does for its parallel
-    velocity and the contraction in its momentum equation.
+    Those three read 0.79-0.93, 1.19-1.44 and 9.3-14.8 before two things changed: the right-hand side
+    stopped re-entering the generated field code on every bracket term, and ElectromagneticFields 0.6.3
+    began sharing subexpressions inside it. findings.md separates the two.
+
+    The compact form is no longer cheaper than Hamilton-Dirac at all. It won by evaluating three
+    bracket terms rather than six, each of which re-entered dbᵢdxⱼ from the top; now that the field
+    values are read once per call and shared, that saving is worth almost nothing and what shows
+    instead is the extra work it does for its parallel velocity and the contraction in its momentum
+    equation. The canonicalised row moved furthest, because it is the one dominated by second
+    derivatives and those gained most from the elimination upstream.
 
     The canonicalised form is still the one that matters: it buys exact symplecticity rather than
     approximate, and section 2 shows it giving up as much as two or three orders of magnitude of energy
@@ -378,13 +427,13 @@ function costs()
     worst cases and not typical ones — on five of the eleven it is within a factor of two on both, and
     on TokamakSmallCartesian it conserves energy slightly better.
 
-    Two rows sit outside that 4.5-6.0 because their cost is the nonlinear solve rather than the
-    right-hand side, which is why the canonicalised spread was always the widest: Dipole3d at 9.9 with
-    Newton at 3.0 iterations per stage, and SolovevSymmetricField at 36.6 with 45.5 and a peak of 50,
-    the equilibrium where this formulation diverges. Every other row runs at exactly 1.0. For the same
-    reason the compact :parallel form comes out *cheaper* than Hamilton-Dirac on Dipole3d, at 0.69: it
-    is the only variant there that converges in one iteration, against 1.9 for the pair it is compared
-    with.""")
+    A ratio above is a statement about two right-hand sides only where both variants ask the solver for
+    the same work, so the ranges exclude the rows where they do not. Those are Dipole3d, whose
+    canonicalised form runs at 3.0 Newton iterations per stage against 1.0 elsewhere — and where, for
+    the same reason running the other way, compact :parallel comes out *cheaper* than Hamilton-Dirac at
+    0.72, being the only variant there that converges in one iteration against the pair's 1.9 — and
+    SolovevSymmetricField, which has no canonicalised row at all, this being the equilibrium where that
+    formulation diverges with a NaN in the Newton direction. Every other row runs at exactly 1.0.""")
 end
 
 

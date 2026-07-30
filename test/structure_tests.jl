@@ -247,8 +247,8 @@ end
     using Test
 
     # `guiding_center_3d_v`/`_f` evaluate every injected field function once into a `FieldValues` and
-    # then read the results out of it, which is what makes them 6x faster than calling through to the
-    # generated code on every one of the twelve Poisson-bracket terms. The whole construction rests on
+    # then read the results out of it, which is what makes them 6.9x faster than calling through to
+    # the generated code on every one of the twelve Poisson-bracket terms. The whole construction rests on
     # the cached accessors returning exactly what the uncached ones do — not approximately, exactly —
     # so that is what is asserted, on one chart of each kind.
     #
@@ -307,7 +307,9 @@ end
         # does and the second derivatives besides. The mixed ones are stored for all twenty-seven
         # index triples rather than the eighteen symmetry leaves independent, because
         # `ElectromagneticFields` expands `d²b₁dx₁dx₂` and `d²b₁dx₂dx₁` separately and they need not
-        # agree in the last bit — so both orderings are asserted here.
+        # agree in the last bit — so both orderings are asserted here. Still true on 0.6.3: its
+        # common-subexpression pass shares within one generated body, not across two, and none of the
+        # twenty-seven triples agrees bitwise with its transpose on `SolovevIterXpoint`.
         S = M.secondfieldvalues(t, q)
 
         @test isconcretetype(typeof(S))

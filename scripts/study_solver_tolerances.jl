@@ -302,12 +302,19 @@ function step_costs()
     `Dual`, the line search being 8% of wall clock against the Jacobian's 13%.
 
     The cost was `MidpointExtrapolation(5)` at 70% of wall clock — not the default for either method, and
-    dropped — over a right-hand side that re-entered the generated field code once per bracket term.
-    `db₁dx₁` is 1905 statements with 108 separate evaluations of `log(x₁)` on the ITER Solov'ev X-point,
-    and was called seventy times per evaluation; it is now called once. See `docs/src/findings.md`.
+    dropped — over a right-hand side that re-entered the generated field code once per bracket term. On
+    ElectromagneticFields 0.6.2, `db₁dx₁` was 1905 statements with 108 separate evaluations of `log(x₁)`
+    for the ITER Solov'ev X-point, and was called seventy times per evaluation; it is now called once.
 
-    What remains is the expression swell itself, which lives in `ElectromagneticFields`: a common
-    subexpression pass over the generated bodies takes `db₁dx₁` from 566 ns to 83.""")
+    The third cost was the expression swell in that generated code, and lived upstream. It is delivered:
+    ElectromagneticFields 0.6.3 eliminates common subexpressions in the bodies it emits, taking `db₁dx₁`
+    from 549 ns to 57 and `d²b₁dx₁dx₁` from 1733 to 80, and changing no value — every field function
+    this package injects is bit-identical between 0.6.2 and 0.6.3. `Project.toml` requires it.
+
+    `docs/src/findings.md` measures all four combinations of the two changes, because they are not the
+    same factor: for `hodeproblem` they are separable and multiplicative, 6.9x here and 2.8x upstream,
+    while for `hodeproblem_canonical` they reinforce each other, the second derivatives that form needs
+    having gained the most from the elimination.""")
 end
 
 function main()

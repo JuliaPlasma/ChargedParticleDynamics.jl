@@ -199,7 +199,7 @@ deprecation shims; see *Changed* below for the mapping.
 
   The right-hand side no longer re-enters the generated field code once per term. `db₁dx₁` on the
   ITER Solov'ev X-point is 1905 statements containing 108 separate evaluations of `log(x₁)` and costs
-  566 ns, against 0.5 ns for `g¹¹`, because `ElectromagneticFields` emits SymEngine's expanded tree
+  549 ns, against a `g¹¹` that folds to a constant, because `ElectromagneticFields` 0.6.2 emitted SymEngine's expanded tree
   with no common subexpression elimination. One evaluation of the Hamilton-Dirac right-hand side
   called it more than seventy times: each of the twelve Poisson-bracket terms re-entered from the
   top, and `λ₁` and `λ₂` each recomputed the `λₒ` they share. `fieldvalues` evaluates each injected
@@ -208,10 +208,13 @@ deprecation shims; see *Changed* below for the mapping.
   `SecondFieldValues` does the same for the ninety-nine second derivatives `hodeproblem_canonical`
   needs, kept separate so that the other two formulations do not pay for derivatives they never read.
 
-  `guiding_center_3d_v` goes from 25.0 µs to 4.3 µs; `hodeproblem` on `SolovevIterXpoint` from
-  6.18 ms/step to 0.31, and `hodeproblem_canonical` from 76.9 to 2.2. A new block in
-  `test/structure_tests.jl` pins every cached accessor to its uncached counterpart, so a missing or
-  misindexed field cannot pass as a merely different trajectory. `src/guiding_center_3d/`.
+  `guiding_center_3d_v` goes from 24.7 µs to 3.6 µs — 6.9×, matching the end-to-end per-step ratio
+  exactly. At the `ElectromagneticFields` 0.6.2 these two changes were developed against, and holding
+  the initial guess as the suite used to set it, `hodeproblem` on `SolovevIterXpoint` goes from
+  5.87 ms/step to 0.230 and `hodeproblem_canonical` from 19.9 to 1.57. (The 0.6.3 requirement below
+  takes those to 0.082 and 0.39; [Findings](docs/src/findings.md) measures all four combinations.) A
+  new block in `test/structure_tests.jl` pins every cached accessor to its uncached counterpart, so a
+  missing or misindexed field cannot pass as a merely different trajectory. `src/guiding_center_3d/`.
 - **The `3D guiding centre diagnostics` block asks for `f_abstol = 1E-12`** like the rest of the
   suite, rather than restating `GeometricIntegratorsBase`'s default of `8eps() = 1.8E-15`. It did so
   in order to measure what an unconfigured `integrate` delivers, but that is below the round-off floor
@@ -222,6 +225,40 @@ deprecation shims; see *Changed* below for the mapping.
   defaults are still exercised by the calls that genuinely pass no options. Energy error is identical
   at both tolerances, and `structure_tests.jl` now emits no suppressed solver warnings at all.
   `test/structure_tests.jl`, `test/quiet_solver_warnings.jl`.
+- **`ElectromagneticFields` 0.6.3 is now required**, up from 0.6. It eliminates common subexpressions
+  in the field functions it generates, which this package injects into 32 equilibrium modules and
+  evaluates on every right-hand side. `db₁dx₁` for the ITER Solov'ev X-point goes from 549 ns to 57
+  and `d²b₁dx₁dx₁` from 1733 to 80 — the second derivatives, which `hodeproblem_canonical` needs,
+  gain the most. The compat bound is tightened rather than left at `0.6` because the timings in
+  [Findings](docs/src/findings.md) are no longer reproducible below it.
+
+  Nothing changes in value. The pass only *names* subexpressions, and all **27456** field values this
+  package injects across those 32 modules are bit-identical between 0.6.2 and 0.6.3 — checked on this
+  package's own `@code(2.0, 5.0, 2.0)` and `@code_iter_xpoint()` parameterisations, which are not the
+  ones `ElectromagneticFields` tests — as is every trajectory integrated from them, and every Newton
+  iteration count along the way. `Project.toml`.
+- **The cost tables in [Findings](docs/src/findings.md) are re-measured across four configurations**,
+  because two independent changes bear on them and the previous tables could not tell them apart. The
+  package's own right-hand side rewrite and the `ElectromagneticFields` release are now measured in
+  both combinations, in interleaved randomised rounds on one machine. For `hodeproblem` the two are
+  separable and almost exactly multiplicative — 6.9× here, 2.8× upstream, 19.5× together — and for
+  `hodeproblem_canonical` they reinforce each other, 12.7× here on 0.6.2 but 15.4× on 0.6.3.
+
+  This corrects an attribution error. The relative-cost table committed earlier credited the whole
+  change to the right-hand side rewrite, but had in fact been measured with the upstream pass already
+  active: `scripts/Manifest.toml` carried a `path = "../../ElectromagneticFields"` stanza with no
+  matching `[sources]` entry in `scripts/Project.toml`, so `julia --project=scripts` resolved the
+  dependency to a working checkout. `Pkg.status` cannot detect this — for a path dependency it prints
+  the version recorded in the manifest, not the version at the path. The manifest is removed, and
+  `findings.md` now says to check `Base.locate_package` instead.
+
+  `cost()` in `scripts/study_guiding_center_3d_conditioning.jl` was also not fit to measure this: it
+  timed a single `@elapsed` sample against its own admitted ~20 % spread, held `warn_iterations = 1`
+  *inside* the timed region so that a fixed per-step logging cost was charged to every solve — which
+  compresses exactly the ratio under test — and swallowed every exception into an indistinguishable
+  `diverged`, so a misconfigured environment read as a result about the physics. It now takes the
+  minimum of several `@timed` samples, asserts per sample that no compilation entered the timing,
+  counts iterations in a separate untimed run, and reports what it catches.
 
 ### Removed
 
@@ -247,7 +284,9 @@ deprecation shims; see *Changed* below for the mapping.
   one equilibrium whose canonicalised solve needs more than one Newton iteration per stage — drops from
   3.8 iterations per stage to 2.6, peak 50 to 9, and from 29.6× to 18.8× the cost of the Hamilton-Dirac
   form. The right-hand side itself costs the same either way; the whole difference is the solve. The
-  cost table in [Findings](docs/src/findings.md) is updated accordingly.
+  cost table in [Findings](docs/src/findings.md) is updated accordingly. (Those two ratios are the
+  measurement of the day; the right-hand side has since been made some twenty times cheaper and the
+  same row now reads differently — see the four-way table in [Findings](docs/src/findings.md).)
 
   It does *not* account for the canonicalised form's other weaknesses — `SolovevSymmetricField` still
   cannot complete an orbit under it, and `Dipole3d`'s conservation is unchanged — so the comparisons
