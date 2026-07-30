@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.3.0] - 2026-07-30
+
 **This release renames every problem constructor and their keyword arguments.** There are no
 deprecation shims; see *Changed* below for the mapping.
 
@@ -351,6 +354,39 @@ deprecation shims; see *Changed* below for the mapping.
   rather than a multiplier on top of another one. `findings.md:280` already stated correctly that
   `ForwardDiff` is not a dependency, contradicting the claim eighty lines below it. The passage is
   rewritten with the profile behind it. The 0.2.0 entry is left as it stands, being released.
+- **Neither `sodeproblem` declared its own vector field.** `SODE` defaults `v̄` — the field the
+  library uses for everything that is not a substep — to a function that writes nothing, where `ODE`
+  defaults it to `v`, and the tuple of subsystems is no substitute, since no single `vᵢ` is the field
+  of the composed step. So `q̇` was zero in every slot of the solution step, the backward
+  `MidpointExtrapolation` that fills its pre-history returned the initial condition bit-for-bit, and
+  the Hermite initial guess of every `Gauss(1)` subsystem solve of a Strang composition found two
+  identical history entries, warned, and fell back to a constant. That was 1188 warnings from the
+  three gyrokinetic testsets that integrate `sodeproblem`, and it is why the ODE-only ones were
+  unaffected.
+
+  Nothing moves in value: the X-point trajectory is bit-identical over 1000 Strang steps and
+  `|det J - 1|` for all eight equilibria stays at the central-difference floor, worst 4.2E-9 against
+  the 1E-7 the volume test asserts. Both guesses start Newton close enough to converge to the same
+  root, which is why only the warning gave the omission away. It costs +3.9 % on a 1000-step Strang
+  integration, the solution step now evaluating the full field where it previously ran a no-op. The
+  charged particle's Boris splitting had the same omission, silent only because the composition of
+  its two exact solution maps asks for no initial guess. `test/gyro_kinetics_4d_tests.jl` now asserts
+  that the full field is what the problem hands the library as `v̄`, beside the existing check that
+  the six subsystems sum to it.
+- **The theta pinch loop asked Hermite for a guess it cannot give.** `B = B₀ e_z` is uniform, so
+  `∇B = 0` and the force vanishes identically: the 4D guiding centre streams along `z` at constant
+  `u` and never leaves its field line, leaving `x`, `y` and `u` bit-for-bit constant and
+  `p = A(x,y) + u b` an exact invariant of every orbit in that equilibrium. The default guess
+  therefore found two identical `p` history entries on *every* step, warning twice per step while
+  falling back to the constant that is in fact the exact answer — the remaining 200 warnings, all
+  from one call. It now uses `MidpointExtrapolation(5)`, which reads one history entry rather than
+  two, as the Pauli theta pinch already did for the same reason; the trajectory is bitwise
+  unchanged. `test_guiding_center_4d` gains the `kwargs...` passthrough
+  `test_pauli_particle_3d` had. The suite emits no Hermite extrapolation warning of either kind.
+- **`FieldValues` and `SecondFieldValues` had no docstrings**, and `fieldvalues` links to the former
+  with an `@ref`. Documenter resolves `@ref` to a rendered docstring, so that one link failed the
+  documentation build outright at the cross-references stage — `docs/make.jl` promotes
+  `:cross_references` to an error, correctly. Both types now carry one.
 
 ### Known issues
 
@@ -773,6 +809,7 @@ deprecation shims; see *Changed* below for the mapping.
 Initial release.
 
 
-[Unreleased]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/releases/tag/v0.1.0
