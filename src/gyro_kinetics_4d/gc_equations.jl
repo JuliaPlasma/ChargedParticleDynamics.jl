@@ -95,9 +95,19 @@ symplectic integrators for the subsystems therefore preserves phasespace volume 
 symmetric composition of second-order methods gives a second-order volume-preserving scheme.
 """
 function sodeproblem(qᵢ=qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic=true)
+    # `v̄` is the vector field the library uses for everything that is not a substep: the `q̇` it
+    # stores alongside every solution, the backward extrapolation that fills the pre-history of the
+    # solution step, and hence the initial guess of the nonlinear solves. `ODE` defaults it to `v`,
+    # but `SODE` defaults it to a function that writes nothing, and the tuple of subsystems is not a
+    # substitute — no single `vᵢ` is the field of the composed step. Left at that default every
+    # history slot carried `q̇ = 0`, the backward `MidpointExtrapolation` returned the initial
+    # condition bit-for-bit, and the Hermite initial guess of every `Gauss(1)` subsystem solve found
+    # two identical history entries, warned, and fell back to a constant. `v` is the right choice
+    # because the six subsystems sum to it, which the tests assert.
     SODEProblem(
         (v₁, v₂, v₃, v₄, v₅, v₆),
         timespan, timestep, qᵢ;
+        v̄=v,
         parameters=parameters,
         invariants=(h=hamiltonian,),
         periodicity=guiding_center_4d_periodicity(qᵢ, periodic)
