@@ -42,12 +42,18 @@ function test_guiding_center_3d(equ::ODEProblem)
     @test integrate(equ, Gauss(2); options...) isa GeometricSolution
 end
 
+# These used to pass `initialguess=MidpointExtrapolation(5)`, which is not the default for either
+# method — `PartitionedGauss` and `VPRKGauss` both declare `default_iguess() = HermiteExtrapolation()`
+# — and cost 70% of the runtime of every 3D guiding centre integration for nothing. Newton converges
+# in one iteration under either guess, and the trajectories agree to round-off (bit-identical for
+# most equilibria, 1.5E-14 relative at worst), so dropping it is a 3.0-3.5x speedup that changes no
+# result. The Pauli theta pinch still needs it, for a reason recorded in `pauli_particle_3d_tests.jl`.
 function test_guiding_center_3d(equ::Union{HODEProblem,PODEProblem})
-    @test integrate(equ, PartitionedGauss(2); initialguess=MidpointExtrapolation(5), options...) isa GeometricSolution
+    @test integrate(equ, PartitionedGauss(2); options...) isa GeometricSolution
 end
 
 function test_guiding_center_3d(equ::Union{IODEProblem,LODEProblem})
-    @test integrate(equ, VPRKGauss(2); initialguess=MidpointExtrapolation(5), options...) isa GeometricSolution
+    @test integrate(equ, VPRKGauss(2); options...) isa GeometricSolution
 end
 
 end
@@ -310,8 +316,7 @@ end
 
     # `options` is not exported by the helper module — the blocks above reach it through
     # `test_guiding_center_3d` rather than by name — so it is qualified here.
-    solutions = [integrate(p, PartitionedGauss(2); initialguess = MidpointExtrapolation(5),
-                           GuidingCenter3dTests.options...)
+    solutions = [integrate(p, PartitionedGauss(2); GuidingCenter3dTests.options...)
                  for p in problems]
 
     reference = vcat(solutions[1].q[end], solutions[1].p[end])

@@ -57,7 +57,7 @@ function guiding_centre_3d()
                       ("TokamakMediumCylindrical",G3.TokamakMediumCylindrical),
                       ("TokamakSmallToroidal",    G3.TokamakSmallToroidal))
         prob = M.hodeproblem(M.initial_conditions_barely_passing(); timestep = 0.1, timespan = (0.0, 1E2))
-        sol  = integrate(prob, PartitionedGauss(2); initialguess = MidpointExtrapolation(5))
+        sol  = integrate(prob, PartitionedGauss(2))
         _, eerr = M.compute_energy_error(sol)
         c = M.compute_constraints(sol)
         pstr = if isdefined(M, :toroidal_momentum)

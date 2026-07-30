@@ -166,6 +166,21 @@ constraint pair `c`.
 λ₁(t, q, p, params, c = default_constraint_pair()) = +bracket_gH(c[2], t, q, p, params) / λₒ(t, q, p, c)
 λ₂(t, q, p, params, c = default_constraint_pair()) = -bracket_gH(c[1], t, q, p, params) / λₒ(t, q, p, c)
 
+"""
+    multipliers(t, q, p, params, c = default_constraint_pair())
+
+Both Lagrange multipliers as a tuple, sharing the one evaluation of `λₒ` that divides them.
+
+`λ₁` and `λ₂` each recompute it, and the right-hand sides need both, so calling them separately
+evaluated the twelve Poisson-bracket terms behind `{g₁, g₂}` four times per step-stage rather than
+twice. Nothing else divides by `λₒ`, so this is the only place the sharing is worth spelling out.
+"""
+@inline function multipliers(t, q, p, params, c = default_constraint_pair())
+    lo = λₒ(t, q, p, c)
+    (+bracket_gH(c[2], t, q, p, params) / lo,
+     -bracket_gH(c[1], t, q, p, params) / lo)
+end
+
 hamiltonian_canonical(t, q, p, params, c = default_constraint_pair()) =
     hamiltonian(t, q, p, params) + λ₁(t, q, p, params, c) * gᵏ(c[1], t, q, p) +
                                    λ₂(t, q, p, params, c) * gᵏ(c[2], t, q, p)
@@ -188,21 +203,24 @@ end
 end
 
 
+# `fieldvalues` evaluates each injected field function once and the expressions below read the
+# results out of it; see the header of `guiding_center_3d_constraints.jl` for why that is worth
+# doing. `F` goes where `q` would: everything downstream is generic in that argument.
 function guiding_center_3d_v(v, t, q, p, params, c = default_constraint_pair())
-    l₁ = λ₁(t, q, p, params, c)
-    l₂ = λ₂(t, q, p, params, c)
+    F = fieldvalues(t, q)
+    l₁, l₂ = multipliers(t, F, p, params, c)
 
-    components!(v, i -> dHdpᵢ(i, t, q, p, params) + l₁ * dgᵏdpₗ(c[1], i, t, q, p)
-                                                  + l₂ * dgᵏdpₗ(c[2], i, t, q, p))
+    components!(v, i -> dHdpᵢ(i, t, F, p, params) + l₁ * dgᵏdpₗ(c[1], i, t, F, p)
+                                                  + l₂ * dgᵏdpₗ(c[2], i, t, F, p))
     nothing
 end
 
 function guiding_center_3d_f(f, t, q, p, params, c = default_constraint_pair())
-    l₁ = λ₁(t, q, p, params, c)
-    l₂ = λ₂(t, q, p, params, c)
+    F = fieldvalues(t, q)
+    l₁, l₂ = multipliers(t, F, p, params, c)
 
-    components!(f, i -> -dHdqᵢ(i, t, q, p, params) - l₁ * dgᵏdqₗ(c[1], i, t, q, p)
-                                                   - l₂ * dgᵏdqₗ(c[2], i, t, q, p))
+    components!(f, i -> -dHdqᵢ(i, t, F, p, params) - l₁ * dgᵏdqₗ(c[1], i, t, F, p)
+                                                   - l₂ * dgᵏdqₗ(c[2], i, t, F, p))
     nothing
 end
 

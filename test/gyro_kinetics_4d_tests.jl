@@ -63,6 +63,7 @@ end
 
     using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
     using ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint
+    using GeometricIntegrators
     using Test
 
     # The notes absorb the phasespace Jacobian into the distribution function, f̃ = B*∥ f, which
@@ -97,6 +98,18 @@ end
     end
 
     @test vsum ≈ vfull
+
+    # ... and it must be the field the SODE hands the library as `v̄`. That is what the `q̇` of every
+    # solution and the backward extrapolation of the solution step's pre-history are computed with,
+    # and `SODE` — unlike `ODE`, which defaults `v̄` to `v` — defaults it to a function that writes
+    # nothing. Left at that default the pre-history came back equal to the initial condition
+    # bit-for-bit, so the Hermite initial guess of every subsystem solve of the composition warned
+    # and fell back to a constant. The trajectories were unaffected, which is why only the warning
+    # gave it away; this is the assertion that fails if the keyword is ever dropped again.
+    v̄ = zeros(4)
+    initialguess(GK.sodeproblem(q; parameters=params)).v(v̄, 0.0, q, params)
+
+    @test v̄ == vfull
 
 end
 

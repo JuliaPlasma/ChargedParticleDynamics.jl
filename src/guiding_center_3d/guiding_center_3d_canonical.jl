@@ -304,25 +304,32 @@ dλ₂dpⱼ(j::Val, t, q, p, params, c) =
     dbracket_gH_dpⱼ(c[1], j, t, q, p, params) / λₒ(t, q, p, c)
 
 
+# `S` carries the second derivatives as well as the first, and goes where `q` would; the call to
+# `guiding_center_3d_v` below takes it too, so the Hamilton-Dirac part of the right-hand side does
+# not fill a cache of its own. See `guiding_center_3d_constraints.jl`.
 function guiding_center_3d_canonical_v(v, t, q, p, params, c = default_constraint_pair())
-    guiding_center_3d_v(v, t, q, p, params, c)
+    S = secondfieldvalues(t, q)
 
-    g1 = gᵏ(c[1], t, q, p)
-    g2 = gᵏ(c[2], t, q, p)
+    guiding_center_3d_v(v, t, S, p, params, c)
 
-    addcomponents!(v, i -> dλ₁dpⱼ(i, t, q, p, params, c) * g1 +
-                           dλ₂dpⱼ(i, t, q, p, params, c) * g2)
+    g1 = gᵏ(c[1], t, S, p)
+    g2 = gᵏ(c[2], t, S, p)
+
+    addcomponents!(v, i -> dλ₁dpⱼ(i, t, S, p, params, c) * g1 +
+                           dλ₂dpⱼ(i, t, S, p, params, c) * g2)
     nothing
 end
 
 function guiding_center_3d_canonical_f(f, t, q, p, params, c = default_constraint_pair())
-    guiding_center_3d_f(f, t, q, p, params, c)
+    S = secondfieldvalues(t, q)
 
-    g1 = gᵏ(c[1], t, q, p)
-    g2 = gᵏ(c[2], t, q, p)
+    guiding_center_3d_f(f, t, S, p, params, c)
 
-    addcomponents!(f, i -> -dλ₁dqⱼ(i, t, q, p, params, c) * g1 -
-                            dλ₂dqⱼ(i, t, q, p, params, c) * g2)
+    g1 = gᵏ(c[1], t, S, p)
+    g2 = gᵏ(c[2], t, S, p)
+
+    addcomponents!(f, i -> -dλ₁dqⱼ(i, t, S, p, params, c) * g1 -
+                            dλ₂dqⱼ(i, t, S, p, params, c) * g2)
     nothing
 end
 

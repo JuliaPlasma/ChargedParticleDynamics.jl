@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.3.0] - 2026-07-30
+
 **This release renames every problem constructor and their keyword arguments.** There are no
 deprecation shims; see *Changed* below for the mapping.
 
@@ -187,6 +190,78 @@ deprecation shims; see *Changed* below for the mapping.
   `‖ϑ‖ eps`, so the solver had no reachable stopping criterion and the line search ran to its limit
   on every step — the same defect the scripts were fixed for. It now uses the tolerances the test
   suite does.
+- **The 3D guiding centre right-hand side is about twenty times cheaper**, in two independent
+  changes, neither of which alters a trajectory by a single bit.
+
+  `MidpointExtrapolation(5)` is no longer requested. It is not the default for either method —
+  `PartitionedGauss` and `VPRKGauss` both declare `default_iguess() = HermiteExtrapolation()` — and
+  nothing recorded why the 3D tests asked for it; the one documented reason is the Pauli theta pinch,
+  whose momentum is constant along the initial trajectory, and that call site keeps it. It was **70 %
+  of wall clock**, for 3.0–3.5× across all thirteen equilibria and all three formulations, with
+  Newton converging in one iteration either way.
+
+  The right-hand side no longer re-enters the generated field code once per term. `db₁dx₁` on the
+  ITER Solov'ev X-point is 1905 statements containing 108 separate evaluations of `log(x₁)` and costs
+  549 ns, against a `g¹¹` that folds to a constant, because `ElectromagneticFields` 0.6.2 emitted SymEngine's expanded tree
+  with no common subexpression elimination. One evaluation of the Hamilton-Dirac right-hand side
+  called it more than seventy times: each of the twelve Poisson-bracket terms re-entered from the
+  top, and `λ₁` and `λ₂` each recomputed the `λₒ` they share. `fieldvalues` evaluates each injected
+  function once into a `FieldValues`, which is passed where the coordinate vector would go —
+  everything downstream is already generic in that argument, so the accessors pick it up by dispatch.
+  `SecondFieldValues` does the same for the ninety-nine second derivatives `hodeproblem_canonical`
+  needs, kept separate so that the other two formulations do not pay for derivatives they never read.
+
+  `guiding_center_3d_v` goes from 24.7 µs to 3.6 µs — 6.9×, matching the end-to-end per-step ratio
+  exactly. At the `ElectromagneticFields` 0.6.2 these two changes were developed against, and holding
+  the initial guess as the suite used to set it, `hodeproblem` on `SolovevIterXpoint` goes from
+  5.87 ms/step to 0.230 and `hodeproblem_canonical` from 19.9 to 1.57. (The 0.6.3 requirement below
+  takes those to 0.082 and 0.39; [Findings](docs/src/findings.md) measures all four combinations.) A
+  new block in `test/structure_tests.jl` pins every cached accessor to its uncached counterpart, so a
+  missing or misindexed field cannot pass as a merely different trajectory. `src/guiding_center_3d/`.
+- **The `3D guiding centre diagnostics` block asks for `f_abstol = 1E-12`** like the rest of the
+  suite, rather than restating `GeometricIntegratorsBase`'s default of `8eps() = 1.8E-15`. It did so
+  in order to measure what an unconfigured `integrate` delivers, but that is below the round-off floor
+  of the ITER-scale residual — `quiet_solver_warnings.jl` and `study_solver_tolerances.jl` both say
+  so — and four steps of the Solov'ev X-point ran to the iteration cap chasing it, at the crossing of
+  `b₁ = 0` where `λₒ ∝ b₁` collapses. Those four converge at no budget at all: 50, 100, 200 and 1000
+  iterations all terminate at the cap and all four give a bit-identical final state. The library
+  defaults are still exercised by the calls that genuinely pass no options. Energy error is identical
+  at both tolerances, and `structure_tests.jl` now emits no suppressed solver warnings at all.
+  `test/structure_tests.jl`, `test/quiet_solver_warnings.jl`.
+- **`ElectromagneticFields` 0.6.3 is now required**, up from 0.6. It eliminates common subexpressions
+  in the field functions it generates, which this package injects into 32 equilibrium modules and
+  evaluates on every right-hand side. `db₁dx₁` for the ITER Solov'ev X-point goes from 549 ns to 57
+  and `d²b₁dx₁dx₁` from 1733 to 80 — the second derivatives, which `hodeproblem_canonical` needs,
+  gain the most. The compat bound is tightened rather than left at `0.6` because the timings in
+  [Findings](docs/src/findings.md) are no longer reproducible below it.
+
+  Nothing changes in value. The pass only *names* subexpressions, and all **27456** field values this
+  package injects across those 32 modules are bit-identical between 0.6.2 and 0.6.3 — checked on this
+  package's own `@code(2.0, 5.0, 2.0)` and `@code_iter_xpoint()` parameterisations, which are not the
+  ones `ElectromagneticFields` tests — as is every trajectory integrated from them, and every Newton
+  iteration count along the way. `Project.toml`.
+- **The cost tables in [Findings](docs/src/findings.md) are re-measured across four configurations**,
+  because two independent changes bear on them and the previous tables could not tell them apart. The
+  package's own right-hand side rewrite and the `ElectromagneticFields` release are now measured in
+  both combinations, in interleaved randomised rounds on one machine. For `hodeproblem` the two are
+  separable and almost exactly multiplicative — 6.9× here, 2.8× upstream, 19.5× together — and for
+  `hodeproblem_canonical` they reinforce each other, 12.7× here on 0.6.2 but 15.4× on 0.6.3.
+
+  This corrects an attribution error. The relative-cost table committed earlier credited the whole
+  change to the right-hand side rewrite, but had in fact been measured with the upstream pass already
+  active: `scripts/Manifest.toml` carried a `path = "../../ElectromagneticFields"` stanza with no
+  matching `[sources]` entry in `scripts/Project.toml`, so `julia --project=scripts` resolved the
+  dependency to a working checkout. `Pkg.status` cannot detect this — for a path dependency it prints
+  the version recorded in the manifest, not the version at the path. The manifest is removed, and
+  `findings.md` now says to check `Base.locate_package` instead.
+
+  `cost()` in `scripts/study_guiding_center_3d_conditioning.jl` was also not fit to measure this: it
+  timed a single `@elapsed` sample against its own admitted ~20 % spread, held `warn_iterations = 1`
+  *inside* the timed region so that a fixed per-step logging cost was charged to every solve — which
+  compresses exactly the ratio under test — and swallowed every exception into an indistinguishable
+  `diverged`, so a misconfigured environment read as a result about the physics. It now takes the
+  minimum of several `@timed` samples, asserts per sample that no compilation entered the timing,
+  counts iterations in a separate untimed run, and reports what it catches.
 
 ### Removed
 
@@ -212,7 +287,9 @@ deprecation shims; see *Changed* below for the mapping.
   one equilibrium whose canonicalised solve needs more than one Newton iteration per stage — drops from
   3.8 iterations per stage to 2.6, peak 50 to 9, and from 29.6× to 18.8× the cost of the Hamilton-Dirac
   form. The right-hand side itself costs the same either way; the whole difference is the solve. The
-  cost table in [Findings](docs/src/findings.md) is updated accordingly.
+  cost table in [Findings](docs/src/findings.md) is updated accordingly. (Those two ratios are the
+  measurement of the day; the right-hand side has since been made some twenty times cheaper and the
+  same row now reads differently — see the four-way table in [Findings](docs/src/findings.md).)
 
   It does *not* account for the canonicalised form's other weaknesses — `SolovevSymmetricField` still
   cannot complete an orbit under it, and `Dipole3d`'s conservation is unchanged — so the comparisons
@@ -262,6 +339,54 @@ deprecation shims; see *Changed* below for the mapping.
   `QuadraticPotentials3d`, the one equilibrium where `φ ≠ 0`.
 - Docstring cross-references that could not resolve, and `lodeproblem`, `odeproblem`,
   `iodeproblem` and `iodeproblem_λ` of the 4D guiding centre, which had no docstrings at all.
+- **The explanation given for the cost of the 3D `hode` path was wrong in every part.** Both
+  `docs/src/findings.md` and the 0.2.0 entry below attributed it to "nested `ForwardDiff`: the second
+  derivatives of the 3D Hamiltonian differentiate field functions that are themselves AD-generated,
+  and the backtracking line search re-evaluates them". Profiling contradicts all three clauses. There
+  is no nesting and no AD in the field layer: `ElectromagneticFields` generates its field functions
+  symbolically with SymEngine at precompile time and does not depend on `ForwardDiff`. `hodeproblem`
+  never touches a second derivative of the Hamiltonian — its right-hand side is first derivatives
+  throughout, and the Hessian belongs to `hodeproblem_canonical` alone, hand-written in closed form
+  rather than differentiated. And the line search is 8 % of wall clock against the Jacobian's 13 %:
+  of the roughly ninety-eight right-hand side evaluations per step, **four** are on `Dual`.
+
+  Only the clause about `MidpointExtrapolation(5)` survived, and it was the whole of the first layer
+  rather than a multiplier on top of another one. `findings.md:280` already stated correctly that
+  `ForwardDiff` is not a dependency, contradicting the claim eighty lines below it. The passage is
+  rewritten with the profile behind it. The 0.2.0 entry is left as it stands, being released.
+- **Neither `sodeproblem` declared its own vector field.** `SODE` defaults `v̄` — the field the
+  library uses for everything that is not a substep — to a function that writes nothing, where `ODE`
+  defaults it to `v`, and the tuple of subsystems is no substitute, since no single `vᵢ` is the field
+  of the composed step. So `q̇` was zero in every slot of the solution step, the backward
+  `MidpointExtrapolation` that fills its pre-history returned the initial condition bit-for-bit, and
+  the Hermite initial guess of every `Gauss(1)` subsystem solve of a Strang composition found two
+  identical history entries, warned, and fell back to a constant. That was 1188 warnings from the
+  three gyrokinetic testsets that integrate `sodeproblem`, and it is why the ODE-only ones were
+  unaffected.
+
+  Nothing moves in value: the X-point trajectory is bit-identical over 1000 Strang steps and
+  `|det J - 1|` for all eight equilibria stays at the central-difference floor, worst 4.2E-9 against
+  the 1E-7 the volume test asserts. Both guesses start Newton close enough to converge to the same
+  root, which is why only the warning gave the omission away. It costs +3.9 % on a 1000-step Strang
+  integration, the solution step now evaluating the full field where it previously ran a no-op. The
+  charged particle's Boris splitting had the same omission, silent only because the composition of
+  its two exact solution maps asks for no initial guess. `test/gyro_kinetics_4d_tests.jl` now asserts
+  that the full field is what the problem hands the library as `v̄`, beside the existing check that
+  the six subsystems sum to it.
+- **The theta pinch loop asked Hermite for a guess it cannot give.** `B = B₀ e_z` is uniform, so
+  `∇B = 0` and the force vanishes identically: the 4D guiding centre streams along `z` at constant
+  `u` and never leaves its field line, leaving `x`, `y` and `u` bit-for-bit constant and
+  `p = A(x,y) + u b` an exact invariant of every orbit in that equilibrium. The default guess
+  therefore found two identical `p` history entries on *every* step, warning twice per step while
+  falling back to the constant that is in fact the exact answer — the remaining 200 warnings, all
+  from one call. It now uses `MidpointExtrapolation(5)`, which reads one history entry rather than
+  two, as the Pauli theta pinch already did for the same reason; the trajectory is bitwise
+  unchanged. `test_guiding_center_4d` gains the `kwargs...` passthrough
+  `test_pauli_particle_3d` had. The suite emits no Hermite extrapolation warning of either kind.
+- **`FieldValues` and `SecondFieldValues` had no docstrings**, and `fieldvalues` links to the former
+  with an `@ref`. Documenter resolves `@ref` to a rendered docstring, so that one link failed the
+  documentation build outright at the cross-references stage — `docs/make.jl` promotes
+  `:cross_references` to an error, correctly. Both types now carry one.
 
 ### Known issues
 
@@ -684,6 +809,7 @@ deprecation shims; see *Changed* below for the mapping.
 Initial release.
 
 
-[Unreleased]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/releases/tag/v0.1.0

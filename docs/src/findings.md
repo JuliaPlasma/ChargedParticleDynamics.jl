@@ -14,6 +14,21 @@ julia --project=scripts scripts/study_<name>.jl
 All numbers below were produced on the state of the branch at the time of writing; they are
 reproducible but not pinned by a test, so treat small differences as normal.
 
+Every timing here depends on which `ElectromagneticFields` is resolved, because that package emits
+the field functions the right-hand sides are built from and 0.6.3 made them several times faster than
+0.6.2. Before quoting a number against a modified environment, check which one is actually loaded —
+and do not check it with `Pkg.status`, which for a path dependency prints the version recorded in the
+manifest rather than the version at the path:
+
+```
+julia --project=scripts -e 'println(Base.locate_package(Base.identify_package("ElectromagneticFields")))'
+```
+
+That resolves the load path without loading anything. A `scripts/Manifest.toml` carrying a
+`path = "../../ElectromagneticFields"` stanza with no matching `[sources]` entry in
+`scripts/Project.toml` is how one round of these measurements was silently taken against a working
+checkout on a feature branch; deleting the manifest and re-resolving is the fix.
+
 
 ## Conditioning of the 3D guiding centre constraint formulations
 
@@ -138,31 +153,54 @@ reports all three.
 
 ### What the formulations cost
 
-Per step, taking the Hamilton-Dirac form as unity. Measured across all eleven equilibria; the spread
-between them is a few percent.
+Per step, taking the Hamilton-Dirac form as unity, across all eleven equilibria that ship initial
+conditions. Three states, because two separate changes bear on this and they have to be told apart:
+**A** is the code before the right-hand side was rewritten, on `ElectromagneticFields` 0.6.2; **B** is
+after the rewrite, still on 0.6.2; **C** is after it, on 0.6.3, which added common-subexpression
+elimination to the generated field code. **C is what the package does now.**
 
-| formulation | relative cost | why |
-|---|---|---|
-| compact, literal pair | 0.86 – 0.95 | replaces both multipliers by a single bracket ratio; no second derivatives |
-| Hamilton-Dirac | 1 | two multipliers over six bracket terms |
-| compact, `:parallel` | 1.21 – 1.44 | the regularised `D` averages all three brackets, so nine terms rather than three |
-| canonicalised | 8.9 – 18.8 | `∂λ/∂q` and `∂λ/∂p` need every second derivative of the field |
+| formulation | A | B | C | why |
+|---|---|---|---|---|
+| compact, literal pair | 0.79 – 0.93 | 1.01 – 1.12 | 1.02 – 1.10 | replaces both multipliers by a single bracket ratio; no second derivatives |
+| Hamilton-Dirac | 1 | 1 | 1 | two multipliers over six bracket terms |
+| compact, `:parallel` | 1.19 – 1.44 | 1.03 – 1.34 | 1.11 – 1.37 | the regularised `D` averages all three brackets, so nine terms rather than three |
+| canonicalised | 9.3 – 14.8 | 5.7 – 11.2 | 4.8 – 7.2 | `∂λ/∂q` and `∂λ/∂p` need every second derivative of the field |
+
+The single most useful thing in the table is that A → B moved the compact row across one:
+**the compact form is no longer cheaper than Hamilton-Dirac.** It won before by evaluating three
+bracket terms where the Hamilton-Dirac form evaluates six, and each of those terms re-entered
+`dbᵢdxⱼ` from the top. Now the field values are read once per call and shared, so the bracket-term
+count barely registers and what shows instead is the extra work the compact form does — the parallel
+velocity, and the contraction over `∂A/∂x + u ∂b/∂x` in its momentum equation. Its two variants
+converged on each other for the same reason. The upstream release then moved almost nothing here,
+which is the expected shape: it makes every field call cheaper by roughly the same factor, and these
+are ratios.
+
+Where it does show is the canonicalised row, which nearly halved again from B to C. That row is the
+one dominated by second derivatives, and those gain more from the elimination than first derivatives
+do — `d²b₁dx₁dx₁` went from 1733 ns to 80 against `db₁dx₁`'s 549 to 57.
+
+A ratio is a statement about two right-hand sides only when both variants ask the solver for the same
+work, so rows where they do not are excluded from the ranges above and belong here instead:
+
+* `Dipole3d` needs 1.9 Newton iterations per stage for the Hamilton-Dirac form against 1.0 for
+  `compact :parallel`, which is the entire reason that ratio comes out at **0.72** rather than above
+  one. Its canonicalised row is 9.7 at 3.0 iterations per stage. That figure read 29.6 before the sign
+  error in `∂λ₂/∂q` and `∂λ₂/∂p` was fixed, which had Newton at 3.8; the right-hand side itself costs
+  the same either way.
+* `SolovevSymmetricField` has no canonicalised row at all — it is the equilibrium where that
+  formulation diverges with a `NaN` in the Newton direction, which `TODO.md` still records as open.
+
+Every other row runs at exactly 1.0 iterations in every column, so the rest of the table is a clean
+comparison of expressions.
 
 The three pairs cost the same as each other to within noise — they are the same expressions with
-permuted indices — so the pair should be chosen on conditioning alone. The order of magnitude on the
-canonicalised form is the number worth remembering: it buys exact symplecticity rather than
-approximate, and gives up as much as two or three orders of magnitude of energy conservation and four
-or five of constraint conservation for it at these step sizes. The spread there is wide — on five of
-the eleven equilibria it is within a factor of two of the Hamilton-Dirac form on both, and on
-`TokamakSmallCartesian` it conserves energy slightly better — so the figure to expect is the worst
-case, not the typical one.
-
-Its cost spread is wider than the other formulations' for the same reason: part of it is the harder
-nonlinear solve rather than the right-hand side. `Dipole3d`, the worst case at 18.8, is the only
-equilibrium where Newton needs more than one iteration per stage on average — 2.6, against 1.0
-everywhere else. That row read 29.6 before the sign error in `∂λ₂/∂q` and `∂λ₂/∂p` was fixed, which
-had Newton at 3.8 iterations per stage and a peak of 50; the right-hand side itself costs the same
-either way.
+permuted indices — so the pair should be chosen on conditioning alone. The canonicalised form remains
+the one that matters: it buys exact symplecticity rather than approximate, and gives up as much as two
+or three orders of magnitude of energy conservation and four or five of constraint conservation for it
+at these step sizes. The spread is wide — on five of the eleven equilibria it is within a factor of two
+of the Hamilton-Dirac form on both, and on `TokamakSmallCartesian` it conserves energy slightly better
+— so the figure to expect is the worst case, not the typical one.
 
 Separately, the rewrite of the constraints made the Hamilton-Dirac right-hand side **2.7× faster**:
 the old code evaluated `λ₁` and `λ₂` once per component, so the multipliers and the six bracket
@@ -385,18 +423,107 @@ nothing.
 Note this also rules out simply dropping the options: the library default is `f_abstol = 8 eps() =
 1.8e-15`, itself below the ITER floor.
 
-Once the tolerance is sound the remaining cost has nothing to do with ITER:
+Once the tolerance is sound the remaining cost has nothing to do with ITER. Two changes bear on it —
+this package's right-hand side rewrite, and `ElectromagneticFields` 0.6.3 — so all four combinations
+were measured, in interleaved randomised rounds on one machine, minimum per row. **A** is the code
+before the rewrite on 0.6.2, **B** after it on 0.6.2, **C** after it on 0.6.3, **D** before it on
+0.6.3. **C is what the package does now**; **D** exists so that the two factors can be separated
+rather than asserted.
 
-| workload | ms/step | mean iters |
-|---|---|---|
-| GC3d SolovevIterXpoint `hodeproblem` + extrapolation      | 17.9 | 1.0 |
-| GC3d TokamakMediumCartesian `hodeproblem` + extrapolation | 23.8 | 1.0 |
-| GC4d SolovevIterXpoint `iode`                      |  0.3 | 2.0 |
-| Pauli3d SolovevIter `iode`                         |  0.1 | 2.9 |
+| workload | A | B | C | D | A→C |
+|---|---|---|---|---|---|
+| GC3d SolovevIterXpoint `hodeproblem` + extrapolation      |  5.87 | 0.875 | 0.302 | 1.758 | 19.5× |
+| GC3d SolovevIterXpoint `hodeproblem`                      |  1.59 | 0.230 | 0.082 | 0.579 | 19.5× |
+| GC3d SolovevIterXpoint `hodeproblem_compact`              |  2.22 | 0.242 | 0.095 | 0.804 | 23.3× |
+| GC3d SolovevIterXpoint `hodeproblem_canonical`            | 19.94 | 1.566 | 0.389 | 5.999 | 51.2× |
+| GC3d TokamakMediumCartesian `hodeproblem` + extrapolation |  8.09 | 1.454 | 0.375 | 2.324 | 21.6× |
+| GC3d TokamakMediumCartesian `hodeproblem`                 |  2.21 | 0.389 | 0.104 | 0.701 | 21.4× |
+| GC3d TokamakMediumCartesian `hodeproblem_canonical`       | 32.33 | 4.348 | 0.594 | 7.887 | 54.4× |
+| GC4d SolovevIterXpoint `ode`                              | 0.094 | 0.094 | 0.036 | 0.036 |  2.6× |
+| GC4d SolovevIterXpoint `iode`                             | 0.120 | 0.120 | 0.042 | 0.042 |  2.8× |
+| Pauli3d SolovevIter `hodeproblem`                         | 0.065 | 0.065 | 0.043 | 0.043 |  1.5× |
+| Pauli3d SolovevIter `iode`                                | 0.041 | 0.042 | 0.029 | 0.029 |  1.4× |
 
-`TokamakMediumCartesian` is *slower* than the ITER Solov'ev, and the 3D `hodeproblem` path costs two
-orders of magnitude more per step than the Pauli one even though Newton converges in a single
-iteration. The cost is nested `ForwardDiff`: the second derivatives of the 3D Hamiltonian
-differentiate field functions that are themselves AD-generated, and `MidpointExtrapolation(5)`
-triples it. Making those derivatives cheaper is the real fix; cutting the two 3D blocks from 1000
-steps to 100 was the pragmatic one.
+ms/step, Newton at 1.0 iterations on every 3D row throughout. The last four rows are the control: the
+4D guiding centre and Pauli source trees are byte-identical between the two commits, so A = B and
+C = D there, as they come out — but they use the same generated field functions, so they do gain from
+0.6.3.
+
+**For `hodeproblem` the two changes are almost exactly multiplicative.** The rewrite is 6.9× measured
+on 0.6.2 (A/B) and 7.1× on 0.6.3 (D/C); the release is 2.7× on the old code (A/D) and 2.8× on the new
+(B/C). 6.9 × 2.8 = 19.4 against 19.5 measured, so quoting the two factors separately is legitimate
+here.
+
+**For `hodeproblem_canonical` they are not**, and the interaction is the interesting part: the rewrite
+is 12.7× on 0.6.2 but 15.4× on 0.6.3, and the release is 3.3× on the old code but 4.0× on the new.
+That row is the one dominated by second derivatives, and the elimination helps those more than first
+derivatives — `d²b₁dx₁dx₁` from 1733 ns to 80 against `db₁dx₁`'s 549 to 57 — so the two changes
+reinforce each other rather than merely stacking.
+
+What the test suite ran before is the first row and what it runs now is the second, so the figure it
+sees is **72×**. The gap to the Pauli `hodeproblem` that prompted the whole comparison closes from
+**24× to 1.9×**.
+
+Two caveats on the absolute figures. They are lower throughout than the ones this section carried
+before, because the harness now repeats each integration inside one timed region until it exceeds
+50 ms — a single 100-step integration of the Pauli model is 8 ms, where operating-system noise
+dominates — and because it uses `@timed` with a per-sample assertion that no compilation entered the
+sample. The ratios are what transfer between harnesses, not the milliseconds. And repeatedly
+integrating the same hundred steps keeps 0.6.2's very much larger generated code hot in the
+instruction cache in a way a cold workload would not, so if anything these figures *understate* what
+0.6.3 is worth.
+
+`TokamakMediumCartesian` is *slower* than the ITER Solov'ev, in both columns and for a reason that
+has nothing to do with the solver: in a cartesian chart the metric is the identity, so `dgⁱʲdxₖ` and
+its second derivatives fold away to literal zeros — but the *field* then carries the whole
+`sqrt(x²+y²)` toroidal geometry into every component of `db`, which is where the cost is. In the
+curvilinear charts that geometry sits in the metric instead, which is diagonal and cheap.
+
+The 3D `hodeproblem` path cost two orders of magnitude more per step than the Pauli one even though
+Newton converges in a single iteration. That was for a long time attributed to "nested `ForwardDiff`: the second derivatives of the 3D
+Hamiltonian differentiate field functions that are themselves AD-generated, and the backtracking
+line search re-evaluates them". **Every part of that is wrong for this path**, and profiling says so:
+
+* There is no nesting, and no AD in the field layer at all. `ElectromagneticFields` generates its
+  field functions **symbolically, with SymEngine, at precompile time** — its dependencies are
+  `Combinatorics, Documenter, LaTeXStrings, LinearAlgebra, NaNMath, RecipesBase, SymEngine`, and
+  `ForwardDiff` is not among them. The only automatic differentiation anywhere in the stack is the
+  Newton Jacobian, which `SimpleSolvers` takes of the residual.
+* `hodeproblem` never touches a second derivative of the Hamiltonian. Its right-hand side runs
+  `λ₁`/`λ₂` → `bracket_gg`/`bracket_gH` → `dgᵏd…`, `dHdq`, `dHdp`, all first derivatives. The Hessian
+  in `guiding_center_3d_canonical.jl` belongs to `hodeproblem_canonical` alone, and is hand-written
+  closed form rather than differentiated at runtime.
+* The line search is 8 % of wall clock and the Jacobian 13 %. Per step the right-hand side is
+  evaluated **93.8 times on `Float64` against 4.0 times on `Dual`** — automatic differentiation sees
+  four per cent of the calls, so it cannot be the cost whatever it is doing.
+
+Only the last clause survived. `initial_guess!` was **70 %** of wall clock, and
+`MidpointExtrapolation(5)` is not the default for either method — `PartitionedGauss` and `VPRKGauss`
+both declare `default_iguess() = HermiteExtrapolation()`. Nothing recorded why the 3D tests asked for
+it; the one documented reason is the Pauli theta pinch, whose momentum is constant along the initial
+trajectory.
+
+What the cost actually was, in three layers. All three are now addressed; the first two here, the
+third upstream.
+
+1. **The extrapolator**, 3.0–3.5× across all thirteen equilibria and all three formulations, for
+   bit-identical trajectories and no change in iteration count.
+2. **The right-hand side re-entering the generated field code.** On `ElectromagneticFields` 0.6.2,
+   `db₁dx₁` for the ITER Solov'ev X-point was 1905 statements containing 108 separate evaluations of
+   `log(x₁)` and cost 549 ns, against a `g¹¹` that folds to a constant. One evaluation of the Hamilton-Dirac
+   right-hand side called it more than seventy times: each of the twelve Poisson-bracket terms
+   re-entered from the top, and `λ₁` and `λ₂` each recomputed the `λₒ` they share. Evaluating each
+   injected function once into a `FieldValues` and reading the results back took
+   `guiding_center_3d_v` from 24.7 µs to 3.6 µs — 6.9×, which is exactly the end-to-end per-step
+   ratio in the table above, so the whole of that factor is the right-hand side and none of it the
+   solver. On 0.6.3 the same call is 770 ns, 32× below where it started.
+3. **The expression swell itself**, which lives in `ElectromagneticFields` rather than here.
+   `convert(Expr, ::Basic)` wrote out SymEngine's expanded tree verbatim and SymEngine shares
+   nothing, so a subexpression common to fifty branches of `∂ⱼ(Bᵢ / sqrt(gᵏˡBₖBₗ))` was emitted fifty
+   times. **[0.6.3](https://github.com/JuliaPlasma/ElectromagneticFields.jl/pull/10) eliminates
+   common subexpressions in the generated bodies**, which takes `db₁dx₁` from 549 ns to 57 and
+   `d²b₁dx₁dx₁` — which `hodeproblem_canonical` needs — from 1733 ns to 80. The pass only *names*
+   subexpressions, so the values do not change: every one of the 27456 field values this package
+   injects, across all 32 equilibrium modules of the three families, is bit-identical between 0.6.2
+   and 0.6.3, and so is every trajectory integrated from them. `Project.toml` requires 0.6.3 for this
+   reason, and the tables above are measured against it.

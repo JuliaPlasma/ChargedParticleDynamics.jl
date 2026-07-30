@@ -429,15 +429,21 @@ function sodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAUL
         "where the frozen-position kick is quadratic in v and has no exact flow. Use " *
         "odeproblem or iodeproblem instead."))
 
+    # `v̄` is the field of the composed step, not of a substep: it is the `q̇` stored with every
+    # solution and the field the pre-history of the solution step is extrapolated with. `SODE`
+    # defaults it to a function that writes nothing, which leaves both identically zero. Nothing
+    # notices today, because the composition of the two exact solution maps solves nothing and asks
+    # for no initial guess, but it would the moment a substep is sub-integrated implicitly — see the
+    # comment in `gyro_kinetics_4d/gc_equations.jl`, where that is what happens.
     if periodic
         SODEProblem((charged_particle_3d_sode_vv, charged_particle_3d_sode_vx),
                     (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
-                    timespan, timestep, qᵢ; parameters=parameters,
+                    timespan, timestep, qᵢ; v̄=charged_particle_3d_v, parameters=parameters,
                     periodicity=charged_particle_3d_periodicity(qᵢ))
     else
         SODEProblem((charged_particle_3d_sode_vv, charged_particle_3d_sode_vx),
                     (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
-                    timespan, timestep, qᵢ; parameters=parameters)
+                    timespan, timestep, qᵢ; v̄=charged_particle_3d_v, parameters=parameters)
     end
 end
 

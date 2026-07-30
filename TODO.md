@@ -131,6 +131,47 @@ Two things this left open, neither of them about the constraint pair:
   where `:g23` would give ``-3.8``, because changing them moves numbers that findings.md tabulates.
   A sweep of ``\min |b_m|`` along each shipped orbit would settle all eleven properly.
 
+## ~~The per-step cost of the 3D guiding centre model~~ — done
+
+Never tracked as an item: `docs/src/findings.md` recorded the 3D `hodeproblem` at two orders of
+magnitude more per step than the Pauli model, explained it as "nested `ForwardDiff`: the second
+derivatives of the 3D Hamiltonian differentiate field functions that are themselves AD-generated,
+and the backtracking line search re-evaluates them", and left it there.
+
+That explanation was wrong in every part, and profiling says so. `ElectromagneticFields` generates
+its field functions symbolically with SymEngine at precompile time and does not depend on
+`ForwardDiff`; `hodeproblem` never evaluates a second derivative of the Hamiltonian, only
+`hodeproblem_canonical` does, and those are hand-written closed forms rather than differentiated;
+and of the roughly ninety-eight right-hand side evaluations per step, four are on `Dual`, the line
+search being 8 % of wall clock against the Jacobian's 13 %.
+
+There were three real costs. Two are fixed here. `MidpointExtrapolation(5)`, which is not the default
+for either method, was 70 % of wall clock and is no longer requested. The right-hand side no longer
+re-enters the generated field code once per bracket term: `fieldvalues` evaluates each injected
+function once into a `FieldValues`, and `SecondFieldValues` does the same for the second derivatives
+the canonicalised form needs.
+
+The third was the expression swell in the generated code itself, and lives upstream. It is delivered:
+[JuliaPlasma/ElectromagneticFields.jl#10](https://github.com/JuliaPlasma/ElectromagneticFields.jl/pull/10)
+is merged and released as **0.6.3**, which `Project.toml` now requires. It takes `db₁dx₁` from 549 ns
+to 57 and `d²b₁dx₁dx₁` from 1733 to 80, and changes no value: all 27456 field values this package
+injects across its 32 equilibrium modules are bit-identical between 0.6.2 and 0.6.3, and so is every
+trajectory integrated from them.
+
+`hodeproblem` on `SolovevIterXpoint` goes from 1.59 ms/step to 0.082 and `hodeproblem_canonical` from
+19.9 to 0.39. For `hodeproblem` the two contributions are separable and multiplicative — 6.9× from
+this package, 2.8× from the release — and for the canonicalised form they reinforce each other,
+because it is the one dominated by second derivatives and those gained the most. `docs/src/findings.md`
+has the four-way measurement that separates them.
+
+One trap this left behind, worth not re-creating: `scripts/Manifest.toml` had a
+`path = "../../ElectromagneticFields"` stanza with no matching `[sources]` entry in
+`scripts/Project.toml`, so `julia --project=scripts` silently resolved the dependency to a working
+checkout — and `Pkg.status` reports the manifest's version string rather than the version at the path,
+so it could not be noticed that way. One round of the measurements above was taken against a feature
+branch before this was found. The manifest is deleted; check `Base.locate_package` rather than
+`Pkg.status` when a timing looks surprising.
+
 ## One initial-conditions layer for all models
 
 **The equilibrium modules should not carry `u` and `μ` as literals.** Each one should declare its

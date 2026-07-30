@@ -174,18 +174,20 @@ compact_index(constraints::Symbol) = compact_index(Val(constraints))
 
 
 function guiding_center_3d_compact_v(v, t, q, p, params, m = nothing)
-    C = compact_multipliers(t, q, p, params, m)
+    F = fieldvalues(t, q)
+    C = compact_multipliers(t, F, p, params, m)
 
-    components!(v, i -> dHdpᵢ(i, t, q, p, params) + component(C, i))
+    components!(v, i -> dHdpᵢ(i, t, F, p, params) + component(C, i))
     nothing
 end
 
 function guiding_center_3d_compact_f(f, t, q, p, params, m = nothing)
-    C = compact_multipliers(t, q, p, params, m)
-    uₚ = compact_parallel_velocity(t, q, p, m)
+    F = fieldvalues(t, q)
+    C = compact_multipliers(t, F, p, params, m)
+    uₚ = compact_parallel_velocity(t, F, p, m)
 
-    components!(f, l -> -dHdqᵢ(l, t, q, p, params) +
-        contract(a -> (dAᵢdxⱼ(a, l, t, q) + uₚ * dbᵢdxⱼ(a, l, t, q)) * component(C, a)))
+    components!(f, l -> -dHdqᵢ(l, t, F, p, params) +
+        contract(a -> (dAᵢdxⱼ(a, l, t, F) + uₚ * dbᵢdxⱼ(a, l, t, F)) * component(C, a)))
     nothing
 end
 

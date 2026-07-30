@@ -19,12 +19,12 @@ export nl, nx, ny
 
 # Asserts that the integration returns a solution rather than `@test_nowarn`; see the comment on
 # the corresponding functions in `guiding_center_3d_tests.jl` for why.
-function test_guiding_center_4d(equ::ODEProblem)
-    @test integrate(equ, Gauss(2); options...) isa GeometricSolution
+function test_guiding_center_4d(equ::ODEProblem; kwargs...)
+    @test integrate(equ, Gauss(2); options..., kwargs...) isa GeometricSolution
 end
 
-function test_guiding_center_4d(equ::Union{IODEProblem,LODEProblem})
-    @test integrate(equ, VPRKGauss(2); options...) isa GeometricSolution
+function test_guiding_center_4d(equ::Union{IODEProblem,LODEProblem}; kwargs...)
+    @test integrate(equ, VPRKGauss(2); options..., kwargs...) isa GeometricSolution
 end
 
 end
@@ -213,11 +213,23 @@ end
 
 @safetestset "Guiding Centre Dynamics in 4D with Theta Pinch Equilibrium                                          " begin
 
+    using GeometricIntegrators: MidpointExtrapolation
     using ChargedParticleDynamics.GuidingCenter4d.ThetaPinchField
     using ..GuidingCenter4dTests
 
     # The theta pinch defines a loop but no surface.
     test_guiding_center_4d(loop_odeproblem(; timespan=(0.0, 1E2), timestep=1.0))
-    test_guiding_center_4d(loop_iodeproblem(; timespan=(0.0, 1E2), timestep=1.0))
+
+    # `B = B₀ e_z` is uniform, so ∇B = 0 and the force vanishes identically: the guiding centre
+    # streams along z at constant u and never leaves its field line, which leaves x, y and u
+    # bit-for-bit constant and makes p = A(x,y) + u b an exact invariant of every orbit in this
+    # equilibrium — no choice of loop avoids it. The default Hermite extrapolation of the initial
+    # guess then finds two identical `p` history entries on every step, and warns while falling back
+    # to the constant that is in fact the exact answer. Same degeneracy and same remedy as the Pauli
+    # theta pinch; see `pauli_particle_3d_tests.jl`. `MidpointExtrapolation` reads one history entry
+    # rather than two, so the trajectory is bitwise unchanged. The `odeproblem` above needs none of
+    # this: its `q` does move, so its Hermite guess is well posed.
+    test_guiding_center_4d(loop_iodeproblem(; timespan=(0.0, 1E2), timestep=1.0);
+                           initialguess=MidpointExtrapolation(5))
 
 end
