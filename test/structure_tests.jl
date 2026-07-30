@@ -207,7 +207,7 @@ end
 end
 
 
-@safetestset "Noncanonical charged particle: the vector field is the one its own ω and H generate            " begin
+@safetestset "Noncanonical charged particle: the vector field is the one its own ω and H generate                 " begin
     using ChargedParticleDynamics.ChargedParticle3d
     using LinearAlgebra
     using Test
