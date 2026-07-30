@@ -77,6 +77,18 @@ end
 # as `Float64` — four of the roughly twenty-two calls per step, for the Newton Jacobian.
 #
 
+"""
+    FieldValues{T}
+
+One evaluation of every injected field function the first-derivative right-hand sides read: the
+vector potential `A`, the unit vector `b`, the diagonal metric `g`, the gradient of `B`, the electric
+field `E`, and the first derivatives of `A`, `b` and `g`.
+
+Built by [`fieldvalues`](@ref) and passed where those right-hand sides expect the coordinate vector
+`q` — they are generic in that argument, so the accessors pick this up by dispatch and every field
+read becomes a tuple index. [`SecondFieldValues`](@ref) adds the second derivatives that only the
+canonicalised formulation needs.
+"""
 struct FieldValues{T}
     A ::NTuple{3,T}
     b ::NTuple{3,T}
@@ -171,6 +183,17 @@ end
 # `hodeproblem_compact` never touch a second derivative, and filling these ninety-nine slots would
 # cost them more than the first-derivative caching saves.
 #
+"""
+    SecondFieldValues{T,F}
+
+A [`FieldValues`](@ref) together with every second derivative the canonicalised right-hand side
+reads: the second derivatives of `A`, `b` and `g`, the Hessian of `B`, and the first derivatives of
+`E`.
+
+Built by [`secondfieldvalues`](@ref) and used the same way — it answers everything a `FieldValues`
+does, and is held separately rather than merged into it because `hodeproblem` and
+`hodeproblem_compact` never touch a second derivative.
+"""
 struct SecondFieldValues{T,F<:FieldValues{T}}
     first::F
     d²A::NTuple{3,NTuple{3,NTuple{3,T}}}
