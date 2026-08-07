@@ -6,12 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [0.4.0] - 2026-08-08
+
+**This release is not value-preserving.** `ElectromagneticFields` 0.7.0 corrects an orientation error
+that reversed `B` in the four left-handed charts, so six of this package's equilibria integrate a
+different orbit than they did under 0.3.0. Several declared defaults move with it — `DEFAULT_TIMESTEP`
+and `DEFAULT_TIMESPAN` across all 53 equilibrium modules, `TokamakMediumCartesian.default_constraints`,
+the `initial_conditions_*` of three `GuidingCenter3d` modules, and the `uᵢ` of six others. A caller
+who pinned `0.3` and reran will get different numbers, hence the minor bump rather than a patch.
+
+Two dependency updates, of different reach. The solver stack — `GeometricIntegrators` 0.17,
+`SimpleSolvers` 0.10.1, `GeometricIntegratorsBase` 0.5.1 — is confined to `test/`, `docs/` and
+`scripts/`, the three environments that resolve it; `src/` does not depend on any of the three.
+`ElectromagneticFields` 0.7.0 reaches `src/` and is bounded in the root project.
 
 ### Changed
 
-- **`ElectromagneticFields` 0.7.0 is now required**, up from 0.6.3, in all four environments. Unlike
-  0.6.3 this release is *not* value-preserving:
+- **`ElectromagneticFields` 0.7.0 is now required**, up from 0.6.3, in the root project and in the
+  `docs/` and `scripts/` environments. (`test/` does not depend on it directly — it reaches the suite
+  through this package — so it carries no bound of its own.) Unlike 0.6.3 this release is *not*
+  value-preserving:
   [PR #11](https://github.com/JuliaPlasma/ElectromagneticFields.jl/pull/11) fixed an orientation error
   in the Hodge star, which had been handed the unsigned volume element `|det DF|`, and **`B` was
   reversed in the four left-handed charts** — `(R, Z, ϕ)`, both `(r, θ, ϕ)` variants and the
@@ -33,10 +47,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   particle. The `initial_conditions_*` are unchanged: they were already written chart-independently, so
   under 0.6.3 they silently denoted *different* particles in different charts, and now they do not.
 
+- **GeometricIntegrators 0.17, SimpleSolvers 0.10.1 and GeometricIntegratorsBase 0.5.1** in all
+  three environments that resolve them. Each dependency is now bounded in the environment that
+  resolves it: `test/Project.toml` gains bounds for the six deps that had none, and
+  `docs/Project.toml` and `scripts/Project.toml` gain a `[compat]` section each. `SimpleSolvers` is
+  bounded only in `scripts/`, the one environment that uses it directly; elsewhere it is pinned
+  transitively by `GeometricIntegrators = "0.17"`, which keeps it out of the test environment where
+  the suite identifies its messages by module name rather than by importing it.
+- **`GeometricIntegratorsBase` 0.5.1 changes the default solver tolerance** from a flat
+  `f_abstol = 8eps()` to `max(8, solversize(method, problem)) * eps(datatype(problem))`, and merges
+  caller options into the method defaults rather than replacing them. The package's explicit
+  `f_abstol = 1E-12` is still required: the sized default comes to `1.8E-15` for the 4D guiding
+  centre and Pauli solves and `2.7E-15` for the 3D `hodeproblem`, both below the ITER-scale floor of
+  `‖ϑ‖ eps ≈ 3.3E-15`. The comments that justified the override by the *old* behaviour — that
+  passing any option replaced the whole default set, and that `SimpleSolvers` defaulted to
+  `f_abstol = 0` — are corrected in `test/structure_tests.jl` and `test/guiding_center_3d_tests.jl`,
+  and the reasoning is now stated once in `docs/src/audit.md`.
+
+- **`max_stalls` makes an unsatisfiable tolerance cheap.** Since SimpleSolvers 0.10 a solve whose
+  iterate stops moving gives up after two such steps instead of running to `max_iterations`. On the
+  4D guiding centre `iode` at the deliberately-unreachable `f_abstol = 1E-15`, that is 21.7 ms/step
+  and 172 Newton iterations under SimpleSolvers 0.9.2 against 0.126 ms/step and 3.7 iterations now —
+  a factor of 170 in wasted work — while the settings that do converge are unchanged to within
+  run-to-run noise. It does not make such a tolerance correct, but it removes the pathological cost
+  of asking, which is what once made a mis-set tolerance a ten-minute CI problem. The cost table in
+  `docs/src/findings.md` is re-measured on both stacks.
+
 ### Added
 
 - **The three families are comparable on one initial condition**, and asserted to be so in the new
-  `test/model_agreement_tests.jl` (264 tests) with `scripts/study_model_agreement.jl` behind it.
+  `test/model_agreement_tests.jl` (277 tests) with `scripts/study_model_agreement.jl` behind it. Both
+  cover the same six equilibria, so the assertions and the measurements they are set from cannot drift.
   `GuidingCenter3d` and `GuidingCenter4d` are the same model in different variables and agree to
   1E-13 and below in the curvilinear charts; `PauliParticle3d` is a different model whose slow manifold
   is the guiding centre, and tracks it to between 2E-6 and 2E-2 ordered by `ρ/L`.
@@ -62,12 +103,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   coordinate curl `∂₂ϑ₃ - ∂₃ϑ₂` — the *signed* Jacobian — against `b`, so it carries the chart's
   handedness and comes out negative in the six left-handed equilibria, where the physical `B*∥` is
   positive; dividing the factor back out gives `0.9511` in all three charts of the small tokamak, where
-  `ωabs` reads `+0.9511`, `-0.9987` and `-0.0499`. Until 0.7.0 the reversed `b` cancelled it and it
+  `ωabs` reads `+0.9511`, `-0.9986` and `-0.0499`. Until 0.7.0 the reversed `b` cancelled it and it
   looked positive everywhere. Nothing needed repairing — a coordinate curl is divergence-free whatever
   its sign, so the splitting is still volume preserving, and `v_gk = ωabs v_gc` still holds exactly —
   but `s` runs opposite to physical time in those six, which the test now asserts per chart instead of
   asserting a positive factor. `TODO.md` records the design question of whether the module should
   rescale by the physical `B*∥` instead.
+
+  The three `GyroKinetics4d.GuidingCenter4dTokamakSmall*` modules stated their rescaling factor as
+  `B*∥` on the `DEFAULT_TIMESTEP` comment, which under the corrected definition is wrong in both value
+  and sign — the toroidal chart's read `B*∥ ≈ 0.05`, where `B*∥ = +0.9511` and it is `ωabs` that is
+  `-0.0499`. All three now name `ωabs`, give both quantities, and say that `s` therefore advances while
+  physical time runs backwards in the two left-handed charts. Two of them also still quoted the 4D
+  guiding centre's pre-1000-step span, `(0, 5E4)`.
+
+  The sign assertion in `test/gyro_kinetics_4d_tests.jl` no longer derives handedness from
+  `occursin("Cartesian", name)` but from an explicit per-equilibrium table, asserted to cover the
+  module set exactly. The substring rule is right for the eight modules that exist and wrong for
+  `SolovevSymmetric`, which is a cartesian chart despite the name.
 - **`GuidingCenter3d` no longer offsets any initial condition to a cartesian `y = 0.1` that its 4D
   counterpart does not.** All three modules that did are aligned to `y = 0`, so every equilibrium in the
   package now starts the same physical particle in every model family.
@@ -116,40 +169,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `study_gyrokinetic_rescaling.jl`, which measures `ωabs`. The `Dipole3d` figures differed because
   `findings.md` tabulates that equilibrium at `t = 3` and `t = 30` while the script runs to `t = 10`;
   both are now labelled with their span, and the two are consistent once that is stated.
-
-
-## [0.3.1] - 2026-08-07
-
-Dependency update. `src/` is unchanged; everything here is in `test/`, `docs/` and `scripts/`, the
-three environments that resolve `GeometricIntegrators`.
-
-### Changed
-
-- **GeometricIntegrators 0.17, SimpleSolvers 0.10.1 and GeometricIntegratorsBase 0.5.1** in all
-  three environments. Each dependency is now bounded in the environment that resolves it:
-  `test/Project.toml` gains bounds for the six deps that had none, and `docs/Project.toml` and
-  `scripts/Project.toml` gain a `[compat]` section each. `SimpleSolvers` is bounded only in
-  `scripts/`, the one environment that uses it directly; elsewhere it is pinned transitively by
-  `GeometricIntegrators = "0.17"`, which keeps it out of the test environment where the suite
-  identifies its messages by module name rather than by importing it.
-- **`GeometricIntegratorsBase` 0.5.1 changes the default solver tolerance** from a flat
-  `f_abstol = 8eps()` to `max(8, solversize(method, problem)) * eps(datatype(problem))`, and merges
-  caller options into the method defaults rather than replacing them. The package's explicit
-  `f_abstol = 1E-12` is still required: the sized default comes to `1.8E-15` for the 4D guiding
-  centre and Pauli solves and `2.7E-15` for the 3D `hodeproblem`, both below the ITER-scale floor of
-  `‖ϑ‖ eps ≈ 3.3E-15`. The comments that justified the override by the *old* behaviour — that
-  passing any option replaced the whole default set, and that `SimpleSolvers` defaulted to
-  `f_abstol = 0` — are corrected in `test/structure_tests.jl` and `test/guiding_center_3d_tests.jl`,
-  and the reasoning is now stated once in `docs/src/audit.md`.
-
-- **`max_stalls` makes an unsatisfiable tolerance cheap.** Since SimpleSolvers 0.10 a solve whose
-  iterate stops moving gives up after two such steps instead of running to `max_iterations`. On the
-  4D guiding centre `iode` at the deliberately-unreachable `f_abstol = 1E-15`, that is 21.7 ms/step
-  and 172 Newton iterations under SimpleSolvers 0.9.2 against 0.126 ms/step and 3.7 iterations now —
-  a factor of 170 in wasted work — while the settings that do converge are unchanged to within
-  run-to-run noise. It does not make such a tolerance correct, but it removes the pathological cost
-  of asking, which is what once made a mis-set tolerance a ten-minute CI problem. The cost table in
-  `docs/src/findings.md` is re-measured on both stacks.
 
 ### Tests
 
@@ -281,6 +300,19 @@ three environments that resolve `GeometricIntegrators`.
 - `scripts/guiding_center_3d_dipole.jl` and `scripts/guiding_center_3d_quadratic_potentials.jl` asked
   for `f_abstol = 8eps()` and `2eps()` against round-off floors of `3.4E-14` and `4.0E-15`; both now
   use `1E-12`.
+- **`Dipole3d.default_constraints` is justified on the step the module now declares.** Its docstring
+  quoted the constraint and energy levels of the three pairs without saying at which step, and the
+  figures were those of the retired `Δt = 0.03`. Re-measured over the declared thousand-step example at
+  `Δt = 0.1`: `4.8E-06` for `:g12` against `7.4E-03` and `8.8E-03` for the two pairs the orbit takes
+  through zero, three orders rather than the four the old numbers showed at the finer step. The
+  ordering, which is what the default rests on, is unchanged at either step. The longer-run figures
+  stay in `docs/src/findings.md`, whose table is measured at `t = 3` and `t = 30` — both places now say
+  which span they are quoting.
+- Every comment in `test/guiding_center_3d_tests.jl` that described the file's workload as "a hundred
+  steps, the same as the blocks above" predated the move to thousand-step examples. The
+  `SolovevSymmetricField` block also still called itself "the one block that cannot be run over the
+  module's own `DEFAULT_TIMESPAN`" directly below the new paragraph explaining that its
+  `hodeproblem_compact` does exactly that.
 
 
 ## [0.3.0] - 2026-07-30
@@ -1083,7 +1115,7 @@ deprecation shims; see *Changed* below for the mapping.
 Initial release.
 
 
-[Unreleased]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.3.0...HEAD
+[0.4.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/releases/tag/v0.1.0

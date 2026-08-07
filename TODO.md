@@ -18,7 +18,7 @@ electrostatic potential, the curvilinear noncanonical charged particle, and the 
 
 # Migration: SimpleSolvers 0.10 / GeometricIntegrators 0.17 — done
 
-Released as 0.3.1; see the CHANGELOG. `test/`, `docs/` and `scripts/` are on GeometricIntegrators
+Released as part of 0.4.0; see the CHANGELOG. `test/`, `docs/` and `scripts/` are on GeometricIntegrators
 0.17.0, SimpleSolvers 0.10.1 and GeometricIntegratorsBase 0.5.1, each bounded in the environment
 that resolves it.
 
