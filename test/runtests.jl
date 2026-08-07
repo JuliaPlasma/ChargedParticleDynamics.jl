@@ -9,6 +9,7 @@ const TEST_FILES = ("structure_tests.jl",
                     "guiding_center_4d_tests.jl",
                     "gyro_kinetics_4d_tests.jl",
                     "pauli_particle_3d_tests.jl",
+                    "model_agreement_tests.jl",
                     "plots_tests.jl")
 
 for f in TEST_FILES
