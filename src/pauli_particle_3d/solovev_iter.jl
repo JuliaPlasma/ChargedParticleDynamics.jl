@@ -27,8 +27,16 @@ module SolovevIter
     const qᵢ = from_cartesian(0, xᵢ)
     const vᵢ = [3.43E-3, 6.75, -3.41E-1]
 
-    const DEFAULT_TIMESTEP = 1.0
-    const DEFAULT_TIMESPAN = (0.0, 1000.0)
+    # A thousand steps, at a relative energy error of 9.7E-3 (1.1E-2 at `Δt = 0.2`, 9.4E-2 at
+    # `Δt = 0.5`). `Δt = 1` is not usable: all three formulations throw `NaN detected in direction
+    # vector`.
+    #
+    # The span is what a thousand steps buys, not a limit of one formulation: over `t ∈ [0, 1E3]`
+    # `pode`, `hode` and `iode` alike reach 2.7 for `barely_passing`, 2.7 for `barely_trapped` and
+    # 5.6 for `deeply_passing`, while `deeply_trapped` and `trapped` survive. The orbit runs out,
+    # not a discretisation of it.
+    const DEFAULT_TIMESTEP = 0.1
+    const DEFAULT_TIMESPAN = (0.0, 1E2)
 
     include("pauli_particle_3d.jl")
 

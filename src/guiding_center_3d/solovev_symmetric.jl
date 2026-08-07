@@ -12,8 +12,14 @@ export hamiltonian, toroidal_momentum
 
 SolovevSymmetric.@code(2.0, 5.0, 1.0, 1.0) # inject magnetic field code
 
+# `hodeproblem_compact` holds this span, and beyond it: over `t ∈ [0, 1E3]` it stays at 1.1E-7.
+# `hodeproblem` and `hodeproblem_canonical` do not — they lose the orbit between `t = 10` and
+# `t = 50` at *any* step size, reaching 2.4E+6 and 1.5E+228 over that longer span, and a finer step
+# does not rescue them (`hodeproblem` is 2.2E+9 at `Δt = 0.05` over `t ∈ [0, 50]`). Over
+# `t ∈ [0, 1E1]` both sit at 4.5E-12, so they carry a shorter span where they are integrated. That
+# only the compact form survives a long run here is the point worth knowing about this equilibrium.
 const DEFAULT_TIMESTEP = 0.1
-const DEFAULT_TIMESPAN = (0.0, 1E3)
+const DEFAULT_TIMESPAN = (0.0, 1E2)
 
 initial_conditions_barely_passing() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.425E-1]), (params=(μ=1E-2,),)) # Δt=2.5, nt=50
 initial_conditions_barely_trapped() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.375E-1]), (params=(μ=1E-2,),)) # Δt=3.0, nt=100

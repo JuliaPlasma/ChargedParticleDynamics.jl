@@ -19,8 +19,16 @@ module TokamakSmallCartesian
     const qᵢ = [1.05,   0.0,    0.0]
     const vᵢ = [2.1E-3, 4.3E-4, 0.0]
 
-    const DEFAULT_TIMESTEP = 500.0
-    const DEFAULT_TIMESPAN = (0.0, 5E4)
+    # A thousand steps, at which all three formulations agree to a relative energy error of 4.5E-8.
+    # `Δt = 500` is not usable here: the `pode` and `hode` forms reach 1.9E+37 with 441 of their
+    # steps at the solver's iteration cap, and the `iode` form throws.
+    #
+    # The `Cylindrical` and `Toroidal` charts of this same tokamak do run at `Δt = 500`, at 2.5E-6
+    # and 1.2E-6. The asymmetry is real: it is the cartesian chart that is stiff, not the
+    # equilibrium — the toroidal transit appears there as a rotation of (x, y) that has to be
+    # resolved, where in the other two charts it is a coordinate that simply winds.
+    const DEFAULT_TIMESTEP = 10.0
+    const DEFAULT_TIMESPAN = (0.0, 1E4)
 
     include("pauli_particle_3d.jl")
 

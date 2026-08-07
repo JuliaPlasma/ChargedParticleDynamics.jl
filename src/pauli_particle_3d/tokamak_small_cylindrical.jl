@@ -21,7 +21,7 @@ module TokamakSmallCylindrical
     const vᵢ = DF̄(0, qᵢ) * [2.1E-3, 4.3E-4, 0.0] # should DF be evaluated at qᵢ or xᵢ ?
 
     const DEFAULT_TIMESTEP = 500.0
-    const DEFAULT_TIMESPAN = (0.0, 5E4)
+    const DEFAULT_TIMESPAN = (0.0, 5E5)
 
     include("pauli_particle_3d.jl")
 

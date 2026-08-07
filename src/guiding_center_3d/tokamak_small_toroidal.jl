@@ -13,8 +13,13 @@ export hamiltonian, toroidal_momentum
 
 AxisymmetricTokamakToroidal.@code() # inject magnetic field code
 
-const DEFAULT_TIMESTEP = 0.1
-const DEFAULT_TIMESPAN = (0.0, 1E2)
+# Δt = 500, matching this equilibrium's `GuidingCenter4d` and `PauliParticle3d` counterparts.
+# `hodeproblem` and `hodeproblem_compact` hold it at 4.8E-3 relative energy with constraints of
+# 1.5E-8 and 2.2E-8. `hodeproblem_canonical` does not — it throws a `SingularException` at 500 on
+# either regular pair — and carries a smaller step where it is integrated; 250 is the largest it
+# tolerates. See `test/guiding_center_3d_tests.jl`.
+const DEFAULT_TIMESTEP = 500.0
+const DEFAULT_TIMESPAN = (0.0, 5E5)
 # const DEFAULT_TIMESTEP = 500.0
 # const DEFAULT_TIMESPAN = (0.0, 5E4)
 

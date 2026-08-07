@@ -31,7 +31,7 @@ module TokamakIterCylindrical
 
 
     const DEFAULT_TIMESTEP = 1.0
-    const DEFAULT_TIMESPAN = (0.0, 100.0)
+    const DEFAULT_TIMESPAN = (0.0, 1E3)
 
     function initial_conditions(x₀, u₀, μ)
         v₀ = u₀ * [b¹(0, x₀), b²(0, x₀), b³(0, x₀)]

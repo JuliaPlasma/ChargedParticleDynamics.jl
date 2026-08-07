@@ -12,6 +12,11 @@ export hamiltonian
 
 AxisymmetricTokamakCartesian.@code(2.0, 5.0, 2.0) # inject magnetic field code
 
+# `hodeproblem` and `hodeproblem_compact` hold this span comfortably, at 2.4E-8 and 3.1E-8 in
+# `max|g¹|`. `hodeproblem_canonical` does not: on `initial_conditions_deeply_passing` it runs
+# 6.8E-8 at `t = 10`, 5.3E-5 at 20, 4.3E+20 at 50 and `NaN` at 100, so it carries a shorter span
+# where it is integrated rather than this example being trimmed to it. The canonicalised form is
+# the fragile one here, as it is on `SolovevSymmetricField`.
 const DEFAULT_TIMESTEP = 0.1
 const DEFAULT_TIMESPAN = (0.0, 1E2)
 

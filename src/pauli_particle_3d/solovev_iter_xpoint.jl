@@ -28,8 +28,13 @@ module SolovevIterXpoint
     const qᵢ = from_cartesian(0, xᵢ)
     const vᵢ = [3.43E-3, 6.75, -3.41E-1]
 
-    const DEFAULT_TIMESTEP = 1.0
-    const DEFAULT_TIMESPAN = (0.0, 1000.0)
+    # As for `SolovevIter`. A thousand steps, at which all three formulations agree at 1.1E-2
+    # (2.0E-2 at `Δt = 0.2`, 2.7 at `Δt = 0.5`); `Δt = 1` is not usable, the `pode` and `hode` forms
+    # throwing on a `NaN` direction and the `iode` form reaching 2.7. Over `t ∈ [0, 1E3]` all three
+    # lose `barely_passing`, `barely_trapped` and `deeply_passing` alike (2.8, 2.6, 5.6), so the
+    # span is a property of the orbit rather than of a formulation.
+    const DEFAULT_TIMESTEP = 0.1
+    const DEFAULT_TIMESPAN = (0.0, 1E2)
 
     include("pauli_particle_3d.jl")
 

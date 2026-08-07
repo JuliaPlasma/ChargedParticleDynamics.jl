@@ -25,7 +25,7 @@ module GuidingCenter4dTokamakSmallCartesian
 
     # Rescaled time: the 4D guiding centre uses Δt = 500 over (0, 5E4) with B*∥ ≈ 0.95 here.
     const DEFAULT_TIMESTEP = 5E2
-    const DEFAULT_TIMESPAN = (0.0, 5E4)
+    const DEFAULT_TIMESPAN = (0.0, 5E5)
 
     export default_parameters
 

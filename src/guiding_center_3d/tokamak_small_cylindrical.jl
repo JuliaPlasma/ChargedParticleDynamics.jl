@@ -13,8 +13,13 @@ export hamiltonian, toroidal_momentum
 
 AxisymmetricTokamakCylindrical.@code() # inject magnetic field code
 
-const DEFAULT_TIMESTEP = 0.1
-const DEFAULT_TIMESPAN = (0.0, 1E2)
+# Δt = 500, matching this equilibrium's `GuidingCenter4d` and `PauliParticle3d` counterparts. All
+# three formulations hold it on the module's own `:g12` pair — 4.3E-3 relative energy, constraints
+# 6.0E-9, 1.8E-6 and 3.8E-9 over a thousand steps. Its `Cartesian` chart cannot do this at any
+# constraint pair, and its `Toroidal` chart cannot in the canonicalised form; see
+# `test/guiding_center_3d_tests.jl`.
+const DEFAULT_TIMESTEP = 500.0
+const DEFAULT_TIMESPAN = (0.0, 5E5)
 # const DEFAULT_TIMESTEP = 500.0
 # const DEFAULT_TIMESPAN = (0.0, 5E4)
 

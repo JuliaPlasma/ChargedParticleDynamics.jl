@@ -23,9 +23,16 @@ module GuidingCenter4dTokamakSmallToroidal
     include("gc_common.jl")
     include("gc_equations.jl")
 
-    # Rescaled time: the 4D guiding centre uses Δt = 500 over (0, 5E4) with B*∥ ≈ 0.05 here.
+    # This model integrates in rescaled time, `Δs = Δt / B*∥`. The 4D guiding centre runs this
+    # equilibrium at `Δt = 500` and `B*∥ ≈ 0.05` here, so the rescaled step is `500 / 0.05 = 1E4`.
+    #
+    # It is deliberately not the 500 the `Cartesian` and `Cylindrical` charts carry: those have
+    # `B*∥ ≈ 1`, where the two coincide. Levelling this to 500 leaves the integration looking
+    # healthy — a thousand steps at either value gives the same 4.277E-3 relative energy error,
+    # since each covers a different physical span — and is caught only by the rescaling assertion in
+    # `test/gyro_kinetics_4d_tests.jl`.
     const DEFAULT_TIMESTEP = 1E4
-    const DEFAULT_TIMESPAN = (0.0, 1E6)
+    const DEFAULT_TIMESPAN = (0.0, 1E7)
 
     const x₀ = from_cartesian(0, [1.05, 0.0, 0.0])
 
