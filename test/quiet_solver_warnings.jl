@@ -1,65 +1,92 @@
 #
-# Suppress the repetitive nonlinear-solver warnings for the duration of the test suite.
+# Count the nonlinear-solver warnings the test suite provokes, per test file, and keep them out of
+# the log. There should be none, and `runtests.jl` asserts it.
 #
-# `SimpleSolvers` emits one warning per solve that exhausts its iteration budget, and which orbits
-# trip it depends on the floating-point details of the platform. Only the count is reported, at the
-# end of the run.
+# `SimpleSolvers` warns when a solve reaches `warn_iterations`, and once per line search that cannot
+# find a step satisfying the sufficient-decrease condition. Both are dropped here and counted per
+# test file; `runtests.jl` then *asserts* that the count is zero for every file. The suppression is
+# what keeps a regression from flooding the log on its way to failing that assertion.
 #
-# The count is worth reading, but it is *not* a tripwire and nothing asserts on it. It used to sit
-# above fifty thousand because the tests requested an `f_abstol` below the round-off floor of the
-# ITER-scale residuals, so Newton could not converge and ran to its iteration limit on nearly half
-# of all steps; see the comment on `options` in `guiding_center_3d_tests.jl`. With the tolerances
-# now in use the blocks that pass those options contribute none of them, so a sharp rise means a
-# tolerance has slipped below a residual floor again — but that has to be noticed by reading the
-# log, not by a failing test.
+# That assertion is the point, and it rests on `SimpleSolvers` 0.10: a converging solve is silent,
+# and a solve that cannot converge says so once, naming the residual it achieved. Anything that
+# appears is therefore attributable, and a file that starts warning is a real change rather than
+# noise — a tolerance that has slipped below a residual floor, or a step at which the integrators
+# no longer converge.
 #
-# Asserting a bound was considered and rejected: which orbits exhaust the budget depends on the
-# floating-point details of the platform, which is the whole reason the warnings are filtered here,
-# so any threshold tight enough to catch a regression would also flake across platforms.
+# `SimpleSolvers` is not a dependency of this environment — it reaches the suite through
+# `GeometricIntegrators` — so its messages are identified by the name of the module they originate
+# from rather than by importing it.
 #
-# The residue that remains comes from the calls in `structure_tests.jl` and `plots_tests.jl` that
-# deliberately integrate without passing `options` in order to exercise the library defaults — and
-# those defaults ask for `f_abstol = 8eps()`, which is itself below the ITER-scale floor.
+# ## Why the count is zero, and what would make it rise again
 #
-# Every call that *does* pass options now asks for `1E-12`. The 3D guiding centre diagnostics block
-# of `structure_tests.jl` used to restate `8eps()` by hand while still passing options, which is the
-# worst of both: it configured the solver and then asked it for a residual below the round-off floor,
-# and four steps of the Solov'ev X-point ran to the iteration cap chasing it. See the comment on
-# `options` there.
+# Three things keep it there, and each is a place a regression could appear.
 #
-# This is deliberately *not* a way of hiding failures: the tests assert that `integrate` returns a
-# solution, which is unaffected by the warnings. See the comment on the assertions in the
-# individual test files for why "no warnings" is not a usable criterion here.
+# `GeometricIntegratorsBase` scales its default tolerance with the stage system,
+# `f_abstol = max(8, solversize(method, problem)) * eps(datatype(problem))`. That is what keeps the
+# calls which deliberately pass no options at all — `integrate(prob, Gauss(2))` in
+# `structure_tests.jl` and the three in `plots_tests.jl` — quiet while still exercising the library
+# defaults.
+#
+# Every equilibrium declares a step at which its own model integrates. Where one does not, the
+# solver reaches its iteration cap on a large fraction of steps; `GuidingCenter4d`'s and
+# `PauliParticle3d`'s `TokamakSmallCartesian` are the two that are easiest to get wrong, both being
+# unusable at `Δt = 500`.
+#
+# The 4D variational problems are integrated with `SymmetricProjection(VPRKGauss(2))`. Plain
+# `VPRKGauss(2)` does not control the parasitic mode of the degenerate discretisation, and a solve
+# asked to continue a trajectory that has left the device caps rather than converges. See
+# `guiding_center_4d_tests.jl` and `docs/src/findings.md`.
+#
+# This is deliberately not a way of hiding failures: the tests assert that `integrate` returns a
+# solution, which is unaffected by the warnings. Note also that the converse does not hold — an
+# orbit can be lost with the solver perfectly quiet — so silence here is a necessary condition for a
+# healthy suite, not a sufficient one.
 #
 module QuietSolverWarnings
 
 using Logging
 
-export quiet_solver_warnings!, suppressed_warning_count
+export quiet_solver_warnings!, suppressed_warning_count, suppressed_warning_counts
+export current_test_file!
 
 const QUIET_MODULES = (:SimpleSolvers,)
-const COUNT = Ref(0)
+const COUNTS = Dict{String,Int}()
+const CURRENT = Ref("<startup>")
 
 struct QuietLogger{L<:AbstractLogger} <: AbstractLogger
     parent::L
 end
 
+# `shouldlog` returns `true` for the quiet modules so that `handle_message` is reached; it drops the
+# record there. Counting cannot be done here, because `shouldlog` is consulted once per *call site*
+# for loggers that cache it, whereas `handle_message` runs once per message.
 function Logging.shouldlog(logger::QuietLogger, level, _module, group, id)
-    if level < Logging.Error && nameof(_module) ∈ QUIET_MODULES
-        COUNT[] += 1
-        return false
-    end
+    level < Logging.Error && nameof(_module) ∈ QUIET_MODULES && return true
     Logging.shouldlog(logger.parent, level, _module, group, id)
 end
 
 Logging.min_enabled_level(logger::QuietLogger) = Logging.min_enabled_level(logger.parent)
 Logging.catch_exceptions(logger::QuietLogger) = Logging.catch_exceptions(logger.parent)
-Logging.handle_message(logger::QuietLogger, args...; kwargs...) =
-    Logging.handle_message(logger.parent, args...; kwargs...)
+
+function Logging.handle_message(logger::QuietLogger, level, message, _module, group, id,
+                                file, line; kwargs...)
+    if level < Logging.Error && nameof(_module) ∈ QUIET_MODULES
+        COUNTS[CURRENT[]] = get(COUNTS, CURRENT[], 0) + 1
+        return nothing
+    end
+    Logging.handle_message(logger.parent, level, message, _module, group, id, file, line; kwargs...)
+end
 
 quiet_solver_warnings!() = global_logger(QuietLogger(global_logger()))
 
-suppressed_warning_count() = COUNT[]
+"""Attribute subsequent suppressed messages to test file `f`."""
+current_test_file!(f) = (CURRENT[] = f)
+
+"""Suppressed messages per test file."""
+suppressed_warning_counts() = COUNTS
+
+"""Total number of suppressed messages, over all test files."""
+suppressed_warning_count() = sum(values(COUNTS); init = 0)
 
 end
 
