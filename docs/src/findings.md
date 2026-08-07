@@ -400,17 +400,101 @@ equation `p = ϑ(q)`, so the floor is `‖ϑ‖ eps`, evaluated here at each equ
 
 `‖A‖ ~ B₀R₀²`, and ITER has `B₀ = 5.3`, `R₀ = 6.2`, which is why exactly the ITER-size 4D guiding
 centre equilibria are the unreachable ones. `SolovevSymmetricField` is the worst of them at
-`‖ϑ‖ ≈ 256`; it never showed up in CI only because its block runs `ode` rather than `iode`.
+`‖ϑ‖ ≈ 256`.
+
+An earlier version of this page added that `SolovevSymmetricField` "never showed up in CI only
+because its block runs `ode` rather than `iode`, and `Gauss` converges on these problems in one or
+two iterations regardless of tolerance". **That is wrong**, and measurement says so: at the
+`f_abstol = 1E-12` the suite uses, `Gauss(2)` on its `odeproblem` averages 29.4 Newton iterations
+and reaches the iteration cap on 45 of 100 steps at `Δt = 1E2`, and on 4 % of steps at `Δt = 1E1`.
+It goes quiet only at `Δt = 1E0`, which is ten thousand steps for the same span. The capping is a
+step-size limit of the equilibrium, not a tolerance effect, and the solves that cap do not converge
+at any iteration budget.
+
+This was not caused by the move to SimpleSolvers 0.10 — the same block capped 28 of 100 steps under
+GeometricIntegrators 0.16.10 / SimpleSolvers 0.9.2, at 0.524 ms/step against 0.346 now. 0.10 reports
+more of the failures and is 1.5x faster per step; what it added is the diagnosis, namely that
+`φ'(0)` is inconsistent with the merit the line search measures.
+
+The module declares `DEFAULT_TIMESTEP = 1E0` over `DEFAULT_TIMESPAN = (0.0, 1E3)`, and every test
+runs at it. That rate is not a convenient choice for `Gauss(2)` but the only stable one measured:
+over the same physical span, the maximum relative energy error is
+
+| Δt | `odeproblem`, `Gauss(2)` | `iodeproblem`, `VPRKGauss(2)` |
+|---|---|---|
+| 5E3 | 9.2e-01 | 2.0e-01 |
+| 1E3 | 1.0e+00 | 8.7e-01 |
+| 1E2 | 1.8e+01 | 2.3e+03 |
+| 1E1 | 1.8e+11 | 1.5e+18 |
+| 1E0 | **1.9e-03** | 6.2e+25 |
+
+### The variational formulation is unstable here, and finer steps make it worse
+
+The right-hand column is the finding. The `odeproblem` becomes well behaved at `Δt = 1E0`; the
+`iodeproblem` becomes catastrophically worse, `|R|` reaching 1.3e+5 against a machine radius of 2.5.
+The degenerate variational discretisation carries a parasitic mode that plain VPRK does not control
+and that grows as the step shrinks — the reverse of the usual convergence expectation, and the
+reason the old `Δt = 5E3` block looked healthy: it took two steps.
+
+The solver's iteration cap is a *symptom* of this, not a cause. At `Δt = 1E0` it is reached on 97 %
+of steps, but it is being asked to solve for a state that has already left the device, and no solver
+setting repairs that. Measured: `DogLeg` throws on a NaN direction for all four orbits, `StrongWolfe`
+throws a `SingularException` on one and caps just as hard on the rest, `Static` throws on two, and
+`PartitionedGauss(2)` is singular.
+
+**`SymmetricProjection(VPRKGauss(2))` is what fixes it**, because it constrains exactly the drift off
+`p = ϑ(q)` that the parasitic mode feeds on. All four orbits then integrate silently and stay bounded
+at `|R| ≤ 6.5`, the same excursion `Gauss(2)` gives. `MidpointProjection` is not sufficient — it holds
+`barely_trapped` and throws on a NaN direction for the other three.
+
+Since the parasitic mode is a property of the degenerate formulation rather than of this
+equilibrium, **every variational orbit in the 4D guiding centre tests is integrated with the
+projected method**. The one exception is the `ThetaPinchField` loop, where `p` is an exact invariant,
+so there is no drift to project and the projection's inner initial guess would re-introduce a
+degenerate `p` history.
+
+This restores *stability*, not accuracy: on `SolovevSymmetricField` the projected energy error is
+O(1) against the `odeproblem`'s 1.9e-3 over the same span. On this equilibrium the variational
+formulation should not be read as a quantitative result, and the tests assert only that the
+integration completes. Elsewhere the projected variational orbits track the `ode` ones closely —
+4.7e-6 against 3.1e-6 on `TokamakMediumCartesian`, and to three digits on `SolovevIterXpoint`.
+
+### Larger time steps do not help, and the apparent evidence that they do is an artifact
+
+Read down the `Δt` column of the first table and the error appears to *fall* as the step grows past
+`5E3`, which would suggest running these examples at `Δt = 1E4` or beyond. It does not survive a
+controlled comparison. That table holds the *span* fixed, so a larger step means proportionally fewer
+steps and proportionally less opportunity for the instability to accumulate — at `Δt = 1E5` over
+`t ∈ [0, 1E6]` the run is ten steps, which cannot resolve the orbit at all.
+
+Holding the *step count* fixed at 1000 instead, and letting the span follow, gives the ordinary
+picture — monotone in `Δt`, in the direction one expects:
+
+| Δt | span | `odeproblem` max\|ΔH/H\| | `iodeproblem` + projection |
+|---|---|---|---|
+| 1E-1 | 1E2 | 9.4e-08 | 5.7e-07 |
+| 1E0  | 1E3 | **1.9e-03** | 9.6e-02 |
+| 1E1  | 1E4 | 1.8e+11 | throws |
+| 1E2  | 1E5 | 4.9e+22 | throws |
+| 1E3  | 1E6 | 9.2e+24 | 8.3e+201 |
+| 1E4  | 1E7 | 1.3e+32 | 2.6e+212 |
+
+`Δt = 1E4` is therefore the worst configuration measured, not a viable one. `Δt = 1E0` is the largest
+step at which this equilibrium is resolved; `Δt = 1E-1` buys four more orders of accuracy for ten
+times the work, which is the trade available if it is ever wanted.
+
+With this and one mis-set time step in the Pauli tests corrected, the suite emits no
+nonlinear-solver warnings at all, and asserts as much.
 
 Two knobs are involved, and they fail for different models. Cost per step at the ITER Solov'ev
 X-point, with the Newton iteration count behind it:
 
 | setting | GC4d `iode` ms/step | mean iters | Pauli3d `iode` ms/step | mean iters |
 |---|---|---|---|---|
-| `f_abstol=1E-15, f_reltol=1E-15` | 11.89 | 4.0 | 0.74 | 3.9 |
-| `f_abstol=1E-15`                 | 11.91 | 4.0 | 0.74 | 3.9 |
-| `f_abstol=1E-14`                 |  0.33 | 2.0 | 0.12 | 3.0 |
-| `f_abstol=1E-12`                 |  0.33 | 2.0 | 0.11 | 2.9 |
+| `f_abstol=1E-15, f_reltol=1E-15` | 0.130 | 3.8 | 0.044 | 3.3 |
+| `f_abstol=1E-15`                 | 0.126 | 3.7 | 0.039 | 2.9 |
+| `f_abstol=1E-14`                 | 0.046 | 1.0 | 0.031 | 2.0 |
+| `f_abstol=1E-12`                 | 0.045 | 1.0 | 0.031 | 2.0 |
 
 The 4D guiding centre degrades from `f_abstol = 1E-15` alone and recovers between 1E-15 and 1E-14,
 exactly where its floor lies. The Pauli model has a small momentum and is untouched by `f_abstol`;
@@ -420,8 +504,31 @@ term `f_reltol ‖F(x₀)‖` that lets a large-magnitude solve converge at all.
 uses. **The final state is unchanged to ~1e-14 across every row** — the extra iterations buy
 nothing.
 
-Note this also rules out simply dropping the options: the library default is `f_abstol = 8 eps() =
-1.8e-15`, itself below the ITER floor.
+The unreachable rows are cheap because of `max_stalls`: a solve whose iterate stops moving gives up
+after two such steps rather than running to `max_iterations`. What that is worth is visible by
+comparing the same workloads under GeometricIntegrators 0.16.10 / SimpleSolvers 0.9.2, which lacks
+it, with 0.17 / 0.10.1:
+
+| setting | GC4d `iode` 0.9.2 | 0.10.1 | Pauli3d `iode` 0.9.2 | 0.10.1 |
+|---|---|---|---|---|
+| `f_abstol=1E-15, f_reltol=1E-15` | 30.8 ms/step, 246.8 iters | 0.130, 3.8 | 6.32 ms/step, 127.8 iters | 0.044, 3.3 |
+| `f_abstol=1E-15`                 | 21.7 ms/step, 172.2 iters | 0.126, 3.7 | 0.272 ms/step, 2.9 iters | 0.039, 2.9 |
+| `f_abstol=1E-14`                 | 0.047, 1.0                | 0.046, 1.0 | 0.058, 2.0               | 0.031, 2.0 |
+| `f_abstol=1E-12`                 | 0.047, 1.0                | 0.045, 1.0 | 0.030, 2.0               | 0.031, 2.0 |
+
+An unsatisfiable tolerance therefore costs about four Newton iterations rather than 170, while the
+rows that *do* converge are unchanged to within run-to-run noise. This does not make an `f_abstol`
+below the residual floor correct — the solver still cannot deliver what was asked, and says so — but
+it removes the pathological cost of asking, which is what turns such a mistake into a ten-minute CI
+problem rather than a warning.
+
+Note this also rules out simply dropping the options. `GeometricIntegratorsBase` 0.5.1 scales its
+default with the size of the stage system,
+`f_abstol = max(8, solversize(method, problem)) * eps(datatype(problem))`, which for the workloads
+here is `1.8e-15` (`solversize = 8`, the 4D guiding centre and Pauli variational solves) or
+`2.7e-15` (`solversize = 12`, the 3D `hodeproblem` under `PartitionedGauss(2)`). Both are still
+below the ITER floor, so the sized default does not rescue these problems and the explicit
+`f_abstol` stays.
 
 Once the tolerance is sound the remaining cost has nothing to do with ITER. Two changes bear on it —
 this package's right-hand side rewrite, and `ElectromagneticFields` 0.6.3 — so all four combinations

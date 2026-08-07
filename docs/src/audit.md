@@ -199,6 +199,62 @@ state, then any velocity/multiplier slots, then `params`.
 vector of periods is accepted by the constructor and then silently ignored, which is worth knowing
 when adding a model.
 
+### Default time spans and steps
+
+Every equilibrium module declares `DEFAULT_TIMESTEP` and `DEFAULT_TIMESPAN`, and the two are chosen
+so that the default problem runs **1000 steps** in every model. That makes the shipped example
+directly comparable between models, coordinate systems and formulations, and it is what the test
+suite integrates: with the exceptions listed below, every test runs at its module's own defaults
+rather than at numbers that exist only in the test file.
+
+A declared default is not, however, a guarantee of a resolved orbit, and two limits are worth
+knowing before using one for anything quantitative.
+
+**A default is chosen per model, not per formulation.** Where a model offers several formulations,
+they do not all tolerate the same step and span, and the default follows the majority rather than the
+weakest. The known cases are `GuidingCenter3d.TokamakMediumCartesian`, where
+`hodeproblem_canonical` loses `initial_conditions_deeply_passing` beyond ``t \approx 20`` while
+`hodeproblem` and `hodeproblem_compact` hold the full span, and
+`GuidingCenter3d.SolovevSymmetricField`, where `hodeproblem` and `hodeproblem_canonical` lose the
+orbit beyond ``t \approx 10`` at *any* step size and only `hodeproblem_compact` survives the declared
+example. The tests give those two formulations a shorter span explicitly.
+
+**A step that is too coarse can lose an orbit silently.** The nonlinear solver frequently does not
+warn while the relative energy error is of order one, so neither the solver's silence nor the
+`isa GeometricSolution` assertion the tests make is evidence that a run is physical. The defaults
+recorded here were each checked against energy conservation, and against the constraints for the 3D
+guiding centre.
+
+`GuidingCenter3d.Dipole3d` is deliberately not at its most accurate step: `Δt = 0.1` is chosen to
+*exhibit* the constraint drift that distinguishes the three formulations rather than to minimise it.
+
+### Nonlinear solver tolerances
+
+Every test module, script and example that integrates an implicit method passes
+`f_abstol = 1E-12`. `f_abstol` is an *absolute* bound on the residual, and the variational and Pauli
+residuals carry the momentum equation ``p = \vartheta(q)``, so their round-off floor is
+``\|\vartheta\| \, \varepsilon`` — about ``3.3 \times 10^{-15}`` for the ITER-scale Solov'ev
+equilibria and ``5.7 \times 10^{-14}`` for `SolovevSymmetricField`. A tolerance below that floor is
+unsatisfiable, and the solver spends its whole iteration budget failing to meet it.
+
+The library default does not clear those floors. Since `GeometricIntegratorsBase` 0.5.1 it scales
+with the size of the stage system,
+
+```julia
+f_abstol = max(8, solversize(method, problem)) * eps(datatype(problem))
+```
+
+which comes to ``1.8 \times 10^{-15}`` for the 4D guiding centre and Pauli solves
+(`solversize = 8`) and ``2.7 \times 10^{-15}`` for the 3D `hodeproblem` under `PartitionedGauss(2)`
+(`solversize = 12`). Both are below the ITER floor, so the explicit `f_abstol` is required rather
+than merely conservative. Caller options are merged into that default, not substituted for it, so
+passing one option does not disturb the others.
+
+`f_reltol` is deliberately left at its `SimpleSolvers` default of ``\sqrt{\varepsilon}``: its
+relative term ``f_{reltol} \|F(x_0)\|`` is what lets a large-magnitude solve converge at all.
+
+See [Findings](@ref) for the measurements behind these numbers.
+
 ### Parameters
 
 Every equilibrium module provides `default_parameters(::Type{T} = Float64)` returning a named

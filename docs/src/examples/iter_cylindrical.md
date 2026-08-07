@@ -84,10 +84,12 @@ timespan_long = (0., 1_000_000.);
 ```
 
 Nonlinear solver options.
-`f_abstol` is an absolute bound on the residual and has to stay above its round-off floor, which
-for these ITER-scale models is `‖ϑ‖ eps` — the `1E-15` this page used to ask for sits below it, so
-the solver had no reachable stopping criterion and the line search ran to its iteration limit on
-every step:
+`f_abstol` is an absolute bound on the residual and has to stay above its round-off floor, which for
+these ITER-scale models is `‖ϑ‖ eps ≈ 3.3E-15`. Below that the Newton iteration has no reachable
+stopping criterion and runs to its limit on nearly every step. The library default does not clear the
+floor either: `GeometricIntegratorsBase` scales it as
+`max(8, solversize(method, problem)) * eps(datatype(problem))`, which is `1.8E-15` here. See
+[Model Audit](@ref) for the full reasoning:
 ```@example 1
 options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 ```
