@@ -213,6 +213,32 @@ function ω(Ω::Matrix, t, q, params=NamedTuple())
     nothing
 end
 
+@doc raw"""
+    ωabs(t, q, params)
+
+The factor by which this module's vector field is rescaled relative to the 4D guiding centre one,
+``v_{gk} = \omega_{abs} \, v_{gc}``, so that the independent variable is the rescaled time with
+``dt = \omega_{abs} \, ds``. It is the contraction ``\omega \cdot \partial\vartheta/\partial u`` of
+the curl of the one-form against ``b``.
+
+!!! note "This is `det(DF) · B*∥`, not `B*∥`"
+    `ω₁ = ∂₂ϑ₃ - ∂₃ϑ₂` is the *coordinate* curl, which is `det(DF)` times the contravariant one —
+    the signed Jacobian, not the volume element `J`. So `ωabs = det(DF) · B*∥ = orientation · J · B*∥`,
+    and in the four left-handed charts of `ElectromagneticFields` — the cylindrical, the two toroidal
+    and every `Solovev*` other than `SolovevSymmetric` — it comes out **negative** while the physical
+    ``B^{\star}_{\parallel}`` is positive. Dividing back out recovers a chart-independent value: the
+    small tokamak gives `B*∥ = 0.9511` in its cartesian, cylindrical and toroidal charts alike, where
+    `ωabs` reads `+0.9511`, `-0.9987` and `-0.0499`.
+
+    Nothing here needs correcting for that: the coordinate divergence of a coordinate curl vanishes
+    identically whatever its sign, so the splitting is volume preserving either way, and the
+    proportionality above holds with the signed factor. What it does mean is that `s` runs *opposite*
+    to physical time in those charts. `scripts/study_gyrokinetic_rescaling.jl` integrates the guiding
+    centre model over `t = ωabs · s` and still recovers the same orbit, which is the check.
+
+    Until `ElectromagneticFields` 0.7.0 this was masked: `b` was itself reversed in exactly those
+    charts, so the two sign errors cancelled and `ωabs` came out positive everywhere.
+"""
 function ωabs(t, q, params=NamedTuple())
     ω₁(t,q) * dϑ₁dx₄(t,q) + ω₂(t,q) * dϑ₂dx₄(t,q) + ω₃(t,q) * dϑ₃dx₄(t,q)
 end

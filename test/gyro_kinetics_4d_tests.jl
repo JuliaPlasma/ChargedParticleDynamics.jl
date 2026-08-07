@@ -59,7 +59,7 @@ end
 end
 
 
-@safetestset "Gyrokinetic GC Model: the vector field is the guiding centre one, rescaled by B*∥                    " begin
+@safetestset "Gyrokinetic GC Model: the vector field is the guiding centre one, rescaled by ωabs                   " begin
 
     using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
     using ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint
@@ -67,9 +67,11 @@ end
     using Test
 
     # The notes absorb the phasespace Jacobian into the distribution function, f̃ = B*∥ f, which
-    # multiplies the guiding centre characteristics through by B*∥. The two vector fields must
-    # therefore be exactly proportional, with B*∥ = `ωabs` the factor — same orbits, traversed in
-    # the reparametrised time dt = B*∥ ds.
+    # multiplies the guiding centre characteristics through by it. The two vector fields must
+    # therefore be exactly proportional, with `ωabs` the factor — same orbits, traversed in the
+    # reparametrised time dt = `ωabs` ds. On this equilibrium `ωabs` is negative, the Solov'ev chart
+    # being left-handed, so the guiding centre orbit is traversed backwards in `s`; that is a
+    # property of the factor and not a defect, and the equality below is what pins it.
     GK = GuidingCenter4dSolovevIterXpoint
     GC = SolovevIterXpoint
 
@@ -168,12 +170,24 @@ end
     # Sweeps the whole set rather than the one equilibrium the blocks above cover. The point is the
     # curvilinear ones: `gc_common.jl` carries no metric, because the formulation is intrinsic —
     # ϑᵢ = Aᵢ + u bᵢ in covariant components and Ω = dϑ need none — and the Liouville measure is
-    # √det Ω = B*∥ in any chart. So the volume-preserving splitting must work unchanged in
-    # cylindrical and toroidal coordinates, and this is the assertion that says so.
+    # √det Ω in any chart, which is `ωabs` as this module computes it. So the volume-preserving
+    # splitting must work unchanged in cylindrical and toroidal coordinates, and this is the assertion
+    # that says so. It does, including where `ωabs` is negative: a coordinate curl is divergence-free
+    # whatever sign the Jacobian gives it, so the sign reverses `s` and nothing else.
     #
-    # Each module's time step is the 4D guiding centre's divided by B*∥ at its own initial
-    # condition, since the independent variable is the rescaled time with dt = B*∥ ds. Getting that
-    # factor wrong by ~2·10² is exactly the bug the audit found in the one shipped equilibrium.
+    # Each module's time step is the 4D guiding centre's divided by the rescaling factor at its own
+    # initial condition, since the independent variable is the rescaled time with dt = `ωabs` ds.
+    # Getting that factor wrong by ~2·10² is exactly the bug the audit found in the one shipped
+    # equilibrium.
+    #
+    # `ωabs` is `det(DF) · B*∥`, not `B*∥`. It contracts the coordinate curl `∂₂ϑ₃ - ∂₃ϑ₂`, which
+    # is `det(DF)` times the contravariant one, against `b`, so it inherits the chart's handedness
+    # and comes out **negative in the six left-handed charts** — the cylindrical, toroidal and
+    # Solov'ev ones; see `orientation` in `ElectromagneticFields`. Dividing it back out recovers a
+    # chart-independent `B*∥`: the small tokamak gives 0.9511 in all three of its charts. Only the
+    # magnitude is a statement about the step, hence `abs` below. The sign is not free to choose —
+    # the vector field carries the same factor, so `dt = ωabs ds` runs `s` opposite to `t` there,
+    # which `scripts/study_gyrokinetic_rescaling.jl` relies on and confirms.
     equilibria = sort(filter(n -> isa(getfield(GyroKinetics4d, n), Module) && n !== :GyroKinetics4d,
                              names(GyroKinetics4d, all = true)))
 
@@ -188,14 +202,18 @@ end
         @test integrate(M.odeproblem(ics), Gauss(2)) isa GeometricSolution
         @test integrate(M.sodeproblem(ics), strang_composition()) isa GeometricSolution
 
-        # The rescaled step really is the physical one divided by B*∥: multiplying it back by
-        # B*∥ must recover the step of the corresponding 4D guiding centre module, which is the
+        # The rescaled step really is the physical one divided by the rescaling factor: multiplying
+        # it back must recover the step of the corresponding 4D guiding centre module, which is the
         # same equilibrium in physical time. This is what catches a step copied from a sibling —
-        # the audit found the shipped one wrong by a factor of B*∥ ≈ 2·10².
+        # the audit found the shipped one wrong by a factor of ≈2·10².
         short = Symbol(replace(string(name), "GuidingCenter4d" => ""))
         G = getfield(ChargedParticleDynamics.GuidingCenter4d, short)
-        Bpar = M.ωabs(0.0, q₀, params)
-        @test 0.1 < Δs * Bpar / G.DEFAULT_TIMESTEP < 10.0
+        ωfac = M.ωabs(0.0, q₀, params)
+        @test 0.1 < abs(Δs * ωfac / G.DEFAULT_TIMESTEP) < 10.0
+
+        # And the handedness is what fixes its sign, so assert that too rather than only its
+        # magnitude: a chart whose `ωabs` came out with the wrong sign would otherwise pass above.
+        @test sign(ωfac) == (occursin("Cartesian", string(name)) ? +1 : -1)
 
         step(q) = integrate(M.sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)),
                             strang_composition()).q[end]

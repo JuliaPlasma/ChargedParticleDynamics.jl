@@ -45,7 +45,10 @@ module GuidingCenter4dTokamakSmallToroidal
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.314593645825811e-6),)
 
 
-    const qᵢ = [x₀..., -0.00045135897235326736]
+    # Shared with the 4D guiding centre module of the same equilibrium, whose `uᵢ` this tracks. The
+    # minus this carried until `ElectromagneticFields` 0.7.0 compensated for the reversed `b` of the
+    # left-handed `(r, θ, ϕ)` chart; see the note on `uᵢ` in `guiding_center_4d/tokamak_small_toroidal.jl`.
+    const qᵢ = [x₀..., 0.00045135897235326736]
 
     toroidal_momentum(t, q) = ϑ₃(t, q)
 

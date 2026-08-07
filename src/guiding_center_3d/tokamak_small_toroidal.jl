@@ -24,14 +24,25 @@ const DEFAULT_TIMESPAN = (0.0, 5E5)
 # const DEFAULT_TIMESPAN = (0.0, 5E4)
 
 const xᵢ = [1.05, 0.0, 0.0]
-const uᵢ = -0.00045135897235326736
+# As for `TokamakSmallCylindrical`: `(r, θ, ϕ)` is left-handed too, so this carried a compensating
+# minus for the reversed `b` that `ElectromagneticFields` 0.7.0 removed the need for. All three charts
+# of this equilibrium now start the same physical particle with the same `u` and `μ`.
+const uᵢ = 0.00045135897235326736
 const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
 
 
-initial_conditions_barely_passing() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.1, 0.0])..., 8.117E-4]), (params=(μ=2.448E-6,),))
-initial_conditions_barely_trapped() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.1, 0.0])..., 7.610E-4]), (params=(μ=2.250E-6,),))
-initial_conditions_deeply_passing() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.1, 0.0])..., 1.623E-3]), (params=(μ=2.448E-6,),))
-initial_conditions_deeply_trapped() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.1, 0.0])..., 4.306E-4]), (params=(μ=2.250E-6,),))
+# These four read `[1.05, 0.1, 0.0]` until the three families were aligned. The offset bought nothing
+# — this module's pair is `:g12`, which divides by `b₃ = 1.054` and is regular on the midplane, so
+# unlike the cartesian charts there is no vanishing component of `b` here to move away from. It was
+# also inconsistent three ways over: with `initial_conditions_pauli` just below, with this
+# equilibrium's `Cylindrical` chart, and with its `GuidingCenter4d` and `PauliParticle3d` modules. In
+# the toroidal chart the offset is not even a toroidal rotation, since it moves `r` from 0.05 to
+# 0.0548 and so changes the flux surface. At `y = 0` every formulation holds the same step or better:
+# `hodeproblem` on `barely_passing` improves from 4.7E-7 to 6.4E-8 relative energy.
+initial_conditions_barely_passing() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 8.117E-4]), (params=(μ=2.448E-6,),))
+initial_conditions_barely_trapped() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 7.610E-4]), (params=(μ=2.250E-6,),))
+initial_conditions_deeply_passing() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 1.623E-3]), (params=(μ=2.448E-6,),))
+initial_conditions_deeply_trapped() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.306E-4]), (params=(μ=2.250E-6,),))
 initial_conditions_pauli() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.3E-4]), (params=(μ=2.310E-6,),))
 
 u_loop() = 4.0E-4

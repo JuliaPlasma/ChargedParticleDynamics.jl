@@ -17,7 +17,12 @@ module TokamakSmallCylindrical
     const DEFAULT_TIMESPAN = (0.0, 5E5)
 
     const xᵢ = [1.05, 0., 0.]
-    const uᵢ = -0.00045135897235326736
+    # The same physical particle as `TokamakSmallCartesian` starts, at the same position and with the
+    # same `μ`. This read `-0.00045135897235326736` until `ElectromagneticFields` 0.7.0: `(R, Z, ϕ)`
+    # is a left-handed chart, and the Hodge star was being handed the unsigned volume element, so `b`
+    # came out antiparallel to the cartesian chart's and the sign here compensated for it. With the
+    # field corrected the compensation is stale, and `u` means the same thing in all three charts.
+    const uᵢ = 0.00045135897235326736
     const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
 
 

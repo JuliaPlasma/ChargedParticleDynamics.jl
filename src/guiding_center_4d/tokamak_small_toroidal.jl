@@ -17,7 +17,10 @@ module TokamakSmallToroidal
     const DEFAULT_TIMESPAN = (0.0, 5E5)
 
     const xᵢ = [1.05, 0., 0.]
-    const uᵢ = -0.00045135897235326736
+    # As for `TokamakSmallCylindrical`: `(r, θ, ϕ)` is left-handed too, so this carried a compensating
+    # minus for the reversed `b` that `ElectromagneticFields` 0.7.0 removed the need for. All three
+    # charts of this equilibrium now start the same physical particle with the same `u` and `μ`.
+    const uᵢ = 0.00045135897235326736
     const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
 
 
