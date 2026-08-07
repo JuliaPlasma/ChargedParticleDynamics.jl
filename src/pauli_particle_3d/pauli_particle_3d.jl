@@ -41,9 +41,10 @@ end
 Split the *full* velocity `v₀` at `x₀` into its parallel part, which becomes the state, and its
 perpendicular part, whose energy becomes the magnetic moment `μ = |v⊥|² / 2|B|`.
 
-`v₀` is contravariant and `b` covariant, so `u₀ = v₀ · b` is already the contraction that raises the
-index; `b⃗` is then the contravariant unit vector that rebuilds the parallel velocity as a vector.
-The three are distinct objects in a curvilinear chart and not interchangeable.
+`v₀` is contravariant and `b` covariant, so `u₀ = v₀ · b` contracts the two into the scalar parallel
+speed with no metric needed; `b⃗` is then the contravariant unit vector that rebuilds the parallel
+velocity as a vector, `v∥ = u₀ b⃗`. `b`, `bₚ` and `b⃗` are the covariant, physical and contravariant
+triads and are distinct objects in a curvilinear chart, not interchangeable.
 """
 function initial_conditions(x₀, v₀::AbstractVector)
     u₀ = v₀' * b(0, x₀)

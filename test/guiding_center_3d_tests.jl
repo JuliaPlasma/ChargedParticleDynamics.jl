@@ -329,12 +329,11 @@ end
     # `t ∈ [0, 1E3]` — and a finer step does not rescue them. `hodeproblem_compact` holds that span at
     # 1.1E-7 and so runs at the default. That only the compact form survives a long run here is the
     # thing worth testing, and it is visible precisely because the two are not levelled to the same
-    # span. As in the 4D model, this is the worst-conditioned equilibrium of the set.
-    #
-    # Also the one block that cannot be run over the module's own `DEFAULT_TIMESPAN`. This is the
-    # stiffest equilibrium in the package — `‖ϑ‖ ≈ 256`, an order of magnitude above the ITER-like
-    # Solov'ev equilibria — and the constraint drift grows fast enough that Newton meets a NaN a few
-    # hundred steps in. A hundred steps, the same workload as the blocks above, is well inside that.
+    # span. As in the 4D model, this is the worst-conditioned equilibrium of the set: `‖ϑ‖ ≈ 256`, an
+    # order of magnitude above the ITER-like Solov'ev equilibria, and the constraint drift grows fast
+    # enough under the two non-compact forms that Newton meets a NaN a few hundred steps in. The
+    # hundred steps below — a tenth of the declared example, at its declared step — are well inside
+    # that.
     test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E1)))
     test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E1)))
     test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E1)))

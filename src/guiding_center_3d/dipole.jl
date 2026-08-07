@@ -40,13 +40,25 @@ default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
 
-All three pairs are regular at the initial condition, but only this one stays that way. The orbit
-takes `b₁` and `b₂` through zero, so `(g³, g¹)` and `(g², g³)` — which divide by them — hold the
-constraints to 1E-3 and the energy to 4E-5 over a hundred steps, and lose the orbit entirely past a
-few hundred: `|ΔH/H|` reaches 2E3 by `t = 30`, and 7.6E5 under `hodeproblem_canonical`.
-`(g¹, g²)` divides by `b₃`, which does not vanish along this orbit, and holds both to 2E-8 out to
-`t = 300`. This is the one equilibrium in the package where the pair has to be chosen on its
-conditioning along the orbit rather than at the initial condition.
+All three pairs are regular at the initial condition — `λₒ` is -34, 34 and 68 — but only this one stays
+that way, because the orbit takes `b₁` and `b₂` through zero and the other two pairs divide by them.
+Over the module's declared example, a thousand steps at `Δt = 0.1`:
+
+    pair              max|gᵏ|     max|ΔH/H|
+    (g¹, g²)  :g12   4.8E-06      3.3E-07
+    (g³, g¹)  :g31   7.4E-03      1.3E-06
+    (g², g³)  :g23   8.8E-03      9.8E-07
+
+Three orders of magnitude in the constraints, which are this model's characteristic diagnostic.
+`(g¹, g²)` divides by `b₃`, which does not vanish along this orbit. The separation is not an artifact
+of the coarse step either: at `Δt = 0.03` the same ordering holds at 1.8E-08 against 1.3E-05 and
+6.8E-06, and it widens with the span, `:g23` reaching 8.2E+01 by `t = 300`.
+
+This is the one equilibrium in the package where the pair has to be chosen on its conditioning *along
+the orbit* rather than at the initial condition; `TokamakMediumCartesian` is also chosen on
+conditioning, but at the initial condition. The longer-run figures, and the same comparison for
+`hodeproblem_canonical`, are tabulated in `docs/src/findings.md` under "Regular is not the same as well
+conditioned" — that table is measured at `t = 3` and `t = 30`, so read its span before comparing.
 """
 default_constraints() = :g12
 

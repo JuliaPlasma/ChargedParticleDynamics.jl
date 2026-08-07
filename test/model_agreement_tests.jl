@@ -78,6 +78,11 @@ end
     # with the Pauli family: `y = 0` puts it on the `b₁ = b_x = 0` midplane, where `:g31` is singular,
     # so its `default_constraints` moved to `:g23` — the better conditioned pair in any case — and its
     # `hodeproblem_canonical` now needs a tenth of the step. See `guiding_center_3d_tests.jl`.
+    #
+    # Guarded against becoming vacuous: the loops below skip an equilibrium that no longer declares a
+    # condition in all three families, so an empty module list would pass silently.
+    @test !isempty(sharedmodules())
+
     for name in sharedmodules()
         E3, E4, Ep = getfield(G3, Symbol(name)), getfield(G4, Symbol(name)), getfield(P3, Symbol(name))
 
@@ -122,10 +127,14 @@ end
     # values, which are 1E-13 and below in the curvilinear charts; the cartesian chart of the small
     # tokamak is looser because the toroidal transit appears there as a rotation of (x, y) that has
     # to be resolved rather than a coordinate that winds.
+    #
+    # The set is every equilibrium `scripts/study_model_agreement.jl` measures, at the same steps, so
+    # the assertions and the measurements they are set from cannot drift apart.
     CASES = (("TokamakSmallCartesian",   10.0, 1E-6),
              ("TokamakSmallCylindrical", 10.0, 1E-9),
              ("TokamakSmallToroidal",    10.0, 1E-9),
              ("TokamakIterCylindrical",  0.01, 1E-9),
+             ("SolovevIter",             0.01, 1E-9),
              ("SolovevIterXpoint",       0.01, 1E-9))
 
     for (name, step, tol) in CASES
@@ -162,9 +171,19 @@ end
     # velocity and brings *every* equilibrium below 1E-3, independently of ρ/L. That is what says the
     # two models share a slow manifold rather than merely resembling each other: the four decades of
     # spread in the first column are the initial condition, not the dynamics.
-    CASES = (("TokamakSmallCylindrical", 10.0),
+    #
+    # The set is every equilibrium `scripts/study_model_agreement.jl` measures, at the same steps.
+    # `TokamakSmallCartesian` is the row where the drift correction is *worse* than the lowest-order
+    # condition — 2.3E-5 against 1.9E-5 on `barely_passing`, 1.0E-5 against 6.9E-6 on
+    # `deeply_trapped` — because `v_gc` fixes the `O(v_drift)` mismatch in the velocity while leaving
+    # the `O(ρ)` mismatch in the position, and this is where the residual is already down at the
+    # position term. It is kept for exactly that reason: the assertion below is that the corrected
+    # condition lands under 1E-3 everywhere, not that it improves everywhere.
+    CASES = (("TokamakSmallCartesian",   10.0),
+             ("TokamakSmallCylindrical", 10.0),
              ("TokamakSmallToroidal",    10.0),
              ("TokamakIterCylindrical",  0.01),
+             ("SolovevIter",             0.01),
              ("SolovevIterXpoint",       0.01))
 
     for (name, step) in CASES
