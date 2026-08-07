@@ -3,7 +3,9 @@ using GeometricIntegrators
 using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d
 using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, b₁, b₂, b₃
 
-const options = (f_abstol=2eps(), verbosity=1)
+# As in `guiding_center_3d_dipole.jl`: `f_abstol` has to stay above the residual's `‖ϑ‖ eps` floor,
+# which is `4.0E-15` here (`‖p‖ ≈ 18`), so the `2eps() = 4.4E-16` this asked for was unreachable.
+const options = (f_abstol=1E-12, verbosity=1)
 
 # odeequ = ode(initial_conditions_quadratic())
 

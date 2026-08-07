@@ -95,7 +95,10 @@ initial(M, icsname) = getfield(M, icsname)()
 # ---------------------------------------------------------------------------------------------
 # A logger that harvests the iteration count out of the "Solver took N iterations." warnings, as in
 # `study_solver_tolerances.jl`. `SimpleSolvers` emits one per solve that reaches `warn_iterations`,
-# so `warn_iterations=1` turns the warning into a per-solve report of the work a step cost.
+# so `warn_iterations=1` turns the warning into a per-solve report of the work a step cost. The
+# wording is unchanged in `SimpleSolvers` 0.10, so the match below still holds; the qualified status
+# API (`SimpleSolvers.status`, `SimpleSolvers.isstalled`) is the alternative, but it is not exported
+# and would mean driving the solver a step at a time instead of calling `integrate`.
 # ---------------------------------------------------------------------------------------------
 
 mutable struct IterationLogger <: AbstractLogger
@@ -185,9 +188,14 @@ canonicalised form and the compact form for the equilibrium's own default pair, 
 in its regularised, pair-independent variant.
 
 `regular` says whether the variant's denominator survives the initial condition. Attempting a
-singular one is not merely useless but slow: the multipliers are infinite from the first stage, and
-the backtracking line search grinds through its thousand-iteration budget on every step before the
-solver finally reports the NaN.
+singular one is useless: the multipliers are infinite from the first stage and the solver reports
+the NaN.
+
+It is not especially slow: the backtracking line search checks its anchor before descending, so a
+non-descent direction costs one derivative evaluation rather than a whole ladder, and a solve that
+cannot move its iterate stops after `max_stalls = 2` steps rather than running to `max_iterations`.
+Note that the line-search budget is `linesearch_max_iterations`, default **60**, which is not the
+same quantity as `max_iterations` (default 1000) bounding the outer Newton iteration.
 """
 function variants(M, ic)
     d = M.default_constraints()

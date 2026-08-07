@@ -52,9 +52,13 @@ mean(x) = isempty(x) ? 0.0 : sum(x) / length(x)
 # A logger that harvests the iteration count out of the "Solver took N iterations." warnings.
 #
 # `SimpleSolvers` emits one per solve that reaches `warn_iterations`, so setting `warn_iterations=1`
-# turns that warning into a per-solve report of how much work the step actually cost. It is the only
-# way to see the iteration counts from outside the solver, and it is why the test suite needs
-# `test/quiet_solver_warnings.jl` at all.
+# turns that warning into a per-solve report of how much work the step actually cost. The message is
+# unchanged in `SimpleSolvers` 0.10, so this still works; the alternative is the qualified status API
+# (`SimpleSolvers.status`, `SimpleSolvers.isstalled`), which is deliberately *not* exported and needs
+# the solver to be driven a step at a time rather than through `integrate`.
+#
+# This is not why the test suite has `test/quiet_solver_warnings.jl`: that exists for the one block
+# whose solves genuinely do not converge. See its header.
 # ---------------------------------------------------------------------------------------------
 
 mutable struct IterationLogger <: AbstractLogger
@@ -160,17 +164,20 @@ function residual_scales()
     For the 4D guiding centre this is the whole story: the ITER-like Solov'ev equilibria and
     `TokamakIterCylindrical` all sit above 1E-15 because ‖A‖ ~ B₀R₀² and ITER has B₀ = 5.3,
     R₀ = 6.2, while the medium and small tokamaks sit comfortably below it.
-    `SolovevSymmetricField` is by far the worst at ‖ϑ‖ ≈ 256; it never showed up in CI only because
-    its test block runs `ode` rather than `iode`, and `Gauss` converges on these problems in one or
-    two iterations regardless of tolerance.
+    `SolovevSymmetricField` is by far the worst at ‖ϑ‖ ≈ 256, and its difficulty is a step-size
+    limit rather than a tolerance one: at f_abstol = 1E-12, `Gauss(2)` on its `odeproblem` averages
+    29.4 iterations and reaches the iteration cap on 45 of 100 steps at Δt = 1E2, against 2.2
+    iterations and no capped step at the Δt = 1E0 it runs at.
 
     The Pauli rows are the counterexample that stops this being a complete explanation: their
     momentum is small, so this floor says `f_abstol = 1E-15` should have been fine — and measured on
     its own, it is. What broke the Pauli blocks was pinning `f_reltol` as well, which section 2
     separates out.
 
-    Either way, this rules out simply dropping the `options` from the test suite:
-    `GeometricIntegratorsBase.default_options` asks for `f_abstol = 8eps() = 1.8E-15`, itself below
+    Either way, this rules out simply dropping the `options` from the test suite.
+    `GeometricIntegratorsBase.default_options` scales its tolerance with the stage system,
+    `f_abstol = max(8, solversize(method, problem)) * eps(datatype(problem))`, which is 1.8E-15 for
+    the 4D guiding centre and Pauli solves and 2.7E-15 for the 3D `hodeproblem` — both still below
     the 4D guiding centre's ITER floor.""")
 end
 
