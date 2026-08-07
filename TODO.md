@@ -16,6 +16,43 @@ electrostatic potential, the curvilinear noncanonical charged particle, and the 
 
 ---
 
+# Migration: SimpleSolvers 0.10 / GeometricIntegrators 0.17 — done
+
+Released as 0.3.1; see the CHANGELOG. `test/`, `docs/` and `scripts/` are on GeometricIntegrators
+0.17.0, SimpleSolvers 0.10.1 and GeometricIntegratorsBase 0.5.1, each bounded in the environment
+that resolves it.
+
+The suite now emits **no** nonlinear-solver warnings and `runtests.jl` asserts that per test file,
+which replaces both the un-asserted count this section wanted repurposed and the `@test_nowarn`
+that was abandoned as platform-dependent. The 1853 messages it started from had three causes, all
+real and all fixed: `GuidingCenter4d.SolovevSymmetricField` running its `ode` orbits at a step size
+where they could not converge (1616), one Pauli `iodeproblem()` left at the module default
+`Δt = 500` (174), and the unconfigured calls exercising the old flat `f_abstol = 8eps()` library
+default (the rest), which `GeometricIntegratorsBase` 0.5.1 fixed upstream.
+
+Two claims in this section were wrong and are worth not repeating:
+
+* `status`/`isstalled` are **not** exported by SimpleSolvers — deliberately, since exporting
+  `status` would be hostile to `using SimpleSolvers`. They have to be qualified, and reading them
+  means driving the solver a step at a time rather than calling `integrate`.
+* The residue was said to be irreducible until `GeometricIntegratorsBase` changed its default. It
+  did change it, in 0.5.1, to `max(8, solversize(method, problem)) * eps(datatype(problem))` — but
+  that only silenced the unconfigured calls. The bulk was this repository's own two mis-set time
+  steps.
+
+What did **not** change: the `‖ϑ‖ eps` reasoning behind `f_abstol = 1E-12` still holds, because the
+sized default is 1.8E-15–2.7E-15 and the ITER floor is 3.3E-15. `max_iterations = 50` is kept: the
+solves that reach it are genuinely still iterating rather than stalling, so `max_stalls` does not
+catch them.
+
+## Retracted claim worth leaving retracted
+
+- [ ] `CHANGELOG.md` and `docs/src/findings.md` record a *retracted* attribution of the 3D `hode`
+      cost to the line search — profiling showed it was 8 % of wall clock against the Jacobian's
+      13 %. That retraction is still correct and was not revisited for 0.10.
+
+---
+
 # Next
 
 ## Phase 5 — finish porting the stale subsystems

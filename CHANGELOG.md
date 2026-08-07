@@ -9,6 +9,171 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.3.1] - 2026-08-07
+
+Dependency update. `src/` is unchanged; everything here is in `test/`, `docs/` and `scripts/`, the
+three environments that resolve `GeometricIntegrators`.
+
+### Changed
+
+- **GeometricIntegrators 0.17, SimpleSolvers 0.10.1 and GeometricIntegratorsBase 0.5.1** in all
+  three environments. Each dependency is now bounded in the environment that resolves it:
+  `test/Project.toml` gains bounds for the six deps that had none, and `docs/Project.toml` and
+  `scripts/Project.toml` gain a `[compat]` section each. `SimpleSolvers` is bounded only in
+  `scripts/`, the one environment that uses it directly; elsewhere it is pinned transitively by
+  `GeometricIntegrators = "0.17"`, which keeps it out of the test environment where the suite
+  identifies its messages by module name rather than by importing it.
+- **`GeometricIntegratorsBase` 0.5.1 changes the default solver tolerance** from a flat
+  `f_abstol = 8eps()` to `max(8, solversize(method, problem)) * eps(datatype(problem))`, and merges
+  caller options into the method defaults rather than replacing them. The package's explicit
+  `f_abstol = 1E-12` is still required: the sized default comes to `1.8E-15` for the 4D guiding
+  centre and Pauli solves and `2.7E-15` for the 3D `hodeproblem`, both below the ITER-scale floor of
+  `‖ϑ‖ eps ≈ 3.3E-15`. The comments that justified the override by the *old* behaviour — that
+  passing any option replaced the whole default set, and that `SimpleSolvers` defaulted to
+  `f_abstol = 0` — are corrected in `test/structure_tests.jl` and `test/guiding_center_3d_tests.jl`,
+  and the reasoning is now stated once in `docs/src/audit.md`.
+
+- **`max_stalls` makes an unsatisfiable tolerance cheap.** Since SimpleSolvers 0.10 a solve whose
+  iterate stops moving gives up after two such steps instead of running to `max_iterations`. On the
+  4D guiding centre `iode` at the deliberately-unreachable `f_abstol = 1E-15`, that is 21.7 ms/step
+  and 172 Newton iterations under SimpleSolvers 0.9.2 against 0.126 ms/step and 3.7 iterations now —
+  a factor of 170 in wasted work — while the settings that do converge are unchanged to within
+  run-to-run noise. It does not make such a tolerance correct, but it removes the pathological cost
+  of asking, which is what once made a mis-set tolerance a ten-minute CI problem. The cost table in
+  `docs/src/findings.md` is re-measured on both stacks.
+
+### Tests
+
+- **The suite emits no nonlinear-solver warnings at all, and asserts it.**
+  `test/quiet_solver_warnings.jl` counted 1853 suppressed messages on the new stack and reported
+  only a total, because before `SimpleSolvers` 0.10 a *converging* solve warned too and which orbits
+  tripped it was platform-dependent. 0.10 made a converging solve silent, so the messages became
+  attributable; attributing them found three causes, all of them real, and `runtests.jl` now asserts
+  per test file that the count is zero. The count was never a tripwire before; it is one now.
+- **Every problem now declares a 1000-step example, and the tests run it.** `DEFAULT_TIMESPAN` is set
+  to `1000 · DEFAULT_TIMESTEP` for all 53 equilibrium modules across `ChargedParticle3d`,
+  `GuidingCenter3d`, `GuidingCenter4d`, `PauliParticle3d` and `GyroKinetics4d`, so the declared
+  example is uniform and directly comparable between models, coordinate systems and formulations.
+  Thirteen spans moved: three came down from 10 000 steps (`GuidingCenter3d.SolovevSymmetricField`,
+  `GuidingCenter4d.SolovevSymmetricField`, `PauliParticle3d.TokamakSmallCartesian`) and ten went up
+  from 100 (the `TokamakSmall*` families of `GuidingCenter4d`, `PauliParticle3d` and
+  `GyroKinetics4d`, plus `PauliParticle3d.ThetaPinchField` and `.TokamakIterCylindrical`). Every
+  lengthened case was checked on energy rather than on solver silence — a long span can lose an orbit
+  without the solver warning at all — and all are clean, between 0 and 6.6E-3 relative.
+
+- **Several modules declared a `DEFAULT_TIMESTEP` at which their own model does not integrate.** The
+  test files had been compensating with hand-tuned overrides, so the defaults were never exercised
+  and their breakage was invisible; the documented usage in `docs/src/guiding_center_3d.md` and
+  `docs/src/pauli_particle_3d.md` would have hit it. Corrected, with the measurement recorded on each
+  constant: `GuidingCenter3d.SolovevIterXpoint` (`Δt = 1` gave `NaN` and 89 capped steps → 0.1),
+  `.TokamakSmallCartesian` (`Δt = 200` gave `NaN` and 494 capped → 0.1, which the file had had
+  commented out above the broken value all along), `PauliParticle3d.SolovevIter` and
+  `.SolovevIterXpoint` (`Δt = 1`, all formulations threw → 0.1) and
+  `PauliParticle3d.TokamakSmallCartesian` (`Δt = 500`, 1.9E+37 with 441 capped → 10).
+  `GuidingCenter3d.Dipole3d` moves the other way, from `Δt = 0.03` to 0.1, deliberately: the coarser
+  step *exhibits* the constraint drift the model is about, separating the three formulations legibly
+  (4.8E-6, 7.1E-4, 8.1E-6 in `max|g¹|`) where at 0.03 they all collapse into the 1E-8 range.
+
+- **Where a time span is shortened for the tests, the exception belongs to the formulation that
+  blocks, not to the module.** Two cases remain, both in `guiding_center_3d_tests.jl`:
+  `TokamakMediumCartesian.hodeproblem_canonical` and `SolovevSymmetricField.hodeproblem` run over
+  `t ∈ [0, 1E1]` while their siblings run the declared span. That keeps the tests comparable across
+  formulations and, on `SolovevSymmetricField`, makes visible the thing worth knowing — that
+  `hodeproblem_compact` is the only formulation which survives the full example there. Levelling every
+  call to the shortest span that all of them tolerate had concealed exactly that.
+
+- **`GuidingCenter4d.SolovevSymmetricField` gets usable defaults** — `DEFAULT_TIMESPAN = (0.0, 1E4)`
+  and `DEFAULT_TIMESTEP = 1E0`, replacing `t ∈ [0, 5E5]` at `Δt = 5E3` — **and every test now runs at
+  them.** Nothing used the old pair: every call in the test block overrode it, between them with four
+  different pairs. This equilibrium is the worst conditioned in the package, `‖ϑ‖ ≈ 256` against
+  `≈ 15` for the ITER Solov'ev cases, and accounted for 1616 of the 1853 suppressed warnings. `Δt =
+  1E0` is not merely convenient for `Gauss(2)` but the only stable rate measured: the maximum
+  relative energy error over the span is 1.9E-3 there against 1.8E+11 at `Δt = 1E1` and 1.8E+1 at
+  `Δt = 1E2`. All four orbits then converge in 2.1–2.3 iterations and cap on no step.
+- **Every 4D guiding centre variational test is integrated with `SymmetricProjection(VPRKGauss(2))`.**
+  The parasitic mode below is a property of the degenerate formulation, not of one equilibrium, so
+  the projected method is now the default in `GuidingCenter4dTests` rather than a special case. One
+  call keeps the unprojected method: the `ThetaPinchField` loop, where `p` is an exact invariant so
+  there is no drift to project, and the projection's inner Hermite guess re-introduces the
+  degenerate-history warning that block exists to avoid.
+
+### Bug fixes
+
+- **The 4D guiding centre right-hand sides could not be differentiated through.** Every method in
+  `src/guiding_center_4d/guiding_center_4d_common.jl` pinned all of its array arguments to a single
+  element type — `f(y::AbstractVector{DT}, t, q::AbstractVector{DT}, …) where {DT}` — and the
+  `κ`-dependent pair additionally pinned the scalar, `κ::DT`. That is satisfiable only when every
+  argument has the *same* type, so as soon as a caller differentiates with respect to one of them and
+  leaves the others alone, no method matches. `SymmetricProjection` does exactly that, and
+  `iodeproblem_dg` therefore died with `MethodError: no method matching guiding_center_4d_g(::Vector{ForwardDiff.Dual{…}}, ::Float64, …)`.
+  The constraint bought nothing — no method used `DT` for dispatch, and only two used it at all, to
+  size a workspace — so it is removed throughout; the two workspace sites now take their element type
+  from `q`, which is what they hold. The `κ` formulation is consequently integrated with the same
+  projected method as everything else.
+- **With the projected method most of the tests' custom time steps became unnecessary**, and were
+  dropped in favour of each module's own `DEFAULT_TIMESPAN`/`DEFAULT_TIMESTEP`:
+  `TokamakMediumCartesian`, `TokamakMediumCylindrical`, `TokamakSmallCylindrical`,
+  `TokamakSmallToroidal`, `SymmetricField` and both formulations of `SolovevIterXpoint`'s `trapped`
+  orbit — for which the default is not merely adequate but *better*, 8.8E-5 against 2.2E-1 at the
+  `Δt = 1E4` it used to override with. Two overrides are load-bearing and stay, now with the
+  measurement that justifies them: `TokamakSmallCartesian`'s variational calls (at the default
+  `Δt = 500`, `deeply_passing` reaches 3.2E+41 with 495 warnings, against 6.1E-4 and silence at
+  `Δt = 10`), and `SolovevIterXpoint`'s (at the default the variational and `ode` orbits agree, but
+  their shared energy error is O(1) and `deeply_passing` emits 39 line-search-at-round-off messages
+  that no `f_abstol` between 1E-12 and 1E-10 removes).
+- **Larger time steps for `SolovevSymmetricField` are not viable**, contrary to what the fixed-span
+  convergence table suggests. That table's apparent improvement beyond `Δt = 5E3` is an artifact of
+  holding the span fixed, so a larger step means fewer steps and less accumulated instability — at
+  `Δt = 1E5` the run is ten steps. Holding the step *count* fixed at 1000 gives the ordinary monotone
+  picture: 9.4E-8 at `Δt = 1E-1`, 1.9E-3 at `1E0`, 1.8E+11 at `1E1`, 1.3E+32 at `1E4`. `Δt = 1E0` is
+  the largest step at which the equilibrium is resolved.
+- **Why the projection is needed at all.** The degenerate variational discretisation carries a
+  parasitic mode
+  that VPRK does not control and that *grows as the step shrinks* — the energy error runs 2.0E-1 at
+  `Δt = 5E3`, 2.3E+3 at `Δt = 1E2`, 1.5E+18 at `Δt = 1E1` and 6.2E+25 at `Δt = 1E0`, with `|R|`
+  reaching 1.3E+5 against a machine radius of 2.5, which is why the old two-step default looked
+  healthy. The solver's iteration cap was a symptom: it was being asked to continue a trajectory that
+  had already left the device, and no solver setting repairs that — `DogLeg` throws on a NaN
+  direction for all four orbits, `StrongWolfe` and `Static` throw a `SingularException` or cap just
+  as hard, and `PartitionedGauss(2)` is singular. `SymmetricProjection` constrains the drift off
+  `p = ϑ(q)` that the mode feeds on; all four orbits then integrate silently and stay bounded at
+  `|R| ≤ 6.5`, matching `Gauss(2)`. `MidpointProjection` is not sufficient. This restores stability,
+  not accuracy — the projected energy error is O(1) against the `odeproblem`'s 1.9E-3 — so on this
+  equilibrium the variational formulation is not a quantitative result, and the tests assert only
+  that the integration completes.
+- **`PauliParticle3d.TokamakSmallCartesian.iodeproblem()` was left at the module default
+  `Δt = 500`** (the other 174), at which the variational integrators do not converge — a limit
+  `test/guiding_center_4d_tests.jl` already recorded for the same equilibrium, and which the `pode`
+  and `hode` calls beside it already worked around with `Δt = 10`. It took 22.8 Newton iterations per
+  step and capped on 27 of 100; at `Δt = 10` it takes 2.0, caps on none and runs 21x faster.
+- The calls that deliberately pass no options, to exercise the library defaults —
+  `integrate(prob, Gauss(2))` in `structure_tests.jl` and the three in `plots_tests.jl` — are silent
+  under the sized default and are asserted to be. They were the dominant source of warnings before,
+  and `quiet_solver_warnings.jl` described them as irreducible.
+
+### Documentation
+
+- `docs/src/findings.md` **retracts a claim measurement disproved**: that `SolovevSymmetricField`
+  "never showed up in CI only because its block runs `ode` rather than `iode`, and `Gauss` converges
+  on these problems in one or two iterations regardless of tolerance". `Gauss(2)` averaged 29.4
+  iterations there and capped on 45 % of steps. This was **not** a SimpleSolvers 0.10 regression:
+  under GeometricIntegrators 0.16.10 / SimpleSolvers 0.9.2 the same block capped 28 of 100 steps at
+  0.524 ms/step, against 45 at 0.346 ms/step now. 0.10 reports more of the failures, runs 1.5x
+  faster, and names the cause — the line search reporting `φ'(0)` inconsistent with its merit — which
+  is what made them findable.
+- `docs/src/audit.md` gains a *Nonlinear solver tolerances* section stating the `‖ϑ‖ eps` floor, the
+  sized library default and why `f_reltol` is left alone, which the test modules and scripts now
+  reference instead of restating.
+- `scripts/study_guiding_center_3d_conditioning.jl` **corrects a wrong number**: a singular
+  constraint pair was said to make the line search "grind through its thousand-iteration budget".
+  The line-search budget is `linesearch_max_iterations`, whose default is 60; the thousand was
+  `max_iterations`, which bounds the outer Newton iteration. Since 0.10 the line search also checks
+  its anchor before descending, and a stalled solve stops after `max_stalls = 2` steps.
+- `scripts/guiding_center_3d_dipole.jl` and `scripts/guiding_center_3d_quadratic_potentials.jl` asked
+  for `f_abstol = 8eps()` and `2eps()` against round-off floors of `3.4E-14` and `4.0E-15`; both now
+  use `1E-12`.
+
+
 ## [0.3.0] - 2026-07-30
 
 **This release renames every problem constructor and their keyword arguments.** There are no
