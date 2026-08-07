@@ -19,26 +19,29 @@ module GuidingCenter4dTokamakSmallToroidal
 
     AxisymmetricTokamakToroidal.@code() # inject magnetic field code
 
+    # Left-handed chart: `det(DF) < 0`. See `ORIENTATION` in `gc_common.jl`.
+    const ORIENTATION = -1
+
     include("coordinate_transformations.jl")
     include("gc_common.jl")
     include("gc_equations.jl")
 
-    # This model integrates in rescaled time, `Δs = Δt / ωabs`. The factor is `ωabs` and *not* the
-    # physical `B*∥` — see the note on `ωabs` in `gc_common.jl`. The distinction is at its widest in
-    # this chart: at `initial_conditions_deeply_passing` `ωabs = -0.04993` while `B*∥ = +0.9511`, the
-    # same `B*∥` the cartesian and cylindrical charts of this equilibrium give. The factor of twenty
-    # is the volume element `J = 0.0525` of a toroidal chart at `r = 0.05`, and the sign is its
-    # handedness. The 4D guiding centre runs this equilibrium at `Δt = 500` over `(0, 5E5)`, so
-    # `|Δs| = 500 / 0.04993 ≈ 1E4`.
+    # This model integrates in rescaled time, `Δs = Δt / ωabs`. The factor is the phasespace Jacobian
+    # `ωabs = J B*∥` and *not* the physical `B*∥` — see the note on `ωabs` in `gc_common.jl`. The
+    # distinction is at its widest in this chart: at `initial_conditions_deeply_passing`
+    # `ωabs = 0.04993` while `B*∥ = 0.9511`, the same `B*∥` the cartesian and cylindrical charts of
+    # this equilibrium give. The factor of twenty between them is the volume element `J = 0.0525` of a
+    # toroidal chart at `r = 0.05`. The 4D guiding centre runs this equilibrium at `Δt = 500` over
+    # `(0, 5E5)`, so `Δs = 500 / 0.04993 ≈ 1E4`.
     #
-    # It is deliberately not the 500 the `Cartesian` and `Cylindrical` charts carry: there `|ωabs| ≈ 1`
-    # and the rescaled step nearly coincides with the physical one. Levelling this to 500 leaves the
-    # integration looking healthy — a thousand steps at either value gives the same 4.277E-3 relative
-    # energy error, since each covers a different physical span — and is caught only by the rescaling
-    # assertion in `test/gyro_kinetics_4d_tests.jl`.
-    #
-    # The step below is positive, so `s` advances while physical time runs *backwards*, as in the
-    # cylindrical chart. `TODO.md` carries the question of whether to rescale by `B*∥` instead.
+    # It is deliberately not the 500 the `Cartesian` and `Cylindrical` charts carry: there `ωabs ≈ 1`
+    # and the rescaled step nearly coincides with the physical one. Levelling this to 500 would leave
+    # the integration looking *better* rather than broken — a thousand Strang steps give 5.8E-4 in
+    # relative energy at `Δs = 1E4` against 1.4E-6 at `Δs = 500` — because the second run silently
+    # covers a twentieth of the physical span, `2.5E4` against `4.99E5`, not because it resolves the
+    # orbit better. That is why the step is pinned by the rescaling assertion in
+    # `test/gyro_kinetics_4d_tests.jl` rather than by an energy threshold, which would prefer the
+    # wrong value.
     const DEFAULT_TIMESTEP = 1E4
     const DEFAULT_TIMESPAN = (0.0, 1E7)
 

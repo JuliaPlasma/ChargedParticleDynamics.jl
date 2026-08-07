@@ -63,6 +63,17 @@ which is what this module integrates.
     integrating ``dt/ds = B^{\star}_{\parallel}`` alongside. The *orbits* are unaffected, which is
     all a PIC pusher needs.
 
+!!! note "In a curvilinear chart the factor is `ωabs = J B*∥`"
+    The expressions above are written in the flat measure of a cartesian chart, where the phasespace
+    Jacobian is ``B^{\star}_{\parallel}``. In a general chart it is the Liouville density
+    ``\sqrt{\det \Omega} = J \, B^{\star}_{\parallel}``, which is what
+    [`ωabs`](@ref ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallCylindrical.ωabs)
+    computes and what the implemented ``dt = \omega_{abs} \, ds`` uses. Its magnitude is therefore
+    chart-dependent — the three charts of the small tokamak give `0.9511`, `0.9986` and `0.0499` for
+    a common `B*∥ = 0.9511` — while its *sign* is not: it is a measure density and positive in every
+    chart. Getting that sign wrong reverses the orbit, which is what happened before each module
+    declared its `ORIENTATION`; see [Findings](@ref) and `ωabs`.
+
 The point of the rescaling is that the new right-hand side is divergence-free,
 ```math
 \nabla \cdot \bigg( B^{\star}_{\parallel} \dfrac{dR}{dt} \bigg)

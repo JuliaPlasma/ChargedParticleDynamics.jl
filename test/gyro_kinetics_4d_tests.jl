@@ -66,12 +66,15 @@ end
     using GeometricIntegrators
     using Test
 
-    # The notes absorb the phasespace Jacobian into the distribution function, f̃ = B*∥ f, which
+    # The notes absorb the phasespace Jacobian into the distribution function, f̃ = ωabs f, which
     # multiplies the guiding centre characteristics through by it. The two vector fields must
-    # therefore be exactly proportional, with `ωabs` the factor — same orbits, traversed in the
-    # reparametrised time dt = `ωabs` ds. On this equilibrium `ωabs` is negative, the Solov'ev chart
-    # being left-handed, so the guiding centre orbit is traversed backwards in `s`; that is a
-    # property of the factor and not a defect, and the equality below is what pins it.
+    # therefore be exactly proportional, with `ωabs` the factor — same orbits, traversed in the same
+    # direction, in the reparametrised time dt = `ωabs` ds.
+    #
+    # `ωabs = J B*∥` is positive in every chart, including this left-handed Solov'ev one, because it
+    # carries the chart's `ORIENTATION`; see `ωabs` in `gc_common.jl`. The equality below is what
+    # pins the two together, and the "one orbit in three charts" block at the end of this file is
+    # what pins the sign.
     GK = GuidingCenter4dSolovevIterXpoint
     GC = SolovevIterXpoint
 
@@ -172,46 +175,23 @@ end
     # ϑᵢ = Aᵢ + u bᵢ in covariant components and Ω = dϑ need none — and the Liouville measure is
     # √det Ω in any chart, which is `ωabs` as this module computes it. So the volume-preserving
     # splitting must work unchanged in cylindrical and toroidal coordinates, and this is the assertion
-    # that says so. It does, including where `ωabs` is negative: a coordinate curl is divergence-free
-    # whatever sign the Jacobian gives it, so the sign reverses `s` and nothing else.
+    # that says so. Applying the chart's `ORIENTATION` to the field does not disturb it: negating a
+    # divergence-free field leaves it divergence-free.
     #
     # Each module's time step is the 4D guiding centre's divided by the rescaling factor at its own
     # initial condition, since the independent variable is the rescaled time with dt = `ωabs` ds.
     # Getting that factor wrong by ~2·10² is exactly the bug the audit found in the one shipped
     # equilibrium.
     #
-    # `ωabs` is `det(DF) · B*∥`, not `B*∥`. It contracts the coordinate curl `∂₂ϑ₃ - ∂₃ϑ₂`, which
-    # is `det(DF)` times the contravariant one, against `b`, so it inherits the chart's handedness
-    # and comes out **negative in the six left-handed charts** — the cylindrical, toroidal and
-    # Solov'ev ones; see `orientation` in `ElectromagneticFields`. Dividing it back out recovers a
-    # chart-independent `B*∥`: the small tokamak gives 0.9511 in all three of its charts. Only the
-    # magnitude is a statement about the step, hence `abs` below. The sign is not free to choose —
-    # the vector field carries the same factor, so `dt = ωabs ds` runs `s` opposite to `t` there,
-    # which `scripts/study_gyrokinetic_rescaling.jl` relies on and confirms.
+    # `ωabs` is the phasespace Jacobian `J B*∥`, and it is **positive in every chart**. The bare
+    # contraction it is built from is `det(DF) · B*∥` — `∂₂ϑ₃ - ∂₃ϑ₂` is the coordinate curl, which
+    # carries the signed Jacobian — so each module declares an `ORIENTATION` that restores it; see
+    # `ωabs` in `gc_common.jl`. Both facts are asserted below: that the declared constant really is
+    # the handedness of the chart, and that the factor that reaches the dynamics is positive.
     equilibria = sort(filter(n -> isa(getfield(GyroKinetics4d, n), Module) && n !== :GyroKinetics4d,
                              names(GyroKinetics4d, all = true)))
 
     @test length(equilibria) == 8
-
-    # The expected sign of `ωabs` per equilibrium, which is the handedness of its chart and nothing
-    # else. Spelled out rather than derived from the module name: `SolovevSymmetric` is a *cartesian*
-    # chart despite the name, so a rule like `occursin("Cartesian", …)` encodes the right answer for
-    # the eight modules that exist today and the wrong one for the first equilibrium that breaks the
-    # naming pattern. `GyroKinetics4d` cannot currently host `SolovevSymmetricField` — see the note in
-    # `src/GyroKinetics4d.jl` — but the table should not be what has to be rediscovered if it can.
-    #
-    # The coverage assertion below is the point of writing it out: adding an equilibrium without
-    # deciding its handedness fails here rather than silently inheriting a substring's guess.
-    ORIENTATION = Dict(:GuidingCenter4dSolovevIter              => -1,
-                       :GuidingCenter4dSolovevIterXpoint        => -1,
-                       :GuidingCenter4dTokamakIterCylindrical   => -1,
-                       :GuidingCenter4dTokamakMediumCartesian   => +1,
-                       :GuidingCenter4dTokamakMediumCylindrical => -1,
-                       :GuidingCenter4dTokamakSmallCartesian    => +1,
-                       :GuidingCenter4dTokamakSmallCylindrical  => -1,
-                       :GuidingCenter4dTokamakSmallToroidal     => -1)
-
-    @test sort(collect(keys(ORIENTATION))) == equilibria
 
     for name in equilibria
         M = getfield(GyroKinetics4d, name)
@@ -231,9 +211,18 @@ end
         ωfac = M.ωabs(0.0, q₀, params)
         @test 0.1 < abs(Δs * ωfac / G.DEFAULT_TIMESTEP) < 10.0
 
-        # And the handedness is what fixes its sign, so assert that too rather than only its
-        # magnitude: a chart whose `ωabs` came out with the wrong sign would otherwise pass above.
-        @test sign(ωfac) == ORIENTATION[name]
+        # The factor that reaches the dynamics is positive, so `s` runs with `t`. This is the
+        # assertion that would have caught the sign the coordinate curl used to carry into the
+        # vector field, and it holds for every chart rather than per chart.
+        @test ωfac > 0
+
+        # And the module's declared `ORIENTATION` really is its chart's handedness, checked against
+        # the bare contraction rather than restated: `ORIENTATION · (bare) = ωabs > 0` means the
+        # constant and the chart agree. Declaring the wrong one would silently reverse the orbit.
+        bare = M.ω₁(0.0, q₀) * M.dϑ₁dx₄(0.0, q₀) +
+               M.ω₂(0.0, q₀) * M.dϑ₂dx₄(0.0, q₀) +
+               M.ω₃(0.0, q₀) * M.dϑ₃dx₄(0.0, q₀)
+        @test sign(bare) == M.ORIENTATION
 
         step(q) = integrate(M.sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)),
                             strang_composition()).q[end]
@@ -245,6 +234,65 @@ end
             J[:, j] = (step(qp) .- step(qm)) ./ 2h
         end
         @test abs(det(J) - 1) < 1E-7
+    end
+
+end
+
+
+@safetestset "Gyrokinetic GC Model: one orbit, three charts, one direction                           " begin
+
+    using ChargedParticleDynamics
+    using ChargedParticleDynamics.GyroKinetics4d
+    using ChargedParticleDynamics.GuidingCenter4d
+    using Test
+
+    # The regression test for the sign of the rescaling factor.
+    #
+    # `ωabs` is built from a *coordinate* curl, which carries `det(DF)`, so before each module
+    # declared its `ORIENTATION` the factor was negative in the six left-handed charts — and since
+    # the vector field carries the same factor, the model integrated those orbits **backwards**.
+    # That is not a reparametrisation of time but chart-dependence: the same physical particle in
+    # the same tokamak circulated one way in the cartesian chart and the other way in the
+    # cylindrical one. Nothing else in the suite noticed, because everything else is a magnitude —
+    # the proportionality `v_gk = ωabs v_gc` holds with either sign, and `|det J| = 1` is
+    # insensitive to direction.
+    #
+    # So this asserts the one thing that is not a magnitude. The small tokamak carries all three
+    # charts of a single equilibrium; started from the same physical point with the same `u` and
+    # `μ`, the *physical* toroidal velocity `(scale factor) × (coordinate derivative) / ωabs` must
+    # be the same number in all three, and must equal the guiding centre's.
+    GK = GyroKinetics4d
+    G4 = GuidingCenter4d
+
+    params = (μ = 2.448E-6,)
+    u = 1.623E-3
+
+    # (gyrokinetic module, guiding centre module, toroidal coordinate index, its scale factor)
+    charts = ((GK.GuidingCenter4dTokamakSmallCartesian,   G4.TokamakSmallCartesian,   2, q -> 1.0),
+              (GK.GuidingCenter4dTokamakSmallCylindrical, G4.TokamakSmallCylindrical, 3, q -> q[1]),
+              (GK.GuidingCenter4dTokamakSmallToroidal,    G4.TokamakSmallToroidal,    3, q -> 1.0 + q[1] * cos(q[2])))
+
+    reference = nothing
+
+    for (Mk, Mg, i, scale) in charts
+        q = [Mg.from_cartesian(0, [1.05, 0.0, 0.0])..., u]
+
+        vgk = zeros(4); Mk.v(vgk, 0.0, q, params)
+        vgc = zeros(4); Mg.guiding_center_4d_v(vgc, 0.0, q, params)
+        ω = Mk.ωabs(0.0, q, params)
+
+        # the gyrokinetic field, un-rescaled, is the guiding centre field — sign included
+        @test ω > 0
+        @test vgk ≈ ω .* vgc
+
+        # and the physical toroidal velocity is chart-independent, which is the statement that
+        # failed while the factor was signed
+        toroidal = scale(q) * vgk[i] / ω
+        @test toroidal ≈ scale(q) * vgc[i]
+
+        reference === nothing && (reference = toroidal)
+        @test toroidal ≈ reference
+        @test toroidal > 0
     end
 
 end

@@ -355,24 +355,33 @@ drift and gyroradius written out locally rather than by depending on `GuidingCen
 Pauli family directly comparable with the guiding centre one at whatever order is wanted, and would give
 the `test/model_agreement_tests.jl` threshold a reason to be tight rather than merely measured.
 
-## Should `ωabs` carry the chart's orientation?
+## Should `ωabs` carry the chart's orientation? — answered: no, and it was a bug
 
-`ElectromagneticFields` 0.7.0 exposed that `GyroKinetics4d.ωabs` is `det(DF) · B*∥` and not `B*∥`: it
-contracts the coordinate curl `∂₂ϑ₃ - ∂₃ϑ₂`, which carries the *signed* Jacobian, against `b`. So it is
-negative in the six left-handed-chart equilibria while the physical `B*∥` is positive, and since the
-vector field carries the same factor, **`s` runs opposite to physical time there**. Until 0.7.0 the
-reversed `b` cancelled it and nobody could have noticed.
+`ElectromagneticFields` 0.7.0 exposed that `GyroKinetics4d.ωabs` contracted the coordinate curl
+`∂₂ϑ₃ - ∂₃ϑ₂`, which carries the *signed* Jacobian, so it came out `det(DF) · B*∥` — negative in the six
+left-handed-chart equilibria. This section used to record that as a benign reparametrisation, on the
+grounds that the splitting stays volume preserving and `v_gk = ωabs v_gc` still holds. Both are true and
+neither is the point.
 
-Nothing is broken by it — the coordinate divergence of a coordinate curl vanishes identically whatever
-its sign, so the splitting is still volume preserving; `v_gk = ωabs v_gc` still holds exactly; and
-`study_gyrokinetic_rescaling.jl` still recovers the same orbit integrating the guiding centre model over
-a negative `t` interval. The tests assert the sign per chart rather than working around it.
+The factor is the phasespace Jacobian `√det Ω = J B*∥`, absorbed into the distribution function as
+`f̃ = ωabs f`. It is a measure density and cannot be negative — as the name says. Carried into the vector
+field, the sign made the model **chart-dependent**: the same physical particle circulated one way in the
+cartesian chart of the small tokamak and the other way in its cylindrical chart. Nothing in the suite
+caught it because every other assertion was a magnitude.
 
-The question left open is whether the module should instead define its rescaling by the physical `B*∥`,
-which would negate the vector field in those charts so that `s` and `t` always run together. That is a
-one-line change with a genuine argument on each side: the present convention is what makes the
-*coordinate* right-hand side divergence-free by construction, while the alternative is what makes the
-documented `dt = B*∥ ds` chart-independent. Decide it deliberately, not by patching a sign.
+Resolved by giving each module an `ORIENTATION = ±1` and applying it in `ωabs` and `v`. The trade-off
+this section posed — divergence-free coordinate right-hand side *versus* chart-independent `dt` — was
+not real: negating a divergence-free field leaves it divergence-free and each subsystem Hamiltonian, so
+the splitting is untouched. `s` now runs with `t` in every chart, and the already-declared positive
+`DEFAULT_TIMESTEP`s are correct, which under the signed factor they were not.
+
+Rescaling by the *physical* `B*∥` instead — the other option this section listed — remains rejected, and
+now for a stated reason: it is a scalar rather than a density, so the right-hand side would no longer be
+a pure coordinate curl and would lose the divergence-free property that is the module's reason to exist.
+
+`test/gyro_kinetics_4d_tests.jl` asserts `ωabs > 0` for all eight, checks each declared `ORIENTATION`
+against its chart, and compares the physical toroidal velocity across all three charts of the small
+tokamak — the one statement that is not a magnitude.
 
 ## Order of the composition methods for the splitting
 

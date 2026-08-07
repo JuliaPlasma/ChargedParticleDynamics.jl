@@ -19,14 +19,17 @@ module GuidingCenter4dTokamakSmallCartesian
 
     AxisymmetricTokamakCartesian.@code() # inject magnetic field code
 
+    # Right-handed chart: `det(DF) > 0`. See `ORIENTATION` in `gc_common.jl`.
+    const ORIENTATION = +1
+
     include("coordinate_transformations.jl")
     include("gc_common.jl")
     include("gc_equations.jl")
 
-    # Rescaled time: `Δs = Δt / ωabs`, where `ωabs` is this module's rescaling factor and *not* the
-    # physical `B*∥` — see the note on `ωabs` in `gc_common.jl`. Here the two agree, the chart being
-    # right-handed: `ωabs = +0.9511 = B*∥` at `initial_conditions_deeply_passing`. The 4D guiding
-    # centre runs this equilibrium at `Δt = 500` over `(0, 5E5)`, so `Δs = 500 / 0.9511 ≈ 5E2`.
+    # Rescaled time: `Δs = Δt / ωabs`, where `ωabs = J B*∥` is the phasespace Jacobian and *not* the
+    # physical `B*∥` — see the note on `ωabs` in `gc_common.jl`. Here the two agree, this chart being
+    # cartesian and so `J = 1`: `ωabs = 0.9511 = B*∥` at `initial_conditions_deeply_passing`. The 4D
+    # guiding centre runs this equilibrium at `Δt = 500` over `(0, 5E5)`, so `Δs = 500 / 0.9511 ≈ 5E2`.
     const DEFAULT_TIMESTEP = 5E2
     const DEFAULT_TIMESPAN = (0.0, 5E5)
 

@@ -18,20 +18,19 @@ module GuidingCenter4dTokamakSmallCylindrical
 
     AxisymmetricTokamakCylindrical.@code() # inject magnetic field code
 
+    # Left-handed chart: `det(DF) < 0`. See `ORIENTATION` in `gc_common.jl`.
+    const ORIENTATION = -1
+
     include("coordinate_transformations.jl")
     include("gc_common.jl")
     include("gc_equations.jl")
 
-    # Rescaled time: `Δs = Δt / ωabs`, where `ωabs` is this module's rescaling factor and *not* the
-    # physical `B*∥` — see the note on `ωabs` in `gc_common.jl`. `(R, Z, ϕ)` is left-handed, so the two
-    # differ in sign and by the volume element: at `initial_conditions_deeply_passing`
-    # `ωabs = -0.9986` while `B*∥ = +0.9511`, the same `B*∥` the cartesian chart of this equilibrium
-    # gives. The 4D guiding centre runs it at `Δt = 500` over `(0, 5E5)`, so `|Δs| = 500 / 0.9986 ≈ 5E2`
-    # — the magnitudes nearly coincide here, which is why the sign went unnoticed until 0.7.0.
-    #
-    # The step below is positive, so `s` advances while physical time runs *backwards*. That is a
-    # property of the factor rather than a defect; `TODO.md` carries the question of whether this
-    # module should rescale by `B*∥` instead so that `s` runs with `t`.
+    # Rescaled time: `Δs = Δt / ωabs`, where `ωabs = J B*∥` is the phasespace Jacobian and *not* the
+    # physical `B*∥` — see the note on `ωabs` in `gc_common.jl`. They differ by the volume element
+    # `J = R = 1.05` here: at `initial_conditions_deeply_passing` `ωabs = 0.9986` while `B*∥ = 0.9511`,
+    # the same `B*∥` the cartesian chart of this equilibrium gives. The 4D guiding centre runs it at
+    # `Δt = 500` over `(0, 5E5)`, so `Δs = 500 / 0.9986 ≈ 5E2` — the two nearly coincide here, which
+    # is why this chart is the least useful of the three for telling the factors apart.
     const DEFAULT_TIMESTEP = 5E2
     const DEFAULT_TIMESPAN = (0.0, 5E5)
 

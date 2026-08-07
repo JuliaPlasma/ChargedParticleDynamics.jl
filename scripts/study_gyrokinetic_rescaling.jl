@@ -11,14 +11,17 @@
 # This script establishes that, first pointwise and then by integrating both models and comparing
 # where they end up.
 #
-# The factor is `ωabs`, and on this equilibrium it is NEGATIVE. `ωabs` is `det(DF) · B*∥` rather than
-# `B*∥`: it contracts the coordinate curl `∂₂ϑ₃ - ∂₃ϑ₂`, which carries the signed Jacobian, against b,
-# so it inherits the handedness of the chart — and the Solov'ev chart is left-handed. The physical
-# B*∥ is positive; dividing the factor out recovers it, chart-independently. Nothing here needs a
-# correction for that, and the point of the third section is that it does not: integrating the guiding
-# centre model over a negative t interval still lands on the same orbit. What it does mean is that s
-# runs opposite to physical time here. Until ElectromagneticFields 0.7.0 the reversed b in this chart
-# cancelled the sign and ωabs came out positive everywhere, which is why it was written as B*∥ below.
+# The factor is `ωabs = J B*∥`, the phasespace Jacobian, and it is positive here as in every chart.
+# It is not `B*∥`: it contracts the coordinate curl `∂₂ϑ₃ - ∂₃ϑ₂`, which carries the *signed*
+# Jacobian, against b, so the bare contraction inherits the handedness of the chart — and the
+# Solov'ev chart is left-handed. Each module therefore declares an `ORIENTATION` that restores it,
+# which is what keeps the factor a measure density rather than a signed one.
+#
+# That sign was not cosmetic. Until it was applied, the vector field carried the negative factor and
+# this model integrated the six left-handed-chart equilibria *backwards* — the same physical particle
+# circulated one way in the cartesian chart of a tokamak and the other way in its cylindrical chart.
+# ElectromagneticFields 0.7.0 is what exposed it: before that the reversed b cancelled the sign and
+# the bare contraction came out positive everywhere, which is why it used to be written as B*∥ below.
 #
 # See docs/src/findings.md, "The gyrokinetic model is the guiding centre model in rescaled time" and
 # "The orientation shows through anywhere a coordinate curl appears".
@@ -33,7 +36,7 @@ using Printf
 const GK = ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
 const GC = ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint
 
-"v_gyrokinetic(q) = ωabs(q) · v_guiding_centre(q), pointwise. See the header on ωabs's sign."
+"v_gyrokinetic(q) = ωabs(q) · v_guiding_centre(q), pointwise. See the header on ωabs's orientation."
 function pointwise()
     println("Pointwise:  max |v_gk - ωabs · v_gc| / |v_gk|\n")
     @printf("  %-38s %-14s %s\n", "q = (R₁, R₂, R₃, u)", "ωabs", "rel. difference")
@@ -74,7 +77,7 @@ relation is t = ∫₀ˢ ωabs(q(s')) ds', so replacing it by ωabs(q₀) s leav
 therefore shrinks quadratically with the interval and is independent of the step.
 """
 function orbits()
-    println("\nOrbit equivalence: GK over s against GC over t = ωabs(q₀) s, which is negative here\n")
+    println("\nOrbit equivalence: GK over s against GC over t = ωabs(q₀) s\n")
     @printf("  %-12s %-14s %s\n", "s interval", "endpoint diff", "ratio")
 
     q₀, par = GK.initial_conditions_deeply_passing()

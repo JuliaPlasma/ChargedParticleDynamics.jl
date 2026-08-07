@@ -103,20 +103,30 @@ and worked around rather than unnoticed.
 
 Two derived quantities in this package are built from `∂₂ϑ₃ - ∂₃ϑ₂`-shaped expressions, which are
 `det(DF)` times the contravariant curl rather than `|det DF|` times it. Both therefore carry the
-chart's handedness, and both come out **negative in the left-handed charts**:
+chart's handedness, and both come out **negative in the left-handed charts**. What separates them is
+whether that sign reaches the dynamics — for one it does not, and for the other it did:
 
 * `λₒ = {g₁, g₂}` and the compact form's `D`, in the 3D guiding centre model. In the table below
   `λₒ(:g23)` and `b₂` now share a sign in the left-handed charts and have opposite signs in the
   right-handed ones, where before the reversal made it look uniform. Nothing in the dynamics depends
   on it — the multipliers divide by `λₒ` and are multiplied by derivatives carrying the same factor.
-* `ωabs` in the gyrokinetic model, which is `det(DF) · B*∥` and not `B*∥`. Dividing the factor back
-  out recovers a chart-independent `B*∥`: the small tokamak gives `0.9511` in its cartesian,
-  cylindrical and toroidal charts alike, where `ωabs` reads `+0.9511`, `-0.9986` and `-0.0499`. This
-  one is visible, because the rescaled time is defined by `dt = ωabs ds`, so **`s` runs opposite to
-  physical time in six of the eight gyrokinetic equilibria.** The splitting is still volume
-  preserving — the coordinate divergence of a coordinate curl vanishes identically whatever its sign
-  — and the proportionality `v_gk = ωabs v_gc` still holds exactly. Until 0.7.0 the two sign errors
-  cancelled and `ωabs` came out positive everywhere.
+  Nothing to do here.
+* `ωabs` in the gyrokinetic model. This one **did** reach the dynamics, because the rescaled time is
+  defined by `dt = ωabs ds` and the vector field carries the same factor: with the bare contraction
+  the model integrated the six left-handed-chart equilibria *backwards*, so the same physical
+  particle circulated one way in the cartesian chart of a tokamak and the other way in its
+  cylindrical chart. That is chart-dependence, not a reparametrisation, and it is a defect.
+
+  It is fixed rather than documented. `ωabs` is the phasespace Jacobian `√det Ω = J B*∥`, a measure
+  density and so non-negative; each module declares an `ORIENTATION` that restores it, and the
+  factor is now positive in every chart — `0.9511`, `0.9986` and `0.0499` for the three charts of the
+  small tokamak, whose common physical `B*∥` is `0.9511`. The magnitude is chart-dependent through
+  `J`, which is what a density should be; only the sign was wrong. Applying the orientation costs
+  nothing, since negating a divergence-free field leaves it divergence-free. See "The gyrokinetic
+  model is the guiding centre model in rescaled time" below.
+
+  Until 0.7.0 none of this was visible: the two sign errors cancelled and the bare contraction came
+  out positive everywhere.
 
 
 ## Conditioning of the 3D guiding centre constraint formulations
@@ -397,34 +407,44 @@ The two vector fields are therefore exactly proportional, with `ωabs` the facto
 
 | q = (R₁, R₂, R₃, u) | `ωabs` | max rel. diff of `v_gk - ωabs · v_gc` |
 |---|---|---|
-| [6.2, 0.3, 0.0, 0.34]  | -4.354e+04 | 0.00e+00 |
-| [5.5, -0.8, 1.1, -0.2] | -2.113e+04 | 1.21e-16 |
-| [7.0, 0.5, 2.0, 0.5]   | -9.258e+04 | 1.18e-16 |
+| [6.2, 0.3, 0.0, 0.34]  | 4.354e+04 | 0.00e+00 |
+| [5.5, -0.8, 1.1, -0.2] | 2.113e+04 | 1.21e-16 |
+| [7.0, 0.5, 2.0, 0.5]   | 9.258e+04 | 1.18e-16 |
 
 and the six subsystems of the splitting sum to the full field exactly (difference 0.00e+00, not
 merely small).
 
-**The factor is negative here, and that is the chart and not a defect.** `ωabs` is `det(DF) · B*∥`,
-and the Solov'ev chart is left-handed, so it carries the opposite sign to the physical
-`B*∥ > 0`; see "The orientation shows through anywhere a coordinate curl appears" above. Six of the
-eight gyrokinetic equilibria are in this position and the two cartesian ones are not. The consequence
-is that **`s` runs opposite to physical time in those six**: the relation is `dt = ωabs ds` with
-`ωabs < 0`. Everything else survives it — the proportionality above is exact, the splitting is still
-volume preserving, and the comparison below still recovers the same orbit — because a coordinate curl
-is divergence-free whatever its sign. Until `ElectromagneticFields` 0.7.0 the reversed `b` cancelled
-this and `ωabs` came out positive in every chart.
+**The factor has to be positive, and making it so was a bug fix.** `ωabs` is the phasespace Jacobian
+`√det Ω = J B*∥`, a measure density — it is absorbed into the distribution function as `f̃ = ωabs f`,
+and a distribution rescaled by a negative number is not one. But it is computed from a *coordinate*
+curl, which carries `det(DF)` rather than `J`, so the bare contraction is negative in the six
+left-handed-chart equilibria; see "The orientation shows through anywhere a coordinate curl appears"
+above. Each module now declares an `ORIENTATION` that restores it, and `ωabs > 0` everywhere.
 
-**`s` is the "slow" variable either way.** One unit of `s` covers `|ωabs| ≈ 2e2` units of physical
+Before that, the vector field carried the negative factor and this model **integrated those six
+equilibria backwards**. That is not a reparametrisation of time but chart-dependence: the same
+physical particle in the same tokamak circulated one way in the cartesian chart and the other way in
+the cylindrical one. Nothing in the suite noticed, because everything else it asserted was a
+magnitude — the proportionality above holds with either sign, and `|det J| = 1` cannot see a
+direction. `test/gyro_kinetics_4d_tests.jl` now compares the physical toroidal velocity across all
+three charts of the small tokamak, which is the one statement that is not.
+
+Applying the orientation costs nothing else: negating a divergence-free field leaves it
+divergence-free, and each of the six subsystems stays symplectic in the pair it moves, so the
+splitting is volume preserving exactly as before. `ωabs` keeps a chart-dependent *magnitude* through
+`J`, which is what a density should do. Until `ElectromagneticFields` 0.7.0 none of this was visible:
+the reversed `b` cancelled the sign and the bare contraction came out positive in every chart.
+
+**`s` is the "slow" variable.** One unit of `s` covers `ωabs ≈ 2e2` units of physical
 time at the shipped ITER-like initial condition. Integrating the gyrokinetic model over `s` and the
-guiding centre model over `t = ωabs(q₀) s` — a *negative* interval, so backwards — lands in the same
-place:
+guiding centre model over `t = ωabs(q₀) s` lands in the same place:
 
 | s interval | endpoint difference | ratio |
 |---|---|---|
-| 4e-03 | 1.69e-08 | |
-| 2e-03 | 4.20e-09 | 4.0 |
+| 4e-03 | 1.64e-08 | |
+| 2e-03 | 4.13e-09 | 4.0 |
 | 1e-03 | 1.04e-09 | 4.0 |
-| 5e-04 | 2.61e-10 | 4.0 |
+| 5e-04 | 2.60e-10 | 4.0 |
 
 The residual is second order in the interval and independent of the step, which identifies it as
 the error of the *linear* time map rather than of the integrator: the exact relation is

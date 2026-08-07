@@ -99,28 +99,44 @@ Two dependency updates, of different reach. The solver stack — `GeometricInteg
 
 ### Fixed
 
-- **`GyroKinetics4d.ωabs` is `det(DF) · B*∥`, not `B*∥`**, and is documented as such. It contracts the
-  coordinate curl `∂₂ϑ₃ - ∂₃ϑ₂` — the *signed* Jacobian — against `b`, so it carries the chart's
-  handedness and comes out negative in the six left-handed equilibria, where the physical `B*∥` is
-  positive; dividing the factor back out gives `0.9511` in all three charts of the small tokamak, where
-  `ωabs` reads `+0.9511`, `-0.9986` and `-0.0499`. Until 0.7.0 the reversed `b` cancelled it and it
-  looked positive everywhere. Nothing needed repairing — a coordinate curl is divergence-free whatever
-  its sign, so the splitting is still volume preserving, and `v_gk = ωabs v_gc` still holds exactly —
-  but `s` runs opposite to physical time in those six, which the test now asserts per chart instead of
-  asserting a positive factor. `TODO.md` records the design question of whether the module should
-  rescale by the physical `B*∥` instead.
+- **`GyroKinetics4d` integrated six of its eight equilibria backwards.** `ωabs` is the phasespace
+  Jacobian, absorbed into the distribution function as `f̃ = ωabs f` — a measure density, and so
+  non-negative, as its name says. But it was computed by contracting the *coordinate* curl
+  `∂₂ϑ₃ - ∂₃ϑ₂`, which carries the signed Jacobian, against `b`, giving `det(DF) · B*∥`: negative in
+  the six left-handed-chart equilibria. The vector field carries the same factor, so those six ran in
+  the wrong direction. Until `ElectromagneticFields` 0.7.0 the reversed `b` cancelled the sign and it
+  could not have been seen.
 
-  The three `GyroKinetics4d.GuidingCenter4dTokamakSmall*` modules stated their rescaling factor as
-  `B*∥` on the `DEFAULT_TIMESTEP` comment, which under the corrected definition is wrong in both value
-  and sign — the toroidal chart's read `B*∥ ≈ 0.05`, where `B*∥ = +0.9511` and it is `ωabs` that is
-  `-0.0499`. All three now name `ωabs`, give both quantities, and say that `s` therefore advances while
-  physical time runs backwards in the two left-handed charts. Two of them also still quoted the 4D
-  guiding centre's pre-1000-step span, `(0, 5E4)`.
+  This is chart-dependence rather than a reparametrisation of time, which is how it was first read.
+  The same physical particle, in the same tokamak, circulated one way in the cartesian chart and the
+  other way in the cylindrical one. Nothing in the suite caught it because everything it asserted was
+  a magnitude: `v_gk = ωabs v_gc` holds with either sign, and `|det J| = 1` cannot see a direction.
 
-  The sign assertion in `test/gyro_kinetics_4d_tests.jl` no longer derives handedness from
-  `occursin("Cartesian", name)` but from an explicit per-equilibrium table, asserted to cover the
-  module set exactly. The substring rule is right for the eight modules that exist and wrong for
-  `SolovevSymmetric`, which is a cartesian chart despite the name.
+  Fixed by giving each of the eight modules an `ORIENTATION = ±1` and applying it in `ωabs` and in the
+  vector field, so `ωabs = J B*∥ > 0` in every chart and `s` runs with `t`. This costs nothing:
+  negating a divergence-free field leaves it divergence-free and each of the six subsystems
+  Hamiltonian, so the splitting is volume preserving exactly as before, and the cartesian equilibria
+  are bit-identical. It also makes the declared positive `DEFAULT_TIMESTEP`s correct, which under the
+  signed factor they were not — `Δs = Δt/ωabs` was negative there.
+
+  `ωabs` keeps a chart-dependent *magnitude* through `J`, which is what a density should do: the three
+  charts of the small tokamak give `0.9511`, `0.9986` and `0.0499` for a common physical
+  `B*∥ = 0.9511`. Only the sign was wrong.
+
+  `test/gyro_kinetics_4d_tests.jl` gains the assertion that would have caught it — one physical
+  particle in all three charts of the small tokamak must have the same physical toroidal velocity —
+  plus `ωabs > 0` for all eight and a check of each declared `ORIENTATION` against its chart. The
+  three `GuidingCenter4dTokamakSmall*` modules stated their factor as `B*∥` on the `DEFAULT_TIMESTEP`
+  comment, wrong in both value and sign; all three now name `ωabs` and give both quantities. Two also
+  quoted the 4D guiding centre's pre-1000-step span, `(0, 5E4)`. Closes the `TODO.md` item, whose
+  posed trade-off — divergence-free right-hand side versus chart-independent `dt` — was not real.
+
+  One number found while re-measuring around it: `GuidingCenter4dTokamakSmallToroidal` justified its
+  `Δs = 1E4` by claiming a thousand steps at `1E4` and at `500` give "the same `4.277E-3`" relative
+  energy error. They do not — 5.8E-4 against 1.4E-6 under the suite's Strang composition — and the
+  conclusion is stronger than the one it was supporting: levelling the step to 500 makes the run look
+  *better*, because it silently covers a twentieth of the physical span. An energy threshold would
+  prefer the wrong step, which is why the rescaling assertion is what pins it.
 - **`GuidingCenter3d` no longer offsets any initial condition to a cartesian `y = 0.1` that its 4D
   counterpart does not.** All three modules that did are aligned to `y = 0`, so every equilibrium in the
   package now starts the same physical particle in every model family.
