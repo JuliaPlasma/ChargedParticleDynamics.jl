@@ -128,12 +128,13 @@ different surface. The sign is a consequence of how each pair is ordered rather 
 physical — see `constraint_pair` — but it is spelled out because it means ``\lambda_{\mathrm{o}}`` and
 ``b_{m}`` need not share a sign in the tabulated values.
 
-The implementation once used ``(g^{3}, g^{1})`` alone, and **seven of the eleven equilibria have
+The implementation once used ``(g^{3}, g^{1})`` alone, and **eight of the eleven equilibria have
 ``b_{1} = 0`` exactly at the initial condition the package ships**, so the multipliers were infinite
 and `hodeproblem` could not be started there at all. This was not confined to the curvilinear cases:
-`TokamakSmallCartesian` failed too, because its initial condition sits at ``y = z = 0`` where
+both cartesian tokamaks fail too, because their initial conditions sit at ``y = z = 0`` where
 ``B_{x} = 0``. What decides it is where the initial condition lies relative to the field, not the
-coordinate system.
+coordinate system — and if anything a cartesian chart is the harder case for this pair, since there the
+toroidal direction is split across ``b_{1}`` and ``b_{2}`` instead of sitting in ``b_{3}`` alone.
 
 **All three pairs are now implemented and selectable** through the `constraints` keyword, and each
 equilibrium declares a `default_constraints` that is regular at its own initial conditions. Nine of
@@ -147,8 +148,16 @@ Two residual limitations are worth knowing about, neither of them removable by c
 * **A pair that is regular at the initial condition can still be badly conditioned along the orbit.**
   `Dipole3d` is regular for all three, but its orbit takes ``b_{1}`` and ``b_{2}`` through zero, and
   the two pairs that divide by them lose the orbit entirely past ``t = 30``. Its default is chosen on
-  the conditioning along the orbit for that reason; the other ten are chosen on regularity at the
-  initial condition alone. See `TODO.md`.
+  the conditioning along the orbit for that reason. `TokamakMediumCartesian`'s is chosen on conditioning
+  too, at the initial condition rather than along the orbit: ``b_{2} = 0.9923`` is the largest component
+  there, giving ``\lambda_{\mathrm{o}} = -3.85`` where ``(g^{1}, g^{2})`` gives ``0.48``. The other nine
+  are chosen on regularity alone. See `TODO.md`.
+* **`hodeproblem_canonical` can need a smaller step than the module declares.** On
+  `TokamakMediumCartesian` it cannot hold the thousand-step example at ``\Delta t = 0.1`` on any pair
+  regular there, and takes a thousand steps at ``\Delta t = 0.01`` instead. On `SolovevSymmetricField`
+  it cannot produce a usable orbit at any step tried. Both are properties of that formulation rather
+  than of the constraint pair, and in neither case does it raise — it returns a trajectory that has left
+  the device, so it has to be screened on magnitude.
 * **The omitted constraint is conserved ``1/b_{m}`` times worse than the retained pair**, since
   ``b_{1} g^{2} - b_{2} g^{1} + b_{3} g^{3} = 0`` determines it from them pointwise. This is why
   `compute_constraints` reports all three components rather than the two the pair retains.
@@ -296,8 +305,18 @@ and additionally accept the named tuple that every `initial_conditions_*` return
 ## Open work
 
 * Choose each 3D guiding centre equilibrium's `default_constraints` on the conditioning of the pair
-  along its orbit rather than on regularity at the initial condition. Only `Dipole3d`, where the
-  difference is four orders of magnitude, is currently chosen that way.
+  along its orbit rather than on regularity at the initial condition. Two of the eleven are currently
+  chosen on conditioning: `Dipole3d`, along the orbit, where the difference is four orders of
+  magnitude, and `TokamakMediumCartesian`, at the initial condition. The other nine are on regularity
+  alone.
+* Decide whether `GyroKinetics4d` should rescale by the physical ``B^{\star}_{\parallel}`` rather than
+  by `ωabs`, which is ``\det(DF) \, B^{\star}_{\parallel}`` and therefore negative in the left-handed
+  charts, so that the rescaled time ``s`` always runs with physical time. Nothing is broken as it
+  stands; see `TODO.md`.
+* Place the Pauli initial conditions on the *first-order* slow manifold rather than the lowest-order
+  one. `initial_conditions(x, u, μ)` sets ``v = u \vec{b}``, which omits the drift velocity, and that
+  omission — not the difference between the models — is what separates the Pauli orbit from the
+  guiding centre one; see [Findings](@ref).
 * Write the coordinate-transforming `IRK` integrator that `coordinate_transformations.jl` is waiting
   for. The 0.x-era sketch is on file at
   `src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl` as the starting point; it is not

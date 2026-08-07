@@ -8,6 +8,115 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`ElectromagneticFields` 0.7.0 is now required**, up from 0.6.3, in all four environments. Unlike
+  0.6.3 this release is *not* value-preserving:
+  [PR #11](https://github.com/JuliaPlasma/ElectromagneticFields.jl/pull/11) fixed an orientation error
+  in the Hodge star, which had been handed the unsigned volume element `|det DF|`, and **`B` was
+  reversed in the four left-handed charts** — `(R, Z, ϕ)`, both `(r, θ, ϕ)` variants and the
+  `Solovev*` family. Six equilibria of this package are built on them: `TokamakSmall/Medium/Iter
+  Cylindrical`, `TokamakSmallToroidal`, `SolovevIter` and `SolovevIterXpoint`. Everything cartesian is
+  bit-identical, including `SolovevSymmetricField`, which is a cartesian chart despite the name.
+
+  The models are exactly equivariant under the change. `ϑ = A + u b` and `H = ½u² + μ|B| + φ` are both
+  invariant under `b → -b` together with `u → -u`, and `A`, `|B|` and `φ` are untouched upstream, so
+  the old dynamics at parallel velocity `u` *is* the new dynamics at `-u`. Verified rather than argued:
+  the 4D vector field is bit-identical component for component with `v_u` negated, and fifty steps of
+  every affected equilibrium under 0.6.3 reproduce to `0.000e+00` or a few units in the last place
+  under 0.7.0 with `u` negated, in all three model families.
+
+- **The stale sign compensation on `uᵢ` is removed** from the cylindrical and toroidal small-tokamak
+  modules of `GuidingCenter3d`, `GuidingCenter4d` and `GyroKinetics4d`. Those declared
+  `uᵢ = -0.00045135897235326736` where the cartesian chart of the same equilibrium declares `+` — a
+  hand-correction for the reversed field, which is now wrong. All three charts again start one physical
+  particle. The `initial_conditions_*` are unchanged: they were already written chart-independently, so
+  under 0.6.3 they silently denoted *different* particles in different charts, and now they do not.
+
+### Added
+
+- **The three families are comparable on one initial condition**, and asserted to be so in the new
+  `test/model_agreement_tests.jl` (264 tests) with `scripts/study_model_agreement.jl` behind it.
+  `GuidingCenter3d` and `GuidingCenter4d` are the same model in different variables and agree to
+  1E-13 and below in the curvilinear charts; `PauliParticle3d` is a different model whose slow manifold
+  is the guiding centre, and tracks it to between 2E-6 and 2E-2 ordered by `ρ/L`.
+
+  The substantive finding is that **the Pauli residual is the initial condition, not the dynamics**.
+  `v = u b⃗` is the slow manifold only to lowest order; the guiding centre also carries the ∇B and
+  curvature drifts, so the Pauli particle starts off the manifold by the drift velocity and gyrates
+  about the right orbit for ever after — which is why the difference *saturates* rather than converging
+  when `μ` or `u` is taken down four decades. Supplying the guiding centre velocity instead collapses
+  the spread across equilibria from four decades to two, and is worth 650–1080× on the ITER Solov'ev.
+
+- **Every `PauliParticle3d` equilibrium now declares the same `initial_conditions_*` as its
+  `GuidingCenter3d` and `GuidingCenter4d` counterparts.** Three of its eight modules had them,
+  `TokamakIterCylindrical` was missing `barely_passing`, and the three small-tokamak modules had none at
+  all — so the family could only ever be run at its own `(qᵢ, vᵢ)` default, and the usage documented in
+  `docs/src/pauli_particle_3d.md` (`hodeproblem(initial_conditions_pauli())` on
+  `TokamakSmallCylindrical`) did not exist. The `initial_conditions(x₀, u₀, μ)` helper that three
+  modules carried privately now lives once in `pauli_particle_3d.jl`.
+
+### Fixed
+
+- **`GyroKinetics4d.ωabs` is `det(DF) · B*∥`, not `B*∥`**, and is documented as such. It contracts the
+  coordinate curl `∂₂ϑ₃ - ∂₃ϑ₂` — the *signed* Jacobian — against `b`, so it carries the chart's
+  handedness and comes out negative in the six left-handed equilibria, where the physical `B*∥` is
+  positive; dividing the factor back out gives `0.9511` in all three charts of the small tokamak, where
+  `ωabs` reads `+0.9511`, `-0.9987` and `-0.0499`. Until 0.7.0 the reversed `b` cancelled it and it
+  looked positive everywhere. Nothing needed repairing — a coordinate curl is divergence-free whatever
+  its sign, so the splitting is still volume preserving, and `v_gk = ωabs v_gc` still holds exactly —
+  but `s` runs opposite to physical time in those six, which the test now asserts per chart instead of
+  asserting a positive factor. `TODO.md` records the design question of whether the module should
+  rescale by the physical `B*∥` instead.
+- **`GuidingCenter3d` no longer offsets any initial condition to a cartesian `y = 0.1` that its 4D
+  counterpart does not.** All three modules that did are aligned to `y = 0`, so every equilibrium in the
+  package now starts the same physical particle in every model family.
+
+  `TokamakSmallToroidal` and `TokamakMediumCylindrical` are free: in a cylindrical chart the offset is
+  nearly a toroidal rotation and cannot make a singular pair regular, and in the toroidal chart it moved
+  `r` from 0.05 to 0.0548 and so changed the flux surface, while also disagreeing with
+  `initial_conditions_pauli` in the same file. Every formulation holds the same step or better at
+  `y = 0`.
+
+  `TokamakMediumCartesian` costs something and gains more. `y = 0` puts it on the midplane where
+  `b₁ = b_x` vanishes identically, so `:g31` is not merely ill-conditioned there but **singular**, and
+  its `default_constraints` moves to `:g23`. That is the better pair on its own merits — `b₂ = 0.9923`
+  is the largest component of `b`, giving `λₒ = -3.85` where `:g31` gave `-0.154` at `y = 0.1`, and
+  `hodeproblem` conserves the constraints about three times better on it — which closes a `TODO.md`
+  item that had flagged `:g31` as the worst-conditioned of the three. `hodeproblem_canonical` is the
+  one formulation that loses by the move: it cannot hold the module's thousand-step example at all on
+  `:g23` (4.1E+07 and 8.0E+10 on `barely_trapped` and `deeply_passing`) and takes a thousand steps at
+  `Δt = 0.01` instead, holding 2.8E-13, 2.6E-13, 9.6E-08 and 6.7E-15. `:g12` is not an alternative for
+  it, meeting a `NaN` or a `SingularException` at every step from 0.1 down to 0.01.
+
+  What this costs the suite is that `TokamakMediumCartesian` is no longer an equilibrium where all three
+  pairs are regular at once, which is what the "the constraint formulations agree" testset used it for.
+  That moved to **`SolovevIterXpoint`**, and is stronger there: the three pairs agree to `8E-16` against
+  the cartesian chart's `6E-9`, that chart being much the stiffer. `Dipole3d` and `QuadraticPotentials3d`
+  are the other two equilibria with all three pairs regular. Eight of eleven now have `b₁ = 0` exactly at
+  their initial condition, up from seven.
+- The `coords` column of the conditioning table in `docs/src/findings.md` called
+  `SolovevSymmetricField` cylindrical. It is a cartesian chart.
+- `docs/src/pauli_particle_3d.md` quoted `v₀` and `v_∥` with the wrong sign on two components, in
+  physical rather than contravariant components without saying so, and defined `u₀` as `|v_∥|` rather
+  than the contraction `v₀ · b`. The `v_∥` signs were wrong under 0.6.3 too: that quantity is invariant
+  under the field reversal, since `v_∥ = (v · b) b⃗` flips twice.
+- `DF̄` is evaluated at the chart coordinates `qᵢ` rather than the cartesian `xᵢ` in
+  `pauli_particle_3d/tokamak_small_{cylindrical,toroidal}.jl`, and the "should DF be evaluated at qᵢ or
+  xᵢ?" comment is answered instead of asked. The two coincide in the cylindrical chart, which is why it
+  never showed; they do not in the toroidal one.
+- `docs/src/examples/iter_cylindrical.md` integrated the 4D guiding centre `iodeproblem` with plain
+  `VPRKLobattoIIIAIIIB(2)`, which throws on a `NaN` direction vector for the orbit the corrected field
+  gives. It now uses `SymmetricProjection(VPRKLobattoIIIAIIIB(2))`, holding `3.6E-3` relative energy —
+  which is what `findings.md` already concluded for every 4D variational orbit, and this page was the
+  one place still doing it unprojected. Its plot label also said `Δt=1.0` for a `timestep=10.` run.
+- Several studies carried static prose that their own output contradicted, now reconciled: the
+  `Dipole3d` and `SolovevSymmetricField` cost ratios and the "seven of eleven" count in
+  `study_guiding_center_3d_conditioning.jl`, and the `B*∥` naming throughout
+  `study_gyrokinetic_rescaling.jl`, which measures `ωabs`. The `Dipole3d` figures differed because
+  `findings.md` tabulates that equilibrium at `t = 3` and `t = 30` while the script runs to `t = 10`;
+  both are now labelled with their span, and the two are consistent once that is stated.
+
 
 ## [0.3.1] - 2026-08-07
 

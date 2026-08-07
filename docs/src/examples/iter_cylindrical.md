@@ -199,17 +199,25 @@ pcar_Δt5 = cartesian_solution(psol_Δt5, PauliParticle3d.TokamakIterCylindrical
 
 ## Guiding Center 4D with Variational Lobatto-IIIA-IIIB
 
+The projection is not optional here. The degenerate variational discretisation of the 4D guiding
+centre carries a parasitic mode that plain VPRK does not control, so `VPRKLobattoIIIAIIIB(2)` on its
+own throws on a `NaN` direction vector at this step, and `SymmetricProjection` — which constrains
+exactly the drift off `p = ϑ(q)` that the mode feeds on — holds the orbit at `3.6E-3` relative energy.
+`SymmetricProjection(VPRKGauss(2))` is better still at `2.5E-7`, and is what the test suite uses for
+every 4D variational orbit; the Lobatto pair is kept here to show what the method itself does. See
+[Findings](@ref), "The variational formulation is unstable here, and finer steps make it worse".
+
 Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
 vode = GuidingCenter4d.TokamakIterCylindrical.iodeproblem(q₀; parameters = parameters, timestep=10., timespan=(0,1800))
-vsol = integrate(vode, VPRKLobattoIIIAIIIB(2); options...)
+vsol = integrate(vode, SymmetricProjection(VPRKLobattoIIIAIIIB(2)); options...)
 vcar = cartesian_solution(vsol, GuidingCenter4d.TokamakIterCylindrical);
 ```
 
 Plot solution and energy error:
 ```@example 1
 fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, ChargedParticle3d.TokamakIterCylindrical; label="Charged Particle Δt=0.01", linewidth = 1)
-plot_trajectory_scatter!(fig, ax, vcar.R, vcar.Z; label="Guiding Center Δt=1.0", color=:orange, markersize=10)
+plot_trajectory_scatter!(fig, ax, vcar.R, vcar.Z; label="Guiding Center Δt=10.0", color=:orange, markersize=10)
 axislegend(ax)
 fig
 ```

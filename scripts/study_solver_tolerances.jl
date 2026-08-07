@@ -316,7 +316,14 @@ function step_costs()
     The third cost was the expression swell in that generated code, and lived upstream. It is delivered:
     ElectromagneticFields 0.6.3 eliminates common subexpressions in the bodies it emits, taking `db₁dx₁`
     from 549 ns to 57 and `d²b₁dx₁dx₁` from 1733 to 80, and changing no value — every field function
-    this package injects is bit-identical between 0.6.2 and 0.6.3. `Project.toml` requires it.
+    this package injects is bit-identical between 0.6.2 and 0.6.3.
+
+    `Project.toml` now requires 0.7.0, which unlike 0.6.3 is *not* value-preserving: it reverses `b` in
+    the four left-handed charts, so six of this package's equilibria — every cylindrical, toroidal and
+    Solov'ev one bar `SolovevSymmetricField`, which is cartesian despite the name — integrate a
+    different orbit than they did. It changes the sign of terms in the generated code rather than the
+    amount of arithmetic, so the timings above re-measure inside their previous spread. See
+    docs/src/findings.md, "The reversed field of the left-handed charts".
 
     `docs/src/findings.md` measures all four combinations of the two changes, because they are not the
     same factor: for `hodeproblem` they are separable and multiplicative, 6.9x here and 2.8x upstream,

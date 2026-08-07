@@ -152,21 +152,33 @@ defines. See the note where those blocks used to be.
 
 Two things this left open, neither of them about the constraint pair:
 
-* **`hodeproblem_canonical` diverges on `SolovevSymmetricField`** after some thirty steps, although
-  the pair is well conditioned there (``\lambda_o \approx -228``) and the same orbit runs to
-  completion under `hodeproblem` and `hodeproblem_compact`. The ``\partial\lambda/\partial q``,
-  ``\partial\lambda/\partial p`` terms amplify the constraint drift rather than ignoring it. It is
-  the only equilibrium where this happens.
+* **`hodeproblem_canonical` diverges on `SolovevSymmetricField`**, although the pair is well
+  conditioned there (``\lambda_o \approx -228``) and the same orbit runs to completion under
+  `hodeproblem` and `hodeproblem_compact` at 4.5e-12 and 2.4e-11. The
+  ``\partial\lambda/\partial q``, ``\partial\lambda/\partial p`` terms amplify the constraint drift
+  rather than ignoring it. It is the only equilibrium where this happens. Note that it does not
+  *stop*: over a hundred steps it reaches ``\vert \Delta H/H \vert`` of 1.5e+228 and
+  ``\max \vert g^k \vert`` of 2.6e+114 at 44.2 Newton iterations per solve against 1.1 for the other
+  formulations, so it reports a destroyed trajectory as a number rather than raising. Anything that
+  screens these formulations automatically has to test the magnitude, not just for an exception.
+  This equilibrium is a cartesian chart, so the 0.7.0 field reversal is not involved.
 * **The omitted constraint drifts `1/bₘ` times as much as the retained pair**, since
   ``b_1 g^2 - b_2 g^1 + b_3 g^3 = 0`` determines it from them. On the ITER Solov'ev X-point that is a
   factor of 170. Nothing is wrong with it, but it is one of two reasons to prefer the pair whose
   ``b_m`` is largest rather than merely non-zero.
 * **`default_constraints` is chosen on regularity at the initial condition, not on conditioning along
-  the orbit** — with one exception. `Dipole3d` had to be moved to `:g12` because its orbit takes both
-  `b₁` and `b₂` through zero and the other two pairs lose the orbit entirely by ``t = 30``. The rest
-  were left where regularity put them, including `TokamakMediumCartesian` at ``\lambda_o = -0.15``
-  where `:g23` would give ``-3.8``, because changing them moves numbers that findings.md tabulates.
-  A sweep of ``\min |b_m|`` along each shipped orbit would settle all eleven properly.
+  the orbit** — with two exceptions, both now settled. `Dipole3d` had to be moved to `:g12` because its
+  orbit takes both `b₁` and `b₂` through zero and the other two pairs lose the orbit entirely by
+  ``t = 30``. `TokamakMediumCartesian` moved to `:g23` when its initial condition was aligned to
+  `y = 0` to match its 4D and Pauli counterparts: that puts it on the `b₁ = b_x = 0` midplane, where
+  `:g31` is singular rather than merely ill-conditioned, and `b₂ = 0.9923` makes `:g23` the best
+  conditioned of the two that remain (``\lambda_o = -3.85`` against `:g12`'s ``0.48``).
+
+  The remaining nine were left where regularity put them. A sweep of ``\min |b_m|`` along each shipped
+  orbit would settle them properly; note that changing one moves numbers findings.md tabulates, and
+  that the `TokamakMediumCartesian` move also cost that equilibrium its role as the one place all three
+  pairs could be compared — which is now `SolovevIterXpoint`, and is a better home for it, the three
+  pairs agreeing there to 8E-16 against the cartesian chart's 6E-9.
 
 ## ~~The per-step cost of the 3D guiding centre model~~ — done
 
@@ -307,8 +319,8 @@ top of that; adding them changes `β` and `γ` as well, so it is a larger job th
 ## Long-time energy behaviour of the volume-preserving splitting
 
 The gyrokinetic splitting preserves volume exactly but is not symplectic, and over a realistic span
-its energy error is already four orders of magnitude worse than Gauss(2) on the same field
-(7.7e-4 against 1.2e-7 — see [findings.md](docs/src/findings.md)). Whether that error is *bounded*
+its energy error is already five orders of magnitude worse than Gauss(2) on the same field
+(3.7e-5 against 2.7e-10 — see [findings.md](docs/src/findings.md)). Whether that error is *bounded*
 or *drifts* is unanswered and decides whether the scheme is preferable to a symplectic method here.
 
 Integrate for 10⁵–10⁶ steps and compare the drift of the Strang composition against Gauss(2) and
@@ -323,6 +335,44 @@ The argument of Li, Zhang & Liu is that canonical Runge-Kutta applied to their c
 constraint drift and energy error for both formulations, over long runs, at several step sizes.
 Their §5 runs the same experiment on a toy field, a dipole and a tokamak — all three of which this
 package has.
+
+## The first-order slow manifold for the Pauli initial conditions
+
+`scripts/study_model_agreement.jl` §3 shows that what separates the Pauli orbit from the guiding centre
+one is almost entirely *where the initial condition is put*, not the dynamics. `initial_conditions(x, u, μ)`
+sets `v = u b⃗`, the lowest-order slow manifold; the guiding centre also carries the ∇B and curvature
+drifts, so the Pauli particle starts off the manifold by the drift velocity and gyrates about the right
+orbit for ever after. Supplying the guiding centre velocity instead collapses the spread across
+equilibria from four decades to two, and is worth 650–1080× on the ITER Solov'ev.
+
+It is only half the correction, and the small tokamak rows prove it: there it is 2–10× *worse*,
+consistently. The velocity mismatch is fixed but the *position* mismatch is not — the Pauli state is the
+particle position, which differs from the guiding centre position by the gyroradius vector. The first-order
+slow manifold needs both.
+
+Worth doing as a `initial_conditions_slow_manifold(x, u, μ)` that applies both corrections, with the
+drift and gyroradius written out locally rather than by depending on `GuidingCenter4d`. It would make the
+Pauli family directly comparable with the guiding centre one at whatever order is wanted, and would give
+the `test/model_agreement_tests.jl` threshold a reason to be tight rather than merely measured.
+
+## Should `ωabs` carry the chart's orientation?
+
+`ElectromagneticFields` 0.7.0 exposed that `GyroKinetics4d.ωabs` is `det(DF) · B*∥` and not `B*∥`: it
+contracts the coordinate curl `∂₂ϑ₃ - ∂₃ϑ₂`, which carries the *signed* Jacobian, against `b`. So it is
+negative in the six left-handed-chart equilibria while the physical `B*∥` is positive, and since the
+vector field carries the same factor, **`s` runs opposite to physical time there**. Until 0.7.0 the
+reversed `b` cancelled it and nobody could have noticed.
+
+Nothing is broken by it — the coordinate divergence of a coordinate curl vanishes identically whatever
+its sign, so the splitting is still volume preserving; `v_gk = ωabs v_gc` still holds exactly; and
+`study_gyrokinetic_rescaling.jl` still recovers the same orbit integrating the guiding centre model over
+a negative `t` interval. The tests assert the sign per chart rather than working around it.
+
+The question left open is whether the module should instead define its rescaling by the physical `B*∥`,
+which would negate the vector field in those charts so that `s` and `t` always run together. That is a
+one-line change with a genuine argument on each side: the present convention is what makes the
+*coordinate* right-hand side divergence-free by construction, while the alternative is what makes the
+documented `dt = B*∥ ds` chart-independent. Decide it deliberately, not by patching a sign.
 
 ## Order of the composition methods for the splitting
 
