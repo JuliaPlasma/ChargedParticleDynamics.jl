@@ -22,7 +22,16 @@ module GuidingCenter4dTokamakSmallCylindrical
     include("gc_common.jl")
     include("gc_equations.jl")
 
-    # Rescaled time: the 4D guiding centre uses Δt = 500 over (0, 5E4) with B*∥ ≈ 1.0 here.
+    # Rescaled time: `Δs = Δt / ωabs`, where `ωabs` is this module's rescaling factor and *not* the
+    # physical `B*∥` — see the note on `ωabs` in `gc_common.jl`. `(R, Z, ϕ)` is left-handed, so the two
+    # differ in sign and by the volume element: at `initial_conditions_deeply_passing`
+    # `ωabs = -0.9986` while `B*∥ = +0.9511`, the same `B*∥` the cartesian chart of this equilibrium
+    # gives. The 4D guiding centre runs it at `Δt = 500` over `(0, 5E5)`, so `|Δs| = 500 / 0.9986 ≈ 5E2`
+    # — the magnitudes nearly coincide here, which is why the sign went unnoticed until 0.7.0.
+    #
+    # The step below is positive, so `s` advances while physical time runs *backwards*. That is a
+    # property of the factor rather than a defect; `TODO.md` carries the question of whether this
+    # module should rescale by `B*∥` instead so that `s` runs with `t`.
     const DEFAULT_TIMESTEP = 5E2
     const DEFAULT_TIMESPAN = (0.0, 5E5)
 

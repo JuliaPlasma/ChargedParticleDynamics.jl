@@ -111,7 +111,7 @@ chart's handedness, and both come out **negative in the left-handed charts**:
   on it — the multipliers divide by `λₒ` and are multiplied by derivatives carrying the same factor.
 * `ωabs` in the gyrokinetic model, which is `det(DF) · B*∥` and not `B*∥`. Dividing the factor back
   out recovers a chart-independent `B*∥`: the small tokamak gives `0.9511` in its cartesian,
-  cylindrical and toroidal charts alike, where `ωabs` reads `+0.9511`, `-0.9987` and `-0.0499`. This
+  cylindrical and toroidal charts alike, where `ωabs` reads `+0.9511`, `-0.9986` and `-0.0499`. This
   one is visible, because the rescaled time is defined by `dt = ωabs ds`, so **`s` runs opposite to
   physical time in six of the eight gyrokinetic equilibria.** The splitting is still volume
   preserving — the coordinate divergence of a coordinate curl vanishes identically whatever its sign

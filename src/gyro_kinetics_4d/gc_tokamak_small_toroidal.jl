@@ -23,14 +23,22 @@ module GuidingCenter4dTokamakSmallToroidal
     include("gc_common.jl")
     include("gc_equations.jl")
 
-    # This model integrates in rescaled time, `Δs = Δt / B*∥`. The 4D guiding centre runs this
-    # equilibrium at `Δt = 500` and `B*∥ ≈ 0.05` here, so the rescaled step is `500 / 0.05 = 1E4`.
+    # This model integrates in rescaled time, `Δs = Δt / ωabs`. The factor is `ωabs` and *not* the
+    # physical `B*∥` — see the note on `ωabs` in `gc_common.jl`. The distinction is at its widest in
+    # this chart: at `initial_conditions_deeply_passing` `ωabs = -0.04993` while `B*∥ = +0.9511`, the
+    # same `B*∥` the cartesian and cylindrical charts of this equilibrium give. The factor of twenty
+    # is the volume element `J = 0.0525` of a toroidal chart at `r = 0.05`, and the sign is its
+    # handedness. The 4D guiding centre runs this equilibrium at `Δt = 500` over `(0, 5E5)`, so
+    # `|Δs| = 500 / 0.04993 ≈ 1E4`.
     #
-    # It is deliberately not the 500 the `Cartesian` and `Cylindrical` charts carry: those have
-    # `B*∥ ≈ 1`, where the two coincide. Levelling this to 500 leaves the integration looking
-    # healthy — a thousand steps at either value gives the same 4.277E-3 relative energy error,
-    # since each covers a different physical span — and is caught only by the rescaling assertion in
-    # `test/gyro_kinetics_4d_tests.jl`.
+    # It is deliberately not the 500 the `Cartesian` and `Cylindrical` charts carry: there `|ωabs| ≈ 1`
+    # and the rescaled step nearly coincides with the physical one. Levelling this to 500 leaves the
+    # integration looking healthy — a thousand steps at either value gives the same 4.277E-3 relative
+    # energy error, since each covers a different physical span — and is caught only by the rescaling
+    # assertion in `test/gyro_kinetics_4d_tests.jl`.
+    #
+    # The step below is positive, so `s` advances while physical time runs *backwards*, as in the
+    # cylindrical chart. `TODO.md` carries the question of whether to rescale by `B*∥` instead.
     const DEFAULT_TIMESTEP = 1E4
     const DEFAULT_TIMESPAN = (0.0, 1E7)
 

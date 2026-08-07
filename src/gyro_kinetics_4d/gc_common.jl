@@ -228,7 +228,7 @@ the curl of the one-form against ``b``.
     and every `Solovev*` other than `SolovevSymmetric` — it comes out **negative** while the physical
     ``B^{\star}_{\parallel}`` is positive. Dividing back out recovers a chart-independent value: the
     small tokamak gives `B*∥ = 0.9511` in its cartesian, cylindrical and toroidal charts alike, where
-    `ωabs` reads `+0.9511`, `-0.9987` and `-0.0499`.
+    `ωabs` reads `+0.9511`, `-0.9986` and `-0.0499`.
 
     Nothing here needs correcting for that: the coordinate divergence of a coordinate curl vanishes
     identically whatever its sign, so the splitting is volume preserving either way, and the

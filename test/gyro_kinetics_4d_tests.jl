@@ -193,6 +193,26 @@ end
 
     @test length(equilibria) == 8
 
+    # The expected sign of `ωabs` per equilibrium, which is the handedness of its chart and nothing
+    # else. Spelled out rather than derived from the module name: `SolovevSymmetric` is a *cartesian*
+    # chart despite the name, so a rule like `occursin("Cartesian", …)` encodes the right answer for
+    # the eight modules that exist today and the wrong one for the first equilibrium that breaks the
+    # naming pattern. `GyroKinetics4d` cannot currently host `SolovevSymmetricField` — see the note in
+    # `src/GyroKinetics4d.jl` — but the table should not be what has to be rediscovered if it can.
+    #
+    # The coverage assertion below is the point of writing it out: adding an equilibrium without
+    # deciding its handedness fails here rather than silently inheriting a substring's guess.
+    ORIENTATION = Dict(:GuidingCenter4dSolovevIter              => -1,
+                       :GuidingCenter4dSolovevIterXpoint        => -1,
+                       :GuidingCenter4dTokamakIterCylindrical   => -1,
+                       :GuidingCenter4dTokamakMediumCartesian   => +1,
+                       :GuidingCenter4dTokamakMediumCylindrical => -1,
+                       :GuidingCenter4dTokamakSmallCartesian    => +1,
+                       :GuidingCenter4dTokamakSmallCylindrical  => -1,
+                       :GuidingCenter4dTokamakSmallToroidal     => -1)
+
+    @test sort(collect(keys(ORIENTATION))) == equilibria
+
     for name in equilibria
         M = getfield(GyroKinetics4d, name)
         ics = M.initial_conditions_deeply_passing()
@@ -213,7 +233,7 @@ end
 
         # And the handedness is what fixes its sign, so assert that too rather than only its
         # magnitude: a chart whose `ωabs` came out with the wrong sign would otherwise pass above.
-        @test sign(ωfac) == (occursin("Cartesian", string(name)) ? +1 : -1)
+        @test sign(ωfac) == ORIENTATION[name]
 
         step(q) = integrate(M.sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)),
                             strang_composition()).q[end]
