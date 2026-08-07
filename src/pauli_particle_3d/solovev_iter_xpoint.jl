@@ -47,11 +47,6 @@ module SolovevIterXpoint
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ).params.μ),)
 
 
-    function initial_conditions(x₀, u₀, μ)
-        v₀ = u₀ * [b¹(0, x₀), b²(0, x₀), b³(0, x₀)]
-        (q = x₀, v = v₀, params = (μ = μ,))
-    end
-
     initial_conditions_barely_passing() = initial_conditions(from_cartesian(0, [2.5, 0., 0.]), 3.425E-1, 1E-2)
     initial_conditions_barely_trapped() = initial_conditions(from_cartesian(0, [2.5, 0., 0.]), 3.375E-1, 1E-2)
     initial_conditions_deeply_passing() = initial_conditions(from_cartesian(0, [2.5, 0., 0.]),  5E-1,    1E-2)

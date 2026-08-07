@@ -13,6 +13,9 @@ module TokamakSmallCartesian
     import ElectromagneticFields.AxisymmetricTokamakCartesian
 
     export podeproblem, hamiltonian, toroidal_momentum
+    export initial_conditions_barely_passing, initial_conditions_barely_trapped
+    export initial_conditions_deeply_passing, initial_conditions_deeply_trapped
+    export initial_conditions_pauli
 
     const equ = AxisymmetricTokamakCartesian.@code() # inject magnetic field code
 
@@ -40,5 +43,17 @@ module TokamakSmallCartesian
     """
     default_parameters(::Type{T}=Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ).params.μ),)
 
+
+    # The same `(x, u, μ)` as this equilibrium's `GuidingCenter3d` and `GuidingCenter4d` modules, so
+    # that the three families can be started from one condition and compared. This module had none,
+    # which is why the Pauli family could only ever be run at its own `(qᵢ, vᵢ)` default.
+    initial_conditions_barely_passing() = initial_conditions([1.05, 0.0, 0.0], 8.117E-4, 2.448E-6)
+    initial_conditions_barely_trapped() = initial_conditions([1.05, 0.0, 0.0], 7.610E-4, 2.250E-6)
+    initial_conditions_deeply_passing() = initial_conditions([1.05, 0.0, 0.0], 1.623E-3, 2.448E-6)
+    initial_conditions_deeply_trapped() = initial_conditions([1.05, 0.0, 0.0], 4.306E-4, 2.250E-6)
+
+    # The guiding centre modules call this one `initial_conditions_pauli` because it is the condition
+    # that matches this family's own `(qᵢ, vᵢ)` default, to the three digits they carry it to.
+    initial_conditions_pauli() = initial_conditions([1.05, 0.0, 0.0], 4.3E-4, 2.310E-6)
 
 end

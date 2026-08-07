@@ -15,10 +15,15 @@ AxisymmetricTokamakCylindrical.@code(2.0, 5.0, 2.0) # inject magnetic field code
 const DEFAULT_TIMESTEP = 0.1
 const DEFAULT_TIMESPAN = (0.0, 1E2)
 
-initial_conditions_barely_passing() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.1, 0.0])..., 3.425E-1]), (params=(μ=1E-2,),)) # Δt=2.5, nt=50
-initial_conditions_barely_trapped() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.1, 0.0])..., 3.375E-1]), (params=(μ=1E-2,),)) # Δt=3.0, nt=100
-initial_conditions_deeply_passing() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.1, 0.0])..., 5E-1]), (params=(μ=1E-2,),))     # Δt=2.5, nt=25
-initial_conditions_deeply_trapped() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.1, 0.0])..., 1E-1]), (params=(μ=1E-2,),))     # Δt=5.0, nt=50
+# These read `[2.5, 0.1, 0.0]` until the families were aligned, matching neither this equilibrium's
+# `GuidingCenter4d` module nor its own `Cartesian` chart's reason for the offset. In a cylindrical
+# chart a cartesian `y` displacement is very nearly a toroidal rotation — it leaves `Z = 0` and so
+# leaves `b₁ = b_R = 0` either way — so it cannot make a singular pair regular, which is what the
+# offset is for in the cartesian chart. All three formulations agree to three digits at both values.
+initial_conditions_barely_passing() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 3.425E-1]), (params=(μ=1E-2,),))
+initial_conditions_barely_trapped() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 3.375E-1]), (params=(μ=1E-2,),))
+initial_conditions_deeply_passing() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 5E-1]), (params=(μ=1E-2,),))
+initial_conditions_deeply_trapped() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 1E-1]), (params=(μ=1E-2,),))
 
 μ_loop() = 1E-3
 μ_surface() = 1E-3

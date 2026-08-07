@@ -202,23 +202,27 @@ end
     test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing()))
     test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped()))
 
-    # Only the canonicalised form needs a shorter span here, so only it gets one: it loses
-    # `deeply_passing` between `t = 20` and `t = 50` (5.3E-5 in `max|g¹|` at 20, 4.3E+20 at 50,
-    # `NaN` at the default 100), where the other two formulations hold the full span at 1E-8. The
-    # exception belongs to the formulation that blocks, not to the module's declared example.
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); timespan=(0.0, 1E1)))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); timespan=(0.0, 1E1)))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_passing(); timespan=(0.0, 1E1)))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1)))
+    # Only the canonicalised form needs an exception here, so only it gets one, and it is a *step*
+    # rather than a span: it keeps the module's thousand-step example and runs it at a tenth of the
+    # step. At `Δt = 0.1` on the module's `:g23` pair it loses `barely_trapped` and `deeply_passing`
+    # outright — 4.1E+07 and 8.0E+10 in relative energy — and at `Δt = 0.01` it holds all four at
+    # 2.8E-13, 2.6E-13, 9.6E-08 and 6.7E-15. `:g12` is not the alternative it looks like: it meets a
+    # `NaN` or a `SingularException` at every step size tried, 0.1 down to 0.01. The exception belongs
+    # to the formulation that blocks, not to the module's declared example.
+    canonical_workload = (timestep=0.01, timespan=(0.0, 1E1))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); canonical_workload...))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); canonical_workload...))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_passing(); canonical_workload...))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_trapped(); canonical_workload...))
 
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 
-    # The one equilibrium where no component of `b` vanishes at the initial condition, so all three
-    # constraint pairs are usable and can be compared against each other; see the "the constraint
-    # formulations agree" block at the end of this file.
+    # `b₁ = b_x` vanishes identically on `y = z = 0`, where this equilibrium's initial conditions now
+    # sit, so `:g31` is singular here and only two of the three pairs can be compared. The three-way
+    # comparison moved to `SolovevIterXpoint`; see the "the constraint formulations agree" block at the
+    # end of this file.
     test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); constraints=:g12))
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); constraints=:g23))
 
     # test_guiding_center_3d(iode(initial_conditions_barely_passing()))
     # test_guiding_center_3d(iode(initial_conditions_barely_trapped()))
@@ -367,11 +371,19 @@ end
 
     # The substantive check on the three constraint pairs and the three formulations: where they are
     # all well conditioned they describe the same constrained system and must agree to the accuracy of
-    # the nonlinear solve. `TokamakMediumCartesian` is the one equilibrium in the package for which no
-    # component of `b` vanishes at the initial condition, so all three pairs are usable there at once.
+    # the nonlinear solve. That needs an equilibrium at which no component of `b` vanishes, so that all
+    # three pairs are regular at once.
+    #
+    # This was `TokamakMediumCartesian` until its initial conditions moved to `y = 0` to match its 4D
+    # and Pauli counterparts. In a cartesian chart `b₁ = b_x` vanishes identically on `y = z = 0`, so
+    # `:g31` is now singular there and only two pairs survive. `SolovevIterXpoint` is the replacement
+    # and is a better one: `b = (-5.9E-3, -2.6E-2, 2.5)` has no vanishing component either, and being
+    # curvilinear it is far less stiff, so the three pairs agree to 8E-16 here against the cartesian
+    # chart's 6E-9. The three equilibria with all three pairs regular are now `Dipole3d`,
+    # `QuadraticPotentials3d` and this one; see the conditioning table in `docs/src/findings.md`.
     mx(ds) = maximum(abs(ds[i]) for i in eachindex(ds))
 
-    M = GuidingCenter3d.TokamakMediumCartesian
+    M = GuidingCenter3d.SolovevIterXpoint
     ic = M.initial_conditions_barely_passing()
     workload = (timespan = (0.0, 1E1), timestep = 0.1)
 

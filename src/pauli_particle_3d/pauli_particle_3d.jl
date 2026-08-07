@@ -35,7 +35,17 @@ function hamiltonian(t, q, p, params)
 end
 
 
-function initial_conditions(x₀, v₀)
+"""
+    initial_conditions(x₀, v₀::AbstractVector)
+
+Split the *full* velocity `v₀` at `x₀` into its parallel part, which becomes the state, and its
+perpendicular part, whose energy becomes the magnetic moment `μ = |v⊥|² / 2|B|`.
+
+`v₀` is contravariant and `b` covariant, so `u₀ = v₀ · b` is already the contraction that raises the
+index; `b⃗` is then the contravariant unit vector that rebuilds the parallel velocity as a vector.
+The three are distinct objects in a curvilinear chart and not interchangeable.
+"""
+function initial_conditions(x₀, v₀::AbstractVector)
     u₀ = v₀' * b(0, x₀)
     vpar = u₀ .* b⃗(0, x₀)
     vper = v₀ .- vpar
@@ -43,6 +53,23 @@ function initial_conditions(x₀, v₀)
 
     (q = x₀, v = vpar, params = (μ = μ,))
 end
+
+"""
+    initial_conditions(x₀, u₀::Real, μ)
+
+The initial condition of parallel velocity `u₀` and magnetic moment `μ` at `x₀` — the same
+`(x, u, μ)` triple the `GuidingCenter3d` and `GuidingCenter4d` modules are started from, so that the
+three families can be compared on one condition.
+
+The velocity is `u₀ b⃗(x₀)`, i.e. purely parallel, which places the particle on the slow manifold
+`ẋ × b = 0` where the Pauli dynamics reduces to the guiding centre dynamics. The residual gyration
+`μ' = |ẋ × b|² / 2|B|` vanishes at `t = 0` and stays small, which is the sense in which the Pauli
+orbit tracks the guiding centre one; see the "Slow Manifolds" section of the manual.
+
+Three modules carried a private copy of this; it is defined here so that every equilibrium has it and
+they cannot drift apart.
+"""
+initial_conditions(x₀, u₀::Real, μ) = (q = x₀, v = u₀ .* b⃗(0, x₀), params = (μ = μ,))
 
 
 function pauli_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ)

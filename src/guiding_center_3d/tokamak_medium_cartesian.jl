@@ -12,18 +12,34 @@ export hamiltonian
 
 AxisymmetricTokamakCartesian.@code(2.0, 5.0, 2.0) # inject magnetic field code
 
-# `hodeproblem` and `hodeproblem_compact` hold this span comfortably, at 2.4E-8 and 3.1E-8 in
-# `max|g¹|`. `hodeproblem_canonical` does not: on `initial_conditions_deeply_passing` it runs
-# 6.8E-8 at `t = 10`, 5.3E-5 at 20, 4.3E+20 at 50 and `NaN` at 100, so it carries a shorter span
-# where it is integrated rather than this example being trimmed to it. The canonicalised form is
-# the fragile one here, as it is on `SolovevSymmetricField`.
+# `hodeproblem` and `hodeproblem_compact` hold this thousand-step example on the module's `:g23` pair,
+# at 2.6E-6 and 2.2E-9 in `max|gᵏ|` for `barely_passing`. `hodeproblem_canonical` does not: it loses
+# `barely_trapped` and `deeply_passing` outright over it, at 4.1E+07 and 8.0E+10 in relative energy.
+#
+# It holds a thousand steps at a tenth of the step, and therefore a tenth of the span — `Δt = 0.01` over
+# `t ∈ [0, 10]` gives 2.8E-13, 2.6E-13, 9.6E-08 and 6.7E-15 — so the exception it carries in
+# `test/guiding_center_3d_tests.jl` is a step and a span together, not a step alone. `(g¹, g²)` is not
+# an alternative: it meets a `NaN` or a `SingularException` at every step size from 0.1 down to 0.01.
+# The canonicalised form is the fragile one here, as it is on `SolovevSymmetricField`.
 const DEFAULT_TIMESTEP = 0.1
 const DEFAULT_TIMESPAN = (0.0, 1E2)
 
-initial_conditions_barely_passing() = merge(initial_conditions(0, [2.5, 0.1, 0.0, 3.425E-1]), (params=(μ=1E-2,),)) # Δt=2.5, nt=50
-initial_conditions_barely_trapped() = merge(initial_conditions(0, [2.5, 0.1, 0.0, 3.375E-1]), (params=(μ=1E-2,),)) # Δt=3.0, nt=100
-initial_conditions_deeply_passing() = merge(initial_conditions(0, [2.5, 0.1, 0.0, 5E-1]), (params=(μ=1E-2,),))     # Δt=2.5, nt=25
-initial_conditions_deeply_trapped() = merge(initial_conditions(0, [2.5, 0.1, 0.0, 1E-1]), (params=(μ=1E-2,),))     # Δt=5.0, nt=50
+# `y = 0`, matching this equilibrium's `GuidingCenter4d` counterpart and every other module in the
+# package. This read `y = 0.1` while the module defaulted to `:g31`, and had to: in a cartesian chart
+# `B_x` vanishes on `y = z = 0`, so `b₁ = 0` exactly here and the `(g³, g¹)` pair — which divides by it
+# — is singular. The offset bought that one pair, at the cost of being the only initial condition in the
+# package that did not agree with its 4D and Pauli siblings.
+#
+# Moving to `y = 0` and defaulting to `(g², g³)` instead is the better trade: `b₂ = 0.9923` is the
+# largest component of `b` here, so it is also the best conditioned pair — `λₒ = -3.85` against
+# `:g31`'s `-0.154` at `y = 0.1` — and `hodeproblem` conserves the constraints about three times better
+# on it. What it costs is that this equilibrium is no longer one where all three pairs are regular at
+# once; `SolovevIterXpoint` is now the sharpest case for that comparison. See `default_constraints`
+# below and the conditioning table in `docs/src/findings.md`.
+initial_conditions_barely_passing() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.425E-1]), (params=(μ=1E-2,),))
+initial_conditions_barely_trapped() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.375E-1]), (params=(μ=1E-2,),))
+initial_conditions_deeply_passing() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 5E-1]), (params=(μ=1E-2,),))
+initial_conditions_deeply_trapped() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 1E-1]), (params=(μ=1E-2,),))
 
 μ_loop() = 1E-3
 μ_surface() = 1E-3
@@ -67,16 +83,21 @@ default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
 
-The one equilibrium in the package where no component of `b` vanishes at the initial condition, so all
-three pairs are usable and the three can be compared against each other — which is what
-`test/guiding_center_3d_tests.jl` does with them.
+`(g², g³)`, which divides by `b₂ = 0.9923` — the largest component of `b` at this initial condition, so
+the best conditioned of the three pairs. `(g³, g¹)` divides by `b₁`, which vanishes identically on
+`y = z = 0` in a cartesian chart, so it is not merely badly conditioned here but singular.
 
-This is the worst conditioned of the three, at `λₒ = -0.15` against `-3.8` for `(g², g³)`, and `b₁`
-falls to 3.5E-4 along the orbit, which is what drives the omitted constraint to 1.4E-6 where the
-retained pair holds 2E-9. It is kept because the measurements in `docs/src/findings.md` were made with
-it; see the open item in `TODO.md`.
+This is one of two equilibria whose default is chosen on conditioning rather than on bare regularity;
+`Dipole3d` is the other, and its reason is different — there all three pairs are regular at the initial
+condition and it is the *orbit* that takes `b₁` and `b₂` through zero. See `docs/src/findings.md`.
+
+!!! note "`hodeproblem_canonical` needs a smaller step here"
+    On this pair the canonicalised form loses `barely_trapped` and `deeply_passing` at the module's
+    `Δt = 0.1`, and holds all four at `Δt = 0.01`. `(g¹, g²)` is not an alternative — it meets a `NaN`
+    or a `SingularException` at every step size tried, including 0.01. The step, not the pair, is what
+    that formulation needs here.
 """
-default_constraints() = :g31
+default_constraints() = :g23
 
 
 include("guiding_center_3d_equations.jl")
