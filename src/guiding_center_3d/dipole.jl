@@ -52,13 +52,15 @@ Over the module's declared example, a thousand steps at `Δt = 0.1`:
 Three orders of magnitude in the constraints, which are this model's characteristic diagnostic.
 `(g¹, g²)` divides by `b₃`, which does not vanish along this orbit. The separation is not an artifact
 of the coarse step either: at `Δt = 0.03` the same ordering holds at 1.8E-08 against 1.3E-05 and
-6.8E-06, and it widens with the span, `:g23` reaching 8.2E+01 by `t = 300`.
+6.8E-06. What it is a function of is the *span*, since the pairs are all regular at the initial
+condition and it is the orbit that spoils two of them — at `Δt = 0.03` and `t = 300`, `:g23` has
+reached 8.3E-01 where `:g12` is still at 2.1E-07.
 
 This is the one equilibrium in the package where the pair has to be chosen on its conditioning *along
 the orbit* rather than at the initial condition; `TokamakMediumCartesian` is also chosen on
-conditioning, but at the initial condition. The longer-run figures, and the same comparison for
-`hodeproblem_canonical`, are tabulated in `docs/src/findings.md` under "Regular is not the same as well
-conditioned" — that table is measured at `t = 3` and `t = 30`, so read its span before comparing.
+conditioning, but at the initial condition. The full comparison across spans, including
+`hodeproblem_canonical` — which loses `:g31` by `t = 30`, well before the Hamilton-Dirac form does —
+is tabulated in `docs/src/findings.md` under "Regular is not the same as well conditioned".
 """
 default_constraints() = :g12
 

@@ -260,18 +260,27 @@ pair. This equilibrium is a cartesian chart and so untouched by the 0.7.0 field 
 `Dipole3d` is where that distinction bites. All three pairs are regular at its initial condition —
 `λₒ` is -34, 34 and 68 — but the orbit takes `b₁` and `b₂` through zero:
 
-| variant | max\|gᵏ\| at t = 3 | \|ΔH/H\| at t = 3 | \|ΔH/H\| at t = 30 |
-|---|---|---|---|
-| hode `:g31` | 1.30e-03 | 4.06e-05 | 2e+03 |
-| hode `:g23` | 1.69e-03 | 3.98e-05 | not measured |
-| hode `:g12` | 1.83e-08 | 1.98e-09 | 1.98e-09 |
-| canonical `:g31` | 3.27e-05 | 8.16e-07 | 7.6e+05 |
-| canonical `:g12` | 5.63e-06 | 1.59e-08 | 1.66e-08 |
+All at `Δt = 0.03`, so `t = 3` is a hundred steps and `t = 300` is ten thousand:
 
-Four orders of magnitude at `t = 3`, and past `t = 30` the badly conditioned pair loses the orbit
-altogether under both formulations — `|ΔH/H|` of 2e+03 and 7.6e+05 are not error estimates, they are
-destroyed trajectories. With `:g12` both the Hamilton-Dirac and the canonicalised form hold their
-levels out to `t = 300`.
+| variant | max\|gᵏ\| t = 3 | \|ΔH/H\| t = 3 | max\|gᵏ\| t = 30 | \|ΔH/H\| t = 30 | max\|gᵏ\| t = 300 | \|ΔH/H\| t = 300 |
+|---|---|---|---|---|---|---|
+| hode `:g31` | 1.31e-05 | 2.62e-09 | 1.02e-04 | 2.73e-09 | 4.46e-04 | 9.96e-08 |
+| hode `:g23` | 6.79e-06 | 1.87e-09 | 6.38e-05 | 1.87e-09 | 8.31e-01 | 1.24e-05 |
+| hode `:g12` | 1.83e-08 | 1.98e-09 | 2.23e-08 | 1.98e-09 | 2.07e-07 | 1.98e-09 |
+| canonical `:g31` | 3.27e-05 | 8.15e-07 | 6.32e+02 | 2.90e+05 | 6.32e+02 | 2.90e+05 |
+| canonical `:g12` | 5.63e-06 | 1.59e-08 | 5.63e-06 | 1.66e-08 | 6.32e-06 | 1.66e-08 |
+
+Three orders of magnitude in the constraints at `t = 3`, and the gap widens with the span rather than
+staying put — which is the whole point, since the badly conditioned pairs are fine *at* the initial
+condition and it is the orbit that spoils them.
+
+Which formulation loses them, and when, is the part worth reading. The canonicalised form is
+destroyed by `t = 30` on `:g31`: `|ΔH/H| = 2.9e+05` is not an error estimate, and the maximum does not
+move afterwards because the trajectory is already gone. The Hamilton-Dirac form still holds that same
+pair at 2.7e-09 there, and by `t = 300` has only drifted to 1.0e-07 — it is `:g23` that goes first for
+it, reaching 8.3e-01 in the constraints. So the canonicalised form is the fragile one here, the same
+ordering it shows on `SolovevSymmetricField`. With `:g12` both formulations hold their levels out to
+`t = 300`.
 
 `Dipole3d` is therefore one of two equilibria whose `default_constraints` is chosen on conditioning
 rather than on bare regularity, and it is the only one chosen on conditioning *along the orbit*: all

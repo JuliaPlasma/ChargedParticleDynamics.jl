@@ -316,6 +316,22 @@ Two dependency updates, of different reach. The solver stack — `GeometricInteg
 - `scripts/guiding_center_3d_dipole.jl` and `scripts/guiding_center_3d_quadratic_potentials.jl` asked
   for `f_abstol = 8eps()` and `2eps()` against round-off floors of `3.4E-14` and `4.0E-15`; both now
   use `1E-12`.
+- **Two rows of the `Dipole3d` conditioning table in `docs/src/findings.md` were wrong**, and the
+  conclusions drawn from them with them. Re-measured at the `Δt = 0.03` the table was taken at, three
+  of its five rows reproduce to three significant figures — `hode :g12`, `canonical :g31`,
+  `canonical :g12` — while the two `hode` rows on a non-default pair are out by two orders in the
+  constraints and four in the energy: `:g31` reads 1.31e-05 and 2.62e-09 against the tabulated
+  1.30e-03 and 4.06e-05, `:g23` 6.79e-06 and 1.87e-09 against 1.69e-03 and 3.98e-05. The
+  diagnostics have not changed since the table was written and the other rows still reproduce with
+  them, so the two were wrong when recorded rather than made stale by a later change.
+
+  What they were supporting was wrong with them. It is three orders of magnitude at `t = 3`, not
+  four; and the badly conditioned pair is *not* lost "under both formulations" by `t = 30` — the
+  canonicalised form is destroyed there (`|ΔH/H| = 2.9e+05`) while the Hamilton-Dirac form still
+  holds the same pair at 2.7e-09 and only degrades by `t = 300`, and then on `:g23` rather than
+  `:g31`. The corrected table spans `t = 3`, `30` and `300` and states its step; the case for
+  `default_constraints = :g12` is unaffected and now stronger, since it is the only pair either
+  formulation holds throughout.
 - **`Dipole3d.default_constraints` is justified on the step the module now declares.** Its docstring
   quoted the constraint and energy levels of the three pairs without saying at which step, and the
   figures were those of the retired `Δt = 0.03`. Re-measured over the declared thousand-step example at
