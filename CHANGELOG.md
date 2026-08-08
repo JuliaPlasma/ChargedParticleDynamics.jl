@@ -198,12 +198,17 @@ Two dependency updates, of different reach. The solver stack — `GeometricInteg
   to `1000 · DEFAULT_TIMESTEP` for all 53 equilibrium modules across `ChargedParticle3d`,
   `GuidingCenter3d`, `GuidingCenter4d`, `PauliParticle3d` and `GyroKinetics4d`, so the declared
   example is uniform and directly comparable between models, coordinate systems and formulations.
-  Thirteen spans moved: three came down from 10 000 steps (`GuidingCenter3d.SolovevSymmetricField`,
-  `GuidingCenter4d.SolovevSymmetricField`, `PauliParticle3d.TokamakSmallCartesian`) and ten went up
-  from 100 (the `TokamakSmall*` families of `GuidingCenter4d`, `PauliParticle3d` and
-  `GyroKinetics4d`, plus `PauliParticle3d.ThetaPinchField` and `.TokamakIterCylindrical`). Every
-  lengthened case was checked on energy rather than on solver silence — a long span can lose an orbit
-  without the solver warning at all — and all are clean, between 0 and 6.6E-3 relative.
+  Sixteen step counts moved, from a spread running 100 to three million. Four came down, all in
+  `GuidingCenter3d`: `Dipole3d` from 3 000 000 steps (`Δt = 0.03` over `9E4`),
+  `QuadraticPotentials3d` from 50 000, and `SolovevSymmetricField` and `TokamakSmallCartesian` from
+  10 000 each — the step moves too on `Dipole3d` and `TokamakSmallCartesian`, for the separate
+  reasons given below. Twelve went up from 100: the `TokamakSmall*` families of `GuidingCenter4d`,
+  `PauliParticle3d` and `GyroKinetics4d` — nine — plus `GuidingCenter4d.SolovevSymmetricField`,
+  `PauliParticle3d.ThetaPinchField` and `.TokamakIterCylindrical`. The rest were already at 1000,
+  `ChargedParticle3d`'s twelve equilibria among them, which share one `DEFAULT_TIMESTEP = 0.01` over
+  `(tᵢ, 10.0)` between the canonical and noncanonical formulations rather than declaring their own.
+  Every lengthened case was checked on energy rather than on solver silence — a long span can lose an
+  orbit without the solver warning at all — and all are clean, between 0 and 6.6E-3 relative.
 
 - **Several modules declared a `DEFAULT_TIMESTEP` at which their own model does not integrate.** The
   test files had been compensating with hand-tuned overrides, so the defaults were never exercised
@@ -226,7 +231,7 @@ Two dependency updates, of different reach. The solver stack — `GeometricInteg
   `hodeproblem_compact` is the only formulation which survives the full example there. Levelling every
   call to the shortest span that all of them tolerate had concealed exactly that.
 
-- **`GuidingCenter4d.SolovevSymmetricField` gets usable defaults** — `DEFAULT_TIMESPAN = (0.0, 1E4)`
+- **`GuidingCenter4d.SolovevSymmetricField` gets usable defaults** — `DEFAULT_TIMESPAN = (0.0, 1E3)`
   and `DEFAULT_TIMESTEP = 1E0`, replacing `t ∈ [0, 5E5]` at `Δt = 5E3` — **and every test now runs at
   them.** Nothing used the old pair: every call in the test block overrode it, between them with four
   different pairs. This equilibrium is the worst conditioned in the package, `‖ϑ‖ ≈ 256` against

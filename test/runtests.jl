@@ -32,4 +32,11 @@ end
     for f in TEST_FILES
         @test get(suppressed_warning_counts(), f, 0) == 0
     end
+
+    # Per file, so that a regression names itself — and then over everything, because the loop above
+    # can only see the keys it asks for. Anything counted before the first `current_test_file!` is
+    # filed under `<startup>` and would pass the per-file tests unnoticed. That window is empty as
+    # this file stands, which is the point: it stops being empty the moment anyone puts setup above
+    # the include loop.
+    @test suppressed_warning_count() == 0
 end

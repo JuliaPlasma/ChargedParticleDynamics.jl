@@ -37,6 +37,10 @@
 # asked to continue a trajectory that has left the device caps rather than converges. See
 # `guiding_center_4d_tests.jl` and `docs/src/findings.md`.
 #
+# The count is per *run*, not per session: `quiet_solver_warnings!` resets it and is idempotent, so
+# re-running the include loop in a live session starts from zero rather than inheriting the previous
+# run's counts and failing the assertion spuriously.
+#
 # This is deliberately not a way of hiding failures: the tests assert that `integrate` returns a
 # solution, which is unaffected by the warnings. Note also that the converse does not hold — an
 # orbit can be lost with the solver perfectly quiet — so silence here is a necessary condition for a
@@ -77,7 +81,17 @@ function Logging.handle_message(logger::QuietLogger, level, message, _module, gr
     Logging.handle_message(logger.parent, level, message, _module, group, id, file, line; kwargs...)
 end
 
-quiet_solver_warnings!() = global_logger(QuietLogger(global_logger()))
+# Installing resets the counters and is idempotent, so that re-running the suite's include loop in a
+# live session — the usual way to work on a test file — starts from zero instead of carrying the
+# previous run's counts into the assertion, and does not nest a second `QuietLogger` around the
+# first. (Re-`include`ing *this* file is not the case being handled: that replaces the module, and
+# the `using` below then fails on an ambiguous binding before any of this is reached.)
+function quiet_solver_warnings!()
+    empty!(COUNTS)
+    CURRENT[] = "<startup>"
+    logger = global_logger()
+    logger isa QuietLogger ? logger : global_logger(QuietLogger(logger))
+end
 
 """Attribute subsequent suppressed messages to test file `f`."""
 current_test_file!(f) = (CURRENT[] = f)
