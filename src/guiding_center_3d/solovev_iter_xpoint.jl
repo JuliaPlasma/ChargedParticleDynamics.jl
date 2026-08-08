@@ -13,8 +13,17 @@ export hamiltonian, toroidal_momentum
 
 Solovev.@code_iter_xpoint() # inject magnetic field code
 
-const DEFAULT_TIMESTEP = 1.0
-const DEFAULT_TIMESPAN = (0.0, 1000.0)
+# A thousand steps of the shipped initial conditions. The relative energy error over the run is
+# 1.0E-2, against 1.6E-2 at `Δt = 0.2` and 2.7 at `Δt = 0.5`; `Δt = 1` is not integrable here at all
+# (`hodeproblem` reaches `NaN` with 89 of its steps at the solver's iteration cap, and
+# `hodeproblem_canonical` throws).
+#
+# The span is what a thousand steps buys, not a limit of one formulation: over `t ∈ [0, 1E3]` all
+# three lose `barely_passing`, `barely_trapped` and `deeply_passing` alike (2.7, 2.7, and `NaN` or
+# 5.8), while `deeply_trapped` and `trapped` survive. The orbit runs out, not a discretisation of
+# it, so the example is short rather than one formulation carrying an exception.
+const DEFAULT_TIMESTEP = 0.1
+const DEFAULT_TIMESPAN = (0.0, 1E2)
 
 const xᵢ = [7.0 - 1.4, 0.0, 0.0]
 const qᵢ = [from_cartesian(0, xᵢ)..., 2.8166280889939737]

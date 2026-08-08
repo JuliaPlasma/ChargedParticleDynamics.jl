@@ -52,9 +52,13 @@ mean(x) = isempty(x) ? 0.0 : sum(x) / length(x)
 # A logger that harvests the iteration count out of the "Solver took N iterations." warnings.
 #
 # `SimpleSolvers` emits one per solve that reaches `warn_iterations`, so setting `warn_iterations=1`
-# turns that warning into a per-solve report of how much work the step actually cost. It is the only
-# way to see the iteration counts from outside the solver, and it is why the test suite needs
-# `test/quiet_solver_warnings.jl` at all.
+# turns that warning into a per-solve report of how much work the step actually cost. The message is
+# unchanged in `SimpleSolvers` 0.10, so this still works; the alternative is the qualified status API
+# (`SimpleSolvers.status`, `SimpleSolvers.isstalled`), which is deliberately *not* exported and needs
+# the solver to be driven a step at a time rather than through `integrate`.
+#
+# This is not why the test suite has `test/quiet_solver_warnings.jl`: that exists for the one block
+# whose solves genuinely do not converge. See its header.
 # ---------------------------------------------------------------------------------------------
 
 mutable struct IterationLogger <: AbstractLogger
@@ -160,17 +164,20 @@ function residual_scales()
     For the 4D guiding centre this is the whole story: the ITER-like Solov'ev equilibria and
     `TokamakIterCylindrical` all sit above 1E-15 because ‖A‖ ~ B₀R₀² and ITER has B₀ = 5.3,
     R₀ = 6.2, while the medium and small tokamaks sit comfortably below it.
-    `SolovevSymmetricField` is by far the worst at ‖ϑ‖ ≈ 256; it never showed up in CI only because
-    its test block runs `ode` rather than `iode`, and `Gauss` converges on these problems in one or
-    two iterations regardless of tolerance.
+    `SolovevSymmetricField` is by far the worst at ‖ϑ‖ ≈ 256, and its difficulty is a step-size
+    limit rather than a tolerance one: at f_abstol = 1E-12, `Gauss(2)` on its `odeproblem` averages
+    29.4 iterations and reaches the iteration cap on 45 of 100 steps at Δt = 1E2, against 2.2
+    iterations and no capped step at the Δt = 1E0 it runs at.
 
     The Pauli rows are the counterexample that stops this being a complete explanation: their
     momentum is small, so this floor says `f_abstol = 1E-15` should have been fine — and measured on
     its own, it is. What broke the Pauli blocks was pinning `f_reltol` as well, which section 2
     separates out.
 
-    Either way, this rules out simply dropping the `options` from the test suite:
-    `GeometricIntegratorsBase.default_options` asks for `f_abstol = 8eps() = 1.8E-15`, itself below
+    Either way, this rules out simply dropping the `options` from the test suite.
+    `GeometricIntegratorsBase.default_options` scales its tolerance with the stage system,
+    `f_abstol = max(8, solversize(method, problem)) * eps(datatype(problem))`, which is 1.8E-15 for
+    the 4D guiding centre and Pauli solves and 2.7E-15 for the 3D `hodeproblem` — both still below
     the 4D guiding centre's ITER floor.""")
 end
 
@@ -309,7 +316,14 @@ function step_costs()
     The third cost was the expression swell in that generated code, and lived upstream. It is delivered:
     ElectromagneticFields 0.6.3 eliminates common subexpressions in the bodies it emits, taking `db₁dx₁`
     from 549 ns to 57 and `d²b₁dx₁dx₁` from 1733 to 80, and changing no value — every field function
-    this package injects is bit-identical between 0.6.2 and 0.6.3. `Project.toml` requires it.
+    this package injects is bit-identical between 0.6.2 and 0.6.3.
+
+    `Project.toml` now requires 0.7.0, which unlike 0.6.3 is *not* value-preserving: it reverses `b` in
+    the four left-handed charts, so six of this package's equilibria — every cylindrical, toroidal and
+    Solov'ev one bar `SolovevSymmetricField`, which is cartesian despite the name — integrate a
+    different orbit than they did. It changes the sign of terms in the generated code rather than the
+    amount of arithmetic, so the timings above re-measure inside their previous spread. See
+    docs/src/findings.md, "The reversed field of the left-handed charts".
 
     `docs/src/findings.md` measures all four combinations of the two changes, because they are not the
     same factor: for `hodeproblem` they are separable and multiplicative, 6.9x here and 2.8x upstream,

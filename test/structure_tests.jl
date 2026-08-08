@@ -673,9 +673,13 @@ end
     # iteration cap is there because a handful of steps otherwise run to the library's limit of 1000
     # and accounted for most of the block's runtime (48 s of 49 s on the Solov'ev case).
     #
-    # `f_abstol` has to be stated at all because `GeometricIntegratorsBase` replaces its whole
-    # `default_options` set as soon as the caller passes any option, and `SimpleSolvers`' own default
-    # is `f_abstol = 0`, which no residual can meet.
+    # `f_abstol` has to be stated because the library default is below this problem's round-off
+    # floor, not because passing options would otherwise disturb the defaults: since
+    # `GeometricIntegratorsBase` 0.5.1 the caller's options are *merged* into the method's
+    # `default_options` rather than replacing them, and that default is
+    # `f_abstol = max(8, solversize(method, problem)) * eps(datatype(problem))` — `2.7E-15` for
+    # `PartitionedGauss(2)` on this three-component model (`solversize = 12`). Below `‖ϑ‖ eps`, so
+    # still not reachable here.
     #
     # It used to restate the library default of `8eps() = 1.8E-15` so as to measure the conservation
     # an unconfigured `integrate` delivers. That was the wrong criterion to hold this block to: the
@@ -685,10 +689,10 @@ end
     # iteration cap chasing it. `1E-12` is what every other test module, script and example in the
     # package uses, for the reasons set out on `options` in `guiding_center_3d_tests.jl`.
     #
-    # Nothing is given up by the change. The library defaults are still exercised, by the calls that
+    # Nothing is given up by stating it. The library defaults are still exercised, by the calls that
     # genuinely pass no options at all — `integrate(prob, Gauss(2))` earlier in this file, and the
-    # three in `plots_tests.jl` — which is what `quiet_solver_warnings.jl` describes as the source of
-    # its residue. The energy error here is identical at both tolerances (5.388E-15 on the X-point,
+    # three in `plots_tests.jl` — which are silent, and which `runtests.jl` asserts to be.
+    # The energy error here is identical at both tolerances (5.388E-15 on the X-point,
     # 3.226E-10 on the medium tokamak), the medium tokamak is bit-identical throughout, and the
     # X-point's constraint errors move by under a quarter of one order against five orders of slack
     # in the bound below. What it buys is four fewer capped steps, four fewer suppressed warnings,

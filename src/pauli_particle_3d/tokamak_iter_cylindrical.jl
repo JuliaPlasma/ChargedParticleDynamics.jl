@@ -13,6 +13,9 @@ module TokamakIterCylindrical
     import ElectromagneticFields.AxisymmetricTokamakCylindrical
 
     export podeproblem, hamiltonian, toroidal_momentum
+    export initial_conditions_barely_passing, initial_conditions_barely_trapped
+    export initial_conditions_deeply_passing, initial_conditions_deeply_trapped
+    export initial_conditions_trapped
 
     AxisymmetricTokamakCylindrical.@code_iter() # inject magnetic field code
 
@@ -31,13 +34,12 @@ module TokamakIterCylindrical
 
 
     const DEFAULT_TIMESTEP = 1.0
-    const DEFAULT_TIMESPAN = (0.0, 100.0)
+    const DEFAULT_TIMESPAN = (0.0, 1E3)
 
-    function initial_conditions(x₀, u₀, μ)
-        v₀ = u₀ * [b¹(0, x₀), b²(0, x₀), b³(0, x₀)]
-        (q = x₀, v = v₀, params = (μ = μ,))
-    end
-
+    # The same `(x, u, μ)` as this equilibrium's `GuidingCenter3d` and `GuidingCenter4d` modules.
+    # `barely_passing` was missing, which is why nothing exercised the condition the other two
+    # families lead with.
+    initial_conditions_barely_passing() = initial_conditions(from_cartesian(0, [2.5, 0., 0.]), 3.425E-1, 1E-2)
     initial_conditions_barely_trapped() = initial_conditions(from_cartesian(0, [2.5, 0., 0.]), 3.375E-1, 1E-2)
     initial_conditions_deeply_passing() = initial_conditions(from_cartesian(0, [2.5, 0., 0.]),  5E-1,    1E-2)
     initial_conditions_deeply_trapped() = initial_conditions(from_cartesian(0, [2.5, 0., 0.]),  1E-1,    1E-2)

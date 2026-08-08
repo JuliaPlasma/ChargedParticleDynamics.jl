@@ -128,12 +128,13 @@ different surface. The sign is a consequence of how each pair is ordered rather 
 physical — see `constraint_pair` — but it is spelled out because it means ``\lambda_{\mathrm{o}}`` and
 ``b_{m}`` need not share a sign in the tabulated values.
 
-The implementation once used ``(g^{3}, g^{1})`` alone, and **seven of the eleven equilibria have
+The implementation once used ``(g^{3}, g^{1})`` alone, and **eight of the eleven equilibria have
 ``b_{1} = 0`` exactly at the initial condition the package ships**, so the multipliers were infinite
 and `hodeproblem` could not be started there at all. This was not confined to the curvilinear cases:
-`TokamakSmallCartesian` failed too, because its initial condition sits at ``y = z = 0`` where
+both cartesian tokamaks fail too, because their initial conditions sit at ``y = z = 0`` where
 ``B_{x} = 0``. What decides it is where the initial condition lies relative to the field, not the
-coordinate system.
+coordinate system — and if anything a cartesian chart is the harder case for this pair, since there the
+toroidal direction is split across ``b_{1}`` and ``b_{2}`` instead of sitting in ``b_{3}`` alone.
 
 **All three pairs are now implemented and selectable** through the `constraints` keyword, and each
 equilibrium declares a `default_constraints` that is regular at its own initial conditions. Nine of
@@ -147,8 +148,16 @@ Two residual limitations are worth knowing about, neither of them removable by c
 * **A pair that is regular at the initial condition can still be badly conditioned along the orbit.**
   `Dipole3d` is regular for all three, but its orbit takes ``b_{1}`` and ``b_{2}`` through zero, and
   the two pairs that divide by them lose the orbit entirely past ``t = 30``. Its default is chosen on
-  the conditioning along the orbit for that reason; the other ten are chosen on regularity at the
-  initial condition alone. See `TODO.md`.
+  the conditioning along the orbit for that reason. `TokamakMediumCartesian`'s is chosen on conditioning
+  too, at the initial condition rather than along the orbit: ``b_{2} = 0.9923`` is the largest component
+  there, giving ``\lambda_{\mathrm{o}} = -3.85`` where ``(g^{1}, g^{2})`` gives ``0.48``. The other nine
+  are chosen on regularity alone. See `TODO.md`.
+* **`hodeproblem_canonical` can need a smaller step than the module declares.** On
+  `TokamakMediumCartesian` it cannot hold the thousand-step example at ``\Delta t = 0.1`` on any pair
+  regular there, and takes a thousand steps at ``\Delta t = 0.01`` instead. On `SolovevSymmetricField`
+  it cannot produce a usable orbit at any step tried. Both are properties of that formulation rather
+  than of the constraint pair, and in neither case does it raise — it returns a trajectory that has left
+  the device, so it has to be screened on magnitude.
 * **The omitted constraint is conserved ``1/b_{m}`` times worse than the retained pair**, since
   ``b_{1} g^{2} - b_{2} g^{1} + b_{3} g^{3} = 0`` determines it from them pointwise. This is why
   `compute_constraints` reports all three components rather than the two the pair retains.
@@ -199,6 +208,62 @@ state, then any velocity/multiplier slots, then `params`.
 vector of periods is accepted by the constructor and then silently ignored, which is worth knowing
 when adding a model.
 
+### Default time spans and steps
+
+Every equilibrium module declares `DEFAULT_TIMESTEP` and `DEFAULT_TIMESPAN`, and the two are chosen
+so that the default problem runs **1000 steps** in every model. That makes the shipped example
+directly comparable between models, coordinate systems and formulations, and it is what the test
+suite integrates: with the exceptions listed below, every test runs at its module's own defaults
+rather than at numbers that exist only in the test file.
+
+A declared default is not, however, a guarantee of a resolved orbit, and two limits are worth
+knowing before using one for anything quantitative.
+
+**A default is chosen per model, not per formulation.** Where a model offers several formulations,
+they do not all tolerate the same step and span, and the default follows the majority rather than the
+weakest. The known cases are `GuidingCenter3d.TokamakMediumCartesian`, where
+`hodeproblem_canonical` loses `initial_conditions_deeply_passing` beyond ``t \approx 20`` while
+`hodeproblem` and `hodeproblem_compact` hold the full span, and
+`GuidingCenter3d.SolovevSymmetricField`, where `hodeproblem` and `hodeproblem_canonical` lose the
+orbit beyond ``t \approx 10`` at *any* step size and only `hodeproblem_compact` survives the declared
+example. The tests give those two formulations a shorter span explicitly.
+
+**A step that is too coarse can lose an orbit silently.** The nonlinear solver frequently does not
+warn while the relative energy error is of order one, so neither the solver's silence nor the
+`isa GeometricSolution` assertion the tests make is evidence that a run is physical. The defaults
+recorded here were each checked against energy conservation, and against the constraints for the 3D
+guiding centre.
+
+`GuidingCenter3d.Dipole3d` is deliberately not at its most accurate step: `Δt = 0.1` is chosen to
+*exhibit* the constraint drift that distinguishes the three formulations rather than to minimise it.
+
+### Nonlinear solver tolerances
+
+Every test module, script and example that integrates an implicit method passes
+`f_abstol = 1E-12`. `f_abstol` is an *absolute* bound on the residual, and the variational and Pauli
+residuals carry the momentum equation ``p = \vartheta(q)``, so their round-off floor is
+``\|\vartheta\| \, \varepsilon`` — about ``3.3 \times 10^{-15}`` for the ITER-scale Solov'ev
+equilibria and ``5.7 \times 10^{-14}`` for `SolovevSymmetricField`. A tolerance below that floor is
+unsatisfiable, and the solver spends its whole iteration budget failing to meet it.
+
+The library default does not clear those floors. Since `GeometricIntegratorsBase` 0.5.1 it scales
+with the size of the stage system,
+
+```julia
+f_abstol = max(8, solversize(method, problem)) * eps(datatype(problem))
+```
+
+which comes to ``1.8 \times 10^{-15}`` for the 4D guiding centre and Pauli solves
+(`solversize = 8`) and ``2.7 \times 10^{-15}`` for the 3D `hodeproblem` under `PartitionedGauss(2)`
+(`solversize = 12`). Both are below the ITER floor, so the explicit `f_abstol` is required rather
+than merely conservative. Caller options are merged into that default, not substituted for it, so
+passing one option does not disturb the others.
+
+`f_reltol` is deliberately left at its `SimpleSolvers` default of ``\sqrt{\varepsilon}``: its
+relative term ``f_{reltol} \|F(x_0)\|`` is what lets a large-magnitude solve converge at all.
+
+See [Findings](@ref) for the measurements behind these numbers.
+
 ### Parameters
 
 Every equilibrium module provides `default_parameters(::Type{T} = Float64)` returning a named
@@ -240,8 +305,18 @@ and additionally accept the named tuple that every `initial_conditions_*` return
 ## Open work
 
 * Choose each 3D guiding centre equilibrium's `default_constraints` on the conditioning of the pair
-  along its orbit rather than on regularity at the initial condition. Only `Dipole3d`, where the
-  difference is four orders of magnitude, is currently chosen that way.
+  along its orbit rather than on regularity at the initial condition. Two of the eleven are currently
+  chosen on conditioning: `Dipole3d`, along the orbit, where the difference is four orders of
+  magnitude, and `TokamakMediumCartesian`, at the initial condition. The other nine are on regularity
+  alone.
+* Decide whether `GyroKinetics4d` should rescale by the physical ``B^{\star}_{\parallel}`` rather than
+  by `ωabs`, which is ``\det(DF) \, B^{\star}_{\parallel}`` and therefore negative in the left-handed
+  charts, so that the rescaled time ``s`` always runs with physical time. Nothing is broken as it
+  stands; see `TODO.md`.
+* Place the Pauli initial conditions on the *first-order* slow manifold rather than the lowest-order
+  one. `initial_conditions(x, u, μ)` sets ``v = u \vec{b}``, which omits the drift velocity, and that
+  omission — not the difference between the models — is what separates the Pauli orbit from the
+  guiding centre one; see [Findings](@ref).
 * Write the coordinate-transforming `IRK` integrator that `coordinate_transformations.jl` is waiting
   for. The 0.x-era sketch is on file at
   `src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl` as the starting point; it is not

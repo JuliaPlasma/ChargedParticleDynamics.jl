@@ -13,11 +13,14 @@ export hamiltonian, toroidal_momentum
 
 AxisymmetricTokamakCartesian.@code() # inject magnetic field code
 
-# const DEFAULT_TIMESTEP = 0.1
-# const DEFAULT_TIMESPAN = (0.0, 1E2)
-
-const DEFAULT_TIMESTEP = 200.0
-const DEFAULT_TIMESPAN = (0.0, 2E6)
+# A thousand steps, at which all three formulations agree to a relative energy error of 1.4E-4
+# (1.4E-2 at `Δt = 1`, 4.0E-1 at `Δt = 10`). This chart will not take the `Δt = 500` its
+# `Cylindrical` and `Toroidal` siblings use, at any constraint pair — see the note in
+# `test/guiding_center_3d_tests.jl` — and at `Δt = 200` it does not integrate at all:
+# `hodeproblem` reaches `NaN` with 494 of its steps at the solver's iteration cap and
+# `hodeproblem_canonical` throws.
+const DEFAULT_TIMESTEP = 0.1
+const DEFAULT_TIMESPAN = (0.0, 1E2)
 
 # const DEFAULT_TIMESTEP = 500.0
 # const DEFAULT_TIMESPAN = (0.0, 5E6)

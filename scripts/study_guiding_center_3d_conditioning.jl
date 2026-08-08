@@ -19,10 +19,10 @@
 # the table below. It is spelled out because λₒ and bₘ then do not always share a sign.
 #
 # The package used to implement only (g³, g¹), so it was singular wherever b₁ = 0. In cylindrical
-# coordinates b₁ = b_R, which vanishes on the midplane of an axisymmetric equilibrium — exactly where
-# the supplied initial conditions sit — and seven of the eleven equilibria below could not be started
-# at all. All three pairs are now available, and each equilibrium declares a `default_constraints`
-# that is regular at its own initial conditions.
+# coordinates b₁ = b_R, and in a cartesian chart b₁ = b_x; both vanish on the midplane of an
+# axisymmetric equilibrium — exactly where the supplied initial conditions sit — so eight of the eleven
+# equilibria below cannot use that pair at all. All three pairs are now available, and each equilibrium
+# declares a `default_constraints` that is regular at its own initial conditions.
 #
 # On top of the choice of pair there is the choice of formulation: the Hamilton-Dirac equations
 # (`hodeproblem`, Eq. 11), the canonicalised system with the extended Hamiltonian
@@ -95,7 +95,10 @@ initial(M, icsname) = getfield(M, icsname)()
 # ---------------------------------------------------------------------------------------------
 # A logger that harvests the iteration count out of the "Solver took N iterations." warnings, as in
 # `study_solver_tolerances.jl`. `SimpleSolvers` emits one per solve that reaches `warn_iterations`,
-# so `warn_iterations=1` turns the warning into a per-solve report of the work a step cost.
+# so `warn_iterations=1` turns the warning into a per-solve report of the work a step cost. The
+# wording is unchanged in `SimpleSolvers` 0.10, so the match below still holds; the qualified status
+# API (`SimpleSolvers.status`, `SimpleSolvers.isstalled`) is the alternative, but it is not exported
+# and would mean driving the solver a step at a time instead of calling `integrate`.
 # ---------------------------------------------------------------------------------------------
 
 mutable struct IterationLogger <: AbstractLogger
@@ -156,10 +159,14 @@ function conditioning()
     println("""
 
     A vanishing λₒ means both multipliers are ±Inf or NaN and the problem cannot be started: the
-    Newton solver hits the NaN in its direction vector on the first step. Seven of the eleven
+    Newton solver hits the NaN in its direction vector on the first step. Eight of the eleven
     equilibria are in that position for the pair (g³, g¹) that the package used to hard-code, and
     `SolovevSymmetricField` is in it for two of the three pairs at once — b = e₂ there, so only
     (g², g³) survives.
+
+    Only three equilibria have all three pairs regular at once: Dipole3d, QuadraticPotentials3d and
+    SolovevIterXpoint. TokamakMediumCartesian was a fourth until its initial condition moved to y = 0
+    to match its 4D and Pauli counterparts, which put it on the b₁ = 0 midplane of a cartesian chart.
 
     Nothing about this is confined to the curvilinear equilibria. `TokamakSmallCartesian` fails for
     (g³, g¹) too, because its initial condition sits at y = z = 0 where B_x = 0. What decides the
@@ -185,9 +192,14 @@ canonicalised form and the compact form for the equilibrium's own default pair, 
 in its regularised, pair-independent variant.
 
 `regular` says whether the variant's denominator survives the initial condition. Attempting a
-singular one is not merely useless but slow: the multipliers are infinite from the first stage, and
-the backtracking line search grinds through its thousand-iteration budget on every step before the
-solver finally reports the NaN.
+singular one is useless: the multipliers are infinite from the first stage and the solver reports
+the NaN.
+
+It is not especially slow: the backtracking line search checks its anchor before descending, so a
+non-descent direction costs one derivative evaluation rather than a whole ladder, and a solve that
+cannot move its iterate stops after `max_stalls = 2` steps rather than running to `max_iterations`.
+Note that the line-search budget is `linesearch_max_iterations`, default **60**, which is not the
+same quantity as `max_iterations` (default 1000) bounding the outer Newton iteration.
 """
 function variants(M, ic)
     d = M.default_constraints()
@@ -283,16 +295,21 @@ function agreement()
     Wherever two variants are both well conditioned they track each other to the accuracy of the
     nonlinear solve, which is the substantive check on the new formulations: the three pairs
     parameterise the same constrained system, and the compact form agrees with the Hamilton-Dirac one
-    it was derived from. `TokamakMediumCartesian` is the sharpest case, being the one equilibrium
-    where no component of b vanishes at the initial condition and all three pairs are therefore
-    usable at once.
+    it was derived from. `SolovevIterXpoint` is the sharpest case: no component of b vanishes at its
+    initial condition, so all three pairs are usable at once, and being curvilinear it is far less
+    stiff than the cartesian charts, so the three agree there to 8E-16 rather than 6E-9.
 
     Being *usable* and being *well conditioned* are not the same thing, though, and `Dipole3d` is
-    where that shows. All three pairs are regular at its initial condition, but the orbit takes b₁
-    and b₂ through zero, and the two pairs that divide by them hold the constraints only to 1E-3 and
-    the energy to 4E-5 — four orders of magnitude worse than (g¹, g²), which divides by b₃ and holds
-    them to 2E-8 and 2E-9. Nothing is singular there; the multipliers are simply large. Conditioning
-    along the orbit, not merely at the initial condition, is what the choice of pair should follow.""")
+    where that shows. All three pairs are regular at its initial condition, but the orbit takes b₁ and
+    b₂ through zero, and over the hundred steps above the two pairs that divide by them hold the
+    constraints to 5.6E-4 and 3.1E-4 against (g¹, g²)'s 2.3E-6 — two orders of magnitude, on a span of
+    t = 10. The gap widens with the span rather than being fixed: at t = 3 it is four orders (1.3E-3 and
+    1.7E-3 against 1.8E-8), and past t = 30 the badly conditioned pairs lose the orbit altogether while
+    (g¹, g²) holds its level out to t = 300. findings.md tabulates that separately, because it is a
+    different measurement from this one and not a discrepancy with it.
+
+    Nothing is singular there; the multipliers are simply large. Conditioning along the orbit, not
+    merely at the initial condition, is what the choice of pair should follow.""")
 end
 
 
@@ -428,12 +445,20 @@ function costs()
     on TokamakSmallCartesian it conserves energy slightly better.
 
     A ratio above is a statement about two right-hand sides only where both variants ask the solver for
-    the same work, so the ranges exclude the rows where they do not. Those are Dipole3d, whose
-    canonicalised form runs at 3.0 Newton iterations per stage against 1.0 elsewhere — and where, for
-    the same reason running the other way, compact :parallel comes out *cheaper* than Hamilton-Dirac at
-    0.72, being the only variant there that converges in one iteration against the pair's 1.9 — and
-    SolovevSymmetricField, which has no canonicalised row at all, this being the equilibrium where that
-    formulation diverges with a NaN in the Newton direction. Every other row runs at exactly 1.0.""")
+    the same work, so the ranges exclude the two equilibria where they do not.
+
+    Dipole3d runs at 2.0-2.1 Newton iterations per stage across its Hamilton-Dirac, compact and
+    :parallel variants and 4.1 for the canonicalised one, where every other equilibrium here converges
+    in 1.0, so its ratios measure solver work as much as expressions: compact :parallel comes out at
+    1.13 and the canonicalised form at 12.2.
+
+    SolovevSymmetricField does produce a canonicalised row, and it should not be read as a cost: that
+    formulation runs at 44.2 iterations per stage there against 1.1 for the others, and section 2 shows
+    what it returns — |ΔH/H| of 1.5e+228 over the same hundred steps. It is the equilibrium where the
+    canonicalised form loses the orbit, and it does so without raising, so the 34x is the solver failing
+    rather than an expression being expensive. Screen these on magnitude, not on whether they threw.
+
+    Every other row runs at exactly 1.0.""")
 end
 
 

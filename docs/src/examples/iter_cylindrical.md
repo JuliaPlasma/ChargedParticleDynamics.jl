@@ -84,10 +84,12 @@ timespan_long = (0., 1_000_000.);
 ```
 
 Nonlinear solver options.
-`f_abstol` is an absolute bound on the residual and has to stay above its round-off floor, which
-for these ITER-scale models is `‖ϑ‖ eps` — the `1E-15` this page used to ask for sits below it, so
-the solver had no reachable stopping criterion and the line search ran to its iteration limit on
-every step:
+`f_abstol` is an absolute bound on the residual and has to stay above its round-off floor, which for
+these ITER-scale models is `‖ϑ‖ eps ≈ 3.3E-15`. Below that the Newton iteration has no reachable
+stopping criterion and runs to its limit on nearly every step. The library default does not clear the
+floor either: `GeometricIntegratorsBase` scales it as
+`max(8, solversize(method, problem)) * eps(datatype(problem))`, which is `1.8E-15` here. See
+[Model Audit](@ref) for the full reasoning:
 ```@example 1
 options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 ```
@@ -197,17 +199,25 @@ pcar_Δt5 = cartesian_solution(psol_Δt5, PauliParticle3d.TokamakIterCylindrical
 
 ## Guiding Center 4D with Variational Lobatto-IIIA-IIIB
 
+The projection is not optional here. The degenerate variational discretisation of the 4D guiding
+centre carries a parasitic mode that plain VPRK does not control, so `VPRKLobattoIIIAIIIB(2)` on its
+own throws on a `NaN` direction vector at this step, and `SymmetricProjection` — which constrains
+exactly the drift off `p = ϑ(q)` that the mode feeds on — holds the orbit at `3.6E-3` relative energy.
+`SymmetricProjection(VPRKGauss(2))` is better still at `2.5E-7`, and is what the test suite uses for
+every 4D variational orbit; the Lobatto pair is kept here to show what the method itself does. See
+[Findings](@ref), "The variational formulation is unstable here, and finer steps make it worse".
+
 Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
 vode = GuidingCenter4d.TokamakIterCylindrical.iodeproblem(q₀; parameters = parameters, timestep=10., timespan=(0,1800))
-vsol = integrate(vode, VPRKLobattoIIIAIIIB(2); options...)
+vsol = integrate(vode, SymmetricProjection(VPRKLobattoIIIAIIIB(2)); options...)
 vcar = cartesian_solution(vsol, GuidingCenter4d.TokamakIterCylindrical);
 ```
 
 Plot solution and energy error:
 ```@example 1
 fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, ChargedParticle3d.TokamakIterCylindrical; label="Charged Particle Δt=0.01", linewidth = 1)
-plot_trajectory_scatter!(fig, ax, vcar.R, vcar.Z; label="Guiding Center Δt=1.0", color=:orange, markersize=10)
+plot_trajectory_scatter!(fig, ax, vcar.R, vcar.Z; label="Guiding Center Δt=10.0", color=:orange, markersize=10)
 axislegend(ax)
 fig
 ```

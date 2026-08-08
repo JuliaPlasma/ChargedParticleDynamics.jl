@@ -12,8 +12,8 @@ module SolovevSymmetricField
 
     SolovevSymmetric.@code(2., 5., 1., 1.) # inject magnetic field code
 
-    const DEFAULT_TIMESTEP = 5E3
-    const DEFAULT_TIMESPAN = (0.0, 5E5)
+    const DEFAULT_TIMESTEP = 1E0
+    const DEFAULT_TIMESPAN = (0.0, 1E3)
 
     initial_conditions_barely_passing() = (q = [2.5, 0., 0., 3.425E-1], params = (μ = 1E-2,)) # Δt=2.5, nt=50
     initial_conditions_barely_trapped() = (q = [2.5, 0., 0., 3.375E-1], params = (μ = 1E-2,)) # Δt=3.0, nt=100

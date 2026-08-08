@@ -11,8 +11,11 @@ export hamiltonian
 
 QuadraticPotentials.@code() # inject magnetic field code
 
+# A thousand steps, over which all three formulations sit between 3.1E-9 and 7.4E-9 in relative
+# energy. A span of 2.5E4 at this step would be fifty thousand steps — a study rather than an
+# example — and `hodeproblem_canonical` diverges to `Inf` over it.
 const DEFAULT_TIMESTEP = 0.5
-const DEFAULT_TIMESPAN = (0.0, 2.5E4)
+const DEFAULT_TIMESPAN = (0.0, 5E2)
 
 # const DEFAULT_TIMESTEP = 0.35
 # const DEFAULT_TIMESPAN = (0.0, 12250.)
