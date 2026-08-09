@@ -1,6 +1,6 @@
 name = "ChargedParticleDynamics"
 uuid = "209b3593-7183-5600-9f8f-df5ce7fddd64"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Michael Kraus <michael.kraus@ipp.mpg.de>"]
 
 [deps]
@@ -19,7 +19,7 @@ Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 ChargedParticlePlots = ["Makie", "LaTeXStrings"]
 
 [compat]
-ElectromagneticFields = "0.6.3"
+ElectromagneticFields = "0.7.1"
 GeometricEquations = "0.21"
 GeometricSolutions = "0.6"
 LaTeXStrings = "1"

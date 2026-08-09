@@ -38,22 +38,24 @@ formulation,
 
 ```math
 \begin{aligned}
-\dfrac{d R}{d s} &= \dfrac{\partial \gamma}{\partial u} + \nabla \times \beta , &
-\dfrac{d u}{d s} &= - \nabla \cdot \gamma ,
+\dfrac{d R}{d s} &= \sigma \left( \dfrac{\partial \gamma}{\partial u} + \nabla \times \beta \right) , &
+\dfrac{d u}{d s} &= - \sigma \, \nabla \cdot \gamma ,
 \end{aligned}
 ```
 
-with the vector potentials ``\beta`` and ``\gamma`` of [`β`](@ref) and [`γ`](@ref).
+with the vector potentials ``\beta`` and ``\gamma`` of [`β`](@ref) and [`γ`](@ref) and
+``\sigma =`` `orientation()` the sign of `det(DF)` for this module's chart.
 
 The independent variable is **not** the physical time: the right-hand side is the guiding centre
-vector field multiplied by ``B^{\star}_{\parallel}``, so ``dt = B^{\star}_{\parallel} \, ds``. One
-unit of ``s`` therefore covers ``B^{\star}_{\parallel} \approx 200`` units of physical time for the
-supplied ITER-like equilibrium, and the default time step is scaled accordingly.
+vector field multiplied by ``\omega_{abs}``, so ``dt = \omega_{abs} \, ds``. One unit of ``s``
+therefore covers ``\omega_{abs} \approx 204`` units of physical time for the supplied ITER-like
+equilibrium, and the default time step is scaled accordingly.
 
-That factor is the phasespace Jacobian, absorbed into the distribution function as
-``\tilde{f} = B^{\star}_{\parallel} f``. What it buys is that the right-hand side is then
-divergence-free, which is what makes the splitting of [`sodeproblem`](@ref) volume
-preserving.
+That factor is the phasespace Jacobian ``\omega_{abs} = J \, B^{\star}_{\parallel}``, absorbed into
+the distribution function as ``\tilde{f} = \omega_{abs} f``. What it buys is that the right-hand side
+is then divergence-free, which is what makes the splitting of [`sodeproblem`](@ref) volume
+preserving. It is positive in every chart — see [`ωabs`](@ref) for why ``\sigma`` is needed to make
+it so, and what went wrong while it was not — so ``s`` always runs with ``t``.
 
 The second form takes the named tuple that every `initial_conditions_*` of this module returns,
 whose `params` carry that condition's own magnetic moment `μ`.

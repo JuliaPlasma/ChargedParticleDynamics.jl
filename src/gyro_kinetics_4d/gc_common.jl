@@ -213,8 +213,51 @@ function ω(Ω::Matrix, t, q, params=NamedTuple())
     nothing
 end
 
+@doc raw"""
+    ωabs(t, q, params)
+
+The factor by which this module's vector field is rescaled relative to the 4D guiding centre one,
+``v_{gk} = \omega_{abs} \, v_{gc}``, so that the independent variable is the rescaled time with
+``dt = \omega_{abs} \, ds``. It is the phasespace Jacobian ``\sqrt{\det \Omega} = J \, B^{\star}_{\parallel}``:
+the contraction ``\omega \cdot \partial\vartheta/\partial u`` of the curl of the one-form against
+``b``, taken with the chart's orientation so that it is **positive in every chart**.
+
+!!! note "Why `orientation()` appears here"
+    `ω₁ = ∂₂ϑ₃ - ∂₃ϑ₂` is the *coordinate* curl, which is `det(DF)` times the contravariant one —
+    the signed Jacobian, not the volume element `J`. The bare contraction is therefore
+    `det(DF) · B*∥ = orientation() · J · B*∥`, and in the four left-handed charts of
+    `ElectromagneticFields` — the cylindrical, the two toroidal and every `Solovev*` other than
+    `SolovevSymmetric` — it comes out **negative** while the physical ``B^{\star}_{\parallel}`` is
+    positive. Multiplying by `orientation()` recovers the Liouville density `√det Ω = |Pf(Ω)|`,
+    which is non-negative by construction — as the name of this function says it should be.
+
+    `orientation()` is generated into this module by the `@code` call at its top, alongside `J`,
+    `DF` and the metric: `ElectromagneticFields` 0.7.1 emits the sign its own generator already
+    reads to build `det DF`. It is the one generated function taking no arguments, since the
+    handedness of a chart depends on neither `t` nor `q`. Nothing here declares it — asking the
+    field for its own orientation is what keeps the two from drifting apart.
+
+    That sign is not free to drop. The factor is the phasespace Jacobian, absorbed into the
+    distribution function as `f̃ = ωabs f`; a distribution rescaled by a negative number is not one.
+    Carried into the vector field, it made the model **chart-dependent**: the small tokamak's
+    cartesian chart circulated the particle one way round the torus and its cylindrical chart the
+    other, for the same physical initial condition. `test/gyro_kinetics_4d_tests.jl` asserts that it
+    no longer does.
+
+    The magnitude stays chart-dependent through `J`, which is correct for a density and is why the
+    three charts of the small tokamak give `0.9511`, `0.9986` and `0.0499` for the same `B*∥ = 0.9511`.
+    Only the sign was wrong.
+
+    `orientation()` multiplies here and in [`v`](@ref) and nowhere else. `ω`, `Ω`, [`β`](@ref) and
+    [`γ`](@ref) stay the plain coordinate objects they are — `Ω = dϑ` in particular must not be
+    touched — so the identity `v_gk = ωabs · v_gc` holds exactly with both factors oriented.
+
+    Until `ElectromagneticFields` 0.7.0 none of this was visible: `b` was itself reversed in exactly
+    those charts, so the two sign errors cancelled and the bare contraction came out positive
+    everywhere.
+"""
 function ωabs(t, q, params=NamedTuple())
-    ω₁(t,q) * dϑ₁dx₄(t,q) + ω₂(t,q) * dϑ₂dx₄(t,q) + ω₃(t,q) * dϑ₃dx₄(t,q)
+    orientation() * (ω₁(t,q) * dϑ₁dx₄(t,q) + ω₂(t,q) * dϑ₂dx₄(t,q) + ω₃(t,q) * dϑ₃dx₄(t,q))
 end
 
 
@@ -310,52 +353,58 @@ dγ₃dx₃(t,q,μ) = dϑ₁dx₃(t,q) * dHdx₂(t,q,μ) + ϑ₁(t,q) * d²Hdx�
 dγ₃dx₄(t,q,μ) = dϑ₁dx₄(t,q) * dHdx₂(t,q,μ) + ϑ₁(t,q) * d²Hdx₂dx₄(t,q,μ) - d²Hdx₁dx₄(t,q,μ) * ϑ₂(t,q) - dHdx₁(t,q,μ) * dϑ₂dx₄(t,q)
 
 
+# `orientation()` multiplies every subsystem, for the reason given on `ωabs`: the coordinate curl
+# below carries `det(DF)`, and the rescaling factor has to be the phasespace Jacobian `√det Ω`,
+# which is positive. Negating a divergence-free field leaves it divergence-free and a Hamiltonian
+# vector field Hamiltonian, so nothing about the splitting changes — each `vᵢ` is still symplectic
+# in the two variables it moves, and the six still sum to `v`.
+
 function v₁(v, t, q, params)
     @unpack μ = params
-    v[1] = + dβ₃dx₂(t,q,μ)
-    v[2] = - dβ₃dx₁(t,q,μ)
+    v[1] = + orientation() * dβ₃dx₂(t,q,μ)
+    v[2] = - orientation() * dβ₃dx₁(t,q,μ)
     v[3] = 0
     v[4] = 0
 end
 
 function v₂(v, t, q, params)
     @unpack μ = params
-    v[1] = - dβ₂dx₃(t,q,μ)
+    v[1] = - orientation() * dβ₂dx₃(t,q,μ)
     v[2] = 0
-    v[3] = + dβ₂dx₁(t,q,μ)
+    v[3] = + orientation() * dβ₂dx₁(t,q,μ)
     v[4] = 0
 end
 
 function v₃(v, t, q, params)
     @unpack μ = params
     v[1] = 0
-    v[2] = + dβ₁dx₃(t,q,μ)
-    v[3] = - dβ₁dx₂(t,q,μ)
+    v[2] = + orientation() * dβ₁dx₃(t,q,μ)
+    v[3] = - orientation() * dβ₁dx₂(t,q,μ)
     v[4] = 0
 end
 
 function v₄(v, t, q, params)
     @unpack μ = params
-    v[1] = + dγ₁dx₄(t,q,μ)
+    v[1] = + orientation() * dγ₁dx₄(t,q,μ)
     v[2] = 0
     v[3] = 0
-    v[4] = - dγ₁dx₁(t,q,μ)
+    v[4] = - orientation() * dγ₁dx₁(t,q,μ)
 end
 
 function v₅(v, t, q, params)
     @unpack μ = params
     v[1] = 0
-    v[2] = + dγ₂dx₄(t,q,μ)
+    v[2] = + orientation() * dγ₂dx₄(t,q,μ)
     v[3] = 0
-    v[4] = - dγ₂dx₂(t,q,μ)
+    v[4] = - orientation() * dγ₂dx₂(t,q,μ)
 end
 
 function v₆(v, t, q, params)
     @unpack μ = params
     v[1] = 0
     v[2] = 0
-    v[3] = + dγ₃dx₄(t,q,μ)
-    v[4] = - dγ₃dx₃(t,q,μ)
+    v[3] = + orientation() * dγ₃dx₄(t,q,μ)
+    v[4] = - orientation() * dγ₃dx₃(t,q,μ)
 end
 
 @doc raw"""
@@ -364,22 +413,30 @@ end
 The gyrokinetic guiding centre vector field in the rescaled time,
 
 ```math
-\dfrac{dR}{ds} = \dfrac{\partial \gamma}{\partial u} + \nabla \times \beta ,
+\dfrac{dR}{ds} = \sigma \left( \dfrac{\partial \gamma}{\partial u} + \nabla \times \beta \right) ,
 \qquad
-\dfrac{du}{ds} = - \nabla \cdot \gamma ,
+\dfrac{du}{ds} = - \sigma \, \nabla \cdot \gamma ,
 ```
 
-built from the potentials [`β`](@ref) and [`γ`](@ref). It is the guiding centre vector field
-multiplied by ``B^{\star}_{\parallel}``, so the independent variable is related to the physical
-time by ``dt = B^{\star}_{\parallel} ds``, and it is divergence-free.
+built from the potentials [`β`](@ref) and [`γ`](@ref), with ``\sigma =`` `orientation()` the sign of
+`det(DF)` for this module's chart, as `ElectromagneticFields` generates it. The ``\nabla \times``
+above is the *coordinate* curl, which carries `det(DF)`; ``\sigma`` restores the orientation, so the
+bracket is the properly oriented curl and the field is the guiding centre one multiplied by the
+phasespace Jacobian
+``\omega_{abs} = J \, B^{\star}_{\parallel} > 0``. The independent variable is therefore related to
+the physical time by ``dt = \omega_{abs} \, ds``, with ``s`` running *with* ``t`` in every chart.
+See [`ωabs`](@ref) for why the sign is not optional.
+
+``\sigma`` does not disturb the structure: negating a divergence-free field leaves it
+divergence-free, so the splitting is volume preserving exactly as before.
 
 The sub-fields `v₁` … `v₆` are the six subsystems this splits into; they sum to `v`.
 """
 function v(v, t, q, params)
     @unpack μ = params
-    v[1] =   dγ₁dx₄(t,q,μ) + dβ₃dx₂(t,q,μ) - dβ₂dx₃(t,q,μ)
-    v[2] =   dγ₂dx₄(t,q,μ) + dβ₁dx₃(t,q,μ) - dβ₃dx₁(t,q,μ)
-    v[3] =   dγ₃dx₄(t,q,μ) + dβ₂dx₁(t,q,μ) - dβ₁dx₂(t,q,μ)
-    v[4] = - dγ₁dx₁(t,q,μ) - dγ₂dx₂(t,q,μ) - dγ₃dx₃(t,q,μ)
+    v[1] = orientation() * (  dγ₁dx₄(t,q,μ) + dβ₃dx₂(t,q,μ) - dβ₂dx₃(t,q,μ) )
+    v[2] = orientation() * (  dγ₂dx₄(t,q,μ) + dβ₁dx₃(t,q,μ) - dβ₃dx₁(t,q,μ) )
+    v[3] = orientation() * (  dγ₃dx₄(t,q,μ) + dβ₂dx₁(t,q,μ) - dβ₁dx₂(t,q,μ) )
+    v[4] = orientation() * ( -dγ₁dx₁(t,q,μ) - dγ₂dx₂(t,q,μ) - dγ₃dx₃(t,q,μ) )
     nothing
 end

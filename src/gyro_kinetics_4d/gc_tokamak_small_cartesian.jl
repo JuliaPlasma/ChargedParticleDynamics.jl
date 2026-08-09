@@ -23,9 +23,12 @@ module GuidingCenter4dTokamakSmallCartesian
     include("gc_common.jl")
     include("gc_equations.jl")
 
-    # Rescaled time: the 4D guiding centre uses Δt = 500 over (0, 5E4) with B*∥ ≈ 0.95 here.
+    # Rescaled time: `Δs = Δt / ωabs`, where `ωabs = J B*∥` is the phasespace Jacobian and *not* the
+    # physical `B*∥` — see the note on `ωabs` in `gc_common.jl`. Here the two agree, this chart being
+    # cartesian and so `J = 1`: `ωabs = 0.9511 = B*∥` at `initial_conditions_deeply_passing`. The 4D
+    # guiding centre runs this equilibrium at `Δt = 500` over `(0, 5E5)`, so `Δs = 500 / 0.9511 ≈ 5E2`.
     const DEFAULT_TIMESTEP = 5E2
-    const DEFAULT_TIMESPAN = (0.0, 5E4)
+    const DEFAULT_TIMESPAN = (0.0, 5E5)
 
     export default_parameters
 

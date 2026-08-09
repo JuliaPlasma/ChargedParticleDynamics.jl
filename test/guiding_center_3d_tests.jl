@@ -14,12 +14,16 @@ const ny = 10
 # the problem. The variational and Pauli residuals contain the momentum equation `p = ϑ(q)`, whose
 # scale is set by the one-form `ϑ = A + u b`, so that floor is `‖ϑ‖ eps`: the ITER-like Solov'ev
 # equilibria have `‖ϑ‖ ≈ 16` (`≈ 54` for the symmetric one), i.e. a floor of `3.5E-15` (`1.2E-14`).
-# At the `1E-15` this used to request, the criterion was unreachable and Newton ran to its
-# 1000-iteration limit on nearly half of all steps — a single `iode` testset cost minutes instead of
-# seconds. `max_iterations` bounds the damage should a future equilibrium have a larger `‖ϑ‖`, and
-# `warn_iterations` is set to match it so that hitting the cap is still reported — left at its
-# default of 1000 it could never fire below the cap, and the count in `quiet_solver_warnings.jl`
-# would go quiet regardless of how badly the solver was doing.
+# An `f_abstol` below that floor is unreachable, and the solver then spends its whole budget failing
+# to meet it. The library default does not clear it either: `GeometricIntegratorsBase` scales its own
+# with the stage system, `f_abstol = max(8, solversize(method, problem)) * eps(datatype(problem))`,
+# which is `1.8E-15`–`2.7E-15` for the methods used here.
+#
+# `max_iterations` bounds the damage should a future equilibrium have a larger `‖ϑ‖`, and
+# `warn_iterations` matches it so that reaching the cap is reported — at its default of 1000 it could
+# never fire below the cap. Stagnation is not what the cap is for: `SimpleSolvers` stops a solve that
+# cannot move its iterate after `max_stalls = 2` steps. It is for solves that are genuinely still
+# iterating, which on `GuidingCenter4d.SolovevSymmetricField` neither converge nor stall.
 #
 # `f_reltol` is deliberately left at the `SimpleSolvers` default of `√eps`. Its relative term
 # `f_reltol ‖F(x₀)‖` is what lets a large-magnitude solve converge at all, and pinning it to `1E-15`
@@ -29,25 +33,67 @@ const options = (f_abstol=1E-12, max_iterations=50, warn_iterations=50)
 export test_guiding_center_3d
 export nl, nx, ny
 
-# The tests assert that the integration runs to completion and returns a solution.
+# ---------------------------------------------------------------------------------------------
+# Time step and time span limits of the 3D guiding centre equilibria
+# ---------------------------------------------------------------------------------------------
 #
-# They used to assert `@test_nowarn` instead, which is not a usable criterion here: `SimpleSolvers`
-# warns once per step whose solve exhausts the iteration budget, and which orbits trip it depends on
-# the floating-point details of the platform, so the suite failed on a different equilibrium on
-# Linux than on Windows. The warnings are filtered out by `test/quiet_solver_warnings.jl` and
-# counted there; with the tolerances above the blocks that pass these options contribute none of
-# them, so a sharp rise in the reported count means a tolerance has slipped below a residual floor.
-# Nothing asserts on that count — see `quiet_solver_warnings.jl` for why a threshold would flake.
+# Every call in this file runs at its module's own `DEFAULT_TIMESPAN`/`DEFAULT_TIMESTEP` — a
+# thousand steps in every model — except the two noted below. Each module's constants carry the
+# measurement behind its own step; what follows is what belongs to the file rather than to one
+# module, and none of it is recoverable from the code.
+#
+# **A formulation, not a module, carries an exception.** Two formulations cannot hold their module's
+# declared span, and only those two take a shorter one:
+#
+#   TokamakMediumCartesian.hodeproblem_canonical loses `deeply_passing` between t = 20 and t = 50
+#     (max|g¹| 6.8E-8 at t = 10, 5.3E-5 at 20, 4.3E+20 at 50, NaN at the declared 100), while
+#     `hodeproblem` and `hodeproblem_compact` hold the full span at 1E-8.
+#   SolovevSymmetricField.hodeproblem loses the orbit past t ≈ 10 at *any* step size tried — a finer
+#     step does not rescue it — as does `hodeproblem_canonical`. `hodeproblem_compact` is the only
+#     formulation that survives the declared example here, which is why the two are not levelled to
+#     a common span: the difference is the thing worth testing.
+#
+# **`Dipole3d` is deliberately not at its most accurate step.** `Δt = 0.1` exhibits the constraint
+# drift rather than minimising it: the three formulations separate legibly there (4.8E-6, 7.1E-4,
+# 8.1E-6 in max|g¹|) where at Δt = 0.03 they all fall into the 1E-8 range and the difference stops
+# being visible.
+#
+# **The `TokamakSmall*` charts do not all take the Δt = 500 their 4D and Pauli counterparts use.**
+# `Cylindrical` does, in all three formulations (4.3E-3 relative energy; constraints 6.0E-9, 1.8E-6,
+# 3.8E-9), and declares it. `Toroidal` does in `hodeproblem` and `hodeproblem_compact` (4.8E-3) but
+# not in `hodeproblem_canonical`, which throws a `SingularException` there and takes 250, the
+# largest step it tolerates.
+#
+# `Cartesian` cannot, and **the constraint pair is not what stops it**. Its `:g31` pair is singular
+# at the initial condition (λₒ = 0), leaving `:g12` and `:g23`, and at Δt = 500 both fail in every
+# formulation: `:g12` throws a NaN direction in all three, and `:g23` — the pair it declares — throws
+# a `SingularException` in `hodeproblem` and a NaN in the other two. Giving it the `:g12` its
+# siblings use would change nothing.
+#
+# One subtlety when reproducing that: `hodeproblem_compact(ic)` and
+# `hodeproblem_compact(ic; constraints = s)` are different problems. Without the keyword the compact
+# form is the regularised, pair-independent variant and the more robust of the two — at Δt = 500 on
+# `Cartesian` it is the only thing that runs, and then only to 4.2E-1 in relative energy. With an
+# explicit pair it throws like the rest. The tests call it without.
+#
+# Every step and span above was chosen against energy, and against the constraints where the 3D
+# model makes them available — not against solver silence, which proves less than it looks; see the
+# header of `quiet_solver_warnings.jl`.
+
+# The tests assert that the integration runs to completion and returns a solution. Solver silence is
+# asserted separately and for the file as a whole, by `runtests.jl`, which is the stronger statement
+# and does not depend on which orbit happens to trip a warning on which platform. See
+# `test/quiet_solver_warnings.jl`.
 function test_guiding_center_3d(equ::ODEProblem)
     @test integrate(equ, Gauss(2); options...) isa GeometricSolution
 end
 
-# These used to pass `initialguess=MidpointExtrapolation(5)`, which is not the default for either
-# method — `PartitionedGauss` and `VPRKGauss` both declare `default_iguess() = HermiteExtrapolation()`
-# — and cost 70% of the runtime of every 3D guiding centre integration for nothing. Newton converges
-# in one iteration under either guess, and the trajectories agree to round-off (bit-identical for
-# most equilibria, 1.5E-14 relative at worst), so dropping it is a 3.0-3.5x speedup that changes no
-# result. The Pauli theta pinch still needs it, for a reason recorded in `pauli_particle_3d_tests.jl`.
+# These take the default initial guess. `PartitionedGauss` and `VPRKGauss` both declare
+# `default_iguess() = HermiteExtrapolation()`, and requesting `MidpointExtrapolation(5)` instead
+# costs 70% of the runtime of a 3D guiding centre integration for nothing: Newton converges in one
+# iteration under either, and the trajectories agree to round-off (bit-identical for most equilibria,
+# 1.5E-14 relative at worst). The Pauli theta pinch is the one place that needs it, for a reason
+# recorded in `pauli_particle_3d_tests.jl`.
 function test_guiding_center_3d(equ::Union{HODEProblem,PODEProblem})
     @test integrate(equ, PartitionedGauss(2); options...) isa GeometricSolution
 end
@@ -65,6 +111,7 @@ end
     using ChargedParticleDynamics.GuidingCenter3d.SolovevIterXpoint
     using ..GuidingCenter3dTests
 
+
     # test_guiding_center_3d(ode(initial_conditions_trapped(); timestep = 1E4, timespan = (0, 1E6)))
     # test_guiding_center_3d(ode(initial_conditions_barely_passing()))
     # test_guiding_center_3d(ode(initial_conditions_barely_trapped()))
@@ -73,18 +120,18 @@ end
     # test_guiding_center_3d(guiding_center_3d_loop_ode(nl), Δt=1.)
     # test_guiding_center_3d(guiding_center_3d_surface_ode(nx, ny), Δt=1.)
 
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped()))
 
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped()))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_passing()))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_trapped()))
 
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 
     # test_guiding_center_3d(iode(initial_conditions_trapped(); timestep = 1E4, timespan = (0, 1E6)))
     # test_guiding_center_3d(iode(initial_conditions_barely_passing()))
@@ -106,14 +153,15 @@ end
     using ChargedParticleDynamics.GuidingCenter3d.Dipole3d
     using ..GuidingCenter3dTests
 
-    # These run at the module's own default step of 0.03 rather than the 0.1 the blocks below use,
-    # because that is where the dipole's constraints stay at 1E-8 rather than 1E-6. The step size is
-    # not what used to stop `hodeproblem_canonical` converging here, though — the constraint pair was.
-    # `Dipole3d` is the one equilibrium whose default pair is chosen on its conditioning along the
-    # orbit rather than at the initial condition; see `default_constraints` in `dipole.jl`.
-    test_guiding_center_3d(hodeproblem(initial_conditions_dipole(); timespan=(0.0, 3.0), timestep=0.03))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_dipole(); timespan=(0.0, 3.0), timestep=0.03))
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_dipole(); timespan=(0.0, 3.0), timestep=0.03))
+    # This module's step is deliberately coarse enough to *show* the constraint drift rather than to
+    # minimise it: at `Δt = 0.1` the three formulations separate legibly (4.8E-6, 7.1E-4 and 8.1E-6
+    # in `max|g¹|`), where at `Δt = 0.03` they all fall to the 1E-8 range and the difference between
+    # them stops being visible. What governs whether `hodeproblem_canonical` converges here is the
+    # constraint pair rather than the step: `Dipole3d` is the one equilibrium whose pair is chosen on
+    # its conditioning along the orbit rather than at the initial condition. See `dipole.jl`.
+    test_guiding_center_3d(hodeproblem(initial_conditions_dipole()))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_dipole()))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_dipole()))
 
 end
 
@@ -126,9 +174,13 @@ end
     # The only equilibrium in the package with a non-zero electrostatic potential, so this is also
     # the only integration test that exercises the `φ` term of `hamiltonian` and the `E` term of
     # `dHdqᵢ` on a field where they do not vanish.
-    test_guiding_center_3d(hodeproblem(initial_conditions_quadratic(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_quadratic(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_quadratic(); timespan=(0.0, 1E1), timestep=0.1))
+    #
+    # The declared span was cut from 2.5E4 to 5E2 — fifty thousand steps down to a thousand — because
+    # `hodeproblem_canonical` diverges to `Inf` with 26 capped steps over the longer run. All three
+    # formulations sit between 3.1E-9 and 7.4E-9 at the corrected default.
+    test_guiding_center_3d(hodeproblem(initial_conditions_quadratic()))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_quadratic()))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_quadratic()))
 
 end
 
@@ -145,24 +197,32 @@ end
     # test_guiding_center_3d(guiding_center_3d_loop_ode(nl))
     # test_guiding_center_3d(guiding_center_3d_surface_ode(nx, ny))
 
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped()))
 
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    # Only the canonicalised form needs an exception here, so only it gets one, and it is a *step*
+    # rather than a span: it keeps the module's thousand-step example and runs it at a tenth of the
+    # step. At `Δt = 0.1` on the module's `:g23` pair it loses `barely_trapped` and `deeply_passing`
+    # outright — 4.1E+07 and 8.0E+10 in relative energy — and at `Δt = 0.01` it holds all four at
+    # 2.8E-13, 2.6E-13, 9.6E-08 and 6.7E-15. `:g12` is not the alternative it looks like: it meets a
+    # `NaN` or a `SingularException` at every step size tried, 0.1 down to 0.01. The exception belongs
+    # to the formulation that blocks, not to the module's declared example.
+    canonical_workload = (timestep=0.01, timespan=(0.0, 1E1))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); canonical_workload...))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); canonical_workload...))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_passing(); canonical_workload...))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_trapped(); canonical_workload...))
 
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 
-    # The one equilibrium where no component of `b` vanishes at the initial condition, so all three
-    # constraint pairs are usable and can be compared against each other; see the "the constraint
-    # formulations agree" block at the end of this file.
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); constraints=:g12, timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); constraints=:g23, timespan=(0.0, 1E1), timestep=0.1))
+    # `b₁ = b_x` vanishes identically on `y = z = 0`, where this equilibrium's initial conditions now
+    # sit, so `:g31` is singular here and only two of the three pairs can be compared. The three-way
+    # comparison moved to `SolovevIterXpoint`; see the "the constraint formulations agree" block at the
+    # end of this file.
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); constraints=:g12))
 
     # test_guiding_center_3d(iode(initial_conditions_barely_passing()))
     # test_guiding_center_3d(iode(initial_conditions_barely_trapped()))
@@ -179,16 +239,16 @@ end
     using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical
     using ..GuidingCenter3dTests
 
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped()))
 
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped()))
 
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 
 end
 
@@ -198,16 +258,16 @@ end
     using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCartesian
     using ..GuidingCenter3dTests
 
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped()))
 
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped()))
 
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 
 end
 
@@ -217,16 +277,16 @@ end
     using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCylindrical
     using ..GuidingCenter3dTests
 
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped()))
 
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped()))
 
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 
 end
 
@@ -236,16 +296,20 @@ end
     using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal
     using ..GuidingCenter3dTests
 
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    # This module runs at `Δt = 500`, matching its 4D and Pauli counterparts. Only
+    # `hodeproblem_canonical` cannot: it throws a `SingularException` there on either regular pair.
+    # 250 is the largest step it tolerates, so it takes that and the others run at the default.
 
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing()))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped()))
 
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); timestep=250.0, timespan=(0.0, 2.5E5)))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); timestep=250.0, timespan=(0.0, 2.5E5)))
+
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 
 end
 
@@ -259,17 +323,24 @@ end
     # at these initial conditions, so both `(g³, g¹)` and `(g¹, g²)` divide by zero and only the
     # `(g², g³)` this module defaults to survives. See `default_constraints` in `solovev_symmetric.jl`.
     #
-    # Also the one block that cannot be run over the module's own `DEFAULT_TIMESPAN`. This is the
-    # stiffest equilibrium in the package — `‖ϑ‖ ≈ 256`, an order of magnitude above the ITER-like
-    # Solov'ev equilibria — and the constraint drift grows fast enough that Newton meets a NaN a few
-    # hundred steps in. A hundred steps, the same workload as the blocks above, is well inside that.
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    # `hodeproblem` carries a shorter span here and `hodeproblem_compact` does not, because it is the
+    # former that blocks: `hodeproblem` and `hodeproblem_canonical` lose this orbit somewhere between
+    # `t = 10` and `t = 50` at *any* step size tried — 2.4E+6 and 1.5E+228 over the module's declared
+    # `t ∈ [0, 1E3]` — and a finer step does not rescue them. `hodeproblem_compact` holds that span at
+    # 1.1E-7 and so runs at the default. That only the compact form survives a long run here is the
+    # thing worth testing, and it is visible precisely because the two are not levelled to the same
+    # span. As in the 4D model, this is the worst-conditioned equilibrium of the set: `‖ϑ‖ ≈ 256`, an
+    # order of magnitude above the ITER-like Solov'ev equilibria, and the constraint drift grows fast
+    # enough under the two non-compact forms that Newton meets a NaN a few hundred steps in. The
+    # hundred steps below — a tenth of the declared example, at its declared step — are well inside
+    # that.
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E1)))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E1)))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E1)))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1)))
 
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing(); timespan=(0.0, 1E1), timestep=0.1))
-    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1), timestep=0.1))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
+    test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 
     # `hodeproblem_canonical` is *not* exercised here. It starts fine — the pair is well conditioned,
     # `λₒ ≈ -228` and never falls below -173 along the orbit — but the ∂λ/∂q, ∂λ/∂p terms it adds
@@ -299,11 +370,19 @@ end
 
     # The substantive check on the three constraint pairs and the three formulations: where they are
     # all well conditioned they describe the same constrained system and must agree to the accuracy of
-    # the nonlinear solve. `TokamakMediumCartesian` is the one equilibrium in the package for which no
-    # component of `b` vanishes at the initial condition, so all three pairs are usable there at once.
+    # the nonlinear solve. That needs an equilibrium at which no component of `b` vanishes, so that all
+    # three pairs are regular at once.
+    #
+    # This was `TokamakMediumCartesian` until its initial conditions moved to `y = 0` to match its 4D
+    # and Pauli counterparts. In a cartesian chart `b₁ = b_x` vanishes identically on `y = z = 0`, so
+    # `:g31` is now singular there and only two pairs survive. `SolovevIterXpoint` is the replacement
+    # and is a better one: `b = (-5.9E-3, -2.6E-2, 2.5)` has no vanishing component either, and being
+    # curvilinear it is far less stiff, so the three pairs agree to 8E-16 here against the cartesian
+    # chart's 6E-9. The three equilibria with all three pairs regular are now `Dipole3d`,
+    # `QuadraticPotentials3d` and this one; see the conditioning table in `docs/src/findings.md`.
     mx(ds) = maximum(abs(ds[i]) for i in eachindex(ds))
 
-    M = GuidingCenter3d.TokamakMediumCartesian
+    M = GuidingCenter3d.SolovevIterXpoint
     ic = M.initial_conditions_barely_passing()
     workload = (timespan = (0.0, 1E1), timestep = 0.1)
 

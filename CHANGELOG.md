@@ -6,7 +6,359 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [0.4.0] - 2026-08-08
+
+**This release is not value-preserving.** `ElectromagneticFields` 0.7.0 corrects an orientation error
+that reversed `B` in the four left-handed charts, so six of this package's equilibria integrate a
+different orbit than they did under 0.3.0. Several declared defaults move with it — `DEFAULT_TIMESTEP`
+and `DEFAULT_TIMESPAN` across all 53 equilibrium modules, `TokamakMediumCartesian.default_constraints`,
+the `initial_conditions_*` of three `GuidingCenter3d` modules, and the `uᵢ` of six others. A caller
+who pinned `0.3` and reran will get different numbers, hence the minor bump rather than a patch.
+
+Two dependency updates, of different reach. The solver stack — `GeometricIntegrators` 0.17,
+`SimpleSolvers` 0.10.1, `GeometricIntegratorsBase` 0.5.1 — is confined to `test/`, `docs/` and
+`scripts/`, the three environments that resolve it; `src/` does not depend on any of the three.
+`ElectromagneticFields` 0.7.1 reaches `src/` and is bounded in the root project.
+
+### Changed
+
+- **`ElectromagneticFields` 0.7.1 is now required**, up from 0.6.3, in the root project and in the
+  `docs/` and `scripts/` environments. (`test/` does not depend on it directly — it reaches the suite
+  through this package — so it carries no bound of its own.) The bound is `0.7.1` rather than `0.7`
+  because `GyroKinetics4d` reads the generated `orientation()`, which
+  [PR #12](https://github.com/JuliaPlasma/ElectromagneticFields.jl/pull/12) added in that patch
+  release; under 0.7.0 the eight modules would not load. Unlike 0.6.3 the 0.7 series is *not*
+  value-preserving:
+  [PR #11](https://github.com/JuliaPlasma/ElectromagneticFields.jl/pull/11) fixed an orientation error
+  in the Hodge star, which had been handed the unsigned volume element `|det DF|`, and **`B` was
+  reversed in the four left-handed charts** — `(R, Z, ϕ)`, both `(r, θ, ϕ)` variants and the
+  `Solovev*` family. Six equilibria of this package are built on them: `TokamakSmall/Medium/Iter
+  Cylindrical`, `TokamakSmallToroidal`, `SolovevIter` and `SolovevIterXpoint`. Everything cartesian is
+  bit-identical, including `SolovevSymmetricField`, which is a cartesian chart despite the name.
+
+  The models are exactly equivariant under the change. `ϑ = A + u b` and `H = ½u² + μ|B| + φ` are both
+  invariant under `b → -b` together with `u → -u`, and `A`, `|B|` and `φ` are untouched upstream, so
+  the old dynamics at parallel velocity `u` *is* the new dynamics at `-u`. Verified rather than argued:
+  the 4D vector field is bit-identical component for component with `v_u` negated, and fifty steps of
+  every affected equilibrium under 0.6.3 reproduce to `0.000e+00` or a few units in the last place
+  under 0.7.0 with `u` negated, in all three model families.
+
+- **The stale sign compensation on `uᵢ` is removed** from the cylindrical and toroidal small-tokamak
+  modules of `GuidingCenter3d`, `GuidingCenter4d` and `GyroKinetics4d`. Those declared
+  `uᵢ = -0.00045135897235326736` where the cartesian chart of the same equilibrium declares `+` — a
+  hand-correction for the reversed field, which is now wrong. All three charts again start one physical
+  particle. The `initial_conditions_*` are unchanged: they were already written chart-independently, so
+  under 0.6.3 they silently denoted *different* particles in different charts, and now they do not.
+
+- **GeometricIntegrators 0.17, SimpleSolvers 0.10.1 and GeometricIntegratorsBase 0.5.1** in all
+  three environments that resolve them. Each dependency is now bounded in the environment that
+  resolves it: `test/Project.toml` gains bounds for the six deps that had none, and
+  `docs/Project.toml` and `scripts/Project.toml` gain a `[compat]` section each. `SimpleSolvers` is
+  bounded only in `scripts/`, the one environment that uses it directly; elsewhere it is pinned
+  transitively by `GeometricIntegrators = "0.17"`, which keeps it out of the test environment where
+  the suite identifies its messages by module name rather than by importing it.
+- **`GeometricIntegratorsBase` 0.5.1 changes the default solver tolerance** from a flat
+  `f_abstol = 8eps()` to `max(8, solversize(method, problem)) * eps(datatype(problem))`, and merges
+  caller options into the method defaults rather than replacing them. The package's explicit
+  `f_abstol = 1E-12` is still required: the sized default comes to `1.8E-15` for the 4D guiding
+  centre and Pauli solves and `2.7E-15` for the 3D `hodeproblem`, both below the ITER-scale floor of
+  `‖ϑ‖ eps ≈ 3.3E-15`. The comments that justified the override by the *old* behaviour — that
+  passing any option replaced the whole default set, and that `SimpleSolvers` defaulted to
+  `f_abstol = 0` — are corrected in `test/structure_tests.jl` and `test/guiding_center_3d_tests.jl`,
+  and the reasoning is now stated once in `docs/src/audit.md`.
+
+- **`max_stalls` makes an unsatisfiable tolerance cheap.** Since SimpleSolvers 0.10 a solve whose
+  iterate stops moving gives up after two such steps instead of running to `max_iterations`. On the
+  4D guiding centre `iode` at the deliberately-unreachable `f_abstol = 1E-15`, that is 21.7 ms/step
+  and 172 Newton iterations under SimpleSolvers 0.9.2 against 0.126 ms/step and 3.7 iterations now —
+  a factor of 170 in wasted work — while the settings that do converge are unchanged to within
+  run-to-run noise. It does not make such a tolerance correct, but it removes the pathological cost
+  of asking, which is what once made a mis-set tolerance a ten-minute CI problem. The cost table in
+  `docs/src/findings.md` is re-measured on both stacks.
+
+### Added
+
+- **The three families are comparable on one initial condition**, and asserted to be so in the new
+  `test/model_agreement_tests.jl` (277 tests) with `scripts/study_model_agreement.jl` behind it. Both
+  cover the same six equilibria, so the assertions and the measurements they are set from cannot drift.
+  `GuidingCenter3d` and `GuidingCenter4d` are the same model in different variables and agree to
+  1E-13 and below in the curvilinear charts; `PauliParticle3d` is a different model whose slow manifold
+  is the guiding centre, and tracks it to between 2E-6 and 2E-2 ordered by `ρ/L`.
+
+  The substantive finding is that **the Pauli residual is the initial condition, not the dynamics**.
+  `v = u b⃗` is the slow manifold only to lowest order; the guiding centre also carries the ∇B and
+  curvature drifts, so the Pauli particle starts off the manifold by the drift velocity and gyrates
+  about the right orbit for ever after — which is why the difference *saturates* rather than converging
+  when `μ` or `u` is taken down four decades. Supplying the guiding centre velocity instead collapses
+  the spread across equilibria from four decades to two, and is worth 650–1080× on the ITER Solov'ev.
+
+- **Every `PauliParticle3d` equilibrium now declares the same `initial_conditions_*` as its
+  `GuidingCenter3d` and `GuidingCenter4d` counterparts.** Three of its eight modules had them,
+  `TokamakIterCylindrical` was missing `barely_passing`, and the three small-tokamak modules had none at
+  all — so the family could only ever be run at its own `(qᵢ, vᵢ)` default, and the usage documented in
+  `docs/src/pauli_particle_3d.md` (`hodeproblem(initial_conditions_pauli())` on
+  `TokamakSmallCylindrical`) did not exist. The `initial_conditions(x₀, u₀, μ)` helper that three
+  modules carried privately now lives once in `pauli_particle_3d.jl`.
+
+### Fixed
+
+- **`GyroKinetics4d` integrated six of its eight equilibria backwards.** `ωabs` is the phasespace
+  Jacobian, absorbed into the distribution function as `f̃ = ωabs f` — a measure density, and so
+  non-negative, as its name says. But it was computed by contracting the *coordinate* curl
+  `∂₂ϑ₃ - ∂₃ϑ₂`, which carries the signed Jacobian, against `b`, giving `det(DF) · B*∥`: negative in
+  the six left-handed-chart equilibria. The vector field carries the same factor, so those six ran in
+  the wrong direction. Until `ElectromagneticFields` 0.7.0 the reversed `b` cancelled the sign and it
+  could not have been seen.
+
+  This is chart-dependence rather than a reparametrisation of time, which is how it was first read.
+  The same physical particle, in the same tokamak, circulated one way in the cartesian chart and the
+  other way in the cylindrical one. Nothing in the suite caught it because everything it asserted was
+  a magnitude: `v_gk = ωabs v_gc` holds with either sign, and `|det J| = 1` cannot see a direction.
+
+  Fixed by applying the chart's `orientation()` in `ωabs` and in the vector field, so
+  `ωabs = J B*∥ > 0` in every chart and `s` runs with `t`. The sign is not declared here: each of the
+  eight modules already injects its equilibrium with a `@code` call, and `ElectromagneticFields`
+  0.7.1 emits `orientation()` alongside `J`, `DF` and the metric, so the handedness comes from the
+  same generator as the field it describes rather than from a constant kept in step by hand. This
+  costs nothing:
+  negating a divergence-free field leaves it divergence-free and each of the six subsystems
+  Hamiltonian, so the splitting is volume preserving exactly as before, and the cartesian equilibria
+  are bit-identical. It also makes the declared positive `DEFAULT_TIMESTEP`s correct, which under the
+  signed factor they were not — `Δs = Δt/ωabs` was negative there.
+
+  `ωabs` keeps a chart-dependent *magnitude* through `J`, which is what a density should do: the three
+  charts of the small tokamak give `0.9511`, `0.9986` and `0.0499` for a common physical
+  `B*∥ = 0.9511`. Only the sign was wrong.
+
+  `test/gyro_kinetics_4d_tests.jl` gains the assertion that would have caught it — one physical
+  particle in all three charts of the small tokamak must have the same physical toroidal velocity —
+  plus `ωabs > 0` for all eight and a check of each chart's generated `orientation()` against the
+  bare contraction this package computes, which spans the two packages rather than restating a local
+  constant. The
+  three `GuidingCenter4dTokamakSmall*` modules stated their factor as `B*∥` on the `DEFAULT_TIMESTEP`
+  comment, wrong in both value and sign; all three now name `ωabs` and give both quantities. Two also
+  quoted the 4D guiding centre's pre-1000-step span, `(0, 5E4)`. Closes the `TODO.md` item, whose
+  posed trade-off — divergence-free right-hand side versus chart-independent `dt` — was not real.
+
+  One number found while re-measuring around it: `GuidingCenter4dTokamakSmallToroidal` justified its
+  `Δs = 1E4` by claiming a thousand steps at `1E4` and at `500` give "the same `4.277E-3`" relative
+  energy error. They do not — 5.8E-4 against 1.4E-6 under the suite's Strang composition — and the
+  conclusion is stronger than the one it was supporting: levelling the step to 500 makes the run look
+  *better*, because it silently covers a twentieth of the physical span. An energy threshold would
+  prefer the wrong step, which is why the rescaling assertion is what pins it.
+- **`GuidingCenter3d` no longer offsets any initial condition to a cartesian `y = 0.1` that its 4D
+  counterpart does not.** All three modules that did are aligned to `y = 0`, so every equilibrium in the
+  package now starts the same physical particle in every model family.
+
+  `TokamakSmallToroidal` and `TokamakMediumCylindrical` are free: in a cylindrical chart the offset is
+  nearly a toroidal rotation and cannot make a singular pair regular, and in the toroidal chart it moved
+  `r` from 0.05 to 0.0548 and so changed the flux surface, while also disagreeing with
+  `initial_conditions_pauli` in the same file. Every formulation holds the same step or better at
+  `y = 0`.
+
+  `TokamakMediumCartesian` costs something and gains more. `y = 0` puts it on the midplane where
+  `b₁ = b_x` vanishes identically, so `:g31` is not merely ill-conditioned there but **singular**, and
+  its `default_constraints` moves to `:g23`. That is the better pair on its own merits — `b₂ = 0.9923`
+  is the largest component of `b`, giving `λₒ = -3.85` where `:g31` gave `-0.154` at `y = 0.1`, and
+  `hodeproblem` conserves the constraints about three times better on it — which closes a `TODO.md`
+  item that had flagged `:g31` as the worst-conditioned of the three. `hodeproblem_canonical` is the
+  one formulation that loses by the move: it cannot hold the module's thousand-step example at all on
+  `:g23` (4.1E+07 and 8.0E+10 on `barely_trapped` and `deeply_passing`) and takes a thousand steps at
+  `Δt = 0.01` instead, holding 2.8E-13, 2.6E-13, 9.6E-08 and 6.7E-15. `:g12` is not an alternative for
+  it, meeting a `NaN` or a `SingularException` at every step from 0.1 down to 0.01.
+
+  What this costs the suite is that `TokamakMediumCartesian` is no longer an equilibrium where all three
+  pairs are regular at once, which is what the "the constraint formulations agree" testset used it for.
+  That moved to **`SolovevIterXpoint`**, and is stronger there: the three pairs agree to `8E-16` against
+  the cartesian chart's `6E-9`, that chart being much the stiffer. `Dipole3d` and `QuadraticPotentials3d`
+  are the other two equilibria with all three pairs regular. Eight of eleven now have `b₁ = 0` exactly at
+  their initial condition, up from seven.
+- The `coords` column of the conditioning table in `docs/src/findings.md` called
+  `SolovevSymmetricField` cylindrical. It is a cartesian chart.
+- `docs/src/pauli_particle_3d.md` quoted `v₀` and `v_∥` with the wrong sign on two components, in
+  physical rather than contravariant components without saying so, and defined `u₀` as `|v_∥|` rather
+  than the contraction `v₀ · b`. The `v_∥` signs were wrong under 0.6.3 too: that quantity is invariant
+  under the field reversal, since `v_∥ = (v · b) b⃗` flips twice.
+- `DF̄` is evaluated at the chart coordinates `qᵢ` rather than the cartesian `xᵢ` in
+  `pauli_particle_3d/tokamak_small_{cylindrical,toroidal}.jl`, and the "should DF be evaluated at qᵢ or
+  xᵢ?" comment is answered instead of asked. The two coincide in the cylindrical chart, which is why it
+  never showed; they do not in the toroidal one.
+- `docs/src/examples/iter_cylindrical.md` integrated the 4D guiding centre `iodeproblem` with plain
+  `VPRKLobattoIIIAIIIB(2)`, which throws on a `NaN` direction vector for the orbit the corrected field
+  gives. It now uses `SymmetricProjection(VPRKLobattoIIIAIIIB(2))`, holding `3.6E-3` relative energy —
+  which is what `findings.md` already concluded for every 4D variational orbit, and this page was the
+  one place still doing it unprojected. Its plot label also said `Δt=1.0` for a `timestep=10.` run.
+- Several studies carried static prose that their own output contradicted, now reconciled: the
+  `Dipole3d` and `SolovevSymmetricField` cost ratios and the "seven of eleven" count in
+  `study_guiding_center_3d_conditioning.jl`, and the `B*∥` naming throughout
+  `study_gyrokinetic_rescaling.jl`, which measures `ωabs`. The `Dipole3d` figures differed because
+  `findings.md` tabulates that equilibrium at `t = 3` and `t = 30` while the script runs to `t = 10`;
+  both are now labelled with their span, and the two are consistent once that is stated.
+
+### Tests
+
+- **The suite emits no nonlinear-solver warnings at all, and asserts it.**
+  `test/quiet_solver_warnings.jl` counted 1853 suppressed messages on the new stack and reported
+  only a total, because before `SimpleSolvers` 0.10 a *converging* solve warned too and which orbits
+  tripped it was platform-dependent. 0.10 made a converging solve silent, so the messages became
+  attributable; attributing them found three causes, all of them real, and `runtests.jl` now asserts
+  per test file that the count is zero. The count was never a tripwire before; it is one now.
+- **Every problem now declares a 1000-step example, and the tests run it.** `DEFAULT_TIMESPAN` is set
+  to `1000 · DEFAULT_TIMESTEP` for all 53 equilibrium modules across `ChargedParticle3d`,
+  `GuidingCenter3d`, `GuidingCenter4d`, `PauliParticle3d` and `GyroKinetics4d`, so the declared
+  example is uniform and directly comparable between models, coordinate systems and formulations.
+  Sixteen step counts moved, from a spread running 100 to three million. Four came down, all in
+  `GuidingCenter3d`: `Dipole3d` from 3 000 000 steps (`Δt = 0.03` over `9E4`),
+  `QuadraticPotentials3d` from 50 000, and `SolovevSymmetricField` and `TokamakSmallCartesian` from
+  10 000 each — the step moves too on `Dipole3d` and `TokamakSmallCartesian`, for the separate
+  reasons given below. Twelve went up from 100: the `TokamakSmall*` families of `GuidingCenter4d`,
+  `PauliParticle3d` and `GyroKinetics4d` — nine — plus `GuidingCenter4d.SolovevSymmetricField`,
+  `PauliParticle3d.ThetaPinchField` and `.TokamakIterCylindrical`. The rest were already at 1000,
+  `ChargedParticle3d`'s twelve equilibria among them, which share one `DEFAULT_TIMESTEP = 0.01` over
+  `(tᵢ, 10.0)` between the canonical and noncanonical formulations rather than declaring their own.
+  Every lengthened case was checked on energy rather than on solver silence — a long span can lose an
+  orbit without the solver warning at all — and all are clean, between 0 and 6.6E-3 relative.
+
+- **Several modules declared a `DEFAULT_TIMESTEP` at which their own model does not integrate.** The
+  test files had been compensating with hand-tuned overrides, so the defaults were never exercised
+  and their breakage was invisible; the documented usage in `docs/src/guiding_center_3d.md` and
+  `docs/src/pauli_particle_3d.md` would have hit it. Corrected, with the measurement recorded on each
+  constant: `GuidingCenter3d.SolovevIterXpoint` (`Δt = 1` gave `NaN` and 89 capped steps → 0.1),
+  `.TokamakSmallCartesian` (`Δt = 200` gave `NaN` and 494 capped → 0.1, which the file had had
+  commented out above the broken value all along), `PauliParticle3d.SolovevIter` and
+  `.SolovevIterXpoint` (`Δt = 1`, all formulations threw → 0.1) and
+  `PauliParticle3d.TokamakSmallCartesian` (`Δt = 500`, 1.9E+37 with 441 capped → 10).
+  `GuidingCenter3d.Dipole3d` moves the other way, from `Δt = 0.03` to 0.1, deliberately: the coarser
+  step *exhibits* the constraint drift the model is about, separating the three formulations legibly
+  (4.8E-6, 7.1E-4, 8.1E-6 in `max|g¹|`) where at 0.03 they all collapse into the 1E-8 range.
+
+- **Where a time span is shortened for the tests, the exception belongs to the formulation that
+  blocks, not to the module.** Two cases remain, both in `guiding_center_3d_tests.jl`:
+  `TokamakMediumCartesian.hodeproblem_canonical` and `SolovevSymmetricField.hodeproblem` run over
+  `t ∈ [0, 1E1]` while their siblings run the declared span. That keeps the tests comparable across
+  formulations and, on `SolovevSymmetricField`, makes visible the thing worth knowing — that
+  `hodeproblem_compact` is the only formulation which survives the full example there. Levelling every
+  call to the shortest span that all of them tolerate had concealed exactly that.
+
+- **`GuidingCenter4d.SolovevSymmetricField` gets usable defaults** — `DEFAULT_TIMESPAN = (0.0, 1E3)`
+  and `DEFAULT_TIMESTEP = 1E0`, replacing `t ∈ [0, 5E5]` at `Δt = 5E3` — **and every test now runs at
+  them.** Nothing used the old pair: every call in the test block overrode it, between them with four
+  different pairs. This equilibrium is the worst conditioned in the package, `‖ϑ‖ ≈ 256` against
+  `≈ 15` for the ITER Solov'ev cases, and accounted for 1616 of the 1853 suppressed warnings. `Δt =
+  1E0` is not merely convenient for `Gauss(2)` but the only stable rate measured: the maximum
+  relative energy error over the span is 1.9E-3 there against 1.8E+11 at `Δt = 1E1` and 1.8E+1 at
+  `Δt = 1E2`. All four orbits then converge in 2.1–2.3 iterations and cap on no step.
+- **Every 4D guiding centre variational test is integrated with `SymmetricProjection(VPRKGauss(2))`.**
+  The parasitic mode below is a property of the degenerate formulation, not of one equilibrium, so
+  the projected method is now the default in `GuidingCenter4dTests` rather than a special case. One
+  call keeps the unprojected method: the `ThetaPinchField` loop, where `p` is an exact invariant so
+  there is no drift to project, and the projection's inner Hermite guess re-introduces the
+  degenerate-history warning that block exists to avoid.
+
+### Bug fixes
+
+- **The 4D guiding centre right-hand sides could not be differentiated through.** Every method in
+  `src/guiding_center_4d/guiding_center_4d_common.jl` pinned all of its array arguments to a single
+  element type — `f(y::AbstractVector{DT}, t, q::AbstractVector{DT}, …) where {DT}` — and the
+  `κ`-dependent pair additionally pinned the scalar, `κ::DT`. That is satisfiable only when every
+  argument has the *same* type, so as soon as a caller differentiates with respect to one of them and
+  leaves the others alone, no method matches. `SymmetricProjection` does exactly that, and
+  `iodeproblem_dg` therefore died with `MethodError: no method matching guiding_center_4d_g(::Vector{ForwardDiff.Dual{…}}, ::Float64, …)`.
+  The constraint bought nothing — no method used `DT` for dispatch, and only two used it at all, to
+  size a workspace — so it is removed throughout; the two workspace sites now take their element type
+  from `q`, which is what they hold. The `κ` formulation is consequently integrated with the same
+  projected method as everything else.
+- **With the projected method most of the tests' custom time steps became unnecessary**, and were
+  dropped in favour of each module's own `DEFAULT_TIMESPAN`/`DEFAULT_TIMESTEP`:
+  `TokamakMediumCartesian`, `TokamakMediumCylindrical`, `TokamakSmallCylindrical`,
+  `TokamakSmallToroidal`, `SymmetricField` and both formulations of `SolovevIterXpoint`'s `trapped`
+  orbit — for which the default is not merely adequate but *better*, 8.8E-5 against 2.2E-1 at the
+  `Δt = 1E4` it used to override with. Two overrides are load-bearing and stay, now with the
+  measurement that justifies them: `TokamakSmallCartesian`'s variational calls (at the default
+  `Δt = 500`, `deeply_passing` reaches 3.2E+41 with 495 warnings, against 6.1E-4 and silence at
+  `Δt = 10`), and `SolovevIterXpoint`'s (at the default the variational and `ode` orbits agree, but
+  their shared energy error is O(1) and `deeply_passing` emits 39 line-search-at-round-off messages
+  that no `f_abstol` between 1E-12 and 1E-10 removes).
+- **Larger time steps for `SolovevSymmetricField` are not viable**, contrary to what the fixed-span
+  convergence table suggests. That table's apparent improvement beyond `Δt = 5E3` is an artifact of
+  holding the span fixed, so a larger step means fewer steps and less accumulated instability — at
+  `Δt = 1E5` the run is ten steps. Holding the step *count* fixed at 1000 gives the ordinary monotone
+  picture: 9.4E-8 at `Δt = 1E-1`, 1.9E-3 at `1E0`, 1.8E+11 at `1E1`, 1.3E+32 at `1E4`. `Δt = 1E0` is
+  the largest step at which the equilibrium is resolved.
+- **Why the projection is needed at all.** The degenerate variational discretisation carries a
+  parasitic mode
+  that VPRK does not control and that *grows as the step shrinks* — the energy error runs 2.0E-1 at
+  `Δt = 5E3`, 2.3E+3 at `Δt = 1E2`, 1.5E+18 at `Δt = 1E1` and 6.2E+25 at `Δt = 1E0`, with `|R|`
+  reaching 1.3E+5 against a machine radius of 2.5, which is why the old two-step default looked
+  healthy. The solver's iteration cap was a symptom: it was being asked to continue a trajectory that
+  had already left the device, and no solver setting repairs that — `DogLeg` throws on a NaN
+  direction for all four orbits, `StrongWolfe` and `Static` throw a `SingularException` or cap just
+  as hard, and `PartitionedGauss(2)` is singular. `SymmetricProjection` constrains the drift off
+  `p = ϑ(q)` that the mode feeds on; all four orbits then integrate silently and stay bounded at
+  `|R| ≤ 6.5`, matching `Gauss(2)`. `MidpointProjection` is not sufficient. This restores stability,
+  not accuracy — the projected energy error is O(1) against the `odeproblem`'s 1.9E-3 — so on this
+  equilibrium the variational formulation is not a quantitative result, and the tests assert only
+  that the integration completes.
+- **`PauliParticle3d.TokamakSmallCartesian.iodeproblem()` was left at the module default
+  `Δt = 500`** (the other 174), at which the variational integrators do not converge — a limit
+  `test/guiding_center_4d_tests.jl` already recorded for the same equilibrium, and which the `pode`
+  and `hode` calls beside it already worked around with `Δt = 10`. It took 22.8 Newton iterations per
+  step and capped on 27 of 100; at `Δt = 10` it takes 2.0, caps on none and runs 21x faster.
+- The calls that deliberately pass no options, to exercise the library defaults —
+  `integrate(prob, Gauss(2))` in `structure_tests.jl` and the three in `plots_tests.jl` — are silent
+  under the sized default and are asserted to be. They were the dominant source of warnings before,
+  and `quiet_solver_warnings.jl` described them as irreducible.
+
+### Documentation
+
+- `docs/src/findings.md` **retracts a claim measurement disproved**: that `SolovevSymmetricField`
+  "never showed up in CI only because its block runs `ode` rather than `iode`, and `Gauss` converges
+  on these problems in one or two iterations regardless of tolerance". `Gauss(2)` averaged 29.4
+  iterations there and capped on 45 % of steps. This was **not** a SimpleSolvers 0.10 regression:
+  under GeometricIntegrators 0.16.10 / SimpleSolvers 0.9.2 the same block capped 28 of 100 steps at
+  0.524 ms/step, against 45 at 0.346 ms/step now. 0.10 reports more of the failures, runs 1.5x
+  faster, and names the cause — the line search reporting `φ'(0)` inconsistent with its merit — which
+  is what made them findable.
+- `docs/src/audit.md` gains a *Nonlinear solver tolerances* section stating the `‖ϑ‖ eps` floor, the
+  sized library default and why `f_reltol` is left alone, which the test modules and scripts now
+  reference instead of restating.
+- `scripts/study_guiding_center_3d_conditioning.jl` **corrects a wrong number**: a singular
+  constraint pair was said to make the line search "grind through its thousand-iteration budget".
+  The line-search budget is `linesearch_max_iterations`, whose default is 60; the thousand was
+  `max_iterations`, which bounds the outer Newton iteration. Since 0.10 the line search also checks
+  its anchor before descending, and a stalled solve stops after `max_stalls = 2` steps.
+- `scripts/guiding_center_3d_dipole.jl` and `scripts/guiding_center_3d_quadratic_potentials.jl` asked
+  for `f_abstol = 8eps()` and `2eps()` against round-off floors of `3.4E-14` and `4.0E-15`; both now
+  use `1E-12`.
+- **Two rows of the `Dipole3d` conditioning table in `docs/src/findings.md` were wrong**, and the
+  conclusions drawn from them with them. Re-measured at the `Δt = 0.03` the table was taken at, three
+  of its five rows reproduce to three significant figures — `hode :g12`, `canonical :g31`,
+  `canonical :g12` — while the two `hode` rows on a non-default pair are out by two orders in the
+  constraints and four in the energy: `:g31` reads 1.31e-05 and 2.62e-09 against the tabulated
+  1.30e-03 and 4.06e-05, `:g23` 6.79e-06 and 1.87e-09 against 1.69e-03 and 3.98e-05. The
+  diagnostics have not changed since the table was written and the other rows still reproduce with
+  them, so the two were wrong when recorded rather than made stale by a later change.
+
+  What they were supporting was wrong with them. It is three orders of magnitude at `t = 3`, not
+  four; and the badly conditioned pair is *not* lost "under both formulations" by `t = 30` — the
+  canonicalised form is destroyed there (`|ΔH/H| = 2.9e+05`) while the Hamilton-Dirac form still
+  holds the same pair at 2.7e-09 and only degrades by `t = 300`, and then on `:g23` rather than
+  `:g31`. The corrected table spans `t = 3`, `30` and `300` and states its step; the case for
+  `default_constraints = :g12` is unaffected and now stronger, since it is the only pair either
+  formulation holds throughout.
+- **`Dipole3d.default_constraints` is justified on the step the module now declares.** Its docstring
+  quoted the constraint and energy levels of the three pairs without saying at which step, and the
+  figures were those of the retired `Δt = 0.03`. Re-measured over the declared thousand-step example at
+  `Δt = 0.1`: `4.8E-06` for `:g12` against `7.4E-03` and `8.8E-03` for the two pairs the orbit takes
+  through zero, three orders rather than the four the old numbers showed at the finer step. The
+  ordering, which is what the default rests on, is unchanged at either step. The longer-run figures
+  stay in `docs/src/findings.md`, whose table is measured at `t = 3` and `t = 30` — both places now say
+  which span they are quoting.
+- Every comment in `test/guiding_center_3d_tests.jl` that described the file's workload as "a hundred
+  steps, the same as the blocks above" predated the move to thousand-step examples. The
+  `SolovevSymmetricField` block also still called itself "the one block that cannot be run over the
+  module's own `DEFAULT_TIMESPAN`" directly below the new paragraph explaining that its
+  `hodeproblem_compact` does exactly that.
 
 
 ## [0.3.0] - 2026-07-30
@@ -809,7 +1161,7 @@ deprecation shims; see *Changed* below for the mapping.
 Initial release.
 
 
-[Unreleased]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.3.0...HEAD
+[0.4.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/JuliaPlasma/ChargedParticleDynamics.jl/releases/tag/v0.1.0

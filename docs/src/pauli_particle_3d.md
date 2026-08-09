@@ -113,18 +113,35 @@ the reference initial condition of the charged particle,
 ```math
 x_{0} = [ 1.05, \, 0, \, 0 ] ,
 \qquad
-v_{0} = [ 2.1 \times 10^{-3}, \, 0, \, -4.3 \times 10^{-4} ] ,
+v_{0} = [ 2.1 \times 10^{-3}, \, 0, \, 4.3 \times 10^{-4} ] ,
 ```
 corresponds to
 ```math
-v_{\parallel} \approx [ 0, \, -1.128 \times 10^{-5}, \, -4.297 \times 10^{-4} ] ,
+v_{\parallel} \approx [ 0, \, 1.074 \times 10^{-5}, \, 4.297 \times 10^{-4} ] ,
 \qquad
 \mu \approx 2.315 \times 10^{-6} ,
 ```
 which is the magnetic moment `default_parameters()` returns for that equilibrium, and to the
 guiding centre initial condition ``q_{0} = [x_{0}, u_{0}]`` with
-``u_{0} = \vert v_{\parallel} \vert \approx 4.299 \times 10^{-4}``.
-The three models can therefore be compared directly on the same physical orbit.
+``u_{0} = v_{0} \cdot b (x_{0}) \approx 4.299 \times 10^{-4}``.
+The three models can therefore be compared directly on the same physical orbit — and
+`scripts/study_model_agreement.jl` measures how directly.
+
+!!! note "Which components these are"
+    The two velocities above are quoted in **physical** components, ``\sqrt{g_{ii}} \, v^{i}``, which is
+    what makes their third entries read ``4.3 \times 10^{-4}`` rather than the contravariant
+    ``4.095 \times 10^{-4}`` the module actually stores — the chart has ``g_{33} = R^{2}`` and
+    ``R = 1.05``. And ``u_{0}`` is the contraction ``v_{0} \cdot b`` with the *covariant* `b`, not
+    ``\vert v_{\parallel} \vert``: those agree to three digits here only because the parallel velocity is
+    almost entirely toroidal. The three triads `b`, `bₚ` and `b⃗` are covariant, physical and
+    contravariant and are not interchangeable; see [Initialization](@ref).
+
+    Both signs above were negative in this page before `ElectromagneticFields` 0.7.0, and one of the two
+    changes was a correction rather than an update. ``v_{\parallel}`` and ``\mu`` are *invariant* under
+    the field reversal — ``v_{\parallel} = (v \cdot b) \, \vec{b}`` flips twice — so their signs were
+    simply wrong. ``u_{0}`` genuinely was negative in this chart, because ``b`` pointed the wrong way;
+    it is positive now, and agrees with the cartesian chart of the same tokamak, which it did not
+    before. See "The reversed field of the left-handed charts" in [Findings](@ref).
 
 
 ## Modules

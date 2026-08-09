@@ -13,13 +13,23 @@ export hamiltonian, toroidal_momentum
 
 AxisymmetricTokamakCylindrical.@code() # inject magnetic field code
 
-const DEFAULT_TIMESTEP = 0.1
-const DEFAULT_TIMESPAN = (0.0, 1E2)
+# Δt = 500, matching this equilibrium's `GuidingCenter4d` and `PauliParticle3d` counterparts. All
+# three formulations hold it on the module's own `:g12` pair — 4.3E-3 relative energy, constraints
+# 6.0E-9, 1.8E-6 and 3.8E-9 over a thousand steps. Its `Cartesian` chart cannot do this at any
+# constraint pair, and its `Toroidal` chart cannot in the canonicalised form; see
+# `test/guiding_center_3d_tests.jl`.
+const DEFAULT_TIMESTEP = 500.0
+const DEFAULT_TIMESPAN = (0.0, 5E5)
 # const DEFAULT_TIMESTEP = 500.0
 # const DEFAULT_TIMESPAN = (0.0, 5E4)
 
 const xᵢ = [1.05, 0.0, 0.0]
-const uᵢ = -0.00045135897235326736
+# The same physical particle as `TokamakSmallCartesian` starts, at the same position and with the
+# same `μ`. This read `-0.00045135897235326736` until `ElectromagneticFields` 0.7.0: `(R, Z, ϕ)` is a
+# left-handed chart, and the Hodge star was being handed the unsigned volume element, so `b` came out
+# antiparallel to the cartesian chart's and the sign here compensated for it. With the field
+# corrected the compensation is stale, and `u` means the same thing in all three charts.
+const uᵢ = 0.00045135897235326736
 const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
 
 

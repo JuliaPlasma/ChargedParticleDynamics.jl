@@ -9,9 +9,18 @@ PoincareInvariants = "26663084-47d3-540f-bd97-40ca743aafa4"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+# Every dependency is bounded in the environment that resolves it. `SimpleSolvers` is deliberately
+# absent: it reaches this suite only through `GeometricIntegrators`, whose 0.17 requires 0.10, and
+# the tests identify its messages by originating module name rather than by importing it.
 [compat]
-GeometricIntegrators = "0.16"
+CairoMakie = "0.15"
+GeometricIntegrators = "0.17"
+LaTeXStrings = "1"
+LinearAlgebra = "1"
+Logging = "1"
 PoincareInvariants = "0.5"
+SafeTestsets = "0.1"
+Test = "1"
 
 [sources]
 ChargedParticleDynamics = {path = ".."}

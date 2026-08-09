@@ -4,7 +4,13 @@ using SimpleSolvers
 using ChargedParticleDynamics.GuidingCenter3d.Dipole3d
 using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, b₁, b₂, b₃
 
-const options = (f_abstol=8eps(), verbosity=1)
+# `f_abstol` has to sit above the round-off floor of the residual, which for the variational
+# residual is `‖ϑ‖ eps`. `Dipole3d` ships `‖p‖ ≈ 152`, i.e. a floor of `3.4E-14`, so the `8eps() =
+# 1.8E-15` this asked for was unreachable and every solve stagnated there. `1E-12` is the value the
+# test suite and the other scripts use; see the comment on `options` in
+# `test/guiding_center_3d_tests.jl`. `verbosity` is left at its default of 1 deliberately: this is
+# an exploratory script and the solver's report of what it achieved is the point.
+const options = (f_abstol=1E-12, verbosity=1)
 
 equ = hodeproblem(initial_conditions_dipole())
 # equ = hodeproblem(initial_conditions_dipole(); timestep=0.003)

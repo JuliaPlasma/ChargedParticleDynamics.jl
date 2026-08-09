@@ -302,7 +302,7 @@ function g̅₄(t, q, v)
 end
 
 
-function guiding_center_4d_v(v::AbstractVector{DT}, t, q::AbstractVector{DT}, params) where {DT}
+function guiding_center_4d_v(v::AbstractVector, t, q::AbstractVector, params)
     @unpack μ = params
 
     local lB₁ = B₁(t,q)
@@ -326,19 +326,19 @@ function guiding_center_4d_v(v::AbstractVector{DT}, t, q::AbstractVector{DT}, pa
     nothing
 end
 
-function guiding_center_4d_v(v::AbstractVector{DT}, t, q::AbstractVector{DT}, p::AbstractVector{DT}, params) where {DT}
+function guiding_center_4d_v(v::AbstractVector, t, q::AbstractVector, p::AbstractVector, params)
     guiding_center_4d_v(v, t, q, params)
 end
 
-# function guiding_center_4d_ϑ(θ::AbstractVector{DT}, t, q::AbstractVector{DT}) where {DT}
+# function guiding_center_4d_ϑ(θ::AbstractVector, t, q::AbstractVector)
 #     ϑ(t, q, Θ)
 # end
 
-function guiding_center_4d_ϑ(θ::AbstractVector{DT}, t, q::AbstractVector{DT}, v::AbstractVector{DT}, params) where {DT}
+function guiding_center_4d_ϑ(θ::AbstractVector, t, q::AbstractVector, v::AbstractVector, params)
     ϑ(θ, t, q)
 end
 
-function guiding_center_4d_ϑ(θ::AbstractVector{DT}, t, q::AbstractVector{DT}, v::AbstractVector{DT}, params, κ) where {DT}
+function guiding_center_4d_ϑ(θ::AbstractVector, t, q::AbstractVector, v::AbstractVector, params, κ)
     θ[1] = (1-κ) * ϑ₁(t,q) - κ * f₁(t,q,q)
     θ[2] = (1-κ) * ϑ₂(t,q) - κ * f₂(t,q,q)
     θ[3] = (1-κ) * ϑ₃(t,q) - κ * f₃(t,q,q)
@@ -346,7 +346,7 @@ function guiding_center_4d_ϑ(θ::AbstractVector{DT}, t, q::AbstractVector{DT}, 
     nothing
 end
 
-function guiding_center_4d_f(f::AbstractVector{DT}, t, q::AbstractVector{DT}, v::AbstractVector{DT}, params) where {DT}
+function guiding_center_4d_f(f::AbstractVector, t, q::AbstractVector, v::AbstractVector, params)
     @unpack μ = params
     f[1] = f₁(t,q,v) - dHdx₁(t,q,μ)
     f[2] = f₂(t,q,v) - dHdx₂(t,q,μ)
@@ -355,7 +355,7 @@ function guiding_center_4d_f(f::AbstractVector{DT}, t, q::AbstractVector{DT}, v:
     nothing
 end
 
-function guiding_center_4d_f(f::AbstractVector{DT}, t, q::AbstractVector{DT}, v::AbstractVector{DT}, params, κ) where {DT}
+function guiding_center_4d_f(f::AbstractVector, t, q::AbstractVector, v::AbstractVector, params, κ)
     @unpack μ = params
     f[1] = (1-κ) * f₁(t,q,v) - κ * (g₁(t,q,v) + g̅₁(t,q,v)) - dHdx₁(t,q,μ)
     f[2] = (1-κ) * f₂(t,q,v) - κ * (g₂(t,q,v) + g̅₂(t,q,v)) - dHdx₂(t,q,μ)
@@ -364,7 +364,7 @@ function guiding_center_4d_f(f::AbstractVector{DT}, t, q::AbstractVector{DT}, v:
     nothing
 end
 
-function guiding_center_4d_g(g::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, v::AbstractVector{DT}, λ::AbstractVector{DT}, params) where {DT}
+function guiding_center_4d_g(g::AbstractVector, t::Number, q::AbstractVector, v::AbstractVector, λ::AbstractVector, params)
     g[1] = f₁(t,q,λ)
     g[2] = f₂(t,q,λ)
     g[3] = f₃(t,q,λ)
@@ -372,7 +372,7 @@ function guiding_center_4d_g(g::AbstractVector{DT}, t::Number, q::AbstractVector
     nothing
 end
 
-# function guiding_center_4d_g(g::AbstractVector{DT}, t, q::AbstractVector{DT}, λ::AbstractVector{DT}, params, κ::DT=0) where {DT}
+# function guiding_center_4d_g(g::AbstractVector, t, q::AbstractVector, λ::AbstractVector, params, κ=0)
 #     g[1] = g₁(t,q,λ)
 #     g[2] = g₂(t,q,λ)
 #     g[3] = g₃(t,q,λ)
@@ -380,7 +380,7 @@ end
 #     nothing
 # end
 
-function guiding_center_4d_g(g::AbstractVector{DT}, t, q::AbstractVector{DT}, λ::AbstractVector{DT}, params, κ::DT) where {DT}
+function guiding_center_4d_g(g::AbstractVector, t, q::AbstractVector, λ::AbstractVector, params, κ)
     g[1] = (1-κ) * f₁(t,q,λ) - κ * (g₁(t,q,λ) + g̅₁(t,q,λ))
     g[2] = (1-κ) * f₂(t,q,λ) - κ * (g₂(t,q,λ) + g̅₂(t,q,λ))
     g[3] = (1-κ) * f₃(t,q,λ) - κ * (g₃(t,q,λ) + g̅₃(t,q,λ))
@@ -388,7 +388,7 @@ function guiding_center_4d_g(g::AbstractVector{DT}, t, q::AbstractVector{DT}, λ
     nothing
 end
 
-# function guiding_center_4d_g(g::AbstractVector{DT}, t, q::AbstractVector{DT}, λ::AbstractVector{DT}, params, κ::DT=0) where {DT}
+# function guiding_center_4d_g(g::AbstractVector, t, q::AbstractVector, λ::AbstractVector, params, κ=0)
 #     g[1] = (1-κ) * g₁(t,q,λ) - κ * (f₁(t,q,λ) + g̅₁(t,q,λ))
 #     g[2] = (1-κ) * g₂(t,q,λ) - κ * (f₂(t,q,λ) + g̅₂(t,q,λ))
 #     g[3] = (1-κ) * g₃(t,q,λ) - κ * (f₃(t,q,λ) + g̅₃(t,q,λ))
@@ -396,26 +396,28 @@ end
 #     nothing
 # end
 
-function guiding_center_4d_dH(∇H::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, params) where {DT}
+function guiding_center_4d_dH(∇H::AbstractVector, t::Number, q::AbstractVector, params)
     dH(∇H, t, q, params)
 end
 
-function guiding_center_4d_ω(Ω::Matrix{DT}, t::Number, q::AbstractVector{DT}, v::AbstractVector{DT}, params) where {DT}
+function guiding_center_4d_ω(Ω::AbstractMatrix, t::Number, q::AbstractVector, v::AbstractVector, params)
     ω(Ω, t, q)
 end
 
 
 # Solve Ω(q) λ = ∇H(q) for λ. `params` is the parameter named tuple the model is built with —
 # it is forwarded to `dH`, which unpacks `μ` from it, so passing a bare `μ` here does not work.
-function guiding_center_4d_λ(λ::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, params, Ω::AbstractMatrix{DT}, dh::AbstractVector{DT}) where {DT}
+function guiding_center_4d_λ(λ::AbstractVector, t::Number, q::AbstractVector, params, Ω::AbstractMatrix, dh::AbstractVector)
     dH(dh, t, q, params)
     ω(Ω, t, q)
     λ .= Ω \ dh
     nothing
 end
 
-function guiding_center_4d_λ(λ::AbstractVector{DT}, t::Number, q::AbstractVector{DT}, params) where {DT}
+function guiding_center_4d_λ(λ::AbstractVector, t::Number, q::AbstractVector, params)
     D = length(q)
+    # `Ω` and `dh` hold values of `ω(t,q)` and `dH(t,q)`, so their element type follows `q` alone.
+    DT = eltype(q)
     guiding_center_4d_λ(λ, t, q, params, zeros(DT,D,D), zeros(DT,D))
 end
 
@@ -431,9 +433,10 @@ function guiding_center_4d_pᵢ(tᵢ, qᵢ::AbstractVector{<:AbstractArray{T}}) 
 end
 
 
-function guiding_center_4d_λᵢ(tᵢ, qᵢ::AbstractVector{DT}, params) where {DT}
+function guiding_center_4d_λᵢ(tᵢ, qᵢ::AbstractVector, params)
     D  = length(qᵢ)
     λᵢ = zero(qᵢ)
+    DT = eltype(qᵢ)
     Ω  = zeros(DT, D, D)
     dh = zeros(DT, D)
     guiding_center_4d_λ(λᵢ, tᵢ, qᵢ, params, Ω, dh)

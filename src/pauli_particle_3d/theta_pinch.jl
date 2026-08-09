@@ -14,7 +14,7 @@ module ThetaPinchField
     const vᵢ = [0., 1., 1.]
 
     const DEFAULT_TIMESTEP = 10.0
-    const DEFAULT_TIMESPAN = (0.0, 1000.0)
+    const DEFAULT_TIMESPAN = (0.0, 1E4)
 
     include("pauli_particle_3d.jl")
 
