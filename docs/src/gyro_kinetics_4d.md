@@ -72,7 +72,7 @@ which is what this module integrates.
     chart-dependent — the three charts of the small tokamak give `0.9511`, `0.9986` and `0.0499` for
     a common `B*∥ = 0.9511` — while its *sign* is not: it is a measure density and positive in every
     chart. Getting that sign wrong reverses the orbit, which is what happened before each module
-    declared its `ORIENTATION`; see [Findings](@ref) and `ωabs`.
+    applied its chart's `orientation()`; see [Findings](@ref) and `ωabs`.
 
 The point of the rescaling is that the new right-hand side is divergence-free,
 ```math

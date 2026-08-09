@@ -18,13 +18,16 @@ who pinned `0.3` and reran will get different numbers, hence the minor bump rath
 Two dependency updates, of different reach. The solver stack — `GeometricIntegrators` 0.17,
 `SimpleSolvers` 0.10.1, `GeometricIntegratorsBase` 0.5.1 — is confined to `test/`, `docs/` and
 `scripts/`, the three environments that resolve it; `src/` does not depend on any of the three.
-`ElectromagneticFields` 0.7.0 reaches `src/` and is bounded in the root project.
+`ElectromagneticFields` 0.7.1 reaches `src/` and is bounded in the root project.
 
 ### Changed
 
-- **`ElectromagneticFields` 0.7.0 is now required**, up from 0.6.3, in the root project and in the
+- **`ElectromagneticFields` 0.7.1 is now required**, up from 0.6.3, in the root project and in the
   `docs/` and `scripts/` environments. (`test/` does not depend on it directly — it reaches the suite
-  through this package — so it carries no bound of its own.) Unlike 0.6.3 this release is *not*
+  through this package — so it carries no bound of its own.) The bound is `0.7.1` rather than `0.7`
+  because `GyroKinetics4d` reads the generated `orientation()`, which
+  [PR #12](https://github.com/JuliaPlasma/ElectromagneticFields.jl/pull/12) added in that patch
+  release; under 0.7.0 the eight modules would not load. Unlike 0.6.3 the 0.7 series is *not*
   value-preserving:
   [PR #11](https://github.com/JuliaPlasma/ElectromagneticFields.jl/pull/11) fixed an orientation error
   in the Hodge star, which had been handed the unsigned volume element `|det DF|`, and **`B` was
@@ -112,8 +115,12 @@ Two dependency updates, of different reach. The solver stack — `GeometricInteg
   other way in the cylindrical one. Nothing in the suite caught it because everything it asserted was
   a magnitude: `v_gk = ωabs v_gc` holds with either sign, and `|det J| = 1` cannot see a direction.
 
-  Fixed by giving each of the eight modules an `ORIENTATION = ±1` and applying it in `ωabs` and in the
-  vector field, so `ωabs = J B*∥ > 0` in every chart and `s` runs with `t`. This costs nothing:
+  Fixed by applying the chart's `orientation()` in `ωabs` and in the vector field, so
+  `ωabs = J B*∥ > 0` in every chart and `s` runs with `t`. The sign is not declared here: each of the
+  eight modules already injects its equilibrium with a `@code` call, and `ElectromagneticFields`
+  0.7.1 emits `orientation()` alongside `J`, `DF` and the metric, so the handedness comes from the
+  same generator as the field it describes rather than from a constant kept in step by hand. This
+  costs nothing:
   negating a divergence-free field leaves it divergence-free and each of the six subsystems
   Hamiltonian, so the splitting is volume preserving exactly as before, and the cartesian equilibria
   are bit-identical. It also makes the declared positive `DEFAULT_TIMESTEP`s correct, which under the
@@ -125,7 +132,9 @@ Two dependency updates, of different reach. The solver stack — `GeometricInteg
 
   `test/gyro_kinetics_4d_tests.jl` gains the assertion that would have caught it — one physical
   particle in all three charts of the small tokamak must have the same physical toroidal velocity —
-  plus `ωabs > 0` for all eight and a check of each declared `ORIENTATION` against its chart. The
+  plus `ωabs > 0` for all eight and a check of each chart's generated `orientation()` against the
+  bare contraction this package computes, which spans the two packages rather than restating a local
+  constant. The
   three `GuidingCenter4dTokamakSmall*` modules stated their factor as `B*∥` on the `DEFAULT_TIMESTEP`
   comment, wrong in both value and sign; all three now name `ωabs` and give both quantities. Two also
   quoted the 4D guiding centre's pre-1000-step span, `(0, 5E4)`. Closes the `TODO.md` item, whose

@@ -72,7 +72,7 @@ end
     # direction, in the reparametrised time dt = `ωabs` ds.
     #
     # `ωabs = J B*∥` is positive in every chart, including this left-handed Solov'ev one, because it
-    # carries the chart's `ORIENTATION`; see `ωabs` in `gc_common.jl`. The equality below is what
+    # carries the chart's `orientation()`; see `ωabs` in `gc_common.jl`. The equality below is what
     # pins the two together, and the "one orbit in three charts" block at the end of this file is
     # what pins the sign.
     GK = GuidingCenter4dSolovevIterXpoint
@@ -175,7 +175,7 @@ end
     # ϑᵢ = Aᵢ + u bᵢ in covariant components and Ω = dϑ need none — and the Liouville measure is
     # √det Ω in any chart, which is `ωabs` as this module computes it. So the volume-preserving
     # splitting must work unchanged in cylindrical and toroidal coordinates, and this is the assertion
-    # that says so. Applying the chart's `ORIENTATION` to the field does not disturb it: negating a
+    # that says so. Applying the chart's `orientation()` to the field does not disturb it: negating a
     # divergence-free field leaves it divergence-free.
     #
     # Each module's time step is the 4D guiding centre's divided by the rescaling factor at its own
@@ -185,9 +185,10 @@ end
     #
     # `ωabs` is the phasespace Jacobian `J B*∥`, and it is **positive in every chart**. The bare
     # contraction it is built from is `det(DF) · B*∥` — `∂₂ϑ₃ - ∂₃ϑ₂` is the coordinate curl, which
-    # carries the signed Jacobian — so each module declares an `ORIENTATION` that restores it; see
-    # `ωabs` in `gc_common.jl`. Both facts are asserted below: that the declared constant really is
-    # the handedness of the chart, and that the factor that reaches the dynamics is positive.
+    # carries the signed Jacobian — so each module applies the `orientation()` its `@code` call
+    # generates, which restores it; see `ωabs` in `gc_common.jl`. Both facts are asserted below: that
+    # the generated sign really is the handedness of the chart, and that the factor that reaches the
+    # dynamics is positive.
     equilibria = sort(filter(n -> isa(getfield(GyroKinetics4d, n), Module) && n !== :GyroKinetics4d,
                              names(GyroKinetics4d, all = true)))
 
@@ -216,13 +217,17 @@ end
         # vector field, and it holds for every chart rather than per chart.
         @test ωfac > 0
 
-        # And the module's declared `ORIENTATION` really is its chart's handedness, checked against
-        # the bare contraction rather than restated: `ORIENTATION · (bare) = ωabs > 0` means the
-        # constant and the chart agree. Declaring the wrong one would silently reverse the orbit.
+        # And the `orientation()` this module gets from `ElectromagneticFields` really is the
+        # handedness of the curl this package computes, checked against the bare contraction rather
+        # than restated: `orientation() · (bare) = ωabs > 0` means the generated sign and the chart
+        # agree. This is the one assertion that spans the two packages — it used to check a constant
+        # declared here against its own chart, and now checks that upstream's sign is the one the
+        # dynamics needs. An upstream chart whose orientation went wrong would reverse the orbit
+        # silently, and this is what would catch it.
         bare = M.ω₁(0.0, q₀) * M.dϑ₁dx₄(0.0, q₀) +
                M.ω₂(0.0, q₀) * M.dϑ₂dx₄(0.0, q₀) +
                M.ω₃(0.0, q₀) * M.dϑ₃dx₄(0.0, q₀)
-        @test sign(bare) == M.ORIENTATION
+        @test sign(bare) == M.orientation()
 
         step(q) = integrate(M.sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)),
                             strang_composition()).q[end]
@@ -249,10 +254,10 @@ end
     # The regression test for the sign of the rescaling factor.
     #
     # `ωabs` is built from a *coordinate* curl, which carries `det(DF)`, so before each module
-    # declared its `ORIENTATION` the factor was negative in the six left-handed charts — and since
-    # the vector field carries the same factor, the model integrated those orbits **backwards**.
-    # That is not a reparametrisation of time but chart-dependence: the same physical particle in
-    # the same tokamak circulated one way in the cartesian chart and the other way in the
+    # applied its chart's `orientation()` the factor was negative in the six left-handed charts —
+    # and since the vector field carries the same factor, the model integrated those orbits
+    # **backwards**. That is not a reparametrisation of time but chart-dependence: the same physical
+    # particle in the same tokamak circulated one way in the cartesian chart and the other way in the
     # cylindrical one. Nothing else in the suite noticed, because everything else is a magnitude —
     # the proportionality `v_gk = ωabs v_gc` holds with either sign, and `|det J| = 1` is
     # insensitive to direction.

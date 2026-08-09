@@ -369,7 +369,8 @@ field, the sign made the model **chart-dependent**: the same physical particle c
 cartesian chart of the small tokamak and the other way in its cylindrical chart. Nothing in the suite
 caught it because every other assertion was a magnitude.
 
-Resolved by giving each module an `ORIENTATION = ±1` and applying it in `ωabs` and `v`. The trade-off
+Resolved by applying the chart's `orientation()` — generated into each module by its `@code` call,
+since `ElectromagneticFields` 0.7.1 — in `ωabs` and `v`. The trade-off
 this section posed — divergence-free coordinate right-hand side *versus* chart-independent `dt` — was
 not real: negating a divergence-free field leaves it divergence-free and each subsystem Hamiltonian, so
 the splitting is untouched. `s` now runs with `t` in every chart, and the already-declared positive
@@ -379,9 +380,10 @@ Rescaling by the *physical* `B*∥` instead — the other option this section li
 now for a stated reason: it is a scalar rather than a density, so the right-hand side would no longer be
 a pure coordinate curl and would lose the divergence-free property that is the module's reason to exist.
 
-`test/gyro_kinetics_4d_tests.jl` asserts `ωabs > 0` for all eight, checks each declared `ORIENTATION`
-against its chart, and compares the physical toroidal velocity across all three charts of the small
-tokamak — the one statement that is not a magnitude.
+`test/gyro_kinetics_4d_tests.jl` asserts `ωabs > 0` for all eight, checks each chart's generated
+`orientation()` against the bare contraction this package computes, and compares the physical
+toroidal velocity across all three charts of the small tokamak — the one statement that is not a
+magnitude.
 
 ## Order of the composition methods for the splitting
 

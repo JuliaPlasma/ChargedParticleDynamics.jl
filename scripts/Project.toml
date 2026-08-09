@@ -14,7 +14,7 @@ SimpleSolvers = "36b790f5-6434-4fbe-b711-1f64a1e2f6a2"
 # it is also the one that has to bound them.
 [compat]
 CairoMakie = "0.15"
-ElectromagneticFields = "0.7"
+ElectromagneticFields = "0.7.1"
 GeometricIntegrators = "0.17"
 GeometricIntegratorsBase = "0.5.1"
 LinearAlgebra = "1"

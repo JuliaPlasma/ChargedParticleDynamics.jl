@@ -14,8 +14,9 @@
 # The factor is `ωabs = J B*∥`, the phasespace Jacobian, and it is positive here as in every chart.
 # It is not `B*∥`: it contracts the coordinate curl `∂₂ϑ₃ - ∂₃ϑ₂`, which carries the *signed*
 # Jacobian, against b, so the bare contraction inherits the handedness of the chart — and the
-# Solov'ev chart is left-handed. Each module therefore declares an `ORIENTATION` that restores it,
-# which is what keeps the factor a measure density rather than a signed one.
+# Solov'ev chart is left-handed. Each module therefore applies the `orientation()` that
+# `ElectromagneticFields` generates for its chart, which restores it and is what keeps the factor a
+# measure density rather than a signed one.
 #
 # That sign was not cosmetic. Until it was applied, the vector field carried the negative factor and
 # this model integrated the six left-handed-chart equilibria *backwards* — the same physical particle

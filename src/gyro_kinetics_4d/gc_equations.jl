@@ -44,7 +44,7 @@ formulation,
 ```
 
 with the vector potentials ``\beta`` and ``\gamma`` of [`β`](@ref) and [`γ`](@ref) and
-``\sigma =`` `ORIENTATION` the sign of `det(DF)` for this module's chart.
+``\sigma =`` `orientation()` the sign of `det(DF)` for this module's chart.
 
 The independent variable is **not** the physical time: the right-hand side is the guiding centre
 vector field multiplied by ``\omega_{abs}``, so ``dt = \omega_{abs} \, ds``. One unit of ``s``

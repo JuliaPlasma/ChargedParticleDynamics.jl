@@ -118,7 +118,7 @@ whether that sign reaches the dynamics — for one it does not, and for the othe
   cylindrical chart. That is chart-dependence, not a reparametrisation, and it is a defect.
 
   It is fixed rather than documented. `ωabs` is the phasespace Jacobian `√det Ω = J B*∥`, a measure
-  density and so non-negative; each module declares an `ORIENTATION` that restores it, and the
+  density and so non-negative; each module applies the `orientation()` its chart generates, and the
   factor is now positive in every chart — `0.9511`, `0.9986` and `0.0499` for the three charts of the
   small tokamak, whose common physical `B*∥` is `0.9511`. The magnitude is chart-dependent through
   `J`, which is what a density should be; only the sign was wrong. Applying the orientation costs
@@ -428,7 +428,8 @@ merely small).
 and a distribution rescaled by a negative number is not one. But it is computed from a *coordinate*
 curl, which carries `det(DF)` rather than `J`, so the bare contraction is negative in the six
 left-handed-chart equilibria; see "The orientation shows through anywhere a coordinate curl appears"
-above. Each module now declares an `ORIENTATION` that restores it, and `ωabs > 0` everywhere.
+above. Each module now applies the `orientation()` that `ElectromagneticFields` generates for its
+chart, which restores it, and `ωabs > 0` everywhere.
 
 Before that, the vector field carried the negative factor and this model **integrated those six
 equilibria backwards**. That is not a reparametrisation of time but chart-dependence: the same

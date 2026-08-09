@@ -19,9 +19,6 @@ module GuidingCenter4dTokamakSmallToroidal
 
     AxisymmetricTokamakToroidal.@code() # inject magnetic field code
 
-    # Left-handed chart: `det(DF) < 0`. See `ORIENTATION` in `gc_common.jl`.
-    const ORIENTATION = -1
-
     include("coordinate_transformations.jl")
     include("gc_common.jl")
     include("gc_equations.jl")
