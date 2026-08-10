@@ -53,7 +53,7 @@ using SafeTestsets
         @test plot_fieldlines(equ; xrange = (1.0, 2.5), yrange = (-0.8, 0.8), ngrid = (40, 30)) isa Tuple
     end
 
-    # `plot_fieldlines` contours ψ = R A_φ, which is only meaningful in an axisymmetric cylindrical
+    # `plot_fieldlines` contours ψ = A₃, which is only meaningful in an axisymmetric cylindrical
     # chart. It used to accept any equilibrium and draw a plausible-looking wrong picture for the
     # cartesian and toroidal ones; it now refuses, and so does `plot_trajectory_poloidal(R, Z, equ)`,
     # which forwards its equilibrium here.

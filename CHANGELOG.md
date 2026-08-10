@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Fixed
+
+- **`plot_fieldlines` contours `ψ = A₃`, not `A₃ / R`.** In the `(R, Z, φ)` chart the flux function
+  is the *covariant* toroidal component, which the field code injects as `A₃ = R A_φ = ψ`; it is
+  `B · ∇A₃` that vanishes, while `B · ∇(A₃/R) ≠ 0`. Dividing by `R` therefore plotted the physical
+  component `A_φ`, whose contours are not flux surfaces, under a docstring that called it the
+  poloidal flux. `ElectromagneticFields` 0.8.0 fixes the identical error in its own tokamak and
+  Solov'ev plots; this is the same fix, in the copy of that construction that lives here.
+
+  Only the background contours of the poloidal figures move. `is_axisymmetric_cylindrical` and the
+  chart guard are unchanged — the identification of `A₃` with `ψ` is exactly what needs the chart —
+  as are the trajectories `plot_trajectory_poloidal(R, Z, equ)` draws over them, and every number
+  this package computes. The one hand-rolled copy of the same contour, in the initial-conditions
+  example of `docs/src/initialization.md`, is corrected with it.
+
+
 ## [0.4.0] - 2026-08-08
 
 **This release is not value-preserving.** `ElectromagneticFields` 0.7.0 corrects an orientation error
