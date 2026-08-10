@@ -91,12 +91,17 @@ equilibria — including the toroidal `TokamakSmallNoncanonical` — are self-co
 
 ### `plot_fieldlines` is restricted to axisymmetric cylindrical equilibria
 
-It contours the poloidal flux ``\psi = R A_{\varphi}`` as `equ.A₃(0, x, y, 0) / x`, which reads the
-first two coordinates as ``(R, Z)`` and the third as the toroidal angle. That is meaningless for a
-cartesian or toroidal equilibrium, and it used to draw a plausible-looking wrong picture for them
-rather than failing. It now rejects any chart it is not valid in, and so does
+It contours the poloidal flux as `equ.A₃(0, x, y, 0)`, reading the first two coordinates as
+``(R, Z)`` and the third as the toroidal angle. That reading is meaningless for a cartesian or
+toroidal equilibrium, and it used to draw a plausible-looking wrong picture for them rather than
+failing. It now rejects any chart it is not valid in, and so does
 `plot_trajectory_poloidal(R, Z, equ)`, which forwards its equilibrium to it. The predicate is
 `is_axisymmetric_cylindrical`, decided from the coordinate ranges the field code injects.
+
+The quantity is the *covariant* component ``A_3 = R A_{\varphi} = \psi``, not the physical
+``A_{\varphi} = A_3 / R``: it is ``B \cdot \nabla A_3`` that vanishes, so only ``A_3`` has the flux
+surfaces for its contours. This contoured ``A_3 / R`` until `ElectromagneticFields` 0.8.0, which
+corrects the same error in its own equilibrium plots.
 
 ### The magnetic moment is a fixed parameter
 

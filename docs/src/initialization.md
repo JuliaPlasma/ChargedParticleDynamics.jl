@@ -222,7 +222,9 @@ nz = 120
 
 xgrid = LinRange( 0.5,   1.5, nr)
 ygrid = LinRange(-0.75, +0.75, nz)
-fieldlines = [A₃(0, x, y, 0.0) / x for x in xgrid, y in ygrid]
+# the poloidal flux is the covariant component A₃ = R A_φ = ψ itself, not A₃ / R — see the note on
+# `plot_fieldlines` in the audit
+fieldlines = [A₃(0, x, y, 0.0) for x in xgrid, y in ygrid]
 
 px = zeros(np)
 py = zeros(np)
