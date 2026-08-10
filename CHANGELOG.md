@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [0.4.1] - 2026-08-10
 
 `ElectromagneticFields` 0.8.0 is a breaking release whose break does not reach this package: it
 moves plotting from Plots.jl recipes to a Makie package extension, and nothing here ever used a
