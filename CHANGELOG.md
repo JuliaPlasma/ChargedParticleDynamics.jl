@@ -8,6 +8,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+`ElectromagneticFields` 0.8.0 is a breaking release whose break does not reach this package: it
+moves plotting from Plots.jl recipes to a Makie package extension, and nothing here ever used a
+recipe. Results are unchanged. One figure changes, for a reason of this package's own.
+
+### Changed
+
+- **`ElectromagneticFields` 0.8.0 is now required**, up from 0.7.1, in the root project and in the
+  `docs/` and `scripts/` environments. (`test/` still carries no bound of its own — it reaches the
+  suite through this package.) The bound is a single minor rather than `"0.7.1, 0.8"` so that the
+  allocation and timing figures in `docs/src/findings.md` mean one thing.
+
+  Three parts of the release could have reached this package, and none does:
+
+  - The **plotting break** is invisible here. The twelve `RecipesBase.@recipe` definitions upstream
+    are gone, replaced by an `ElectromagneticFieldsMakieExt` extension and two new exported names,
+    `plot_equilibrium` and `plot_equilibrium!`. There is not one use of Plots.jl or of an upstream
+    recipe anywhere in `src/`, `ext/`, `test/`, `docs/` or `scripts/` — all plotting here is
+    home-grown Makie in `ChargedParticlePlots` — and neither new name collides with the exports of
+    `src/Plots.jl`. Upstream now carries the same `Makie = "0.24"` bound this package does, so the
+    two extensions resolve together.
+  - The rest of the **exported API is unchanged**: those two names are the only additions, nothing
+    was removed or renamed. `code`, `crossproduct`, every `@code*` macro, every equilibrium
+    submodule and the whole injected namespace this package reads — `rangemin`, `rangemax`,
+    `orientation`, `from_cartesian`, `A₁₋₃`, `b₁₋₃`, `b⃗`, `g₁₁₋₃₃`, `ḡ`, `DF̄`, `J`, `aₚ`/`bₚ`/`cₚ`
+    — keep their names and their `(t, ξ₁, ξ₂, ξ₃)` / `(t, ξ)` signatures.
+  - The one change to the **generated code** is value-preserving. A component whose body does not
+    mention the coordinates is now wrapped as `oftype(float(ξ₁), …)`, so the structurally constant
+    entries take the coordinate's float type instead of the `Int` literal SymEngine emitted. That
+    stops `g` and `DF` promoting at runtime — upstream measures 976 and 1072 bytes per call down to
+    the 144 the 3×3 matrix actually is — and every recorded number in the test suite is unmoved.
+    `orientation()` is interpolated as a literal rather than emitted from a symbolic expression, so
+    it is not wrapped and keeps returning an `Int`.
+
 ### Fixed
 
 - **`plot_fieldlines` contours `ψ = A₃`, not `A₃ / R`.** In the `(R, Z, φ)` chart the flux function
