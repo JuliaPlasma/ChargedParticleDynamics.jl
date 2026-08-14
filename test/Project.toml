@@ -10,11 +10,11 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 # Every dependency is bounded in the environment that resolves it. `SimpleSolvers` is deliberately
-# absent: it reaches this suite only through `GeometricIntegrators`, whose 0.17 requires 0.10, and
+# absent: it reaches this suite only through `GeometricIntegrators`, whose 0.18 requires 0.11, and
 # the tests identify its messages by originating module name rather than by importing it.
 [compat]
 CairoMakie = "0.15"
-GeometricIntegrators = "0.17"
+GeometricIntegrators = "0.18"
 LaTeXStrings = "1"
 LinearAlgebra = "1"
 Logging = "1"
