@@ -9,7 +9,6 @@
 using GeometricIntegrators
 using CairoMakie
 
-
 # Choose problem
 import ChargedParticleDynamics.GuidingCenter4d.TokamakIterCylindrical as prob
 # import ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian as prob
@@ -50,7 +49,6 @@ iode = prob.iodeproblem(ics)
 osol = integrate(ode, method; options...)
 isol = integrate(iode, VPRKGauss(2); options...)
 
-
 # Plot solution and energy error
 function plot_solution(prob, problem, sol, prefix)
     # Compute cartesian coordinates from the solution. The first three components of the state are
@@ -63,7 +61,8 @@ function plot_solution(prob, problem, sol, prefix)
 
     # Compute energy. The guiding centre Hamiltonian is a function of the state alone — unlike the
     # Pauli particle's, which takes (q, p) — so it is evaluated on `sol.q` only.
-    energy = [prob.hamiltonian(sol.t[i], sol.q[i], parameters(problem)) for i in eachindex(sol.t)]
+    energy = [prob.hamiltonian(sol.t[i], sol.q[i], parameters(problem))
+              for i in eachindex(sol.t)]
     energy_error = (energy .- energy[begin]) ./ energy[begin]
 
     # Plot trajectory projected on poloidal plane
@@ -72,7 +71,7 @@ function plot_solution(prob, problem, sol, prefix)
         fig[1, 1],
         aspect = 1,
         xlabel = "R",
-        ylabel = "Z",
+        ylabel = "Z"
     )
     lines!(ax, R, Z; linewidth = 3)
     save(prefix * "_trajectory.pdf", fig)
@@ -83,7 +82,7 @@ function plot_solution(prob, problem, sol, prefix)
         fig[1, 1],
         xlabel = "X",
         ylabel = "Y",
-        zlabel = "Z",
+        zlabel = "Z"
     )
     lines!(ax, X, Y, Z; linewidth = 3)
     save(prefix * "_trajectory_3d.pdf", fig)
@@ -93,7 +92,7 @@ function plot_solution(prob, problem, sol, prefix)
     ax = Axis(
         fig[1, 1],
         xlabel = "t",
-        ylabel = "(H(t) - H(0)) / H(0)",
+        ylabel = "(H(t) - H(0)) / H(0)"
     )
     xlims!(ax, (sol.t[begin], sol.t[end]))
     lines!(ax, sol.t[:], energy_error; linewidth = 3)

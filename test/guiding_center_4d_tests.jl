@@ -12,7 +12,7 @@ const ny = 10
 
 # See `guiding_center_3d_tests.jl` for why `f_abstol` has to stay above the residual's round-off
 # floor and why `f_reltol` is left at its default.
-const options = (f_abstol=1E-12, max_iterations=50, warn_iterations=50)
+const options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 
 export test_guiding_center_4d
 export nl, nx, ny
@@ -70,8 +70,9 @@ end
 # of that equilibrium, so every variational orbit here gets the same treatment.
 # `SymmetricProjection` constrains the drift off `p = ϑ(q)` that the mode feeds on. See
 # `docs/src/findings.md`.
-function test_guiding_center_4d(equ::Union{IODEProblem,LODEProblem}; kwargs...)
-    @test integrate(equ, SymmetricProjection(VPRKGauss(2)); options..., kwargs...) isa GeometricSolution
+function test_guiding_center_4d(equ::Union{IODEProblem, LODEProblem}; kwargs...)
+    @test integrate(equ, SymmetricProjection(VPRKGauss(2)); options..., kwargs...) isa
+          GeometricSolution
 end
 
 # Explicit-method form, for the few calls that need something other than the defaults above.
@@ -81,10 +82,7 @@ end
 
 end
 
-
-
 @safetestset "Guiding Centre Dynamics in 4D with ITER-like Solov'ev Equilibrium with X-Point                      " begin
-
     using ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint
     using ..GuidingCenter4dTests
 
@@ -106,18 +104,20 @@ end
     # and `deeply_passing` emits 39 line-search-at-round-off messages there which no `f_abstol`
     # between 1E-12 and 1E-10 removes. `Δt = 1E-1` is where this equilibrium is actually resolved.
     test_guiding_center_4d(iodeproblem(initial_conditions_trapped()))
-    test_guiding_center_4d(iodeproblem(initial_conditions_barely_passing(); timestep=1E-1, timespan=(0, 1E1)))
-    test_guiding_center_4d(iodeproblem(initial_conditions_barely_trapped(); timestep=1E-1, timespan=(0, 1E1)))
-    test_guiding_center_4d(iodeproblem(initial_conditions_deeply_passing(); timestep=1E-1, timespan=(0, 1E1)))
-    test_guiding_center_4d(iodeproblem(initial_conditions_deeply_trapped(); timestep=1E-1, timespan=(0, 1E1)))
+    test_guiding_center_4d(iodeproblem(
+        initial_conditions_barely_passing(); timestep = 1E-1, timespan = (0, 1E1)))
+    test_guiding_center_4d(iodeproblem(
+        initial_conditions_barely_trapped(); timestep = 1E-1, timespan = (0, 1E1)))
+    test_guiding_center_4d(iodeproblem(
+        initial_conditions_deeply_passing(); timestep = 1E-1, timespan = (0, 1E1)))
+    test_guiding_center_4d(iodeproblem(
+        initial_conditions_deeply_trapped(); timestep = 1E-1, timespan = (0, 1E1)))
     # test_guiding_center_4d(loop_iodeproblem(nl), Δt=1.)
     # test_guiding_center_4d(surface_iodeproblem(nx, ny), Δt=1.)
 
 end
 
-
 @safetestset "Guiding Centre Dynamics in 4D with medium-size Tokamak Equilibrium in Cartesian Coordinates         " begin
-
     using ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCartesian
     using ..GuidingCenter4dTests
 
@@ -139,9 +139,7 @@ end
 
 end
 
-
 @safetestset "Guiding Centre Dynamics in 4D with medium-size Tokamak Equilibrium in Cylindrical Coordinates       " begin
-
     using ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCylindrical
     using ..GuidingCenter4dTests
 
@@ -161,9 +159,7 @@ end
 
 end
 
-
 @safetestset "Guiding Centre Dynamics in 4D with small-size Tokamak Equilibrium in Cartesian Coordinates          " begin
-
     using ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian
     using ..GuidingCenter4dTests
 
@@ -178,18 +174,20 @@ end
     # and the projection does not rescue them: `deeply_passing` reaches a relative energy error of
     # 3.2E+41 with |R| = 2.3E+18 and 495 solver warnings there, against 6.1E-4 and silence at
     # Δt = 10. This is the one block in the file whose override is load-bearing.
-    test_guiding_center_4d(iodeproblem(initial_conditions_barely_passing(); timestep=10.0, timespan=(0, 1E3)))
-    test_guiding_center_4d(iodeproblem(initial_conditions_barely_trapped(); timestep=10.0, timespan=(0, 1E3)))
-    test_guiding_center_4d(iodeproblem(initial_conditions_deeply_passing(); timestep=10.0, timespan=(0, 1E3)))
-    test_guiding_center_4d(iodeproblem(initial_conditions_deeply_trapped(); timestep=10.0, timespan=(0, 1E3)))
+    test_guiding_center_4d(iodeproblem(
+        initial_conditions_barely_passing(); timestep = 10.0, timespan = (0, 1E3)))
+    test_guiding_center_4d(iodeproblem(
+        initial_conditions_barely_trapped(); timestep = 10.0, timespan = (0, 1E3)))
+    test_guiding_center_4d(iodeproblem(
+        initial_conditions_deeply_passing(); timestep = 10.0, timespan = (0, 1E3)))
+    test_guiding_center_4d(iodeproblem(
+        initial_conditions_deeply_trapped(); timestep = 10.0, timespan = (0, 1E3)))
     # test_guiding_center_4d(loop_iodeproblem(nl; timestep = 10., timespan = [0, 1E3]))
     # test_guiding_center_4d(surface_iodeproblem(nx, ny; timestep = 10., timespan = [0, 1E3]))
 
 end
 
-
 @safetestset "Guiding Centre Dynamics in 4D with small-size Tokamak Equilibrium in Cylindrical Coordinates        " begin
-
     using ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical
     using ..GuidingCenter4dTests
 
@@ -210,15 +208,15 @@ end
     # The κ-dependent "dg" formulation. Its `ḡ` is checked against finite differences in
     # `structure_tests.jl`, but until now it had never been integrated — and `κ = 0`, which is the
     # default, reduces it to the plain `iodeproblem` and so would not exercise the κ terms at all.
-    test_guiding_center_4d(iodeproblem_dg(initial_conditions_barely_passing(); κ=0.0, timespan=(0.0, 1E3), timestep=10.0))
-    test_guiding_center_4d(iodeproblem_dg(initial_conditions_barely_passing(); κ=0.5, timespan=(0.0, 1E3), timestep=10.0))
-    test_guiding_center_4d(iodeproblem_dg(initial_conditions_barely_passing(); κ=1.0, timespan=(0.0, 1E3), timestep=10.0))
-
+    test_guiding_center_4d(iodeproblem_dg(initial_conditions_barely_passing(); κ = 0.0,
+        timespan = (0.0, 1E3), timestep = 10.0))
+    test_guiding_center_4d(iodeproblem_dg(initial_conditions_barely_passing(); κ = 0.5,
+        timespan = (0.0, 1E3), timestep = 10.0))
+    test_guiding_center_4d(iodeproblem_dg(initial_conditions_barely_passing(); κ = 1.0,
+        timespan = (0.0, 1E3), timestep = 10.0))
 end
 
-
 @safetestset "Guiding Centre Dynamics in 4D with small-size Tokamak Equilibrium in Toroidal Coordinates           " begin
-
     using ChargedParticleDynamics.GuidingCenter4d.TokamakSmallToroidal
     using ..GuidingCenter4dTests
 
@@ -238,9 +236,7 @@ end
 
 end
 
-
 @safetestset "Guiding Centre Dynamics in 4D with symmetric Solov'ev Equilibrium                                   " begin
-
     using ChargedParticleDynamics.GuidingCenter4d.SolovevSymmetricField
     using ..GuidingCenter4dTests
 
@@ -280,9 +276,7 @@ end
     test_guiding_center_4d(iodeproblem(initial_conditions_barely_trapped()))
     test_guiding_center_4d(iodeproblem(initial_conditions_deeply_passing()))
     test_guiding_center_4d(iodeproblem(initial_conditions_deeply_trapped()))
-
 end
-
 
 # These two equilibria carry only a Poincaré loop and surface parameterisation, no point initial
 # condition, so what there is to test is the loop and surface problems. Both blocks used to be
@@ -290,7 +284,6 @@ end
 # `loop_odeproblem(nl)` — which the `PoincareInvariants` 0.5 rewrite replaced with keyword-only
 # constructors that take the sample count at the invariant rather than at the problem.
 @safetestset "Guiding Centre Dynamics in 4D with symmetric Equilibrium                                            " begin
-
     using ChargedParticleDynamics.GuidingCenter4d.SymmetricField
     using ..GuidingCenter4dTests
 
@@ -299,12 +292,9 @@ end
 
     test_guiding_center_4d(loop_iodeproblem())
     test_guiding_center_4d(surface_iodeproblem())
-
 end
 
-
 @safetestset "Guiding Centre Dynamics in 4D with Theta Pinch Equilibrium                                          " begin
-
     using GeometricIntegrators: MidpointExtrapolation, VPRKGauss
     using ChargedParticleDynamics.GuidingCenter4d.ThetaPinchField
     using ..GuidingCenter4dTests
@@ -328,6 +318,5 @@ end
     # brings its own Hermite guess, which re-introduces the very degeneracy the
     # `MidpointExtrapolation` above is here to avoid: two identical `p` history entries, and two
     # warnings that the plain method does not produce.
-    test_guiding_center_4d(loop_iodeproblem(), VPRKGauss(2); initialguess=MidpointExtrapolation(5))
-
+    test_guiding_center_4d(loop_iodeproblem(), VPRKGauss(2); initialguess = MidpointExtrapolation(5))
 end

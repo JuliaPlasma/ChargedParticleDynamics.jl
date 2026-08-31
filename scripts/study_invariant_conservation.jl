@@ -30,10 +30,14 @@ function guiding_centre_4d()
     println("4D guiding centre — ODEProblem, Gauss(2)\n")
     @printf("  %-30s %-14s %s\n", "equilibrium", "|ΔH/H|", "|Δp_φ/p_φ|")
 
-    for (name, M, kw) in (("TokamakSmallCylindrical", G4.TokamakSmallCylindrical, (timestep = 10.0, timespan = (0.0, 1E3))),
-                          ("TokamakSmallToroidal",    G4.TokamakSmallToroidal,    (timestep = 10.0, timespan = (0.0, 1E3))),
-                          ("TokamakSmallCartesian",   G4.TokamakSmallCartesian,   (timestep = 10.0, timespan = (0.0, 1E3))),
-                          ("SolovevIterXpoint",       G4.SolovevIterXpoint,       (timestep = 1.0,  timespan = (0.0, 1E2))))
+    for (name, M, kw) in (("TokamakSmallCylindrical", G4.TokamakSmallCylindrical,
+        (timestep = 10.0, timespan = (0.0, 1E3))),
+        ("TokamakSmallToroidal", G4.TokamakSmallToroidal,
+        (timestep = 10.0, timespan = (0.0, 1E3))),
+        ("TokamakSmallCartesian", G4.TokamakSmallCartesian,
+        (timestep = 10.0, timespan = (0.0, 1E3))),
+        (
+        "SolovevIterXpoint", G4.SolovevIterXpoint, (timestep = 1.0, timespan = (0.0, 1E2))))
         sol = integrate(M.odeproblem(M.initial_conditions_barely_passing(); kw...), Gauss(2))
         _, eerr = M.compute_energy_error(sol)
         _, perr = M.compute_toroidal_momentum_error(sol)
@@ -44,20 +48,21 @@ end
 function guiding_centre_3d()
     println("\n3D guiding centre — HODEProblem, PartitionedGauss(2)\n")
     @printf("  %-30s %-8s %-14s %-14s %-14s %s\n",
-            "equilibrium", "pair", "|ΔH/H|", "|gᵏ| retained", "|gᵏ| omitted", "|Δp_φ/p_φ|")
+        "equilibrium", "pair", "|ΔH/H|", "|gᵏ| retained", "|gᵏ| omitted", "|Δp_φ/p_φ|")
 
     # `SolovevSymmetricField` is the one equilibrium with an initial condition that is left out. Its
     # pair is well conditioned — `(g², g³)` is the only regular one there, and λₒ ≈ -228 — but it is
     # the stiffest equilibrium in the package, `‖ϑ‖ ≈ 256`, and the constraint drift grows fast enough
     # that Newton meets a NaN a few hundred steps into the thousand this section runs. See the note in
     # its test block in `test/guiding_center_3d_tests.jl`.
-    for (name, M) in (("SolovevIterXpoint",       G3.SolovevIterXpoint),
-                      ("TokamakMediumCartesian",  G3.TokamakMediumCartesian),
-                      ("TokamakSmallCylindrical", G3.TokamakSmallCylindrical),
-                      ("TokamakMediumCylindrical",G3.TokamakMediumCylindrical),
-                      ("TokamakSmallToroidal",    G3.TokamakSmallToroidal))
-        prob = M.hodeproblem(M.initial_conditions_barely_passing(); timestep = 0.1, timespan = (0.0, 1E2))
-        sol  = integrate(prob, PartitionedGauss(2))
+    for (name, M) in (("SolovevIterXpoint", G3.SolovevIterXpoint),
+        ("TokamakMediumCartesian", G3.TokamakMediumCartesian),
+        ("TokamakSmallCylindrical", G3.TokamakSmallCylindrical),
+        ("TokamakMediumCylindrical", G3.TokamakMediumCylindrical),
+        ("TokamakSmallToroidal", G3.TokamakSmallToroidal))
+        prob = M.hodeproblem(M.initial_conditions_barely_passing(); timestep = 0.1, timespan = (
+            0.0, 1E2))
+        sol = integrate(prob, PartitionedGauss(2))
         _, eerr = M.compute_energy_error(sol)
         c = M.compute_constraints(sol)
         pstr = if isdefined(M, :toroidal_momentum)
@@ -75,7 +80,7 @@ function guiding_centre_3d()
         omitted = only(setdiff(1:3, retained))
 
         @printf("  %-30s %-8s %-14.2e %-14.2e %-14.2e %s\n", name, M.default_constraints(),
-                mx(eerr), maximum(mx(gs[k]) for k in retained), mx(gs[omitted]), pstr)
+            mx(eerr), maximum(mx(gs[k]) for k in retained), mx(gs[omitted]), pstr)
     end
 
     println("""
@@ -98,7 +103,7 @@ function gyrokinetics()
     @printf("  %-30s %.2e\n", "Gauss(2), full field", mx(e))
 
     sol = integrate(M.sodeproblem(q₀; parameters = params),
-                    Composition(Tuple(Gauss(1) for _ in 1:6), Strang()))
+        Composition(Tuple(Gauss(1) for _ in 1:6), Strang()))
     _, e = M.compute_energy_error(sol)
     @printf("  %-30s %.2e\n", "Strang split, volume pres.", mx(e))
 

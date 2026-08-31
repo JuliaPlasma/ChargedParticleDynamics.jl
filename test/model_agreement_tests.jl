@@ -13,7 +13,6 @@
 
 using SafeTestsets
 
-
 module ModelAgreementUtils
 
 using ChargedParticleDynamics
@@ -30,42 +29,49 @@ const P3 = ChargedParticleDynamics.PauliParticle3d
 const OPTS = (f_abstol = 1E-12, max_iterations = 50)
 
 const ICS = (:initial_conditions_barely_passing, :initial_conditions_barely_trapped,
-             :initial_conditions_deeply_passing, :initial_conditions_deeply_trapped,
-             :initial_conditions_trapped, :initial_conditions_pauli)
+    :initial_conditions_deeply_passing, :initial_conditions_deeply_trapped,
+    :initial_conditions_trapped, :initial_conditions_pauli)
 
 # `periodic = false`: the guiding centre problems wrap their angular coordinate into the chart's
 # range and the Pauli problems do not, so a passing orbit's ϕ would otherwise be compared against
 # the same ϕ plus a multiple of 2π.
 function final_g4(M, x, u, μ, span, step)
-    sol = integrate(M.odeproblem([x..., u]; parameters = (μ = μ,), timespan = span,
-                                 timestep = step, periodic = false), Gauss(2); OPTS...)
+    sol = integrate(
+        M.odeproblem([x..., u]; parameters = (μ = μ,), timespan = span,
+            timestep = step, periodic = false),
+        Gauss(2);
+        OPTS...)
     (sol.q[end][1:3], sol.q[end][4])
 end
 
 function final_g3(M, x, u, μ, span, step)
-    sol = integrate(M.hodeproblem([x..., u]; parameters = (μ = μ,), timespan = span,
-                                  timestep = step, periodic = false), PartitionedGauss(2); OPTS...)
+    sol = integrate(
+        M.hodeproblem([x..., u]; parameters = (μ = μ,), timespan = span,
+            timestep = step, periodic = false),
+        PartitionedGauss(2);
+        OPTS...)
     (collect(sol.q[end]), M.u(span[end], sol.q[end], sol.p[end]))
 end
 
 function final_pauli(M, x, v₀, μ, span, step)
     sol = integrate(M.hodeproblem(x, v₀, μ; timespan = span, timestep = step),
-                    PartitionedGauss(2); OPTS...)
+        PartitionedGauss(2); OPTS...)
     (collect(sol.q[end]), nothing)
 end
 
 reldiff(a, b) = norm(a - b) / max(norm(b), 1E-30)
 
 "Every equilibrium name that all three families define, in a fixed order."
-sharedmodules() = sort([string(n) for n in names(P3, all = true)
-                        if isa(getfield(P3, n), Module) && n !== nameof(P3) &&
-                           isdefined(G3, n) && isdefined(G4, n)])
+function sharedmodules()
+    sort([string(n)
+          for n in names(P3, all = true)
+          if isa(getfield(P3, n), Module) && n !== nameof(P3) &&
+                 isdefined(G3, n) && isdefined(G4, n)])
+end
 
 end
 
-
 @safetestset "Model families: the declared initial conditions are the same across all three          " begin
-
     using ChargedParticleDynamics
     using ..ModelAgreementUtils
 
@@ -84,7 +90,8 @@ end
     @test !isempty(sharedmodules())
 
     for name in sharedmodules()
-        E3, E4, Ep = getfield(G3, Symbol(name)), getfield(G4, Symbol(name)), getfield(P3, Symbol(name))
+        E3, E4, Ep = getfield(G3, Symbol(name)), getfield(G4, Symbol(name)),
+        getfield(P3, Symbol(name))
 
         for i in ICS
             all(isdefined(E, i) for E in (E3, E4, Ep)) || continue
@@ -99,8 +106,8 @@ end
             @test ic3.q ≈ x
             @test icp.q ≈ x
             # parallel velocity, recovered from each family's own state
-            @test E3.u(0.0, ic3.q, ic3.p) ≈ u  atol = 1E-12
-            @test icp.v' * Ep.b(0.0, icp.q) ≈ u  atol = 1E-12
+            @test E3.u(0.0, ic3.q, ic3.p) ≈ u atol = 1E-12
+            @test icp.v' * Ep.b(0.0, icp.q) ≈ u atol = 1E-12
             # magnetic moment
             @test ic3.params.μ == μ
             @test icp.params.μ == μ
@@ -109,17 +116,15 @@ end
 
     # And that there is something to compare: every shared equilibrium carries the same set of names.
     for name in sharedmodules()
-        Es = (getfield(G3, Symbol(name)), getfield(G4, Symbol(name)), getfield(P3, Symbol(name)))
+        Es = (getfield(G3, Symbol(name)), getfield(G4, Symbol(name)),
+            getfield(P3, Symbol(name)))
         for i in ICS
             @test length(unique(isdefined(E, i) for E in Es)) == 1
         end
     end
-
 end
 
-
 @safetestset "Model families: GuidingCenter3d and GuidingCenter4d are the same model                 " begin
-
     using ChargedParticleDynamics
     using ..ModelAgreementUtils
 
@@ -130,12 +135,12 @@ end
     #
     # The set is every equilibrium `scripts/study_model_agreement.jl` measures, at the same steps, so
     # the assertions and the measurements they are set from cannot drift apart.
-    CASES = (("TokamakSmallCartesian",   10.0, 1E-6),
-             ("TokamakSmallCylindrical", 10.0, 1E-9),
-             ("TokamakSmallToroidal",    10.0, 1E-9),
-             ("TokamakIterCylindrical",  0.01, 1E-9),
-             ("SolovevIter",             0.01, 1E-9),
-             ("SolovevIterXpoint",       0.01, 1E-9))
+    CASES = (("TokamakSmallCartesian", 10.0, 1E-6),
+        ("TokamakSmallCylindrical", 10.0, 1E-9),
+        ("TokamakSmallToroidal", 10.0, 1E-9),
+        ("TokamakIterCylindrical", 0.01, 1E-9),
+        ("SolovevIter", 0.01, 1E-9),
+        ("SolovevIterXpoint", 0.01, 1E-9))
 
     for (name, step, tol) in CASES
         M3, M4 = getfield(G3, Symbol(name)), getfield(G4, Symbol(name))
@@ -153,12 +158,9 @@ end
             @test abs(r3[2] - r4[2]) / max(abs(r4[2]), 1E-30) < tol
         end
     end
-
 end
 
-
 @safetestset "Model families: the Pauli particle tracks the guiding centre on its slow manifold      " begin
-
     using ChargedParticleDynamics
     using ..ModelAgreementUtils
 
@@ -179,12 +181,12 @@ end
     # the `O(ρ)` mismatch in the position, and this is where the residual is already down at the
     # position term. It is kept for exactly that reason: the assertion below is that the corrected
     # condition lands under 1E-3 everywhere, not that it improves everywhere.
-    CASES = (("TokamakSmallCartesian",   10.0),
-             ("TokamakSmallCylindrical", 10.0),
-             ("TokamakSmallToroidal",    10.0),
-             ("TokamakIterCylindrical",  0.01),
-             ("SolovevIter",             0.01),
-             ("SolovevIterXpoint",       0.01))
+    CASES = (("TokamakSmallCartesian", 10.0),
+        ("TokamakSmallCylindrical", 10.0),
+        ("TokamakSmallToroidal", 10.0),
+        ("TokamakIterCylindrical", 0.01),
+        ("SolovevIter", 0.01),
+        ("SolovevIterXpoint", 0.01))
 
     for (name, step) in CASES
         M4, Mp = getfield(G4, Symbol(name)), getfield(P3, Symbol(name))
@@ -206,5 +208,4 @@ end
             @test reldiff(drifting, ref) < 1E-3
         end
     end
-
 end

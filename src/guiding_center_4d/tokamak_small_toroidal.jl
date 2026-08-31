@@ -3,86 +3,94 @@ Analytic axisymmetric small tokamak equilibrium in circular coordinates.
 """
 module TokamakSmallToroidal
 
-    import ElectromagneticFields.AxisymmetricTokamakToroidal
+import ElectromagneticFields.AxisymmetricTokamakToroidal
 
-    export initial_conditions_barely_passing, initial_conditions_barely_trapped,
-           initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
-           initial_conditions_pauli
+export initial_conditions_barely_passing, initial_conditions_barely_trapped,
+       initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
+       initial_conditions_pauli
 
-    export hamiltonian, toroidal_momentum
+export hamiltonian, toroidal_momentum
 
-    AxisymmetricTokamakToroidal.@code() # inject magnetic field code
+AxisymmetricTokamakToroidal.@code() # inject magnetic field code
 
-    const DEFAULT_TIMESTEP = 500.0
-    const DEFAULT_TIMESPAN = (0.0, 5E5)
+const DEFAULT_TIMESTEP = 500.0
+const DEFAULT_TIMESPAN = (0.0, 5E5)
 
-    const xᵢ = [1.05, 0., 0.]
-    # As for `TokamakSmallCylindrical`: `(r, θ, ϕ)` is left-handed too, so this carried a compensating
-    # minus for the reversed `b` that `ElectromagneticFields` 0.7.0 removed the need for. All three
-    # charts of this equilibrium now start the same physical particle with the same `u` and `μ`.
-    const uᵢ = 0.00045135897235326736
-    const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
+const xᵢ = [1.05, 0.0, 0.0]
+# As for `TokamakSmallCylindrical`: `(r, θ, ϕ)` is left-handed too, so this carried a compensating
+# minus for the reversed `b` that `ElectromagneticFields` 0.7.0 removed the need for. All three
+# charts of this equilibrium now start the same physical particle with the same `u` and `μ`.
+const uᵢ = 0.00045135897235326736
+const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
 
+function initial_conditions_barely_passing()
+    (q = [from_cartesian(0, [1.05, 0.0, 0.0])..., 8.117E-4], params = (μ = 2.448E-6,))
+end
+function initial_conditions_barely_trapped()
+    (q = [from_cartesian(0, [1.05, 0.0, 0.0])..., 7.610E-4], params = (μ = 2.250E-6,))
+end
+function initial_conditions_deeply_passing()
+    (q = [from_cartesian(0, [1.05, 0.0, 0.0])..., 1.623E-3], params = (μ = 2.448E-6,))
+end
+function initial_conditions_deeply_trapped()
+    (q = [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.306E-4], params = (μ = 2.250E-6,))
+end
+function initial_conditions_pauli()
+    (q = [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.3E-4], params = (μ = 2.310E-6,))
+end
 
-    initial_conditions_barely_passing() = (q = [from_cartesian(0, [1.05, 0., 0.])..., 8.117E-4], params = (μ = 2.448E-6,))
-    initial_conditions_barely_trapped() = (q = [from_cartesian(0, [1.05, 0., 0.])..., 7.610E-4], params = (μ = 2.250E-6,))
-    initial_conditions_deeply_passing() = (q = [from_cartesian(0, [1.05, 0., 0.])..., 1.623E-3], params = (μ = 2.448E-6,))
-    initial_conditions_deeply_trapped() = (q = [from_cartesian(0, [1.05, 0., 0.])..., 4.306E-4], params = (μ = 2.250E-6,))
-    initial_conditions_pauli() = (q = [from_cartesian(0, [1.05, 0., 0.])..., 4.3E-4], params = (μ = 2.310E-6,))
+u_loop() = 4.0E-4
+μ_loop() = 2.5E-6
+u_surface() = 4.0E-4
+μ_surface() = 2.5E-6
 
-    u_loop() = 4.0E-4
-    μ_loop() = 2.5E-6
-    u_surface() = 4.0E-4
-    μ_surface() = 2.5E-6
+function f_loop(t)
+    R0 = 1.0
+    Z0 = 0.0
+    φ0 = 0.0
+    u0 = u_loop()
+    r0 = 0.05
 
-    function f_loop(t)
-        R0 = 1.0
-        Z0 = 0.0
-        φ0 = 0.0
-        u0 = u_loop()
-        r0 = 0.05
+    Rt = R0 + r0*cos(2π*t)
+    Zt = Z0 + r0*sin(2π*t)
 
-        Rt = R0 + r0*cos(2π*t)
-        Zt = Z0 + r0*sin(2π*t)
+    qt = [Rt, Zt, φ0, u0]
 
-        qt = [Rt, Zt, φ0, u0]
+    return qt
+end
 
-        return qt
-    end
+function f_surface(s, t)
+    R0 = 1.0
+    Z0 = 0.0
+    φ0 = 0.0
+    u0 = u_surface()
+    r0 = 0.1
 
-    function f_surface(s,t)
-        R0 = 1.0
-        Z0 = 0.0
-        φ0 = 0.0
-        u0 = u_surface()
-        r0 = 0.1
+    Rt = R0 + 2r0*(s-0.5)
+    Zt = Z0 + 2r0*(t-0.5)
 
-        Rt = R0 + 2r0*(s-0.5)
-        Zt = Z0 + 2r0*(t-0.5)
+    qt = [Rt, Zt, φ0, u0]
 
-        qt = [Rt, Zt, φ0, u0]
+    return qt
+end
 
-        return qt
-    end
+export default_parameters
 
-    export default_parameters
+"The magnetic moment μ this equilibrium is set up for."
+default_parameters(::Type{T} = Float64) where {T} = (μ = T(2.314593645825811e-6),)
 
-    "The magnetic moment μ this equilibrium is set up for."
-    default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.314593645825811e-6),)
+include("guiding_center_4d_common.jl")
+include("guiding_center_4d_equations.jl")
+include("guiding_center_4d_loop.jl")
+include("guiding_center_4d_surface.jl")
 
+# The canonical toroidal momentum is the covariant φ-component of the one-form, ϑ₃. It was
+# previously multiplied by R, which destroys the conservation: on the small tokamak the
+# relative variation over 10³ time units is 2e-13 for ϑ₃ and 3e-3 for R ϑ₃.
+function toroidal_momentum(t, q)
+    ϑ₃(t, q)
+end
 
-    include("guiding_center_4d_common.jl")
-    include("guiding_center_4d_equations.jl")
-    include("guiding_center_4d_loop.jl")
-    include("guiding_center_4d_surface.jl")
-
-    # The canonical toroidal momentum is the covariant φ-component of the one-form, ϑ₃. It was
-    # previously multiplied by R, which destroys the conservation: on the small tokamak the
-    # relative variation over 10³ time units is 2e-13 for ϑ₃ and 3e-3 for R ϑ₃.
-    function toroidal_momentum(t,q)
-        ϑ₃(t,q)
-    end
-
-    include("guiding_center_4d_diagnostics.jl")
+include("guiding_center_4d_diagnostics.jl")
 
 end

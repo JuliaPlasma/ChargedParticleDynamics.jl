@@ -3,75 +3,82 @@ Analytic axisymmetric medium-size tokamak equilibrium in cartesian coordinates.
 """
 module TokamakMediumCylindrical
 
-    import ElectromagneticFields.AxisymmetricTokamakCylindrical
+import ElectromagneticFields.AxisymmetricTokamakCylindrical
 
-    export initial_conditions_barely_passing, initial_conditions_barely_trapped,
-           initial_conditions_deeply_passing, initial_conditions_deeply_trapped
+export initial_conditions_barely_passing, initial_conditions_barely_trapped,
+       initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
-    export hamiltonian, toroidal_momentum
+export hamiltonian, toroidal_momentum
 
-    AxisymmetricTokamakCylindrical.@code(2., 5., 2.) # inject magnetic field code
+AxisymmetricTokamakCylindrical.@code(2.0, 5.0, 2.0) # inject magnetic field code
 
-    const DEFAULT_TIMESTEP = 1.0
-    const DEFAULT_TIMESPAN = (0.0, 1000.0)
+const DEFAULT_TIMESTEP = 1.0
+const DEFAULT_TIMESPAN = (0.0, 1000.0)
 
-    initial_conditions_barely_passing() = (q = [from_cartesian(0, [2.5, 0., 0.])..., 3.425E-1], params = (μ = 1E-2,)) # Δt=2.5, nt=50
-    initial_conditions_barely_trapped() = (q = [from_cartesian(0, [2.5, 0., 0.])..., 3.375E-1], params = (μ = 1E-2,)) # Δt=3.0, nt=100
-    initial_conditions_deeply_passing() = (q = [from_cartesian(0, [2.5, 0., 0.])..., 5E-1], params = (μ = 1E-2,))     # Δt=2.5, nt=25
-    initial_conditions_deeply_trapped() = (q = [from_cartesian(0, [2.5, 0., 0.])..., 1E-1], params = (μ = 1E-2,))     # Δt=5.0, nt=50
+function initial_conditions_barely_passing()
+    (q = [from_cartesian(0, [2.5, 0.0, 0.0])..., 3.425E-1], params = (μ = 1E-2,))
+end # Δt=2.5, nt=50
+function initial_conditions_barely_trapped()
+    (q = [from_cartesian(0, [2.5, 0.0, 0.0])..., 3.375E-1], params = (μ = 1E-2,))
+end # Δt=3.0, nt=100
+function initial_conditions_deeply_passing()
+    (q = [from_cartesian(0, [2.5, 0.0, 0.0])..., 5E-1], params = (μ = 1E-2,))
+end     # Δt=2.5, nt=25
+function initial_conditions_deeply_trapped()
+    (q = [from_cartesian(0, [2.5, 0.0, 0.0])..., 1E-1], params = (μ = 1E-2,))
+end     # Δt=5.0, nt=50
 
-    μ_loop() = 1E-3
-    μ_surface() = 1E-3
+μ_loop() = 1E-3
+μ_surface() = 1E-3
 
-    function f_loop(s)
-        R0 = 1.75
-        Z0 = 0.0
-        φ0 = 0.0
-        u0 = 0.5
-        rx = 0.1
-        ry = 0.1
+function f_loop(s)
+    R0 = 1.75
+    Z0 = 0.0
+    φ0 = 0.0
+    u0 = 0.5
+    rx = 0.1
+    ry = 0.1
 
-        Rs = R0 + rx*cos(2π*s)
-        Zs = Z0 + ry*sin(2π*s)
+    Rs = R0 + rx*cos(2π*s)
+    Zs = Z0 + ry*sin(2π*s)
 
-        qs = [Rs, Zs, φ0, u0]
+    qs = [Rs, Zs, φ0, u0]
 
-        return qs
-    end
+    return qs
+end
 
-    function f_surface(s,t)
-        R0 = 1.75
-        Z0 = 0.0
-        φ0 = 0.0
-        u0 = 0.5
-        r0 = 0.1
+function f_surface(s, t)
+    R0 = 1.75
+    Z0 = 0.0
+    φ0 = 0.0
+    u0 = 0.5
+    r0 = 0.1
 
-        Rt = R0 + r0*(s-0.5)
-        Zt = Z0 + r0*(t-0.5)
+    Rt = R0 + r0*(s-0.5)
+    Zt = Z0 + r0*(t-0.5)
 
-        qt = [Rt, Zt, φ0, u0]
+    qt = [Rt, Zt, φ0, u0]
 
-        return qt
-    end
+    return qt
+end
 
-    export default_parameters
+export default_parameters
 
-    "The magnetic moment μ this equilibrium is set up for."
-    default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+"The magnetic moment μ this equilibrium is set up for."
+default_parameters(::Type{T} = Float64) where {T} = (μ = T(1E-2),)
 
+include("guiding_center_4d_common.jl")
+include("guiding_center_4d_equations.jl")
+include("guiding_center_4d_loop.jl")
+include("guiding_center_4d_surface.jl")
 
-    include("guiding_center_4d_common.jl")
-    include("guiding_center_4d_equations.jl")
-    include("guiding_center_4d_loop.jl")
-    include("guiding_center_4d_surface.jl")
+# The canonical toroidal momentum is the covariant φ-component of the one-form, ϑ₃. It was
+# previously multiplied by R, which destroys the conservation: on the small tokamak the
+# relative variation over 10³ time units is 2e-13 for ϑ₃ and 3e-3 for R ϑ₃.
+function toroidal_momentum(t, q)
+    ϑ₃(t, q)
+end
 
-    # The canonical toroidal momentum is the covariant φ-component of the one-form, ϑ₃. It was
-    # previously multiplied by R, which destroys the conservation: on the small tokamak the
-    # relative variation over 10³ time units is 2e-13 for ϑ₃ and 3e-3 for R ϑ₃.
-    function toroidal_momentum(t,q)
-        ϑ₃(t,q)
-    end
-
-    include("guiding_center_4d_diagnostics.jl")
+include("guiding_center_4d_diagnostics.jl")
 
 end

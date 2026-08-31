@@ -43,15 +43,15 @@ const OPTS = (f_abstol = 1E-12, max_iterations = 50)
 # A thousand steps at a step every family resolves. The guiding centre modules declare steps as large
 # as 500 for the small tokamak and 1.0 for the ITER-size ones, but the Pauli model has to resolve a
 # gyration the guiding centre model has averaged away, so the common step is the Pauli one.
-const CASES = (("TokamakSmallCartesian",   10.0,  1000),
-               ("TokamakSmallCylindrical", 10.0,  1000),
-               ("TokamakSmallToroidal",    10.0,  1000),
-               ("TokamakIterCylindrical",  0.01,  1000),
-               ("SolovevIter",             0.01,  1000),
-               ("SolovevIterXpoint",       0.01,  1000))
+const CASES = (("TokamakSmallCartesian", 10.0, 1000),
+    ("TokamakSmallCylindrical", 10.0, 1000),
+    ("TokamakSmallToroidal", 10.0, 1000),
+    ("TokamakIterCylindrical", 0.01, 1000),
+    ("SolovevIter", 0.01, 1000),
+    ("SolovevIterXpoint", 0.01, 1000))
 
 const ICS = (:initial_conditions_barely_passing, :initial_conditions_barely_trapped,
-             :initial_conditions_deeply_passing, :initial_conditions_deeply_trapped)
+    :initial_conditions_deeply_passing, :initial_conditions_deeply_trapped)
 
 label(icn) = replace(string(icn), "initial_conditions_" => "")
 
@@ -60,14 +60,20 @@ label(icn) = replace(string(icn), "initial_conditions_" => "")
 # compared against the same ϕ plus a multiple of 2π — which reads as a complete disagreement and was
 # how these two rows first looked.
 function g4(M, x, u, μ, span, step)
-    sol = integrate(M.odeproblem([x..., u]; parameters = (μ = μ,), timespan = span, timestep = step,
-                                 periodic = false), Gauss(2); OPTS...)
+    sol = integrate(
+        M.odeproblem([x..., u]; parameters = (μ = μ,), timespan = span, timestep = step,
+            periodic = false),
+        Gauss(2);
+        OPTS...)
     (sol.q[end][1:3], sol.q[end][4])
 end
 
 function g3(M, x, u, μ, span, step)
-    sol = integrate(M.hodeproblem([x..., u]; parameters = (μ = μ,), timespan = span, timestep = step,
-                                  periodic = false), PartitionedGauss(2); OPTS...)
+    sol = integrate(
+        M.hodeproblem([x..., u]; parameters = (μ = μ,), timespan = span, timestep = step,
+            periodic = false),
+        PartitionedGauss(2);
+        OPTS...)
     (collect(sol.q[end]), M.u(span[end], sol.q[end], sol.p[end]))
 end
 
@@ -77,7 +83,7 @@ lowest-order slow manifold, the guiding centre velocity for the drift-corrected 
 """
 function pauli(M, x, v₀, μ, span, step)
     sol = integrate(M.hodeproblem(x, v₀, μ; timespan = span, timestep = step),
-                    PartitionedGauss(2); OPTS...)
+        PartitionedGauss(2); OPTS...)
     q, p = sol.q[end], sol.p[end]
     (collect(q), M.v(span[end], q, p)' * M.b(span[end], q))
 end
@@ -95,6 +101,7 @@ end
 function cases()
     out = []
     for (name, step, nsteps) in CASES, icn in ICS
+
         M4 = getfield(G4, Symbol(name))
         isdefined(M4, icn) || continue
         ic = getfield(M4, icn)()
@@ -102,7 +109,6 @@ function cases()
     end
     out
 end
-
 
 # ---------------------------------------------------------------------------------------------
 # 1. The two guiding centre formulations are the same model
@@ -125,7 +131,7 @@ function equivalence()
         r4 = g4(getfield(G4, Symbol(name)), x, u, μ, span, step)
         r3 = g3(getfield(G3, Symbol(name)), x, u, μ, span, step)
         @printf("  %-24s %-16s %12.3e %12.3e\n", name, label(icn),
-                reldiff(r3[1], r4[1]), abs(r3[2] - r4[2]) / max(abs(r4[2]), 1E-30))
+            reldiff(r3[1], r4[1]), abs(r3[2] - r4[2]) / max(abs(r4[2]), 1E-30))
         flush(stdout)
     end
 
@@ -138,7 +144,6 @@ function equivalence()
     simply winds. The same asymmetry sets that chart's time step; see the note in
     `pauli_particle_3d/tokamak_small_cartesian.jl`.""")
 end
-
 
 # ---------------------------------------------------------------------------------------------
 # 2. The Pauli particle on the lowest-order slow manifold
@@ -162,9 +167,11 @@ function slowmanifold()
     for (name, icn, x, u, μ, span, step) in cases()
         M4 = getfield(G4, Symbol(name))
         r4 = g4(M4, x, u, μ, span, step)
-        rp = pauli(getfield(P3, Symbol(name)), x, u * getfield(P3, Symbol(name)).b⃗(0.0, x), μ, span, step)
+        rp = pauli(getfield(P3, Symbol(name)), x,
+            u * getfield(P3, Symbol(name)).b⃗(0.0, x), μ, span, step)
         @printf("  %-24s %-16s %12.3e %12.3e %12.3e\n", name, label(icn),
-                reldiff(rp[1], r4[1]), abs(rp[2] - r4[2]) / max(abs(r4[2]), 1E-30), ρ_over_L(M4, x, μ))
+            reldiff(rp[1], r4[1]), abs(rp[2] - r4[2]) / max(abs(r4[2]), 1E-30),
+            ρ_over_L(M4, x, μ))
         flush(stdout)
     end
 
@@ -179,7 +186,6 @@ function slowmanifold()
     and taking u down by four decades leaves it at 1.5E-3; both saturate rather than converge. That
     floor is what section 3 identifies.""")
 end
-
 
 # ---------------------------------------------------------------------------------------------
 # 3. What the floor is
@@ -203,7 +209,7 @@ function driftcorrection()
     """)
 
     @printf("  %-24s %-16s %12s %12s %8s\n", "equilibrium", "condition",
-            "v = u b⃗", "v = v_gc", "gain")
+        "v = u b⃗", "v = v_gc", "gain")
 
     for (name, icn, x, u, μ, span, step) in cases()
         M4, Mp = getfield(G4, Symbol(name)), getfield(P3, Symbol(name))
@@ -247,7 +253,6 @@ function driftcorrection()
     the self-contained and conventional one. What this section is for is to say what the residual in
     section 2 *is*, so that it is not read as a disagreement between the models. See `TODO.md`.""")
 end
-
 
 function main()
     equivalence()

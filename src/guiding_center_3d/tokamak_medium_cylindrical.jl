@@ -6,7 +6,7 @@ module TokamakMediumCylindrical
 import ElectromagneticFields.AxisymmetricTokamakCylindrical
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
-    initial_conditions_deeply_passing, initial_conditions_deeply_trapped
+       initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
 export hamiltonian, toroidal_momentum
 
@@ -20,10 +20,18 @@ const DEFAULT_TIMESPAN = (0.0, 1E2)
 # chart a cartesian `y` displacement is very nearly a toroidal rotation — it leaves `Z = 0` and so
 # leaves `b₁ = b_R = 0` either way — so it cannot make a singular pair regular, which is what the
 # offset is for in the cartesian chart. All three formulations agree to three digits at both values.
-initial_conditions_barely_passing() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 3.425E-1]), (params=(μ=1E-2,),))
-initial_conditions_barely_trapped() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 3.375E-1]), (params=(μ=1E-2,),))
-initial_conditions_deeply_passing() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 5E-1]), (params=(μ=1E-2,),))
-initial_conditions_deeply_trapped() = merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 1E-1]), (params=(μ=1E-2,),))
+function initial_conditions_barely_passing()
+    merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 3.425E-1]), (params = (μ = 1E-2,),))
+end
+function initial_conditions_barely_trapped()
+    merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 3.375E-1]), (params = (μ = 1E-2,),))
+end
+function initial_conditions_deeply_passing()
+    merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 5E-1]), (params = (μ = 1E-2,),))
+end
+function initial_conditions_deeply_trapped()
+    merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 1E-1]), (params = (μ = 1E-2,),))
+end
 
 μ_loop() = 1E-3
 μ_surface() = 1E-3
@@ -62,7 +70,7 @@ end
 export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+default_parameters(::Type{T} = Float64) where {T} = (μ = T(1E-2),)
 
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
@@ -71,7 +79,6 @@ The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
 this equilibrium sits, so `(g³, g¹)` is singular there. `(g¹, g²)` divides by `b₃ = b_φ` instead.
 """
 default_constraints() = :g12
-
 
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_canonical.jl")

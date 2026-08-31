@@ -2,7 +2,6 @@
 export transform_q_to_q̃!, transform_q_to_q̃,
        transform_q̃_to_q!, transform_q̃_to_q
 
-
 @doc raw"""
     transform_q_to_q̃(t, q, params)
     transform_q_to_q̃!(q̃, t, q, params)

@@ -26,11 +26,13 @@ const GK = ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoi
 
 strang() = Composition(Tuple(Gauss(1) for _ in 1:6), Strang())
 
-step_split(q, params, Δs, method) =
+function step_split(q, params, Δs, method)
     integrate(GK.sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)), method).q[end]
+end
 
-step_full(q, params, Δs, method) =
+function step_full(q, params, Δs, method)
     integrate(GK.odeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)), method).q[end]
+end
 
 """
 Determinant of the Jacobian of the one-step map, by central differences.
@@ -41,8 +43,10 @@ the floor of the whole measurement is around 1e-11.
 function jacdet(step, q₀, params, Δs; h = 1E-5)
     J = zeros(length(q₀), length(q₀))
     for j in eachindex(q₀)
-        qp = copy(q₀); qp[j] += h
-        qm = copy(q₀); qm[j] -= h
+        qp = copy(q₀)
+        qp[j] += h
+        qm = copy(q₀)
+        qm[j] -= h
         J[:, j] = (step(qp, params, Δs) .- step(qm, params, Δs)) ./ 2h
     end
     det(J)
@@ -55,8 +59,9 @@ function main()
     @printf("  %-10s %-16s %-16s %s\n", "Δs", "Strang split", "ExplicitEuler", "Euler / Δs")
 
     for Δs in (1E-3, 3E-3, 1E-2, 3E-2, 1E-1)
-        ds = abs(jacdet((q, p, h) -> step_split(q, p, h, strang()),         q₀, params, Δs) - 1)
-        de = abs(jacdet((q, p, h) -> step_full(q, p, h, ExplicitEuler()),   q₀, params, Δs) - 1)
+        ds = abs(jacdet((q, p, h) -> step_split(q, p, h, strang()), q₀, params, Δs) - 1)
+        de = abs(jacdet((q, p, h) -> step_full(q, p, h, ExplicitEuler()), q₀, params, Δs) -
+                 1)
         @printf("  %-10.0e %-16.3e %-16.3e %.3e\n", Δs, ds, de, de / Δs)
     end
 

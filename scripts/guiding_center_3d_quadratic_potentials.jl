@@ -1,11 +1,14 @@
 using GeometricIntegrators
 
 using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d
-using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, b₁, b₂, b₃
+using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: hamiltonian,
+                                                                     hamiltonian_u, g₁, g₂,
+                                                                     g₃, λₒ, λ₁, λ₂, b₁, b₂,
+                                                                     b₃
 
 # As in `guiding_center_3d_dipole.jl`: `f_abstol` has to stay above the residual's `‖ϑ‖ eps` floor,
 # which is `4.0E-15` here (`‖p‖ ≈ 18`), so the `2eps() = 4.4E-16` this asked for was unreachable.
-const options = (f_abstol=1E-12, verbosity=1)
+const options = (f_abstol = 1E-12, verbosity = 1)
 
 # odeequ = ode(initial_conditions_quadratic())
 
@@ -13,12 +16,10 @@ const options = (f_abstol=1E-12, verbosity=1)
 # odesol = integrate(odeequ, Gauss(1); initialguess=NoInitialGuess(), options...)
 # odesol = integrate(odeequ, Gauss(1); initialguess=MidpointExtrapolation(2), options...)
 
-
-
-
 # equ = hodeproblem(initial_conditions_quadratic())
 # equ = hodeproblem(initial_conditions_quadratic(); timespan=(0.0, 50.0))
-equ = hodeproblem(initial_conditions_quadratic(); timestep=0.035, timespan=(0.0, 42_000.0))
+equ = hodeproblem(initial_conditions_quadratic(); timestep = 0.035, timespan = (
+    0.0, 42_000.0))
 
 sol = integrate(equ, PartitionedGauss(1); options...)
 # sol = integrate(equ, PartitionedGauss(1); initialguess=NoInitialGuess(), options...)
@@ -29,7 +30,8 @@ sol = integrate(equ, PartitionedGauss(1); options...)
 
 h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
 h0 = h[begin]
-hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
+hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], parameters(equ))
+      for i in eachindex(sol.t)]
 λ0 = [λₒ(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
 λ1 = [λ₁(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
 λ2 = [λ₂(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
@@ -77,15 +79,14 @@ println("b₂(x₀) = ", b2[begin])
 println("b₃(x₀) = ", b3[begin])
 println()
 
-
 using CairoMakie
 
-f = Figure(size=(1000, 800))
+f = Figure(size = (1000, 800))
 
-axsol = Axis(f[1, 1], xlabel="R", ylabel="Z")
-axham = Axis(f[1, 2], xlabel="t", ylabel="[H(t) - H(0)] / H(0)")
-axg1 = Axis(f[2, 1], xlabel="t", ylabel="g₁")
-axg2 = Axis(f[2, 2], xlabel="t", ylabel="g₂")
+axsol = Axis(f[1, 1], xlabel = "R", ylabel = "Z")
+axham = Axis(f[1, 2], xlabel = "t", ylabel = "[H(t) - H(0)] / H(0)")
+axg1 = Axis(f[2, 1], xlabel = "t", ylabel = "g₁")
+axg2 = Axis(f[2, 2], xlabel = "t", ylabel = "g₂")
 
 scatter!(axsol, R, Z)
 plot!(axham, sol.t, (h .- h0) ./ h0)

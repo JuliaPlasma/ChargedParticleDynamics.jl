@@ -6,8 +6,8 @@ module TokamakSmallCartesian
 import ElectromagneticFields.AxisymmetricTokamakCartesian
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
-    initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
-    initial_conditions_pauli, initial_conditions_default
+       initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
+       initial_conditions_pauli, initial_conditions_default
 
 export hamiltonian, toroidal_momentum
 
@@ -25,12 +25,24 @@ const DEFAULT_TIMESPAN = (0.0, 1E2)
 # const DEFAULT_TIMESTEP = 500.0
 # const DEFAULT_TIMESPAN = (0.0, 5E6)
 
-initial_conditions_default() = merge(initial_conditions(0, [1.05, 0.0, -0.005, 0.000045]), (params=(μ=3.2e-7,),))
-initial_conditions_barely_passing() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 8.117E-4]), (params=(μ=2.448E-6,),))
-initial_conditions_barely_trapped() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 7.610E-4]), (params=(μ=2.250E-6,),))
-initial_conditions_deeply_passing() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 1.623E-3]), (params=(μ=2.448E-6,),))
-initial_conditions_deeply_trapped() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.306E-4]), (params=(μ=2.250E-6,),))
-initial_conditions_pauli() = merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.3E-4]), (params=(μ=2.310E-6,),))
+function initial_conditions_default()
+    merge(initial_conditions(0, [1.05, 0.0, -0.005, 0.000045]), (params = (μ = 3.2e-7,),))
+end
+function initial_conditions_barely_passing()
+    merge(initial_conditions(0, [1.05, 0.0, 0.0, 8.117E-4]), (params = (μ = 2.448E-6,),))
+end
+function initial_conditions_barely_trapped()
+    merge(initial_conditions(0, [1.05, 0.0, 0.0, 7.610E-4]), (params = (μ = 2.250E-6,),))
+end
+function initial_conditions_deeply_passing()
+    merge(initial_conditions(0, [1.05, 0.0, 0.0, 1.623E-3]), (params = (μ = 2.448E-6,),))
+end
+function initial_conditions_deeply_trapped()
+    merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.306E-4]), (params = (μ = 2.250E-6,),))
+end
+function initial_conditions_pauli()
+    merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.3E-4]), (params = (μ = 2.310E-6,),))
+end
 
 u_loop() = 4.0E-4
 μ_loop() = 2.5E-6
@@ -70,7 +82,7 @@ end
 export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T}=Float64) where {T} = (μ = T(3.2e-7),)
+default_parameters(::Type{T} = Float64) where {T} = (μ = T(3.2e-7),)
 
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
@@ -80,7 +92,6 @@ which sit at `y = z = 0`, so `(g³, g¹)` is singular there. `(g², g³)` divide
 component in this chart and the largest of the three.
 """
 default_constraints() = :g23
-
 
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_canonical.jl")

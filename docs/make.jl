@@ -36,6 +36,7 @@ end
 function documented_names(dir)
     found = Set{String}()
     for (root, _, files) in walkdir(dir), file in files
+
         endswith(file, ".md") || continue
         text = read(joinpath(root, file), String)
         for block in eachmatch(r"```@(?:auto)?docs\r?\n(.*?)```"s, text)
@@ -72,16 +73,20 @@ end
 # What this does not cover is a *function* docstring that stops being rendered. The pages render the
 # shared API through `@autodocs` on the anchor modules, which takes everything those modules own, so
 # that can only regress by someone replacing an `@autodocs` block with a partial `@docs` list.
-let documented = documented_names(joinpath(@__DIR__, "src")), undocumented = String[], unlisted = String[]
+let documented = documented_names(joinpath(@__DIR__, "src")), undocumented = String[],
+    unlisted = String[]
+
     for m in submodules(CP)
         m === CP && continue
         hasdocstring(m) || push!(undocumented, string(m))
         string(m) in documented || push!(unlisted, string(m))
     end
     isempty(undocumented) ||
-        @warn "Modules without a docstring of their own:\n" * join("  " .* sort(undocumented), "\n")
+        @warn "Modules without a docstring of their own:\n" *
+              join("  " .* sort(undocumented), "\n")
     isempty(unlisted) ||
-        @warn "Modules absent from every @docs/@autodocs block:\n" * join("  " .* sort(unlisted), "\n")
+        @warn "Modules absent from every @docs/@autodocs block:\n" *
+              join("  " .* sort(unlisted), "\n")
     isempty(undocumented) && isempty(unlisted) &&
         @info "Module docs check: all $(length(submodules(CP)) - 1) submodules have a docstring and appear in the manual."
 end
@@ -90,31 +95,33 @@ makedocs(
     sitename = "ChargedParticleDynamics.jl",
     # No `modules` argument: see the comment on the module docs check above for why it cannot be
     # combined with rendering each shared docstring once.
-    warnonly = Documenter.except(:autodocs_block, :cross_references, :docs_block, :doctest, :eval_block, :example_block, :footnote, :linkcheck_remotes, :linkcheck, :meta_block, :parse_error, :setup_block),
+    warnonly = Documenter.except(:autodocs_block, :cross_references, :docs_block, :doctest,
+        :eval_block, :example_block, :footnote, :linkcheck_remotes,
+        :linkcheck, :meta_block, :parse_error, :setup_block),
     format = Documenter.HTML(
-                prettyurls = get(ENV, "CI", nothing) == "true",
-                assets = [asset("assets/style.css", class=:css, islocal=true)],
-                example_size_threshold = 32,
-                ),
-    pages = ["Overview"                      => "index.md",
-             "Normalization"                 => "normalization.md",
-             "Initialization"                => "initialization.md",
-             "Charged Particles in 3D"       => "charged_particle_3d.md",
-             "Pauli Particles in 3D"         => "pauli_particle_3d.md",
-             "Guiding Center Dynamics in 3D" => "guiding_center_3d.md",
-             "Guiding Center Dynamics in 4D" => "guiding_center_4d.md",
-             "Gyrokinetics in 4D"            => "gyro_kinetics_4d.md",
-             "Model Audit"                   => "audit.md",
-             "Findings"                      => "findings.md",
-             "Examples" => [
-                    "ITER Equilibrium in Cylindrical Coordinates"   => "examples/iter_cylindrical.md",
-                 ],
-            ]
+        prettyurls = get(ENV, "CI", nothing) == "true",
+        assets = [asset("assets/style.css", class = :css, islocal = true)],
+        example_size_threshold = 32
+    ),
+    pages = ["Overview" => "index.md",
+        "Normalization" => "normalization.md",
+        "Initialization" => "initialization.md",
+        "Charged Particles in 3D" => "charged_particle_3d.md",
+        "Pauli Particles in 3D" => "pauli_particle_3d.md",
+        "Guiding Center Dynamics in 3D" => "guiding_center_3d.md",
+        "Guiding Center Dynamics in 4D" => "guiding_center_4d.md",
+        "Gyrokinetics in 4D" => "gyro_kinetics_4d.md",
+        "Model Audit" => "audit.md",
+        "Findings" => "findings.md",
+        "Examples" => [
+            "ITER Equilibrium in Cylindrical Coordinates" => "examples/iter_cylindrical.md",
+        ]
+    ]
 )
 
 deploydocs(
-    repo   = "github.com/JuliaPlasma/ChargedParticleDynamics.jl",
+    repo = "github.com/JuliaPlasma/ChargedParticleDynamics.jl",
     devurl = "latest",
     devbranch = "main",
-    push_preview = true,
+    push_preview = true
 )

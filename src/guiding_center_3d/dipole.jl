@@ -30,12 +30,14 @@ Dipole.@code() # inject magnetic field code
 const DEFAULT_TIMESTEP = 0.1
 const DEFAULT_TIMESPAN = (0.0, 1E2)
 
-initial_conditions_dipole() = merge(initial_conditions(0.0, [1.0, 2.0, 1.0, 0.01]), (params=(μ=1E-2,),))
+function initial_conditions_dipole()
+    merge(initial_conditions(0.0, [1.0, 2.0, 1.0, 0.01]), (params = (μ = 1E-2,),))
+end
 
 export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+default_parameters(::Type{T} = Float64) where {T} = (μ = T(1E-2),)
 
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
@@ -63,7 +65,6 @@ conditioning, but at the initial condition. The full comparison across spans, in
 is tabulated in `docs/src/findings.md` under "Regular is not the same as well conditioned".
 """
 default_constraints() = :g12
-
 
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_canonical.jl")

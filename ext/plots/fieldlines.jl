@@ -1,8 +1,9 @@
 
 function plot_fieldlines_figure(; xrange, yrange, kwargs...)
-    plot_poloidal_figure(limits = ((xrange[begin], xrange[end]), (yrange[begin], yrange[end])), kwargs...)
+    plot_poloidal_figure(
+        limits = (
+            (xrange[begin], xrange[end]), (yrange[begin], yrange[end])), kwargs...)
 end
-
 
 """
     is_axisymmetric_cylindrical(equ)
@@ -26,7 +27,6 @@ function is_axisymmetric_cylindrical(equ)
 
     angular(3) && !angular(1) && !angular(2)
 end
-
 
 @doc raw"""
     plot_fieldlines(equ; xrange, yrange, ngrid = (300, 200), levels = 10, kwargs...)
@@ -52,7 +52,7 @@ same distinction `ElectromagneticFields` 0.8.0 draws in its own equilibrium plot
     two-argument `plot_trajectory_poloidal(R, Z)`, which draws the trajectory without the field
     lines.
 """
-function plot_fieldlines(equ; xrange, yrange, ngrid=(300, 200), levels=10, kwargs...)
+function plot_fieldlines(equ; xrange, yrange, ngrid = (300, 200), levels = 10, kwargs...)
     is_axisymmetric_cylindrical(equ) || throw(ArgumentError(
         "plot_fieldlines contours ψ = A₃ and is only meaningful for an axisymmetric " *
         "equilibrium in cylindrical coordinates (R, Z, φ); $(equ) is not one. Call " *
@@ -60,7 +60,8 @@ function plot_fieldlines(equ; xrange, yrange, ngrid=(300, 200), levels=10, kwarg
 
     xgrid = LinRange(xrange..., ngrid[1])
     ygrid = LinRange(yrange..., ngrid[2])
-    fieldlines = [equ.A₃(0, xgrid[i], ygrid[j], 0.0) for i in eachindex(xgrid), j in eachindex(ygrid)];
+    fieldlines = [equ.A₃(0, xgrid[i], ygrid[j], 0.0)
+                  for i in eachindex(xgrid), j in eachindex(ygrid)]
 
     fg, ax = plot_fieldlines_figure(; xrange = xrange, yrange = yrange, kwargs...)
     contour!(ax, xgrid, ygrid, fieldlines, levels = levels, colormap = :reds)

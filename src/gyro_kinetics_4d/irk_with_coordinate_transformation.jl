@@ -37,9 +37,9 @@ using ForwardDiff
 
 using .GuidingCenter4dSolovevIterXpoint
 
-
 "Parameters for right-hand side function of fully implicit Runge-Kutta methods."
-mutable struct ParametersFIRKwCT{DT, TT, D, S, ET <: NamedTuple, PT <: NamedTuple, FT, JT} <: Parameters{DT,TT}
+mutable struct ParametersFIRKwCT{
+    DT, TT, D, S, ET <: NamedTuple, PT <: NamedTuple, FT, JT} <: Parameters{DT, TT}
     equs::ET
     params::PT
     tab::Tableau{TT}
@@ -54,16 +54,17 @@ mutable struct ParametersFIRKwCT{DT, TT, D, S, ET <: NamedTuple, PT <: NamedTupl
     # t̃::TT
     # x₀::Vector{DT}
 
-    function ParametersFIRKwCT{DT,D}(equs::ET, params::PT, tab::Tableau{TT}, Δt::TT) where {DT, TT, D, ET <: NamedTuple, PT <: NamedTuple}
-        F = (v,q) -> equs[:v](zero(TT), q, v)
-        tq = zeros(DT,D)
-        tv = zeros(DT,D)
+    function ParametersFIRKwCT{DT, D}(equs::ET, params::PT, tab::Tableau{TT},
+            Δt::TT) where {DT, TT, D, ET <: NamedTuple, PT <: NamedTuple}
+        F = (v, q) -> equs[:v](zero(TT), q, v)
+        tq = zeros(DT, D)
+        tv = zeros(DT, D)
         Jconfig = ForwardDiff.JacobianConfig(F, tv, tq)
 
-        new{DT, TT, D, tab.s, ET, PT, typeof(F), typeof(Jconfig)}(equs, params, tab, Δt, F, Jconfig, zero(TT), zeros(DT,D))#, zero(TT), x₀)
+        new{DT, TT, D, tab.s, ET, PT, typeof(F), typeof(Jconfig)}(
+            equs, params, tab, Δt, F, Jconfig, zero(TT), zeros(DT, D))#, zero(TT), x₀)
     end
 end
-
 
 @doc raw"""
 Fully implicit Runge-Kutta integrator cache.
@@ -77,7 +78,7 @@ Fully implicit Runge-Kutta integrator cache.
 * `V`: internal stages of vector field
 * `Y`: vector field of internal stages
 """
-struct IntegratorCacheFIRKwCT{DT,D,S} <: ODEIntegratorCache{DT,D}
+struct IntegratorCacheFIRKwCT{DT, D, S} <: ODEIntegratorCache{DT, D}
     q::Vector{DT}
     q̅::Vector{DT}
 
@@ -89,50 +90,56 @@ struct IntegratorCacheFIRKwCT{DT,D,S} <: ODEIntegratorCache{DT,D}
     Q̃::Vector{Vector{DT}}
     Ṽ::Vector{Vector{DT}}
     Ỹ::Vector{Vector{DT}}
-    
+
     J::Vector{Matrix{DT}}
 
-    function IntegratorCacheFIRKwCT{DT,D,S}() where {DT,D,S}
-        q = zeros(DT,D)
-        q̅ = zeros(DT,D)
+    function IntegratorCacheFIRKwCT{DT, D, S}() where {DT, D, S}
+        q = zeros(DT, D)
+        q̅ = zeros(DT, D)
 
-        q̃ = zeros(DT,D)
-        ṽ = zeros(DT,D)
-        s̃ = zeros(DT,D)
+        q̃ = zeros(DT, D)
+        ṽ = zeros(DT, D)
+        s̃ = zeros(DT, D)
 
         Q = create_internal_stage_vector(DT, D, S)
         Q̃ = create_internal_stage_vector(DT, D, S)
         Ṽ = create_internal_stage_vector(DT, D, S)
         Ỹ = create_internal_stage_vector(DT, D, S)
-        
-        J = [zeros(DT,D,D) for i in 1:S]
+
+        J = [zeros(DT, D, D) for i in 1:S]
 
         new(q, q̅, q̃, ṽ, s̃, Q, Q̃, Ṽ, Ỹ, J)
     end
 end
 
-function IntegratorCache{ST}(params::ParametersFIRKwCT{DT,TT,D,S}; kwargs...) where {ST,DT,TT,D,S}
-    IntegratorCacheFIRKwCT{ST,D,S}(; kwargs...)
+function IntegratorCache{ST}(
+        params::ParametersFIRKwCT{
+            DT, TT, D, S}; kwargs...) where {ST, DT, TT, D, S}
+    IntegratorCacheFIRKwCT{ST, D, S}(; kwargs...)
 end
 
-@inline GeometricIntegrators.Integrators.CacheType(ST, params::ParametersFIRKwCT{DT,TT,D,S}) where {DT,TT,D,S} = IntegratorCacheFIRKwCT{ST,D,S}
-
+@inline GeometricIntegrators.Integrators.CacheType(ST,
+    params::ParametersFIRKwCT{DT, TT, D, S}) where {DT, TT, D, S} = IntegratorCacheFIRKwCT{
+    ST, D, S}
 
 "Fully implicit Runge-Kutta integrator with coordinate transformation."
 struct IntegratorFIRKwCT{DT, TT, D, S,
-                PT <: ParametersFIRKwCT{DT,TT},
-                ST <: NonlinearSolver{DT},
-                IT <: InitialGuessODE{TT}}# <: IntegratorRK{DT,TT}
+    PT <: ParametersFIRKwCT{DT, TT},
+    ST <: NonlinearSolver{DT},
+    IT <: InitialGuessODE{TT}}# <: IntegratorRK{DT,TT}
     params::PT
     solver::ST
     iguess::IT
     caches::CacheDict{PT}
 
-    function IntegratorFIRKwCT(params::ParametersFIRKwCT{DT,TT,D,S}, solver::ST, iguess::IT, caches) where {DT,TT,D,S,ST,IT}
+    function IntegratorFIRKwCT(params::ParametersFIRKwCT{DT, TT, D, S}, solver::ST,
+            iguess::IT, caches) where {DT, TT, D, S, ST, IT}
         new{DT, TT, D, S, typeof(params), ST, IT}(params, solver, iguess, caches)
     end
 
-    function IntegratorFIRKwCT{DT,D}(equations::NamedTuple, parameters::NamedTuple, tableau::Tableau{TT}, Δt::TT; exact_jacobian=false) where {DT,TT,D}
+    function IntegratorFIRKwCT{DT, D}(
+            equations::NamedTuple, parameters::NamedTuple, tableau::Tableau{TT},
+            Δt::TT; exact_jacobian = false) where {DT, TT, D}
         # get number of stages
         S = tableau.s
 
@@ -140,7 +147,7 @@ struct IntegratorFIRKwCT{DT, TT, D, S,
         # ct_solver = get_config(:nls_solver)(zeros(DT,3), (x,b) -> coordinate_transformation_rhs!(x, b, parameters))
 
         # create params
-        params = ParametersFIRKwCT{DT,D}(equations, parameters, tableau, Δt)
+        params = ParametersFIRKwCT{DT, D}(equations, parameters, tableau, Δt)
 
         # create cache dict
         caches = CacheDict(params)
@@ -153,31 +160,33 @@ struct IntegratorFIRKwCT{DT, TT, D, S,
         end
 
         # create initial guess
-        iguess = InitialGuessODE{DT,D}(get_config(:ig_interpolation), equations[:v], Δt)
+        iguess = InitialGuessODE{DT, D}(get_config(:ig_interpolation), equations[:v], Δt)
 
         # create integrator
         IntegratorFIRKwCT(params, solver, iguess, caches)
     end
 
-    function IntegratorFIRKwCT{DT,D}(v::Function, ωabs::Function, parameters::NamedTuple, tableau::Tableau{TT}, Δt::TT; kwargs...) where {DT,TT,D}
-        IntegratorFIRKwCT{DT,D}(NamedTuple{(:v,:ωabs)}((v, (t,q) -> ωabs(t,q,parameters))), parameters, tableau, Δt; kwargs...)
+    function IntegratorFIRKwCT{DT, D}(v::Function, ωabs::Function, parameters::NamedTuple,
+            tableau::Tableau{TT}, Δt::TT; kwargs...) where {DT, TT, D}
+        IntegratorFIRKwCT{DT, D}(
+            NamedTuple{(:v, :ωabs)}((v, (t, q) -> ωabs(t, q, parameters))),
+            parameters, tableau, Δt; kwargs...)
     end
 
-    function IntegratorFIRKwCT(equation::ODE{DT,TT}, ωabs::Function, tableau::Tableau{TT}, Δt::TT; kwargs...) where {DT,TT}
-        IntegratorFIRKwCT{DT, ndims(equation)}(equation.v, ωabs, equation.parameters, tableau, Δt; kwargs...)
+    function IntegratorFIRKwCT(equation::ODE{DT, TT}, ωabs::Function,
+            tableau::Tableau{TT}, Δt::TT; kwargs...) where {DT, TT}
+        IntegratorFIRKwCT{DT, ndims(equation)}(
+            equation.v, ωabs, equation.parameters, tableau, Δt; kwargs...)
     end
 end
 
-
-@inline Base.ndims(int::IntegratorFIRKwCT{DT,TT,D,S}) where {DT,TT,D,S} = D
-
+@inline Base.ndims(int::IntegratorFIRKwCT{DT, TT, D, S}) where {DT, TT, D, S} = D
 
 function update_params!(int::IntegratorFIRKwCT, sol::AtomicSolutionODE)
     # set time for nonlinear solver and copy previous solution
-    int.params.t  = sol.t
+    int.params.t = sol.t
     int.params.q .= sol.q
 end
-
 
 # function coordinate_transformation_ig!(x, params::ParametersFIRKwCT)
 #     # compute B⋆∥(t,q)
@@ -213,10 +222,9 @@ end
 
 # end
 
-
-function GeometricIntegrators.Integrators.initialize!(int::IntegratorFIRKwCT{DT}, sol::AtomicSolutionODE{DT},
-                         cache::IntegratorCacheFIRKwCT{DT}=int.caches[DT]) where {DT}
-
+function GeometricIntegrators.Integrators.initialize!(
+        int::IntegratorFIRKwCT{DT}, sol::AtomicSolutionODE{DT},
+        cache::IntegratorCacheFIRKwCT{DT} = int.caches[DT]) where {DT}
     sol.t̅ = sol.t - timestep(int)
 
     # transform_q̃_to_q!(sol.q, cache.q, int.params.params)
@@ -224,13 +232,11 @@ function GeometricIntegrators.Integrators.initialize!(int::IntegratorFIRKwCT{DT}
     equations(int)[:v](sol.t, sol.q, sol.v)
 
     initialize!(int.iguess, sol.t, sol.q, sol.v,
-                            sol.t̅, sol.q̅, sol.v̅)
+        sol.t̅, sol.q̅, sol.v̅)
 end
 
-
 function initial_guess!(int::IntegratorFIRKwCT{DT}, sol::AtomicSolutionODE{DT},
-                        cache::IntegratorCacheFIRKwCT{DT}=int.caches[DT]) where {DT}
-
+        cache::IntegratorCacheFIRKwCT{DT} = int.caches[DT]) where {DT}
     local offset::Int
 
     # transform_q̃_to_q!(sol.q, cache.q, int.params.params)
@@ -238,45 +244,47 @@ function initial_guess!(int::IntegratorFIRKwCT{DT}, sol::AtomicSolutionODE{DT},
 
     # compute initial guess for internal stages
     for i in eachstage(int)
-        evaluate!(int.iguess, sol.q, sol.v, sol.q̅, sol.v̅, cache.Q̃[i], cache.Ṽ[i], tableau(int).q.c[i])
+        evaluate!(int.iguess, sol.q, sol.v, sol.q̅, sol.v̅,
+            cache.Q̃[i], cache.Ṽ[i], tableau(int).q.c[i])
         # transform_q_to_q̃!(cache.Q[i], cache.Q̃[i], int.params.params)
     end
     for i in eachstage(int)
         offset = ndims(int)*(i-1)
         for k in eachdim(int)
-            int.solver.x[offset+k] = 0
+            int.solver.x[offset + k] = 0
             for j in eachstage(int)
-                int.solver.x[offset+k] += timestep(int) * tableau(int).q.a[i,j] * cache.Ṽ[j][k]
+                int.solver.x[offset + k] += timestep(int) * tableau(int).q.a[i, j] *
+                                            cache.Ṽ[j][k]
             end
         end
     end
 end
 
-
-function compute_stages!(x::Vector{ST}, Q::Vector{Vector{ST}}, Q̃::Vector{Vector{ST}}, Ṽ::Vector{Vector{ST}}, Ỹ::Vector{Vector{ST}},
-                         params::ParametersFIRKwCT{DT,TT,D}) where {ST,DT,TT,D}
-
+function compute_stages!(x::Vector{ST}, Q::Vector{Vector{ST}}, Q̃::Vector{Vector{ST}},
+        Ṽ::Vector{Vector{ST}}, Ỹ::Vector{Vector{ST}},
+        params::ParametersFIRKwCT{DT, TT, D}) where {ST, DT, TT, D}
     local tᵢ::TT
 
     # copy x to Y and compute Q = q + Δt Y
-    for i in eachindex(Q̃,Ỹ)
-        for k in eachindex(Q̃[i],Ỹ[i])
-            Ỹ[i][k] = x[D*(i-1)+k]
+    for i in eachindex(Q̃, Ỹ)
+        for k in eachindex(Q̃[i], Ỹ[i])
+            Ỹ[i][k] = x[D * (i - 1) + k]
             Q̃[i][k] = params.q[k] + Ỹ[i][k]
         end
         # transform_q̃_to_q!(Q̃[i], Q[i], params.params)
     end
 
     # compute V = v(Q)
-    for i in eachindex(Q̃,Ṽ)
+    for i in eachindex(Q̃, Ṽ)
         tᵢ = params.t + params.Δt * params.tab.q.c[i]
         params.equs[:v](tᵢ, Q̃[i], Ṽ[i])
     end
 end
 
 "Compute stages of fully implicit Runge-Kutta methods."
-function GeometricIntegrators.Integrators.function_stages!(x::Vector{ST}, b::Vector{ST}, params::ParametersFIRKwCT{DT,TT,D},
-                          caches::CacheDict) where {ST,DT,TT,D}
+function GeometricIntegrators.Integrators.function_stages!(
+        x::Vector{ST}, b::Vector{ST}, params::ParametersFIRKwCT{DT, TT, D},
+        caches::CacheDict) where {ST, DT, TT, D}
     # temporary variables
     local y::ST
 
@@ -291,9 +299,9 @@ function GeometricIntegrators.Integrators.function_stages!(x::Vector{ST}, b::Vec
         for k in eachindex(cache.Ỹ[i])
             y = 0
             for j in eachindex(cache.Ṽ)
-                y += params.tab.q.a[i,j] * cache.Ṽ[j][k]
+                y += params.tab.q.a[i, j] * cache.Ṽ[j][k]
             end
-            b[D*(i-1)+k] = - cache.Ỹ[i][k] + params.Δt * y
+            b[D * (i - 1) + k] = - cache.Ỹ[i][k] + params.Δt * y
         end
     end
 end
@@ -335,10 +343,10 @@ end
 #     end
 # end
 
-
 "Integrate ODE with fully implicit Runge-Kutta integrator."
-function GeometricIntegrators.Integrators.integrate_step!(int::IntegratorFIRKwCT{DT,TT}, sol::AtomicSolutionODE{DT,TT},
-                         cache::IntegratorCacheFIRKwCT{DT}=int.caches[DT]) where {DT,TT}
+function GeometricIntegrators.Integrators.integrate_step!(
+        int::IntegratorFIRKwCT{DT, TT}, sol::AtomicSolutionODE{DT, TT},
+        cache::IntegratorCacheFIRKwCT{DT} = int.caches[DT]) where {DT, TT}
 
     # update nonlinear solver parameters from atomic solution
     update_params!(int, sol)
@@ -362,7 +370,8 @@ function GeometricIntegrators.Integrators.integrate_step!(int::IntegratorFIRKwCT
     compute_stages!(int.solver.x, cache.Q, cache.Q̃, cache.Ṽ, cache.Ỹ, int.params)
 
     # compute final update
-    update_solution!(sol.q, sol.q̃, cache.Ṽ, tableau(int).q.b, tableau(int).q.b̂, timestep(int))
+    update_solution!(
+        sol.q, sol.q̃, cache.Ṽ, tableau(int).q.b, tableau(int).q.b̂, timestep(int))
 
     # copy solution to initial guess
     update_vector_fields!(int.iguess, sol.t, sol.q, sol.q)

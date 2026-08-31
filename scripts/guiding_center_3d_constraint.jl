@@ -2,8 +2,13 @@ using GeometricIntegrators
 using SimpleSolvers: Options
 
 using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian
-using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian: hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, b₁, b₂, b₃
-using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian: gᵏ, dgᵏdqₗ, dgᵏdpₗ, constraint_pair, default_constraints
+using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian: hamiltonian,
+                                                                      hamiltonian_u, g₁, g₂,
+                                                                      g₃, λₒ, λ₁, λ₂, b₁,
+                                                                      b₂, b₃
+using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian: gᵏ, dgᵏdqₗ, dgᵏdpₗ,
+                                                                      constraint_pair,
+                                                                      default_constraints
 
 # using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical
 # using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical: hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, b₁, b₂, b₃
@@ -17,18 +22,18 @@ using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian: gᵏ, dg�
 # for these models is `‖ϑ‖ eps`. The 1E-14 this script used to ask for is below it, so the solver
 # had no reachable criterion and the line search ran to its 1000-iteration limit on every step.
 # `f_reltol` is left at the `SimpleSolvers` default deliberately; see `test/guiding_center_3d_tests.jl`.
-const options = (f_abstol=1E-12, max_iterations=50, warn_iterations=50)
+const options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 
 equ = hodeproblem(initial_conditions_barely_passing())
 # equ = hodeproblem(initial_conditions_barely_trapped())
 # equ = hodeproblem(initial_conditions_deeply_passing())
 # equ = hodeproblem(initial_conditions_deeply_trapped())
 
-
 sol = integrate(equ, PartitionedGauss(1); options...)
 
 h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
-hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
+hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], parameters(equ))
+      for i in eachindex(sol.t)]
 λ0 = [λₒ(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
 λ1 = [λ₁(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
 λ2 = [λ₂(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
@@ -65,10 +70,12 @@ println()
 println("λ₀(0) = ", λ0[begin])
 println("λ₀(T) = ", λ0[end])
 println()
-println("λ₁ g₁ + λ₂ g₂ (0) = ", λ1[begin] * gᵏ(c[1], sol.t[begin], sol.q[begin], sol.p[begin]) +
-                                λ2[begin] * gᵏ(c[2], sol.t[begin], sol.q[begin], sol.p[begin]))
-println("λ₁ g₁ + λ₂ g₂ (T) = ", λ1[end] * gᵏ(c[1], sol.t[end], sol.q[end], sol.p[end]) +
-                                λ2[end] * gᵏ(c[2], sol.t[end], sol.q[end], sol.p[end]))
+println("λ₁ g₁ + λ₂ g₂ (0) = ",
+    λ1[begin] * gᵏ(c[1], sol.t[begin], sol.q[begin], sol.p[begin]) +
+    λ2[begin] * gᵏ(c[2], sol.t[begin], sol.q[begin], sol.p[begin]))
+println("λ₁ g₁ + λ₂ g₂ (T) = ",
+    λ1[end] * gᵏ(c[1], sol.t[end], sol.q[end], sol.p[end]) +
+    λ2[end] * gᵏ(c[2], sol.t[end], sol.q[end], sol.p[end]))
 println()
 
 println()
@@ -83,11 +90,13 @@ let t₀ = sol.t[begin], q₀ = sol.q[begin], p₀ = sol.p[begin]
     println()
     for i in 1:3
         l = Val(i)
-        println("∂g₁/∂q$i * ∂g₂/∂p$i = ", dgᵏdqₗ(c[1], l, t₀, q₀, p₀) * dgᵏdpₗ(c[2], l, t₀, q₀, p₀))
+        println("∂g₁/∂q$i * ∂g₂/∂p$i = ", dgᵏdqₗ(c[1], l, t₀, q₀, p₀) *
+                                          dgᵏdpₗ(c[2], l, t₀, q₀, p₀))
     end
     for i in 1:3
         l = Val(i)
-        println("∂g₁/∂p$i * ∂g₂/∂q$i = ", dgᵏdpₗ(c[1], l, t₀, q₀, p₀) * dgᵏdqₗ(c[2], l, t₀, q₀, p₀))
+        println("∂g₁/∂p$i * ∂g₂/∂q$i = ", dgᵏdpₗ(c[1], l, t₀, q₀, p₀) *
+                                          dgᵏdqₗ(c[2], l, t₀, q₀, p₀))
     end
     println()
 

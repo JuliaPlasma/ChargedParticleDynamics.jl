@@ -1,7 +1,6 @@
 using GeometricIntegrators
 using CairoMakie
 
-
 # Choose problem
 import ChargedParticleDynamics.PauliParticle3d.TokamakIterCylindrical as prob
 # import ChargedParticleDynamics.PauliParticle3d.TokamakSmallCartesian as prob
@@ -45,13 +44,13 @@ isol = integrate(iode, method; options...)
 # Plot solution and energy error
 function plot_solution(prob, ode, sol, prefix)
     # Compute Cartesian coordinates from solution
-    R = prob.R.(sol.t[:], sol.q[:,1], sol.q[:,2], sol.q[:,3])
-    X = prob.X.(sol.t[:], sol.q[:,1], sol.q[:,2], sol.q[:,3])
-    Y = prob.Y.(sol.t[:], sol.q[:,1], sol.q[:,2], sol.q[:,3])
-    Z = prob.Z.(sol.t[:], sol.q[:,1], sol.q[:,2], sol.q[:,3])
+    R = prob.R.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
+    X = prob.X.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
+    Y = prob.Y.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
+    Z = prob.Z.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
 
     # Compute energy
-    hamiltonian = (t,q,p) -> prob.hamiltonian(t, q, p, ode.parameters)
+    hamiltonian = (t, q, p) -> prob.hamiltonian(t, q, p, ode.parameters)
     energy = hamiltonian.(sol.t, sol.q, sol.p)
     energy_error = (energy .- energy[begin]) / energy[begin]
 
@@ -61,7 +60,7 @@ function plot_solution(prob, ode, sol, prefix)
         fig[1, 1],
         aspect = 1,
         xlabel = "R",
-        ylabel = "Z",
+        ylabel = "Z"
     )
     lines!(ax, R, Z; linewidth = 3)
     # scatter!(ax, R, Z)
@@ -73,7 +72,7 @@ function plot_solution(prob, ode, sol, prefix)
         fig[1, 1],
         xlabel = "X",
         ylabel = "Y",
-        zlabel = "Z",
+        zlabel = "Z"
     )
     lines!(ax, X, Y, Z; linewidth = 3)
     # scatter!(ax, X, Y, Z)
@@ -84,7 +83,7 @@ function plot_solution(prob, ode, sol, prefix)
     ax = Axis(
         fig[1, 1],
         xlabel = "t",
-        ylabel = "(H(t) - H(0)) / H(0)",
+        ylabel = "(H(t) - H(0)) / H(0)"
     )
     xlims!(ax, (sol.t[begin], sol.t[end]))
     lines!(ax, sol.t[:], energy_error; linewidth = 3)

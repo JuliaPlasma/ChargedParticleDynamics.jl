@@ -7,12 +7,11 @@ export InitialConditions, InitialConditionsGC
 export charged_particle, guiding_center, pauli_particle
 export e, me, mp, md, mα
 
-const e  = 1.602176634E-19    # electron charge
+const e = 1.602176634E-19    # electron charge
 const me = 9.1093837015E-31   # electron mass
 const mp = 1.6726219237E-27   # proton mass
 const md = 3.3435837724E-27   # deuteron mass
 const mα = 6.6446573357E-27   # α-particle mass
-
 
 """
 Store initial conditions for charged particle, Pauli particle and guiding center models.
@@ -56,7 +55,6 @@ struct InitialConditions{T <: Real}
     charge::Int
 end
 
-
 """
 Compute initial conditions from the following arguments:
 * `X`: gyro center position
@@ -73,7 +71,9 @@ Compute initial conditions from the following arguments:
 * `J`: Jacobian determinant
 * `l=1`: length normalization
 """
-function InitialConditions(X::AbstractVector{T}, θ::T, α::T, Etot::T, M::T, C, â::Function, b̂::Function, ĉ::Function, b::Function, B::Function, g̅::Function, DF̄::Function, J::Function; l₀=1) where {T}
+function InitialConditions(X::AbstractVector{T}, θ::T, α::T, Etot::T, M::T, C, â::Function,
+        b̂::Function, ĉ::Function, b::Function, B::Function,
+        g̅::Function, DF̄::Function, J::Function; l₀ = 1) where {T}
     # computet parallel and perpedicular energy according to pitch angle
     Epar = Etot * (1 - sin(α))
     Eper = Etot * sin(α)
@@ -84,27 +84,26 @@ function InitialConditions(X::AbstractVector{T}, θ::T, α::T, Etot::T, M::T, C,
     v = sqrt(2 * Etot * M / e) / l₀
     u = sqrt(2 * Epar * M / e) / l₀
     w = sqrt(2 * Eper * M / e) / l₀
-    μ = w^2 / 2B(0,X)
+    μ = w^2 / 2B(0, X)
 
     # compute v̂par and v̂per in physical coordinates
-    v̂par = u * b̂(0,X)
-    v̂per = w * ( - â(0,X) * sin(θ) - ĉ(0,X) * cos(θ) )
+    v̂par = u * b̂(0, X)
+    v̂per = w * (- â(0, X) * sin(θ) - ĉ(0, X) * cos(θ))
 
     # transform vpar and vper to contravariant coordinates
-    vpar = DF̄(0,X) * v̂par
-    vper = DF̄(0,X) * v̂per
+    vpar = DF̄(0, X) * v̂par
+    vper = DF̄(0, X) * v̂per
 
     # compute total velocity vector field
     vvec = vpar .+ vper
 
     # compute gyro radius vector ρ and particle position x
-    ω = e * B(0,X) / M
-    ρ = [crossproduct(b(0,X), vvec, g̅(0,X), J(0,X), l) for l in 1:3] / B(0,X)
+    ω = e * B(0, X) / M
+    ρ = [crossproduct(b(0, X), vvec, g̅(0, X), J(0, X), l) for l in 1:3] / B(0, X)
     x = X .+ ρ
 
     InitialConditions{T}(x, X, ρ, vvec, vpar, vper, v, u, μ, θ, α, ω, M, Etot, C)
 end
-
 
 """
 Compute initial conditions from the following arguments:
@@ -122,37 +121,38 @@ Compute initial conditions from the following arguments:
 * `J`: Jacobian determinant
 * `l=1`: length normalization
 """
-function InitialConditionsGC(X::AbstractVector{T}, θ::T, u::T, μ::T, M::T, C, â::Function, b̂::Function, ĉ::Function, b::Function, B::Function, g̅::Function, DF̄::Function, J::Function; l₀=1) where {T}
+function InitialConditionsGC(X::AbstractVector{T}, θ::T, u::T, μ::T, M::T, C, â::Function,
+        b̂::Function, ĉ::Function, b::Function, B::Function,
+        g̅::Function, DF̄::Function, J::Function; l₀ = 1) where {T}
     # compute absolute value of perpendicular and total velocity
-    w = sqrt(2B(0,X) * μ)
+    w = sqrt(2B(0, X) * μ)
     v = sqrt(u^2 + w^2)
 
     # compute perpendicular and total energy
-    Eper = e * l₀^2 * w^2 / 2 / M 
+    Eper = e * l₀^2 * w^2 / 2 / M
     Etot = e * l₀^2 * v^2 / 2 / M
 
     # compute pitch angle
     α = asin(Eper / Etot)
 
     # compute v̂par and v̂per in physical coordinates
-    v̂par = u * b̂(0,X)
-    v̂per = w * ( - â(0,X) * sin(θ) - ĉ(0,X) * cos(θ) )
+    v̂par = u * b̂(0, X)
+    v̂per = w * (- â(0, X) * sin(θ) - ĉ(0, X) * cos(θ))
 
     # transform vpar and vper to contravariant coordinates
-    vpar = DF̄(0,X) * v̂par
-    vper = DF̄(0,X) * v̂per
+    vpar = DF̄(0, X) * v̂par
+    vper = DF̄(0, X) * v̂per
 
     # compute total velocity vector field
     vvec = vpar .+ vper
 
     # compute gyro radius vector ρ and particle position x
-    ω = e * B(0,X) / M
-    ρ = [crossproduct(b(0,X), vvec, g̅(0,X), J(0,X), l) for l in 1:3] / B(0,X)
+    ω = e * B(0, X) / M
+    ρ = [crossproduct(b(0, X), vvec, g̅(0, X), J(0, X), l) for l in 1:3] / B(0, X)
     x = X .+ ρ
 
     InitialConditions{T}(x, X, ρ, vvec, vpar, vper, v, u, μ, θ, α, ω, M, Etot, C)
 end
-
 
 function Base.show(io::IO, ics::InitialConditions)
     print(io, "Charged Particle Initial Conditions with\n")
@@ -173,13 +173,12 @@ function Base.show(io::IO, ics::InitialConditions)
     print(io, "  C   = ", ics.charge)
 end
 
-
 """
 Extracts the charged particle initial conditions and returns the tuple `(x,v)`.
 If the keyword argument `noncanonical` is set to `true`, the functions returns
 the vector `vcat(x,v)`.
 """
-function charged_particle(ics::InitialConditions{T}; noncanonical=false) where {T}
+function charged_particle(ics::InitialConditions{T}; noncanonical = false) where {T}
     if noncanonical
         # `vvec`, not `v`: the noncanonical models carry the three velocity components in
         # `q[4:6]`, whereas `ics.v` is the scalar |v|, which would make this a 4-vector.
@@ -189,7 +188,6 @@ function charged_particle(ics::InitialConditions{T}; noncanonical=false) where {
     end
 end
 
-
 """
 Extracts the guiding center initial conditions and returns the tuple `(vcat(X,u),μ)`.
 """
@@ -197,13 +195,12 @@ function guiding_center(ics::InitialConditions{T}) where {T}
     (vcat(ics.X, ics.u), ics.μ)
 end
 
-
 """
 Extracts the Pauli particle initial conditions and returns the tuple `(X,vpar,μ)`.
 If the keyword argument `noncanonical` is set to `true`, the functions returns
 the tuple `(vcat(X,vpar),μ)`.
 """
-function pauli_particle(ics::InitialConditions{T}; noncanonical=false) where {T}
+function pauli_particle(ics::InitialConditions{T}; noncanonical = false) where {T}
     if noncanonical
         return (vcat(ics.X, ics.vpar), ics.μ)
     else

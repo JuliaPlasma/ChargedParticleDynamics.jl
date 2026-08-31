@@ -20,12 +20,14 @@ const DEFAULT_TIMESPAN = (0.0, 5E2)
 # const DEFAULT_TIMESTEP = 0.35
 # const DEFAULT_TIMESPAN = (0.0, 12250.)
 
-initial_conditions_quadratic() = merge(initial_conditions(0.0, [0.3, 0.2, -1.4, 0.3]), (params=(μ=2.5E-3,),))
+function initial_conditions_quadratic()
+    merge(initial_conditions(0.0, [0.3, 0.2, -1.4, 0.3]), (params = (μ = 2.5E-3,),))
+end
 
 export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.5E-3),)
+default_parameters(::Type{T} = Float64) where {T} = (μ = T(2.5E-3),)
 
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
@@ -37,7 +39,6 @@ measured with it, not because it is the best available — see the conditioning 
 item in `TODO.md` about choosing the defaults on conditioning along the orbit.
 """
 default_constraints() = :g31
-
 
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_canonical.jl")

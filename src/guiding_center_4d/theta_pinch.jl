@@ -22,39 +22,38 @@ u_0 = 0.5, \quad
 """
 module ThetaPinchField
 
-    import ElectromagneticFields.ThetaPinch
+import ElectromagneticFields.ThetaPinch
 
-    ThetaPinch.@code() # inject magnetic field code
+ThetaPinch.@code() # inject magnetic field code
 
-    const DEFAULT_TIMESTEP = 1.0
-    const DEFAULT_TIMESPAN = (0.0, 1000.0)
+const DEFAULT_TIMESTEP = 1.0
+const DEFAULT_TIMESPAN = (0.0, 1000.0)
 
-    μ_loop() = 2.5E-6
+μ_loop() = 2.5E-6
 
-    function f_loop(t)
-        μ  = 2.5E-6
-        Y0 = 0.0
-        u0 = 4E-4
-        r0 = 0.5
-        r1 = 0.3
+function f_loop(t)
+    μ = 2.5E-6
+    Y0 = 0.0
+    u0 = 4E-4
+    r0 = 0.5
+    r1 = 0.3
 
-        Xt = r0*cos(2π*t)
-        Zt = r1*sin(2π*t)
+    Xt = r0*cos(2π*t)
+    Zt = r1*sin(2π*t)
 
-        qt = [Xt, Y0, Zt, u0]
+    qt = [Xt, Y0, Zt, u0]
 
-        return qt
-    end
+    return qt
+end
 
-    export default_parameters
+export default_parameters
 
-    "The magnetic moment μ this equilibrium is set up for."
-    default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.5E-6),)
+"The magnetic moment μ this equilibrium is set up for."
+default_parameters(::Type{T} = Float64) where {T} = (μ = T(2.5E-6),)
 
-
-    include("guiding_center_4d_common.jl")
-    include("guiding_center_4d_equations.jl")
-    include("guiding_center_4d_loop.jl")
-    include("guiding_center_4d_diagnostics.jl")
+include("guiding_center_4d_common.jl")
+include("guiding_center_4d_equations.jl")
+include("guiding_center_4d_loop.jl")
+include("guiding_center_4d_diagnostics.jl")
 
 end

@@ -6,8 +6,8 @@ module TokamakSmallToroidal
 import ElectromagneticFields.AxisymmetricTokamakToroidal
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
-    initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
-    initial_conditions_pauli
+       initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
+       initial_conditions_pauli
 
 export hamiltonian, toroidal_momentum
 
@@ -30,7 +30,6 @@ const xᵢ = [1.05, 0.0, 0.0]
 const uᵢ = 0.00045135897235326736
 const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
 
-
 # These four read `[1.05, 0.1, 0.0]` until the three families were aligned. The offset bought nothing
 # — this module's pair is `:g12`, which divides by `b₃ = 1.054` and is regular on the midplane, so
 # unlike the cartesian charts there is no vanishing component of `b` here to move away from. It was
@@ -39,11 +38,25 @@ const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
 # the toroidal chart the offset is not even a toroidal rotation, since it moves `r` from 0.05 to
 # 0.0548 and so changes the flux surface. At `y = 0` every formulation holds the same step or better:
 # `hodeproblem` on `barely_passing` improves from 4.7E-7 to 6.4E-8 relative energy.
-initial_conditions_barely_passing() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 8.117E-4]), (params=(μ=2.448E-6,),))
-initial_conditions_barely_trapped() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 7.610E-4]), (params=(μ=2.250E-6,),))
-initial_conditions_deeply_passing() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 1.623E-3]), (params=(μ=2.448E-6,),))
-initial_conditions_deeply_trapped() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.306E-4]), (params=(μ=2.250E-6,),))
-initial_conditions_pauli() = merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.3E-4]), (params=(μ=2.310E-6,),))
+function initial_conditions_barely_passing()
+    merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 8.117E-4]),
+        (params = (μ = 2.448E-6,),))
+end
+function initial_conditions_barely_trapped()
+    merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 7.610E-4]),
+        (params = (μ = 2.250E-6,),))
+end
+function initial_conditions_deeply_passing()
+    merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 1.623E-3]),
+        (params = (μ = 2.448E-6,),))
+end
+function initial_conditions_deeply_trapped()
+    merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.306E-4]),
+        (params = (μ = 2.250E-6,),))
+end
+function initial_conditions_pauli()
+    merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.3E-4]), (params = (μ = 2.310E-6,),))
+end
 
 u_loop() = 4.0E-4
 μ_loop() = 2.5E-6
@@ -83,7 +96,7 @@ end
 export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T}=Float64) where {T} = (μ = T(2.314593645825811e-6),)
+default_parameters(::Type{T} = Float64) where {T} = (μ = T(2.314593645825811e-6),)
 
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
@@ -92,7 +105,6 @@ The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
 this equilibrium sits, so `(g³, g¹)` is singular there. `(g¹, g²)` divides by `b₃ = b_φ` instead.
 """
 default_constraints() = :g12
-
 
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_canonical.jl")

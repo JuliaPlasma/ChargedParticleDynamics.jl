@@ -4,27 +4,28 @@ Charged Particle in an uniform magnetic field of the form
 """
 module ThetaPinchField
 
-    import ElectromagneticFields.ThetaPinch
+import ElectromagneticFields.ThetaPinch
 
-    export podeproblem, hamiltonian, angular_momentum
+export podeproblem, hamiltonian, angular_momentum
 
-    ThetaPinch.@code() # inject magnetic field code
+ThetaPinch.@code() # inject magnetic field code
 
-    const qᵢ = [1., 0., 0.]
-    const vᵢ = [0., 1., 1.]
+const qᵢ = [1.0, 0.0, 0.0]
+const vᵢ = [0.0, 1.0, 1.0]
 
-    const DEFAULT_TIMESTEP = 10.0
-    const DEFAULT_TIMESPAN = (0.0, 1E4)
+const DEFAULT_TIMESTEP = 10.0
+const DEFAULT_TIMESPAN = (0.0, 1E4)
 
-    include("pauli_particle_3d.jl")
+include("pauli_particle_3d.jl")
 
-    export default_parameters
+export default_parameters
 
-    """
-    The magnetic moment μ of the default initial condition `(qᵢ, vᵢ)`, obtained by splitting
-    `vᵢ` into its parallel and perpendicular parts at `qᵢ`.
-    """
-    default_parameters(::Type{T}=Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ).params.μ),)
-
+"""
+The magnetic moment μ of the default initial condition `(qᵢ, vᵢ)`, obtained by splitting
+`vᵢ` into its parallel and perpendicular parts at `qᵢ`.
+"""
+function default_parameters(::Type{T} = Float64) where {T}
+    (μ = T(initial_conditions(qᵢ, vᵢ).params.μ),)
+end
 
 end

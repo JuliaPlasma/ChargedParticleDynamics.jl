@@ -44,8 +44,10 @@ function pointwise()
 
     params = (μ = 1E-2,)
     for q in ([6.2, 0.3, 0.0, 3.4E-1], [5.5, -0.8, 1.1, -2.0E-1], [7.0, 0.5, 2.0, 5.0E-1])
-        vgk = zeros(4); GK.v(vgk, 0.0, q, params)
-        vgc = zeros(4); GC.guiding_center_4d_v(vgc, 0.0, q, params)
+        vgk = zeros(4)
+        GK.v(vgk, 0.0, q, params)
+        vgc = zeros(4)
+        GC.guiding_center_4d_v(vgc, 0.0, q, params)
         ωfac = GK.ωabs(0.0, q)
         rel = maximum(abs.(vgk .- ωfac .* vgc) ./ max.(abs.(vgk), 1E-30))
         @printf("  %-38s %-14.6e %.2e\n", string(round.(q, digits = 2)), ωfac, rel)
@@ -60,10 +62,13 @@ function splitting()
     params = (μ = 1E-2,)
     q = [6.2, 0.3, 0.0, 3.4E-1]
 
-    vfull = zeros(4); GK.v(vfull, 0.0, q, params)
-    vsum  = zeros(4)
+    vfull = zeros(4)
+    GK.v(vfull, 0.0, q, params)
+    vsum = zeros(4)
     for V in (GK.v₁, GK.v₂, GK.v₃, GK.v₄, GK.v₅, GK.v₆)
-        vᵢ = zeros(4); V(vᵢ, 0.0, q, params); vsum .+= vᵢ
+        vᵢ = zeros(4)
+        V(vᵢ, 0.0, q, params)
+        vsum .+= vᵢ
     end
 
     @printf("\nSplitting:  max |Σᵢ vᵢ - v| = %.2e\n", maximum(abs.(vsum .- vfull)))
@@ -82,15 +87,22 @@ function orbits()
     @printf("  %-12s %-14s %s\n", "s interval", "endpoint diff", "ratio")
 
     q₀, par = GK.initial_conditions_deeply_passing()
-    params  = (μ = par.μ,)
-    ωfac    = GK.ωabs(0.0, q₀)
+    params = (μ = par.μ,)
+    ωfac = GK.ωabs(0.0, q₀)
 
     previous = NaN
     for s_end in (4E-3, 2E-3, 1E-3, 5E-4)
-        gk = integrate(GK.odeproblem(q₀; parameters = params, timestep = s_end / 2000, timespan = (0.0, s_end)), Gauss(2))
-        gc = integrate(GC.odeproblem(q₀; parameters = params, timestep = ωfac * s_end / 2000, timespan = (0.0, ωfac * s_end)), Gauss(2))
-        d  = maximum(abs.(gk.q[end] .- gc.q[end]))
-        @printf("  %-12.0e %-14.2e %s\n", s_end, d, isnan(previous) ? "" : @sprintf("%.1f", previous / d))
+        gk = integrate(
+            GK.odeproblem(q₀; parameters = params, timestep = s_end / 2000, timespan = (
+                0.0, s_end)),
+            Gauss(2))
+        gc = integrate(
+            GC.odeproblem(q₀; parameters = params, timestep = ωfac * s_end / 2000,
+                timespan = (0.0, ωfac * s_end)),
+            Gauss(2))
+        d = maximum(abs.(gk.q[end] .- gc.q[end]))
+        @printf("  %-12.0e %-14.2e %s\n", s_end, d,
+            isnan(previous) ? "" : @sprintf("%.1f", previous / d))
         previous = d
     end
 end

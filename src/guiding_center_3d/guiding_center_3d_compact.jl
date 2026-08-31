@@ -69,7 +69,6 @@
 
 export hodeproblem_compact
 
-
 # `cₗ = σ gᵏ`: the antisymmetric labelling in terms of the paper's.
 cross_constraint(::Val{1}) = (Val(2), +1)
 cross_constraint(::Val{2}) = (Val(1), -1)
@@ -79,7 +78,6 @@ cross_constraint(::Val{3}) = (Val(3), +1)
 cyclic_complement(::Val{1}) = (Val(2), Val(3))
 cyclic_complement(::Val{2}) = (Val(3), Val(1))
 cyclic_complement(::Val{3}) = (Val(1), Val(2))
-
 
 """
     cₗ(::Val{l}, t, q, p)
@@ -110,7 +108,6 @@ end
     σᵢ * σⱼ * bracket_gg(kᵢ, kⱼ, t, q, p)
 end
 
-
 """
     compact_denominator(t, q, p)
 
@@ -124,9 +121,10 @@ because the metric is positive definite, so the normalisation forbids every `b�
 The mean is exact for any positive weights, so this makes no difference to `D`; in a cartesian chart
 the two coincide.
 """
-compact_denominator(t, q, p) = contract(m -> bᵢ(m, t, q) * bracket_cc(m, t, q, p)) /
-                               contract(m -> bᵢ(m, t, q)^2)
-
+function compact_denominator(t, q, p)
+    contract(m -> bᵢ(m, t, q) * bracket_cc(m, t, q, p)) /
+    contract(m -> bᵢ(m, t, q)^2)
+end
 
 # The scalar the three brackets `{cₗ, H}` are divided by, Eq. (ii) above. `:parallel` takes it from the
 # pair-independent `D`; a pair takes it from that pair's own bracket, which is `0/0` at `bₘ = 0`. The
@@ -146,8 +144,8 @@ they are computed together rather than one at a time.
 @inline function compact_multipliers(t, q, p, params, m)
     s = compact_scale(t, q, p, m)
     (s * bracket_cH(Val(1), t, q, p, params),
-     s * bracket_cH(Val(2), t, q, p, params),
-     s * bracket_cH(Val(3), t, q, p, params))
+        s * bracket_cH(Val(2), t, q, p, params),
+        s * bracket_cH(Val(3), t, q, p, params))
 end
 
 # Index a tuple with a compile-time index, so that it stays one.
@@ -155,8 +153,8 @@ end
 
 # The parallel velocity entering Eq. (iv), likewise dispatching on the choice of form.
 @inline compact_parallel_velocity(t, q, p, ::Nothing) = u(t, q, p)
-@inline compact_parallel_velocity(t, q, p, m::Val{i}) where {i} = (p[i] - Aᵢ(m, t, q)) / bᵢ(m, t, q)
-
+@inline compact_parallel_velocity(t, q, p, m::Val{i}) where {i} = (p[i] - Aᵢ(m, t, q)) /
+                                                                  bᵢ(m, t, q)
 
 """
     compact_index(constraints::Symbol)
@@ -172,7 +170,6 @@ compact_index(::Val{:g12}) = Val(3)
 
 compact_index(constraints::Symbol) = compact_index(Val(constraints))
 
-
 function guiding_center_3d_compact_v(v, t, q, p, params, m = nothing)
     F = fieldvalues(t, q)
     C = compact_multipliers(t, F, p, params, m)
@@ -186,11 +183,12 @@ function guiding_center_3d_compact_f(f, t, q, p, params, m = nothing)
     C = compact_multipliers(t, F, p, params, m)
     uₚ = compact_parallel_velocity(t, F, p, m)
 
-    components!(f, l -> -dHdqᵢ(l, t, F, p, params) +
-        contract(a -> (dAᵢdxⱼ(a, l, t, F) + uₚ * dbᵢdxⱼ(a, l, t, F)) * component(C, a)))
+    components!(f,
+        l -> -dHdqᵢ(l, t, F, p, params) +
+             contract(a -> (dAᵢdxⱼ(a, l, t, F) + uₚ * dbᵢdxⱼ(a, l, t, F)) *
+                           component(C, a)))
     nothing
 end
-
 
 """
     hodeproblem_compact(q₀, p₀; kwargs...)
@@ -212,9 +210,10 @@ scale from `D` in its cartesian form, which is regular. Taking it from the pair'
 choice made here, and is what makes this the cheapest of the three formulations. Use it to exhibit the
 pair dependence of Eq. (29), not to integrate with.
 """
-function hodeproblem_compact(q₀::AbstractVector, p₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
-                             timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic = true,
-                             constraints = :parallel)
+function hodeproblem_compact(
+        q₀::AbstractVector, p₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
+        timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic = true,
+        constraints = :parallel)
     m = compact_index(constraints)
 
     _v(v, t, q, p, params) = guiding_center_3d_compact_v(v, t, q, p, params, m)
@@ -225,8 +224,8 @@ function hodeproblem_compact(q₀::AbstractVector, p₀::AbstractVector; timespa
         _f,
         hamiltonian,
         timespan, timestep, q₀, p₀;
-        parameters=parameters,
-        periodicity=guiding_center_3d_periodicity(q₀, periodic))
+        parameters = parameters,
+        periodicity = guiding_center_3d_periodicity(q₀, periodic))
 end
 
 function hodeproblem_compact(x₀::AbstractVector = qᵢ; timespan = DEFAULT_TIMESPAN, kwargs...)
@@ -234,5 +233,6 @@ function hodeproblem_compact(x₀::AbstractVector = qᵢ; timespan = DEFAULT_TIM
     hodeproblem_compact(ics.q, ics.p; timespan = timespan, kwargs...)
 end
 
-hodeproblem_compact(ics::NamedTuple; kwargs...) =
+function hodeproblem_compact(ics::NamedTuple; kwargs...)
     hodeproblem_compact(ics.q, ics.p; parameters = ics.params, kwargs...)
+end

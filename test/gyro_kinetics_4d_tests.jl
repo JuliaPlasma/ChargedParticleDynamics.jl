@@ -9,7 +9,7 @@ using Test
 
 # See `guiding_center_3d_tests.jl` for why `f_abstol` has to stay above the residual's round-off
 # floor and why `f_reltol` is left at its default.
-const options = (f_abstol=1E-12, max_iterations=50, warn_iterations=50)
+const options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 
 export test_gyro_kinetics_4d_erk4, test_gyro_kinetics_4d_glrk, test_gyro_kinetics_4d_strang
 export strang_composition
@@ -33,9 +33,7 @@ end
 
 end
 
-
 @safetestset "Gyrokinetic GC Model in 4D with ITER-like Solov'ev Equilibrium with X-Point                         " begin
-
     using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
     using ..GyroKinetics4dTests
     using Test
@@ -55,12 +53,9 @@ end
     test_gyro_kinetics_4d_strang(sodeproblem(initial_conditions_trapped()))
     test_gyro_kinetics_4d_strang(sodeproblem(initial_conditions_barely_passing()))
     test_gyro_kinetics_4d_strang(sodeproblem(initial_conditions_deeply_passing()))
-
 end
 
-
 @safetestset "Gyrokinetic GC Model: the vector field is the guiding centre one, rescaled by ωabs                   " begin
-
     using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
     using ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint
     using GeometricIntegrators
@@ -78,7 +73,7 @@ end
     GK = GuidingCenter4dSolovevIterXpoint
     GC = SolovevIterXpoint
 
-    params = (μ=1E-2,)
+    params = (μ = 1E-2,)
 
     for q in ([6.2, 0.3, 0.0, 3.4E-1], [5.5, -0.8, 1.1, -2.0E-1], [7.0, 0.5, 2.0, 5.0E-1])
         vgk = zeros(4)
@@ -112,15 +107,12 @@ end
     # and fell back to a constant. The trajectories were unaffected, which is why only the warning
     # gave it away; this is the assertion that fails if the keyword is ever dropped again.
     v̄ = zeros(4)
-    initialguess(GK.sodeproblem(q; parameters=params)).v(v̄, 0.0, q, params)
+    initialguess(GK.sodeproblem(q; parameters = params)).v(v̄, 0.0, q, params)
 
     @test v̄ == vfull
-
 end
 
-
 @safetestset "Gyrokinetic GC Model: the splitting preserves phasespace volume                                      " begin
-
     using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
     using ..GyroKinetics4dTests
     using GeometricIntegrators
@@ -134,20 +126,24 @@ end
     ics = initial_conditions_deeply_passing()
     q₀, params = ics.q, ics.params
 
-    function jacdet(step, Δs; h=1E-5)
+    function jacdet(step, Δs; h = 1E-5)
         J = zeros(4, 4)
         for j in 1:4
-            qp = copy(q₀); qp[j] += h
-            qm = copy(q₀); qm[j] -= h
+            qp = copy(q₀)
+            qp[j] += h
+            qm = copy(q₀)
+            qm[j] -= h
             J[:, j] = (step(qp, Δs) .- step(qm, Δs)) ./ 2h
         end
         det(J)
     end
 
-    split(q, Δs) = integrate(sodeproblem(q; parameters=params, timestep=Δs, timespan=(0.0, Δs)),
-                             strang_composition()).q[end]
-    euler(q, Δs) = integrate(odeproblem(q; parameters=params, timestep=Δs, timespan=(0.0, Δs)),
-                             ExplicitEuler()).q[end]
+    split(q, Δs) = integrate(
+        sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)),
+        strang_composition()).q[end]
+    euler(q, Δs) = integrate(
+        odeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)),
+        ExplicitEuler()).q[end]
 
     # The central differences bottom out around 1E-11; the splitting sits there for every step size
     # while the volume error of the first-order method grows linearly with it.
@@ -157,12 +153,9 @@ end
 
     @test abs(jacdet(euler, 1E-2) - 1) > 1E-7
     @test abs(jacdet(euler, 3E-2) / jacdet(euler, 1E-2) - 1) > 0   # grows with the step
-
 end
 
-
 @safetestset "Gyrokinetic GC Model: every equilibrium integrates and preserves volume                " begin
-
     using ChargedParticleDynamics
     using ChargedParticleDynamics.GyroKinetics4d
     using ..GyroKinetics4dTests
@@ -189,8 +182,9 @@ end
     # generates, which restores it; see `ωabs` in `gc_common.jl`. Both facts are asserted below: that
     # the generated sign really is the handedness of the chart, and that the factor that reaches the
     # dynamics is positive.
-    equilibria = sort(filter(n -> isa(getfield(GyroKinetics4d, n), Module) && n !== :GyroKinetics4d,
-                             names(GyroKinetics4d, all = true)))
+    equilibria = sort(filter(
+        n -> isa(getfield(GyroKinetics4d, n), Module) && n !== :GyroKinetics4d,
+        names(GyroKinetics4d, all = true)))
 
     @test length(equilibria) == 8
 
@@ -229,23 +223,23 @@ end
                M.ω₃(0.0, q₀) * M.dϑ₃dx₄(0.0, q₀)
         @test sign(bare) == M.orientation()
 
-        step(q) = integrate(M.sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)),
-                            strang_composition()).q[end]
+        step(q) = integrate(
+            M.sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)),
+            strang_composition()).q[end]
         h = 1E-7 * max(1.0, maximum(abs, q₀))
         J = zeros(4, 4)
         for j in 1:4
-            qp = copy(q₀); qp[j] += h
-            qm = copy(q₀); qm[j] -= h
+            qp = copy(q₀)
+            qp[j] += h
+            qm = copy(q₀)
+            qm[j] -= h
             J[:, j] = (step(qp) .- step(qm)) ./ 2h
         end
         @test abs(det(J) - 1) < 1E-7
     end
-
 end
 
-
 @safetestset "Gyrokinetic GC Model: one orbit, three charts, one direction                           " begin
-
     using ChargedParticleDynamics
     using ChargedParticleDynamics.GyroKinetics4d
     using ChargedParticleDynamics.GuidingCenter4d
@@ -273,17 +267,22 @@ end
     u = 1.623E-3
 
     # (gyrokinetic module, guiding centre module, toroidal coordinate index, its scale factor)
-    charts = ((GK.GuidingCenter4dTokamakSmallCartesian,   G4.TokamakSmallCartesian,   2, q -> 1.0),
-              (GK.GuidingCenter4dTokamakSmallCylindrical, G4.TokamakSmallCylindrical, 3, q -> q[1]),
-              (GK.GuidingCenter4dTokamakSmallToroidal,    G4.TokamakSmallToroidal,    3, q -> 1.0 + q[1] * cos(q[2])))
+    charts = (
+        (GK.GuidingCenter4dTokamakSmallCartesian, G4.TokamakSmallCartesian, 2, q -> 1.0),
+        (GK.GuidingCenter4dTokamakSmallCylindrical,
+            G4.TokamakSmallCylindrical, 3, q -> q[1]),
+        (GK.GuidingCenter4dTokamakSmallToroidal,
+            G4.TokamakSmallToroidal, 3, q -> 1.0 + q[1] * cos(q[2])))
 
     reference = nothing
 
     for (Mk, Mg, i, scale) in charts
         q = [Mg.from_cartesian(0, [1.05, 0.0, 0.0])..., u]
 
-        vgk = zeros(4); Mk.v(vgk, 0.0, q, params)
-        vgc = zeros(4); Mg.guiding_center_4d_v(vgc, 0.0, q, params)
+        vgk = zeros(4)
+        Mk.v(vgk, 0.0, q, params)
+        vgc = zeros(4)
+        Mg.guiding_center_4d_v(vgc, 0.0, q, params)
         ω = Mk.ωabs(0.0, q, params)
 
         # the gyrokinetic field, un-rescaled, is the guiding centre field — sign included
@@ -299,5 +298,4 @@ end
         @test toroidal ≈ reference
         @test toroidal > 0
     end
-
 end

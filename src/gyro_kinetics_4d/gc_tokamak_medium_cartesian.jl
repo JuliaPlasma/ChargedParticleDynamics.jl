@@ -12,38 +12,37 @@ coordinate is ``z`` rather than an angle, so ``\vartheta_{3}`` is not a conserve
 """
 module GuidingCenter4dTokamakMediumCartesian
 
-    import ElectromagneticFields.AxisymmetricTokamakCartesian
+import ElectromagneticFields.AxisymmetricTokamakCartesian
 
-    export initial_conditions_barely_passing, initial_conditions_barely_trapped,
-           initial_conditions_deeply_passing, initial_conditions_deeply_trapped
+export initial_conditions_barely_passing, initial_conditions_barely_trapped,
+       initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
-    export hamiltonian
+export hamiltonian
 
-    AxisymmetricTokamakCartesian.@code(2., 5., 2.) # inject magnetic field code
+AxisymmetricTokamakCartesian.@code(2.0, 5.0, 2.0) # inject magnetic field code
 
-    include("coordinate_transformations.jl")
-    include("gc_common.jl")
-    include("gc_equations.jl")
+include("coordinate_transformations.jl")
+include("gc_common.jl")
+include("gc_equations.jl")
 
-    # Rescaled time: the 4D guiding centre uses Δt = 1.0 over (0, 10³) with B*∥ ≈ 3.8 here.
-    const DEFAULT_TIMESTEP = 2.5E-1
-    const DEFAULT_TIMESPAN = (0.0, 2.5E2)
+# Rescaled time: the 4D guiding centre uses Δt = 1.0 over (0, 10³) with B*∥ ≈ 3.8 here.
+const DEFAULT_TIMESTEP = 2.5E-1
+const DEFAULT_TIMESPAN = (0.0, 2.5E2)
 
-    export default_parameters
+export default_parameters
 
-    """
-    The magnetic moment `μ` of the shipped initial conditions.
-    """
-    default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+"""
+The magnetic moment `μ` of the shipped initial conditions.
+"""
+default_parameters(::Type{T} = Float64) where {T} = (μ = T(1E-2),)
 
+const qᵢ = [2.5, 0.0, 0.0, 5E-1]
 
-    const qᵢ = [2.5, 0.0, 0.0, 5E-1]
+initial_conditions_barely_passing() = (q = [2.5, 0.0, 0.0, 3.425E-1], params = (μ = 1E-2,))
+initial_conditions_barely_trapped() = (q = [2.5, 0.0, 0.0, 3.375E-1], params = (μ = 1E-2,))
+initial_conditions_deeply_passing() = (q = [2.5, 0.0, 0.0, 5E-1], params = (μ = 1E-2,))
+initial_conditions_deeply_trapped() = (q = [2.5, 0.0, 0.0, 1E-1], params = (μ = 1E-2,))
 
-    initial_conditions_barely_passing() = (q = [2.5, 0.0, 0.0, 3.425E-1], params = (μ = 1E-2,))
-    initial_conditions_barely_trapped() = (q = [2.5, 0.0, 0.0, 3.375E-1], params = (μ = 1E-2,))
-    initial_conditions_deeply_passing() = (q = [2.5, 0.0, 0.0, 5E-1    ], params = (μ = 1E-2,))
-    initial_conditions_deeply_trapped() = (q = [2.5, 0.0, 0.0, 1E-1    ], params = (μ = 1E-2,))
-
-    include("../guiding_center_4d/guiding_center_4d_diagnostics.jl")
+include("../guiding_center_4d/guiding_center_4d_diagnostics.jl")
 
 end

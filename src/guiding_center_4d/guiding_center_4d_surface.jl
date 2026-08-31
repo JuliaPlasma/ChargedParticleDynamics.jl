@@ -8,19 +8,20 @@ export surface_odeproblem,
 export poincare_invariant_2nd,
        surface_ensemble
 
-
 # The base problems whose flow advects the surface, at the surface's magnetic moment. As for the
 # loop, their initial condition is a placeholder that `PIEnsembleProblem` replaces with the sampled
 # points of `f_surface`.
-surface_odeproblem(; kwargs...) =
+function surface_odeproblem(; kwargs...)
     odeproblem(f_surface(0.0, 0.0); parameters = (μ = μ_surface(),), periodic = false, kwargs...)
+end
 
-surface_iodeproblem(; kwargs...) =
+function surface_iodeproblem(; kwargs...)
     iodeproblem(f_surface(0.0, 0.0); parameters = (μ = μ_surface(),), periodic = false, kwargs...)
+end
 
-surface_lodeproblem(; kwargs...) =
+function surface_lodeproblem(; kwargs...)
     lodeproblem(f_surface(0.0, 0.0); parameters = (μ = μ_surface(),), periodic = false, kwargs...)
-
+end
 
 @doc raw"""
     poincare_invariant_2nd(N; DT = Float64, plan = SecondChebyshevPlan)
@@ -46,9 +47,8 @@ sol  = integrate(surface_ensemble(prob, pinv), VPRKGauss(2))
 I₂   = compute!(pinv, sol, parameters(prob))
 ```
 """
-poincare_invariant_2nd(N; DT = Float64, plan = PoincareInvariants.SecondChebyshevPlan) =
-    SecondPI{DT, 4}(ω, N, plan)
-
+poincare_invariant_2nd(N; DT = Float64, plan = PoincareInvariants.SecondChebyshevPlan) = SecondPI{
+    DT, 4}(ω, N, plan)
 
 """
     surface_ensemble(prob, pinv)

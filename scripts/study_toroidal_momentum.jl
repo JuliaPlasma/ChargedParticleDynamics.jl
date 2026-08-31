@@ -26,28 +26,36 @@ const GC = ChargedParticleDynamics.GuidingCenter4d
 relvar(x) = (maximum(x) - minimum(x)) / max(abs(x[1]), eps())
 
 function candidates(M, sol)
-    ϑ₃   = [M.ϑ₃(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
-    Rϑ₃  = [M.R(sol.t[i], sol.q[i]) * M.ϑ₃(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
-    ang  = [sol.q[i][1] * M.ϑ₂(sol.t[i], sol.q[i]) -
-            sol.q[i][2] * M.ϑ₁(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
+    ϑ₃ = [M.ϑ₃(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
+    Rϑ₃ = [M.R(sol.t[i], sol.q[i]) * M.ϑ₃(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
+    ang = [sol.q[i][1] * M.ϑ₂(sol.t[i], sol.q[i]) -
+           sol.q[i][2] * M.ϑ₁(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
     (ϑ₃ = relvar(ϑ₃), Rϑ₃ = relvar(Rϑ₃), angular = relvar(ang))
 end
 
 function compare()
     println("Relative variation over the orbit of each candidate, Gauss(2)\n")
-    @printf("  %-34s %-10s %-12s %-12s %-12s\n", "equilibrium", "coords", "ϑ₃", "R ϑ₃", "x ϑ₂ - y ϑ₁")
+    @printf("  %-34s %-10s %-12s %-12s %-12s\n", "equilibrium", "coords", "ϑ₃", "R ϑ₃",
+        "x ϑ₂ - y ϑ₁")
 
-    cases = (("TokamakSmallCylindrical",  GC.TokamakSmallCylindrical,  "cylindrical", (timestep = 10.0, timespan = (0.0, 1E3))),
-             ("TokamakSmallToroidal",     GC.TokamakSmallToroidal,     "toroidal",    (timestep = 10.0, timespan = (0.0, 1E3))),
-             ("SolovevIterXpoint",        GC.SolovevIterXpoint,        "cylindrical", (timestep = 1.0,  timespan = (0.0, 1E2))),
-             ("TokamakSmallCartesian",    GC.TokamakSmallCartesian,    "cartesian",   (timestep = 10.0, timespan = (0.0, 1E3))),
-             ("TokamakMediumCartesian",   GC.TokamakMediumCartesian,   "cartesian",   (timestep = 1.0,  timespan = (0.0, 1E3))))
+    cases = (
+        ("TokamakSmallCylindrical", GC.TokamakSmallCylindrical,
+            "cylindrical", (timestep = 10.0, timespan = (0.0, 1E3))),
+        ("TokamakSmallToroidal", GC.TokamakSmallToroidal,
+            "toroidal", (timestep = 10.0, timespan = (0.0, 1E3))),
+        ("SolovevIterXpoint", GC.SolovevIterXpoint,
+            "cylindrical", (timestep = 1.0, timespan = (0.0, 1E2))),
+        ("TokamakSmallCartesian", GC.TokamakSmallCartesian,
+            "cartesian", (timestep = 10.0, timespan = (0.0, 1E3))),
+        ("TokamakMediumCartesian", GC.TokamakMediumCartesian,
+            "cartesian", (timestep = 1.0, timespan = (0.0, 1E3))))
 
     for (name, M, coords, kw) in cases
         prob = M.odeproblem(M.initial_conditions_barely_passing(); kw...)
-        sol  = integrate(prob, Gauss(2))
-        c    = candidates(M, sol)
-        @printf("  %-34s %-10s %-12.2e %-12.2e %-12.2e\n", name, coords, c.ϑ₃, c.Rϑ₃, c.angular)
+        sol = integrate(prob, Gauss(2))
+        c = candidates(M, sol)
+        @printf("  %-34s %-10s %-12.2e %-12.2e %-12.2e\n", name, coords, c.ϑ₃, c.Rϑ₃,
+            c.angular)
     end
 end
 
@@ -62,10 +70,12 @@ function convergence()
     M = GC.TokamakMediumCartesian
     previous = NaN
     for Δt in (1.0, 0.5, 0.25, 0.125)
-        prob = M.odeproblem(M.initial_conditions_barely_passing(); timestep = Δt, timespan = (0.0, 1E3))
-        sol  = integrate(prob, Gauss(2))
-        v    = candidates(M, sol).angular
-        @printf("  %-10.3g %-12.2e %s\n", Δt, v, isnan(previous) ? "" : @sprintf("%.1f", previous / v))
+        prob = M.odeproblem(M.initial_conditions_barely_passing(); timestep = Δt, timespan = (
+            0.0, 1E3))
+        sol = integrate(prob, Gauss(2))
+        v = candidates(M, sol).angular
+        @printf("  %-10.3g %-12.2e %s\n", Δt, v,
+            isnan(previous) ? "" : @sprintf("%.1f", previous / v))
         previous = v
     end
 end

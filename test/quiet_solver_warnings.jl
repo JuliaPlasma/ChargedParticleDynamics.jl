@@ -54,10 +54,10 @@ export quiet_solver_warnings!, suppressed_warning_count, suppressed_warning_coun
 export current_test_file!
 
 const QUIET_MODULES = (:SimpleSolvers,)
-const COUNTS = Dict{String,Int}()
+const COUNTS = Dict{String, Int}()
 const CURRENT = Ref("<startup>")
 
-struct QuietLogger{L<:AbstractLogger} <: AbstractLogger
+struct QuietLogger{L <: AbstractLogger} <: AbstractLogger
     parent::L
 end
 
@@ -73,12 +73,13 @@ Logging.min_enabled_level(logger::QuietLogger) = Logging.min_enabled_level(logge
 Logging.catch_exceptions(logger::QuietLogger) = Logging.catch_exceptions(logger.parent)
 
 function Logging.handle_message(logger::QuietLogger, level, message, _module, group, id,
-                                file, line; kwargs...)
+        file, line; kwargs...)
     if level < Logging.Error && nameof(_module) ∈ QUIET_MODULES
         COUNTS[CURRENT[]] = get(COUNTS, CURRENT[], 0) + 1
         return nothing
     end
-    Logging.handle_message(logger.parent, level, message, _module, group, id, file, line; kwargs...)
+    Logging.handle_message(
+        logger.parent, level, message, _module, group, id, file, line; kwargs...)
 end
 
 # Installing resets the counters and is idempotent, so that re-running the suite's include loop in a

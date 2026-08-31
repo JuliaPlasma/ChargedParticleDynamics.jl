@@ -10,7 +10,6 @@ using SafeTestsets
 # These are smoke tests: each function must build and return a Makie `Figure` without error.
 
 @safetestset "Plotting extension and diagnostics                                                                  " begin
-
     using CairoMakie
     using LaTeXStrings
     using GeometricIntegrators
@@ -44,13 +43,15 @@ using SafeTestsets
         # of its own (for the error of a Poincaré invariant over an `EnsembleSolution`), and the
         # guiding centre Poincaré workflow requires both packages to be loaded together, so the two
         # names collide for every user of it.
-        @test ChargedParticleDynamics.plot_invariant(sol.t, compute_energy(sol); label = "H") isa Figure
+        @test ChargedParticleDynamics.plot_invariant(sol.t, compute_energy(sol); label = "H") isa
+              Figure
         @test plot_invariant_error(sol.t, compute_energy(sol); label = "H") isa Figure
         @test plot_trajectory_poloidal(R, Z) isa Tuple
         @test plot_trajectory_projection(cs.X, cs.Y) isa Tuple
         @test plot_trajectory_3d(cs.X, cs.Y, cs.Z) isa Tuple
         @test plot_trajectory_cylindrical(sol.t, R, Z, φ, u) isa Tuple
-        @test plot_fieldlines(equ; xrange = (1.0, 2.5), yrange = (-0.8, 0.8), ngrid = (40, 30)) isa Tuple
+        @test plot_fieldlines(equ; xrange = (1.0, 2.5), yrange = (-0.8, 0.8), ngrid = (
+            40, 30)) isa Tuple
     end
 
     # `plot_fieldlines` contours ψ = A₃, which is only meaningful in an axisymmetric cylindrical
@@ -59,15 +60,16 @@ using SafeTestsets
     # which forwards its equilibrium here.
     @testset "Field lines reject charts they are not valid in" begin
         cylindrical = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical
-        cartesian   = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian
-        toroidal    = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallToroidal
+        cartesian = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian
+        toroidal = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallToroidal
 
         @test is_axisymmetric_cylindrical(cylindrical)
         @test !is_axisymmetric_cylindrical(cartesian)
         @test !is_axisymmetric_cylindrical(toroidal)
 
         for bad in (cartesian, toroidal)
-            @test_throws ArgumentError plot_fieldlines(bad; xrange = (1.0, 2.5), yrange = (-0.8, 0.8), ngrid = (4, 4))
+            @test_throws ArgumentError plot_fieldlines(
+                bad; xrange = (1.0, 2.5), yrange = (-0.8, 0.8), ngrid = (4, 4))
             @test_throws ArgumentError plot_trajectory_poloidal([1.0, 1.1], [0.0, 0.1], bad)
         end
 
@@ -100,14 +102,13 @@ using SafeTestsets
         # `plot_poincare_*` take plain coordinate vectors, one entry per plotted time.
         ts = [lsol[1].t[n] for n in 0:ntime(lsol[1])]
         cart(j, n) = to_cartesian(lsol[j].t[n], lsol[j].q[n])
-        X = [[cart(j, n)[1] for j in 1:nsamples(lsol)] for n in 0:(length(ts)-1)]
-        Y = [[cart(j, n)[2] for j in 1:nsamples(lsol)] for n in 0:(length(ts)-1)]
-        Z = [[cart(j, n)[3] for j in 1:nsamples(lsol)] for n in 0:(length(ts)-1)]
+        X = [[cart(j, n)[1] for j in 1:nsamples(lsol)] for n in 0:(length(ts) - 1)]
+        Y = [[cart(j, n)[2] for j in 1:nsamples(lsol)] for n in 0:(length(ts) - 1)]
+        Z = [[cart(j, n)[3] for j in 1:nsamples(lsol)] for n in 0:(length(ts) - 1)]
 
         @test plot_poincare_invariant_error(ts, I₁) isa Figure
         @test plot_poincare_loop(ts, X, Y, Z; nplot = 3) isa Tuple
         @test plot_poincare_surface(ts, X, Y, Z; nplot = 3) isa Tuple
         @test plot_poincare_trajectories(X, Y, Z; nplot = 3) isa Tuple
     end
-
 end

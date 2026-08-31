@@ -3,7 +3,8 @@ using LinearAlgebra
 using SimpleSolvers
 
 using ChargedParticleDynamics
-using ChargedParticleDynamics: InitialConditions, charged_particle, guiding_center, pauli_particle
+using ChargedParticleDynamics: InitialConditions, charged_particle, guiding_center,
+                               pauli_particle
 using ChargedParticleDynamics: md
 
 import ChargedParticleDynamics.ChargedParticle3d
@@ -14,10 +15,9 @@ import ChargedParticleDynamics.PauliParticle3d
 import .ChargedParticle3d.TokamakIterCylindrical: from_cartesian, g₁₁, g₂₂, g₃₃
 import .ChargedParticle3d.TokamakIterCylindrical: R₀, B, b, aₚ, bₚ, cₚ, b⃗, ḡ, DF̄, J
 
-
 X₀ = from_cartesian(0, [7.0, 0, 0])
 E₀ = 1E6
-θ₀ = 0.
+θ₀ = 0.0
 α₀ = π*5/16
 m₀ = md
 
@@ -28,7 +28,7 @@ p₀ = ChargedParticle3d.TokamakIterCylindrical.charged_particle_3d_pᵢ(0, x₀
 
 q₀, μ = guiding_center(ics)
 
-parameters = (μ=μ,)
+parameters = (μ = μ,)
 
 # `f_abstol` is an absolute bound on the residual and has to stay above its round-off floor, which
 # for these ITER-scale models is `‖ϑ‖ eps`. The 1E-14 this script used to ask for is below it, so
@@ -43,16 +43,16 @@ options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)#, linese
 Δt5 = 50.0
 # timespan = (0., 5_000.)
 # timespan = (0., 10_000.)
-timespan = (0., 50_000.)
-timespan_long = (0., 1_000_000.);
-
+timespan = (0.0, 50_000.0)
+timespan_long = (0.0, 1_000_000.0);
 
 # `q₀` sits on the midplane, where `b₁ = b_R = 0`. That used to be fatal — the only constraint pair
 # the model had was `(g³, g¹)`, whose Lagrange multipliers divide by `b₁` — and this script displaced
 # the initial condition off the plane by `sqrt(eps())` to work around it. `TokamakIterCylindrical`
 # now defaults to `(g¹, g²)`, which divides by `b₃ = b_φ` instead, so the physical initial condition
 # can be used as it stands.
-g3ode = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(q₀; parameters = parameters, timestep=Δt3, timespan=timespan)#(0., 19_189.)
-g3sol = integrate(g3ode, PartitionedGauss(1); initialguess=NoInitialGuess(),options...)
+g3ode = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(
+    q₀; parameters = parameters, timestep = Δt3, timespan = timespan)#(0., 19_189.)
+g3sol = integrate(g3ode, PartitionedGauss(1); initialguess = NoInitialGuess(), options...)
 # g3sol = integrate(g3ode, PartitionedGauss(1); options...)
 g3car = cartesian_solution(g3sol, GuidingCenter3d.TokamakIterCylindrical);

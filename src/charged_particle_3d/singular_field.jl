@@ -4,29 +4,27 @@ Charged Particle in a singular magnetic field of the form
 """
 module SingularField
 
-    import ElectromagneticFields.Singular
+import ElectromagneticFields.Singular
 
-    export odeproblem, iodeproblem
-    export hamiltonian, angular_momentum
-    export compute_energy, compute_energy_error
+export odeproblem, iodeproblem
+export hamiltonian, angular_momentum
+export compute_energy, compute_energy_error
 
+Singular.@code() # inject magnetic field code
 
-    Singular.@code() # inject magnetic field code
+const qᵢ = [1.0, 0.0, 0.0, 0.0, -1.0, 0.0]
 
-    const qᵢ = [1., 0., 0., 0., -1., 0.]
+angular_momentum(t, q) = q[1] * ϑ₂(t, q) - q[2] * ϑ₁(t, q)
 
-    angular_momentum(t,q) = q[1] * ϑ₂(t,q) - q[2] * ϑ₁(t,q)
+include("charged_particle_3d_noncanonical.jl")
 
-    include("charged_particle_3d_noncanonical.jl")
+export default_parameters
 
-    export default_parameters
-
-    """
-    The charged particle models are parameter-free — the electromagnetic field is injected as
-    code rather than passed as parameters. The method exists so that every problem in this
-    package can be constructed the same way.
-    """
-    default_parameters(::Type{T}=Float64) where {T} = NamedTuple()
-
+"""
+The charged particle models are parameter-free — the electromagnetic field is injected as
+code rather than passed as parameters. The method exists so that every problem in this
+package can be constructed the same way.
+"""
+default_parameters(::Type{T} = Float64) where {T} = NamedTuple()
 
 end

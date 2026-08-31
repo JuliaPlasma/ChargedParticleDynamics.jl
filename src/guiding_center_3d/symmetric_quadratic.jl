@@ -93,7 +93,7 @@ end
 export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+default_parameters(::Type{T} = Float64) where {T} = (μ = T(1E-2),)
 
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
@@ -102,7 +102,6 @@ The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
 only regular pair.
 """
 default_constraints() = :g12
-
 
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_canonical.jl")

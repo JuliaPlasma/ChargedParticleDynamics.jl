@@ -52,17 +52,26 @@ using Printf
 
 const G3 = ChargedParticleDynamics.GuidingCenter3d
 
-const CASES = (("Dipole3d",                "cartesian",   G3.Dipole3d,                :initial_conditions_dipole),
-               ("QuadraticPotentials3d",   "cartesian",   G3.QuadraticPotentials3d,   :initial_conditions_quadratic),
-               ("TokamakSmallCartesian",   "cartesian",   G3.TokamakSmallCartesian,   :initial_conditions_barely_passing),
-               ("TokamakMediumCartesian",  "cartesian",   G3.TokamakMediumCartesian,  :initial_conditions_barely_passing),
-               ("TokamakSmallCylindrical", "cylindrical", G3.TokamakSmallCylindrical, :initial_conditions_barely_passing),
-               ("TokamakMediumCylindrical","cylindrical", G3.TokamakMediumCylindrical,:initial_conditions_barely_passing),
-               ("TokamakIterCylindrical",  "cylindrical", G3.TokamakIterCylindrical,  :initial_conditions_barely_passing),
-               ("SolovevIter",             "cylindrical", G3.SolovevIter,             :initial_conditions_barely_passing),
-               ("SolovevIterXpoint",       "cylindrical", G3.SolovevIterXpoint,       :initial_conditions_barely_passing),
-               ("SolovevSymmetricField",   "cylindrical", G3.SolovevSymmetricField,   :initial_conditions_barely_passing),
-               ("TokamakSmallToroidal",    "toroidal",    G3.TokamakSmallToroidal,    :initial_conditions_barely_passing))
+const CASES = (("Dipole3d", "cartesian", G3.Dipole3d, :initial_conditions_dipole),
+    ("QuadraticPotentials3d", "cartesian",
+        G3.QuadraticPotentials3d, :initial_conditions_quadratic),
+    ("TokamakSmallCartesian", "cartesian",
+        G3.TokamakSmallCartesian, :initial_conditions_barely_passing),
+    ("TokamakMediumCartesian", "cartesian",
+        G3.TokamakMediumCartesian, :initial_conditions_barely_passing),
+    ("TokamakSmallCylindrical", "cylindrical",
+        G3.TokamakSmallCylindrical, :initial_conditions_barely_passing),
+    ("TokamakMediumCylindrical", "cylindrical",
+        G3.TokamakMediumCylindrical, :initial_conditions_barely_passing),
+    ("TokamakIterCylindrical", "cylindrical",
+        G3.TokamakIterCylindrical, :initial_conditions_barely_passing),
+    ("SolovevIter", "cylindrical", G3.SolovevIter, :initial_conditions_barely_passing),
+    ("SolovevIterXpoint", "cylindrical", G3.SolovevIterXpoint,
+        :initial_conditions_barely_passing),
+    ("SolovevSymmetricField", "cylindrical",
+        G3.SolovevSymmetricField, :initial_conditions_barely_passing),
+    ("TokamakSmallToroidal", "toroidal", G3.TokamakSmallToroidal,
+        :initial_conditions_barely_passing))
 
 const PAIRS = (:g31, :g12, :g23)
 
@@ -80,8 +89,10 @@ const METHOD = PartitionedGauss(2)
 # where every solve is stiff enough that its six variants alone outlast the whole rest of this script.
 const NSTEPS = 100
 
-workload(M) = (timespan = (0.0, NSTEPS * min(M.DEFAULT_TIMESTEP, 0.1)),
-               timestep = min(M.DEFAULT_TIMESTEP, 0.1))
+function workload(M)
+    (timespan = (0.0, NSTEPS * min(M.DEFAULT_TIMESTEP, 0.1)),
+        timestep = min(M.DEFAULT_TIMESTEP, 0.1))
+end
 
 mean(x) = isempty(x) ? 0.0 : sum(x) / length(x)
 
@@ -90,7 +101,6 @@ mx(ds) = maximum(abs(ds[i]) for i in eachindex(ds))
 
 # every GuidingCenter3d `initial_conditions_*` returns a NamedTuple (q, p, params)
 initial(M, icsname) = getfield(M, icsname)()
-
 
 # ---------------------------------------------------------------------------------------------
 # A logger that harvests the iteration count out of the "Solver took N iterations." warnings, as in
@@ -111,15 +121,15 @@ Logging.shouldlog(::IterationLogger, level, _module, group, id) = true
 Logging.min_enabled_level(::IterationLogger) = Logging.Warn
 Logging.catch_exceptions(::IterationLogger) = false
 
-function Logging.handle_message(logger::IterationLogger, level, message, _module, group, id,
-                                file, line; kwargs...)
+function Logging.handle_message(
+        logger::IterationLogger, level, message, _module, group, id,
+        file, line; kwargs...)
     m = match(r"Solver took (\d+) iterations", string(message))
     m === nothing || push!(logger.iterations, parse(Int, m.captures[1]))
     nothing
 end
 
 const ITERLOG = IterationLogger(Int[])
-
 
 # ---------------------------------------------------------------------------------------------
 # 1. Conditioning of the three pairs
@@ -140,8 +150,8 @@ function conditioning()
     """)
 
     @printf("  %-26s %-12s %10s %10s %10s   %11s %11s %11s   %10s %8s\n",
-            "equilibrium", "coords", "b₁", "b₂", "b₃",
-            "λₒ(:g31)", "λₒ(:g12)", "λₒ(:g23)", "D", "default")
+        "equilibrium", "coords", "b₁", "b₂", "b₃",
+        "λₒ(:g31)", "λₒ(:g12)", "λₒ(:g23)", "D", "default")
 
     for (name, coords, M, icsname) in CASES
         isdefined(M, icsname) || continue
@@ -151,8 +161,8 @@ function conditioning()
         λ = [M.λₒ(t, q, p, M.constraint_pair(s)) for s in PAIRS]
 
         @printf("  %-26s %-12s %10.3e %10.3e %10.3e   %11.3e %11.3e %11.3e   %10.3e %8s\n",
-                name, coords, M.b₁(t, q), M.b₂(t, q), M.b₃(t, q), λ...,
-                M.compact_denominator(t, q, p), M.default_constraints())
+            name, coords, M.b₁(t, q), M.b₂(t, q), M.b₃(t, q), λ...,
+            M.compact_denominator(t, q, p), M.default_constraints())
     end
     flush(stdout)
 
@@ -177,7 +187,6 @@ function conditioning()
     that it averages agree to machine precision wherever they are all defined, in every chart, which
     is what makes the average a faithful stand-in rather than a fudge.""")
 end
-
 
 # ---------------------------------------------------------------------------------------------
 # 2. Do the formulations agree?
@@ -212,11 +221,12 @@ function variants(M, ic)
     compactok(s) = !iszero(M.bᵢ(M.compact_index(s), t, q))
 
     (("hode :g31", pairok(:g31), ic -> M.hodeproblem(ic; constraints = :g31, w...)),
-     ("hode :g12", pairok(:g12), ic -> M.hodeproblem(ic; constraints = :g12, w...)),
-     ("hode :g23", pairok(:g23), ic -> M.hodeproblem(ic; constraints = :g23, w...)),
-     ("canonical :$d", pairok(d), ic -> M.hodeproblem_canonical(ic; w...)),
-     ("compact :$d", compactok(d), ic -> M.hodeproblem_compact(ic; constraints = d, w...)),
-     ("compact :parallel", true, ic -> M.hodeproblem_compact(ic; w...)))
+        ("hode :g12", pairok(:g12), ic -> M.hodeproblem(ic; constraints = :g12, w...)),
+        ("hode :g23", pairok(:g23), ic -> M.hodeproblem(ic; constraints = :g23, w...)),
+        ("canonical :$d", pairok(d), ic -> M.hodeproblem_canonical(ic; w...)),
+        ("compact :$d", compactok(d),
+            ic -> M.hodeproblem_compact(ic; constraints = d, w...)),
+        ("compact :parallel", true, ic -> M.hodeproblem_compact(ic; w...)))
 end
 
 """
@@ -236,8 +246,8 @@ function solve(M, ic, makeproblem)
         _, e = M.compute_energy_error(sol.t, sol.q, sol.p, parameters(problem))
 
         return (y = y,
-                energy = mx(e),
-                constraints = maximum(mx(getproperty(c, k)) for k in (:g₁, :g₂, :g₃)))
+            energy = mx(e),
+            constraints = maximum(mx(getproperty(c, k)) for k in (:g₁, :g₂, :g₃)))
     catch e
         # Reported rather than swallowed: a bare `catch` here renders a `MethodError` or a
         # misconfigured environment as `diverged`, so a broken run reads as a result about the
@@ -281,10 +291,12 @@ function agreement()
 
         for (label, regular, r) in results
             if r === nothing
-                @printf("    %-20s %12s %12s %12s\n", label, regular ? "diverged" : "singular", "-", "-")
+                @printf("    %-20s %12s %12s %12s\n",
+                    label, regular ? "diverged" : "singular", "-", "-")
             else
                 Δy = reference === nothing ? NaN : norm(r.y - reference) / norm(reference)
-                @printf("    %-20s %12.3e %12.3e %12.3e\n", label, Δy, r.energy, r.constraints)
+                @printf("    %-20s %12.3e %12.3e %12.3e\n", label, Δy, r.energy,
+                    r.constraints)
             end
         end
         println()
@@ -311,7 +323,6 @@ function agreement()
     Nothing is singular there; the multipliers are simply large. Conditioning along the orbit, not
     merely at the initial condition, is what the choice of pair should follow.""")
 end
-
 
 # ---------------------------------------------------------------------------------------------
 # 3. What does each formulation cost?
@@ -375,8 +386,8 @@ function cost(makeproblem, ic; reps = 5)
     end
 
     (ms_per_step = minimum(samples) / nsteps * 1E3,
-     mean_iterations = mean(its),
-     peak_iterations = isempty(its) ? 0 : maximum(its))
+        mean_iterations = mean(its),
+        peak_iterations = isempty(its) ? 0 : maximum(its))
 end
 
 function costs()
@@ -391,7 +402,7 @@ function costs()
     """)
 
     @printf("  %-26s %-20s %10s %10s %8s\n",
-            "equilibrium", "variant", "ms/step", "mean its", "peak")
+        "equilibrium", "variant", "ms/step", "mean its", "peak")
 
     for (name, _, M, icsname) in CASES
         isdefined(M, icsname) || continue
@@ -405,10 +416,10 @@ function costs()
             end
             if w === nothing
                 @printf("  %-26s %-20s %10s %10s %8s\n", name, label,
-                        regular ? "diverged" : "singular", "-", "-")
+                    regular ? "diverged" : "singular", "-", "-")
             else
                 @printf("  %-26s %-20s %10.3f %10.1f %8d\n",
-                        name, label, w.ms_per_step, w.mean_iterations, w.peak_iterations)
+                    name, label, w.ms_per_step, w.mean_iterations, w.peak_iterations)
             end
         end
         flush(stdout)
@@ -460,7 +471,6 @@ function costs()
 
     Every other row runs at exactly 1.0.""")
 end
-
 
 function main()
     conditioning()

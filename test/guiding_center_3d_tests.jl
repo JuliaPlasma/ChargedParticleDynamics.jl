@@ -28,7 +28,7 @@ const ny = 10
 # `f_reltol` is deliberately left at the `SimpleSolvers` default of `√eps`. Its relative term
 # `f_reltol ‖F(x₀)‖` is what lets a large-magnitude solve converge at all, and pinning it to `1E-15`
 # alongside `f_abstol` removed the only criterion these problems could still meet.
-const options = (f_abstol=1E-12, max_iterations=50, warn_iterations=50)
+const options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 
 export test_guiding_center_3d
 export nl, nx, ny
@@ -94,23 +94,19 @@ end
 # iteration under either, and the trajectories agree to round-off (bit-identical for most equilibria,
 # 1.5E-14 relative at worst). The Pauli theta pinch is the one place that needs it, for a reason
 # recorded in `pauli_particle_3d_tests.jl`.
-function test_guiding_center_3d(equ::Union{HODEProblem,PODEProblem})
+function test_guiding_center_3d(equ::Union{HODEProblem, PODEProblem})
     @test integrate(equ, PartitionedGauss(2); options...) isa GeometricSolution
 end
 
-function test_guiding_center_3d(equ::Union{IODEProblem,LODEProblem})
+function test_guiding_center_3d(equ::Union{IODEProblem, LODEProblem})
     @test integrate(equ, VPRKGauss(2); options...) isa GeometricSolution
 end
 
 end
 
-
-
 @safetestset "Guiding Centre Dynamics in 3D with ITER-like Solov'ev Equilibrium with X-Point                      " begin
-
     using ChargedParticleDynamics.GuidingCenter3d.SolovevIterXpoint
     using ..GuidingCenter3dTests
-
 
     # test_guiding_center_3d(ode(initial_conditions_trapped(); timestep = 1E4, timespan = (0, 1E6)))
     # test_guiding_center_3d(ode(initial_conditions_barely_passing()))
@@ -143,13 +139,11 @@ end
 
 end
 
-
 # `Dipole3d` and `QuadraticPotentials3d` are the two equilibria that are *not* blocked by the
 # `b₁ = 0` singularity of the `(g³, g¹)` constraint pair — `b₁` is -0.41 and 2E-3 at their
 # respective initial conditions — and until now neither had a test block at all. With these two,
 # the 3D model's dynamics is exercised on four equilibria of eleven rather than two.
 @safetestset "Guiding Centre Dynamics in 3D in a Dipole Field                                                     " begin
-
     using ChargedParticleDynamics.GuidingCenter3d.Dipole3d
     using ..GuidingCenter3dTests
 
@@ -162,12 +156,9 @@ end
     test_guiding_center_3d(hodeproblem(initial_conditions_dipole()))
     test_guiding_center_3d(hodeproblem_canonical(initial_conditions_dipole()))
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_dipole()))
-
 end
 
-
 @safetestset "Guiding Centre Dynamics in 3D in Quadratic Potentials                                               " begin
-
     using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d
     using ..GuidingCenter3dTests
 
@@ -181,12 +172,9 @@ end
     test_guiding_center_3d(hodeproblem(initial_conditions_quadratic()))
     test_guiding_center_3d(hodeproblem_canonical(initial_conditions_quadratic()))
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_quadratic()))
-
 end
 
-
 @safetestset "Guiding Centre Dynamics in 3D with medium-size Tokamak Equilibrium in Cartesian Coordinates         " begin
-
     using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian
     using ..GuidingCenter3dTests
 
@@ -209,7 +197,7 @@ end
     # 2.8E-13, 2.6E-13, 9.6E-08 and 6.7E-15. `:g12` is not the alternative it looks like: it meets a
     # `NaN` or a `SingularException` at every step size tried, 0.1 down to 0.01. The exception belongs
     # to the formulation that blocks, not to the module's declared example.
-    canonical_workload = (timestep=0.01, timespan=(0.0, 1E1))
+    canonical_workload = (timestep = 0.01, timespan = (0.0, 1E1))
     test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); canonical_workload...))
     test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); canonical_workload...))
     test_guiding_center_3d(hodeproblem_canonical(initial_conditions_deeply_passing(); canonical_workload...))
@@ -222,7 +210,7 @@ end
     # sit, so `:g31` is singular here and only two of the three pairs can be compared. The three-way
     # comparison moved to `SolovevIterXpoint`; see the "the constraint formulations agree" block at the
     # end of this file.
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); constraints=:g12))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); constraints = :g12))
 
     # test_guiding_center_3d(iode(initial_conditions_barely_passing()))
     # test_guiding_center_3d(iode(initial_conditions_barely_trapped()))
@@ -233,9 +221,7 @@ end
 
 end
 
-
 @safetestset "Guiding Centre Dynamics in 3D with medium-size Tokamak Equilibrium in Cylindrical Coordinates       " begin
-
     using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical
     using ..GuidingCenter3dTests
 
@@ -249,12 +235,9 @@ end
 
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
-
 end
 
-
 @safetestset "Guiding Centre Dynamics in 3D with small-size Tokamak Equilibrium in Cartesian Coordinates          " begin
-
     using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCartesian
     using ..GuidingCenter3dTests
 
@@ -268,12 +251,9 @@ end
 
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
-
 end
 
-
 @safetestset "Guiding Centre Dynamics in 3D with small-size Tokamak Equilibrium in Cylindrical Coordinates        " begin
-
     using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCylindrical
     using ..GuidingCenter3dTests
 
@@ -287,12 +267,9 @@ end
 
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
-
 end
 
-
 @safetestset "Guiding Centre Dynamics in 3D with small-size Tokamak Equilibrium in Toroidal Coordinates           " begin
-
     using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal
     using ..GuidingCenter3dTests
 
@@ -305,17 +282,16 @@ end
     test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing()))
     test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped()))
 
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_passing(); timestep=250.0, timespan=(0.0, 2.5E5)))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_barely_trapped(); timestep=250.0, timespan=(0.0, 2.5E5)))
+    test_guiding_center_3d(hodeproblem_canonical(
+        initial_conditions_barely_passing(); timestep = 250.0, timespan = (0.0, 2.5E5)))
+    test_guiding_center_3d(hodeproblem_canonical(
+        initial_conditions_barely_trapped(); timestep = 250.0, timespan = (0.0, 2.5E5)))
 
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
-
 end
 
-
 @safetestset "Guiding Centre Dynamics in 3D with symmetric Solov'ev Equilibrium                                   " begin
-
     using ChargedParticleDynamics.GuidingCenter3d.SolovevSymmetricField
     using ..GuidingCenter3dTests
 
@@ -334,10 +310,14 @@ end
     # enough under the two non-compact forms that Newton meets a NaN a few hundred steps in. The
     # hundred steps below — a tenth of the declared example, at its declared step — are well inside
     # that.
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); timespan=(0.0, 1E1)))
-    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped(); timespan=(0.0, 1E1)))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing(); timespan=(0.0, 1E1)))
-    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped(); timespan=(0.0, 1E1)))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); timespan = (
+        0.0, 1E1)))
+    test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped(); timespan = (
+        0.0, 1E1)))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing(); timespan = (
+        0.0, 1E1)))
+    test_guiding_center_3d(hodeproblem(initial_conditions_deeply_trapped(); timespan = (
+        0.0, 1E1)))
 
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
@@ -351,7 +331,6 @@ end
 
 end
 
-
 # `SymmetricField` and `ThetaPinchField` have no integration test block. Both are Poincaré-invariant
 # fixtures: they ship `f_loop`/`f_surface` rather than `initial_conditions_*`, and the blocks that
 # used to stand here called `guiding_center_3d_loop_ode` and `guiding_center_3d_surface_ode`, which
@@ -359,9 +338,7 @@ end
 # `test/structure_tests.jl`, which reach every module. Note that `b = e₃` in both, so `(g¹, g²)` is
 # the only pair either of them can use.
 
-
 @safetestset "Guiding Centre Dynamics in 3D: the constraint formulations agree                                    " begin
-
     using ChargedParticleDynamics.GuidingCenter3d
     using GeometricIntegrators
     using LinearAlgebra
@@ -387,11 +364,11 @@ end
     workload = (timespan = (0.0, 1E1), timestep = 0.1)
 
     problems = ((M.hodeproblem(ic; constraints = :g31, workload...)),
-                (M.hodeproblem(ic; constraints = :g12, workload...)),
-                (M.hodeproblem(ic; constraints = :g23, workload...)),
-                (M.hodeproblem_canonical(ic; workload...)),
-                (M.hodeproblem_compact(ic; workload...)),
-                (M.hodeproblem_compact(ic; constraints = :g31, workload...)))
+        (M.hodeproblem(ic; constraints = :g12, workload...)),
+        (M.hodeproblem(ic; constraints = :g23, workload...)),
+        (M.hodeproblem_canonical(ic; workload...)),
+        (M.hodeproblem_compact(ic; workload...)),
+        (M.hodeproblem_compact(ic; constraints = :g31, workload...)))
 
     # `options` is not exported by the helper module — the blocks above reach it through
     # `test_guiding_center_3d` rather than by name — so it is qualified here.

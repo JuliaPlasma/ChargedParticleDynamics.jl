@@ -2,7 +2,8 @@ using GeometricIntegrators
 using SimpleSolvers
 
 using ChargedParticleDynamics.GuidingCenter3d.Dipole3d
-using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, b₁, b₂, b₃
+using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: hamiltonian, hamiltonian_u, g₁, g₂,
+                                                        g₃, λₒ, λ₁, λ₂, b₁, b₂, b₃
 
 # `f_abstol` has to sit above the round-off floor of the residual, which for the variational
 # residual is `‖ϑ‖ eps`. `Dipole3d` ships `‖p‖ ≈ 152`, i.e. a floor of `3.4E-14`, so the `8eps() =
@@ -10,7 +11,7 @@ using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: hamiltonian, hamiltonian
 # test suite and the other scripts use; see the comment on `options` in
 # `test/guiding_center_3d_tests.jl`. `verbosity` is left at its default of 1 deliberately: this is
 # an exploratory script and the solver's report of what it achieved is the point.
-const options = (f_abstol=1E-12, verbosity=1)
+const options = (f_abstol = 1E-12, verbosity = 1)
 
 equ = hodeproblem(initial_conditions_dipole())
 # equ = hodeproblem(initial_conditions_dipole(); timestep=0.003)
@@ -28,7 +29,8 @@ sol = integrate(equ, PartitionedGauss(1); options...)
 
 h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
 h0 = h[begin]
-hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
+hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], parameters(equ))
+      for i in eachindex(sol.t)]
 λ0 = [λₒ(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
 λ1 = [λ₁(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
 λ2 = [λ₂(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
@@ -76,15 +78,14 @@ println("b₂(x₀) = ", b2[begin])
 println("b₃(x₀) = ", b3[begin])
 println()
 
-
 using CairoMakie
 
-f = Figure(size=(1000, 800))
+f = Figure(size = (1000, 800))
 
-axsol = Axis(f[1, 1], xlabel="R", ylabel="Z")
-axham = Axis(f[1, 2], xlabel="t", ylabel="[H(t) - H(0)] / H(0)")
-axg1 = Axis(f[2, 1], xlabel="t", ylabel="g₁")
-axg2 = Axis(f[2, 2], xlabel="t", ylabel="g₂")
+axsol = Axis(f[1, 1], xlabel = "R", ylabel = "Z")
+axham = Axis(f[1, 2], xlabel = "t", ylabel = "[H(t) - H(0)] / H(0)")
+axg1 = Axis(f[2, 1], xlabel = "t", ylabel = "g₁")
+axg2 = Axis(f[2, 2], xlabel = "t", ylabel = "g₂")
 
 scatter!(axsol, R, Z)
 plot!(axham, sol.t, (h .- h0) ./ h0)

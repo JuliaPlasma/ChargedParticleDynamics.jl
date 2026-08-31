@@ -6,7 +6,7 @@ module TokamakMediumCartesian
 import ElectromagneticFields.AxisymmetricTokamakCartesian
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
-    initial_conditions_deeply_passing, initial_conditions_deeply_trapped
+       initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
 export hamiltonian
 
@@ -36,10 +36,18 @@ const DEFAULT_TIMESPAN = (0.0, 1E2)
 # on it. What it costs is that this equilibrium is no longer one where all three pairs are regular at
 # once; `SolovevIterXpoint` is now the sharpest case for that comparison. See `default_constraints`
 # below and the conditioning table in `docs/src/findings.md`.
-initial_conditions_barely_passing() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.425E-1]), (params=(μ=1E-2,),))
-initial_conditions_barely_trapped() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.375E-1]), (params=(μ=1E-2,),))
-initial_conditions_deeply_passing() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 5E-1]), (params=(μ=1E-2,),))
-initial_conditions_deeply_trapped() = merge(initial_conditions(0, [2.5, 0.0, 0.0, 1E-1]), (params=(μ=1E-2,),))
+function initial_conditions_barely_passing()
+    merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.425E-1]), (params = (μ = 1E-2,),))
+end
+function initial_conditions_barely_trapped()
+    merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.375E-1]), (params = (μ = 1E-2,),))
+end
+function initial_conditions_deeply_passing()
+    merge(initial_conditions(0, [2.5, 0.0, 0.0, 5E-1]), (params = (μ = 1E-2,),))
+end
+function initial_conditions_deeply_trapped()
+    merge(initial_conditions(0, [2.5, 0.0, 0.0, 1E-1]), (params = (μ = 1E-2,),))
+end
 
 μ_loop() = 1E-3
 μ_surface() = 1E-3
@@ -78,7 +86,7 @@ end
 export default_parameters, default_constraints
 
 "The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T}=Float64) where {T} = (μ = T(1E-2),)
+default_parameters(::Type{T} = Float64) where {T} = (μ = T(1E-2),)
 
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
@@ -98,7 +106,6 @@ condition and it is the *orbit* that takes `b₁` and `b₂` through zero. See `
     that formulation needs here.
 """
 default_constraints() = :g23
-
 
 include("guiding_center_3d_equations.jl")
 include("guiding_center_3d_canonical.jl")

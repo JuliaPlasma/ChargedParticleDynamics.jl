@@ -8,20 +8,21 @@ export loop_odeproblem,
 export poincare_invariant_1st,
        loop_ensemble
 
-
 # The base problems whose flow advects the loop, at the loop's magnetic moment. Their initial
 # condition is a placeholder: `PIEnsembleProblem` replaces it with the sampled points of `f_loop`,
 # one ensemble member per point. Everything else — time span, time step — is taken from the
 # problem, so pass those here.
-loop_odeproblem(; kwargs...) =
+function loop_odeproblem(; kwargs...)
     odeproblem(f_loop(0.0); parameters = (μ = μ_loop(),), periodic = false, kwargs...)
+end
 
-loop_iodeproblem(; kwargs...) =
+function loop_iodeproblem(; kwargs...)
     iodeproblem(f_loop(0.0); parameters = (μ = μ_loop(),), periodic = false, kwargs...)
+end
 
-loop_lodeproblem(; kwargs...) =
+function loop_lodeproblem(; kwargs...)
     lodeproblem(f_loop(0.0); parameters = (μ = μ_loop(),), periodic = false, kwargs...)
-
+end
 
 @doc raw"""
     poincare_invariant_1st(N; DT = Float64)
@@ -48,7 +49,6 @@ I₁   = compute!(pinv, sol, parameters(prob))
 ```
 """
 poincare_invariant_1st(N; DT = Float64) = FirstPI{DT, 4}(ϑ, N)
-
 
 """
     loop_ensemble(prob, pinv)
