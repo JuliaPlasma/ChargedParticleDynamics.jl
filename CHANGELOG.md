@@ -15,8 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `ĉ` as a base letter plus a combining mark, inherited from macOS rather than chosen. Nothing
   about the compiled code changes — Julia's parser normalises identifiers to NFC — but a `grep`
   pattern or an editor search typed in NFC now matches, where before it silently matched nothing.
-  Both files are byte-equal to the NFC normalisation of their predecessor, and no string literal
-  was affected.
+  `b̂` has no precomposed codepoint and is unchanged.
+
+  Both files are byte-equal to the NFC normalisation of their predecessor. One docstring changes
+  along with the identifiers: the field list of `IntegratorCacheFIRKwCT` names `ṽ`, which
+  recomposes with the field it documents. No other string literal is affected, and that docstring
+  is rendered rather than compared.
 
 ## [0.4.1] - 2026-08-10
 
