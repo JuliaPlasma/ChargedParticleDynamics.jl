@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Changed
+
+- `src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl` and
+  `src/utils/initial_conditions.jl` are now Unicode NFC-normalised. They stored `ṽ`, `Ṽ`, `Ỹ`, `â`
+  and `ĉ` as a base letter plus a combining mark, inherited from macOS rather than chosen. Nothing
+  about the compiled code changes — Julia's parser normalises identifiers to NFC — but a `grep`
+  pattern or an editor search typed in NFC now matches, where before it silently matched nothing.
+  `b̂` has no precomposed codepoint and is unchanged.
+
+  Both files are byte-equal to the NFC normalisation of their predecessor. One docstring changes
+  along with the identifiers: the field list of `IntegratorCacheFIRKwCT` names `ṽ`, which
+  recomposes with the field it documents. No other string literal is affected, and that docstring
+  is rendered rather than compared.
+
 ## [0.4.1] - 2026-08-10
 
 `ElectromagneticFields` 0.8.0 is a breaking release whose break does not reach this package: it

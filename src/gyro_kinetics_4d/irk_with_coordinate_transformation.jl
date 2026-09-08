@@ -72,7 +72,7 @@ Fully implicit Runge-Kutta integrator cache.
 ### Fields
 
 * `q̃`: initial guess of solution
-* `ṽ`: initial guess of vector field
+* `ṽ`: initial guess of vector field
 * `s̃`: holds shift due to periodicity of solution
 * `Q`: internal stages of solution
 * `V`: internal stages of vector field
@@ -83,13 +83,13 @@ struct IntegratorCacheFIRKwCT{DT, D, S} <: ODEIntegratorCache{DT, D}
     q̅::Vector{DT}
 
     q̃::Vector{DT}
-    ṽ::Vector{DT}
+    ṽ::Vector{DT}
     s̃::Vector{DT}
 
     Q::Vector{Vector{DT}}
     Q̃::Vector{Vector{DT}}
-    Ṽ::Vector{Vector{DT}}
-    Ỹ::Vector{Vector{DT}}
+    Ṽ::Vector{Vector{DT}}
+    Ỹ::Vector{Vector{DT}}
 
     J::Vector{Matrix{DT}}
 
@@ -98,17 +98,17 @@ struct IntegratorCacheFIRKwCT{DT, D, S} <: ODEIntegratorCache{DT, D}
         q̅ = zeros(DT, D)
 
         q̃ = zeros(DT, D)
-        ṽ = zeros(DT, D)
+        ṽ = zeros(DT, D)
         s̃ = zeros(DT, D)
 
         Q = create_internal_stage_vector(DT, D, S)
         Q̃ = create_internal_stage_vector(DT, D, S)
-        Ṽ = create_internal_stage_vector(DT, D, S)
-        Ỹ = create_internal_stage_vector(DT, D, S)
+        Ṽ = create_internal_stage_vector(DT, D, S)
+        Ỹ = create_internal_stage_vector(DT, D, S)
 
         J = [zeros(DT, D, D) for i in 1:S]
 
-        new(q, q̅, q̃, ṽ, s̃, Q, Q̃, Ṽ, Ỹ, J)
+        new(q, q̅, q̃, ṽ, s̃, Q, Q̃, Ṽ, Ỹ, J)
     end
 end
 
@@ -245,7 +245,7 @@ function initial_guess!(int::IntegratorFIRKwCT{DT}, sol::AtomicSolutionODE{DT},
     # compute initial guess for internal stages
     for i in eachstage(int)
         evaluate!(int.iguess, sol.q, sol.v, sol.q̅, sol.v̅,
-            cache.Q̃[i], cache.Ṽ[i], tableau(int).q.c[i])
+            cache.Q̃[i], cache.Ṽ[i], tableau(int).q.c[i])
         # transform_q_to_q̃!(cache.Q[i], cache.Q̃[i], int.params.params)
     end
     for i in eachstage(int)
@@ -254,30 +254,30 @@ function initial_guess!(int::IntegratorFIRKwCT{DT}, sol::AtomicSolutionODE{DT},
             int.solver.x[offset + k] = 0
             for j in eachstage(int)
                 int.solver.x[offset + k] += timestep(int) * tableau(int).q.a[i, j] *
-                                            cache.Ṽ[j][k]
+                                            cache.Ṽ[j][k]
             end
         end
     end
 end
 
 function compute_stages!(x::Vector{ST}, Q::Vector{Vector{ST}}, Q̃::Vector{Vector{ST}},
-        Ṽ::Vector{Vector{ST}}, Ỹ::Vector{Vector{ST}},
+        Ṽ::Vector{Vector{ST}}, Ỹ::Vector{Vector{ST}},
         params::ParametersFIRKwCT{DT, TT, D}) where {ST, DT, TT, D}
     local tᵢ::TT
 
     # copy x to Y and compute Q = q + Δt Y
-    for i in eachindex(Q̃, Ỹ)
-        for k in eachindex(Q̃[i], Ỹ[i])
-            Ỹ[i][k] = x[D * (i - 1) + k]
-            Q̃[i][k] = params.q[k] + Ỹ[i][k]
+    for i in eachindex(Q̃, Ỹ)
+        for k in eachindex(Q̃[i], Ỹ[i])
+            Ỹ[i][k] = x[D * (i - 1) + k]
+            Q̃[i][k] = params.q[k] + Ỹ[i][k]
         end
         # transform_q̃_to_q!(Q̃[i], Q[i], params.params)
     end
 
     # compute V = v(Q)
-    for i in eachindex(Q̃, Ṽ)
+    for i in eachindex(Q̃, Ṽ)
         tᵢ = params.t + params.Δt * params.tab.q.c[i]
-        params.equs[:v](tᵢ, Q̃[i], Ṽ[i])
+        params.equs[:v](tᵢ, Q̃[i], Ṽ[i])
     end
 end
 
@@ -292,16 +292,16 @@ function GeometricIntegrators.Integrators.function_stages!(
     cache = caches[ST]
 
     # compute stages from nonlinear solver solution x
-    compute_stages!(x, cache.Q, cache.Q̃, cache.Ṽ, cache.Ỹ, params)
+    compute_stages!(x, cache.Q, cache.Q̃, cache.Ṽ, cache.Ỹ, params)
 
     # compute b = - (Y-AV)
-    for i in eachindex(cache.Ỹ)
-        for k in eachindex(cache.Ỹ[i])
+    for i in eachindex(cache.Ỹ)
+        for k in eachindex(cache.Ỹ[i])
             y = 0
-            for j in eachindex(cache.Ṽ)
-                y += params.tab.q.a[i, j] * cache.Ṽ[j][k]
+            for j in eachindex(cache.Ṽ)
+                y += params.tab.q.a[i, j] * cache.Ṽ[j][k]
             end
-            b[D * (i - 1) + k] = - cache.Ỹ[i][k] + params.Δt * y
+            b[D * (i - 1) + k] = - cache.Ỹ[i][k] + params.Δt * y
         end
     end
 end
@@ -313,13 +313,13 @@ end
 
 #     for i in 1:S
 #         for k in 1:D
-#             cache.Ỹ[i][k] = x[D*(i-1)+k]
-#             cache.Q̃[i][k] = params.q[k] + cache.Ỹ[i][k]
+#             cache.Ỹ[i][k] = x[D*(i-1)+k]
+#             cache.Q̃[i][k] = params.q[k] + cache.Ỹ[i][k]
 #         end
 #         transform_q̃_to_q!(cache.Q̃[i], cache.Q[i], params.params)
 #         tᵢ = params.t + params.Δt * params.tab.q.c[i]
 #         F = (v,q) -> params.equs[:v](tᵢ, q, v)
-#         ForwardDiff.jacobian!(cache.J[i], params.F, cache.ṽ, cache.Q[i], params.Jconfig)
+#         ForwardDiff.jacobian!(cache.J[i], params.F, cache.ṽ, cache.Q[i], params.Jconfig)
 #     end
 
 #     jac .= 0
@@ -367,11 +367,11 @@ function GeometricIntegrators.Integrators.integrate_step!(
     check_solver_status(int.solver.status, int.solver.params)
 
     # compute vector field at internal stages
-    compute_stages!(int.solver.x, cache.Q, cache.Q̃, cache.Ṽ, cache.Ỹ, int.params)
+    compute_stages!(int.solver.x, cache.Q, cache.Q̃, cache.Ṽ, cache.Ỹ, int.params)
 
     # compute final update
     update_solution!(
-        sol.q, sol.q̃, cache.Ṽ, tableau(int).q.b, tableau(int).q.b̂, timestep(int))
+        sol.q, sol.q̃, cache.Ṽ, tableau(int).q.b, tableau(int).q.b̂, timestep(int))
 
     # copy solution to initial guess
     update_vector_fields!(int.iguess, sol.t, sol.q, sol.q)
