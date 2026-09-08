@@ -71,8 +71,8 @@ Compute initial conditions from the following arguments:
 * `J`: Jacobian determinant
 * `l=1`: length normalization
 """
-function InitialConditions(X::AbstractVector{T}, θ::T, α::T, Etot::T, M::T, C, â::Function,
-        b̂::Function, ĉ::Function, b::Function, B::Function,
+function InitialConditions(X::AbstractVector{T}, θ::T, α::T, Etot::T, M::T, C, â::Function,
+        b̂::Function, ĉ::Function, b::Function, B::Function,
         g̅::Function, DF̄::Function, J::Function; l₀ = 1) where {T}
     # computet parallel and perpedicular energy according to pitch angle
     Epar = Etot * (1 - sin(α))
@@ -88,7 +88,7 @@ function InitialConditions(X::AbstractVector{T}, θ::T, α::T, Etot::T, M::T, C,
 
     # compute v̂par and v̂per in physical coordinates
     v̂par = u * b̂(0, X)
-    v̂per = w * (- â(0, X) * sin(θ) - ĉ(0, X) * cos(θ))
+    v̂per = w * (- â(0, X) * sin(θ) - ĉ(0, X) * cos(θ))
 
     # transform vpar and vper to contravariant coordinates
     vpar = DF̄(0, X) * v̂par
@@ -121,8 +121,8 @@ Compute initial conditions from the following arguments:
 * `J`: Jacobian determinant
 * `l=1`: length normalization
 """
-function InitialConditionsGC(X::AbstractVector{T}, θ::T, u::T, μ::T, M::T, C, â::Function,
-        b̂::Function, ĉ::Function, b::Function, B::Function,
+function InitialConditionsGC(X::AbstractVector{T}, θ::T, u::T, μ::T, M::T, C, â::Function,
+        b̂::Function, ĉ::Function, b::Function, B::Function,
         g̅::Function, DF̄::Function, J::Function; l₀ = 1) where {T}
     # compute absolute value of perpendicular and total velocity
     w = sqrt(2B(0, X) * μ)
@@ -137,7 +137,7 @@ function InitialConditionsGC(X::AbstractVector{T}, θ::T, u::T, μ::T, M::T, C, 
 
     # compute v̂par and v̂per in physical coordinates
     v̂par = u * b̂(0, X)
-    v̂per = w * (- â(0, X) * sin(θ) - ĉ(0, X) * cos(θ))
+    v̂per = w * (- â(0, X) * sin(θ) - ĉ(0, X) * cos(θ))
 
     # transform vpar and vper to contravariant coordinates
     vpar = DF̄(0, X) * v̂par
