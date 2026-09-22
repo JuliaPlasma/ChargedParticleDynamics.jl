@@ -171,7 +171,7 @@ compact_index(::Val{:g12}) = Val(3)
 compact_index(constraints::Symbol) = compact_index(Val(constraints))
 
 function guiding_center_3d_compact_v(v, t, q, p, params, m = nothing)
-    F = fieldvalues(t, q)
+    F = fieldpoint(params.field, t, q)
     C = compact_multipliers(t, F, p, params, m)
 
     components!(v, i -> dHdpᵢ(i, t, F, p, params) + component(C, i))
@@ -179,7 +179,7 @@ function guiding_center_3d_compact_v(v, t, q, p, params, m = nothing)
 end
 
 function guiding_center_3d_compact_f(f, t, q, p, params, m = nothing)
-    F = fieldvalues(t, q)
+    F = fieldpoint(params.field, t, q)
     C = compact_multipliers(t, F, p, params, m)
     uₚ = compact_parallel_velocity(t, F, p, m)
 
@@ -191,8 +191,8 @@ function guiding_center_3d_compact_f(f, t, q, p, params, m = nothing)
 end
 
 """
-    hodeproblem_compact(q₀, p₀; kwargs...)
-    hodeproblem_compact(x₀ = qᵢ; kwargs...)
+    hodeproblem_compact(q₀, p₀; timespan, timestep, parameters, kwargs...)
+    hodeproblem_compact(x₀; timespan, timestep, parameters, kwargs...)
     hodeproblem_compact(ics::NamedTuple; kwargs...)
 
 The compact form of the guiding centre system, Eq. (29) of Li, Zhang & Liu, which drops the terms
@@ -210,10 +210,8 @@ scale from `D` in its cartesian form, which is regular. Taking it from the pair'
 choice made here, and is what makes this the cheapest of the three formulations. Use it to exhibit the
 pair dependence of Eq. (29), not to integrate with.
 """
-function hodeproblem_compact(
-        q₀::AbstractVector, p₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
-        timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic = true,
-        constraints = :parallel)
+function hodeproblem_compact(q₀::AbstractVector, p₀::AbstractVector; timespan, timestep,
+        parameters, periodic = true, constraints = :parallel)
     m = compact_index(constraints)
 
     _v(v, t, q, p, params) = guiding_center_3d_compact_v(v, t, q, p, params, m)
@@ -225,12 +223,13 @@ function hodeproblem_compact(
         hamiltonian,
         timespan, timestep, q₀, p₀;
         parameters = parameters,
-        periodicity = guiding_center_3d_periodicity(q₀, periodic))
+        periodicity = guiding_center_3d_periodicity(q₀, parameters.field, periodic))
 end
 
-function hodeproblem_compact(x₀::AbstractVector = qᵢ; timespan = DEFAULT_TIMESPAN, kwargs...)
-    ics = initial_conditions(timespan[begin], x₀)
-    hodeproblem_compact(ics.q, ics.p; timespan = timespan, kwargs...)
+function hodeproblem_compact(x₀::AbstractVector; timespan, parameters, kwargs...)
+    ics = initial_conditions(timespan[begin], x₀, parameters)
+    hodeproblem_compact(
+        ics.q, ics.p; timespan = timespan, parameters = parameters, kwargs...)
 end
 
 function hodeproblem_compact(ics::NamedTuple; kwargs...)

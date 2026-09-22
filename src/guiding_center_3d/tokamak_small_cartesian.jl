@@ -3,7 +3,7 @@ Analytic axisymmetric small tokamak equilibrium in cartesian coordinates.
 """
 module TokamakSmallCartesian
 
-import ElectromagneticFields.AxisymmetricTokamakCartesian
+using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCartesianEquilibrium
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,7 +11,7 @@ export initial_conditions_barely_passing, initial_conditions_barely_trapped,
 
 export hamiltonian, toroidal_momentum
 
-AxisymmetricTokamakCartesian.@code() # inject magnetic field code
+const FIELD = FieldFunctions(AxisymmetricTokamakCartesianEquilibrium())
 
 # A thousand steps, at which all three formulations agree to a relative energy error of 1.4E-4
 # (1.4E-2 at `Δt = 1`, 4.0E-1 at `Δt = 10`). This chart will not take the `Δt = 500` its
@@ -26,22 +26,28 @@ const DEFAULT_TIMESPAN = (0.0, 1E2)
 # const DEFAULT_TIMESPAN = (0.0, 5E6)
 
 function initial_conditions_default()
-    merge(initial_conditions(0, [1.05, 0.0, -0.005, 0.000045]), (params = (μ = 3.2e-7,),))
+    merge(initial_conditions(0, [1.05, 0.0, -0.005, 0.000045]), (params = (
+        field = FIELD, μ = 3.2e-7),))
 end
 function initial_conditions_barely_passing()
-    merge(initial_conditions(0, [1.05, 0.0, 0.0, 8.117E-4]), (params = (μ = 2.448E-6,),))
+    merge(initial_conditions(0, [1.05, 0.0, 0.0, 8.117E-4]), (params = (
+        field = FIELD, μ = 2.448E-6),))
 end
 function initial_conditions_barely_trapped()
-    merge(initial_conditions(0, [1.05, 0.0, 0.0, 7.610E-4]), (params = (μ = 2.250E-6,),))
+    merge(initial_conditions(0, [1.05, 0.0, 0.0, 7.610E-4]), (params = (
+        field = FIELD, μ = 2.250E-6),))
 end
 function initial_conditions_deeply_passing()
-    merge(initial_conditions(0, [1.05, 0.0, 0.0, 1.623E-3]), (params = (μ = 2.448E-6,),))
+    merge(initial_conditions(0, [1.05, 0.0, 0.0, 1.623E-3]), (params = (
+        field = FIELD, μ = 2.448E-6),))
 end
 function initial_conditions_deeply_trapped()
-    merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.306E-4]), (params = (μ = 2.250E-6,),))
+    merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.306E-4]), (params = (
+        field = FIELD, μ = 2.250E-6),))
 end
 function initial_conditions_pauli()
-    merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.3E-4]), (params = (μ = 2.310E-6,),))
+    merge(initial_conditions(0, [1.05, 0.0, 0.0, 4.3E-4]), (params = (
+        field = FIELD, μ = 2.310E-6),))
 end
 
 u_loop() = 4.0E-4
@@ -81,8 +87,8 @@ end
 
 export default_parameters, default_constraints
 
-"The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T} = Float64) where {T} = (μ = T(3.2e-7),)
+"The field, and the magnetic moment μ this equilibrium is set up for."
+default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(3.2e-7))
 
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
@@ -93,8 +99,7 @@ component in this chart and the largest of the three.
 """
 default_constraints() = :g23
 
-include("guiding_center_3d_equations.jl")
-include("guiding_center_3d_canonical.jl")
+include("guiding_center_3d_presets.jl")
 
 # In cartesian coordinates the third coordinate is z, not an angle, so the toroidal momentum is the
 # generator of rotation about the z-axis, x p₂ - y p₁, rather than p₃.

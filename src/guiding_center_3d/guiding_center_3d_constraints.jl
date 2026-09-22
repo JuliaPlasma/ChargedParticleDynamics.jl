@@ -18,36 +18,26 @@
 # `guiding_center_3d_canonical.jl` seven hundred lines long and is why only one pair was ever
 # implemented.
 #
-# `ElectromagneticFields.@code()` injects the field functions under names carrying literal
-# subscripts — `b₁`, `db₂dx₃`, `d²A₁dx₂dx₃` — so the generic expressions need index accessors for
-# them. Those take `Val`s rather than `Int`s: the index is then part of the signature, every call
-# inlines to the injected function it stands for, and no dynamic dispatch survives into the
-# right-hand side. Their names must avoid the injected ones, of which `A`, `a`, `b`, `c`, `B`, `E`,
-# `g`, `φ`, `DF`, `J` and the `aₚ`/`a⃗` triads are all taken; hence the `ᵢ`/`ⱼ`/`ₖ` suffixes.
+# The field arrives as a `FieldPoint` — the tensors of `ElectromagneticFields` evaluated once at the
+# point, which is where `q` would go; see `FieldPoints`. The generic expressions read it through the
+# index accessors below. Those take `Val`s rather than `Int`s: the index is then part of the
+# signature, and every call inlines to one entry of one tensor. The `ᵢ`/`ⱼ`/`ₖ` suffixes keep them
+# apart from the per-component names `FieldPoints` answers, `b₁`, `db₂dx₃`, `d²A₁dx₂dx₃`.
 #
 
 const INDEX_SUBSCRIPTS = ('₁', '₂', '₃')
-const INDEX_SUPERSCRIPTS = ('¹', '²', '³')
 
-for i in 1:3
-    @eval @inline Aᵢ(::Val{$i}, t, q) = $(Symbol("A", INDEX_SUBSCRIPTS[i]))(t, q)
-    @eval @inline bᵢ(::Val{$i}, t, q) = $(Symbol("b", INDEX_SUBSCRIPTS[i]))(t, q)
+@inline Aᵢ(::Val{i}, t, P::FieldPoint) where {i} = P.values.A♭[i]
+@inline bᵢ(::Val{i}, t, P::FieldPoint) where {i} = P.values.b♭[i]
 
-    for j in 1:3
-        @eval @inline dAᵢdxⱼ(::Val{$i}, ::Val{$j}, t, q) = $(Symbol(
-            "dA", INDEX_SUBSCRIPTS[i], "dx", INDEX_SUBSCRIPTS[j]))(t, q)
-        @eval @inline dbᵢdxⱼ(::Val{$i}, ::Val{$j}, t, q) = $(Symbol(
-            "db", INDEX_SUBSCRIPTS[i], "dx", INDEX_SUBSCRIPTS[j]))(t, q)
+@inline dAᵢdxⱼ(::Val{i}, ::Val{j}, t, P::FieldPoint) where {i, j} = P.values.DA♭[i, j]
+@inline dbᵢdxⱼ(::Val{i}, ::Val{j}, t, P::FieldPoint) where {i, j} = P.values.Db♭[i, j]
 
-        for k in 1:3
-            @eval @inline d²Aᵢdxⱼdxₖ(::Val{$i}, ::Val{$j}, ::Val{$k}, t, q) = $(Symbol(
-                "d²A", INDEX_SUBSCRIPTS[i], "dx",
-                INDEX_SUBSCRIPTS[j], "dx", INDEX_SUBSCRIPTS[k]))(t, q)
-            @eval @inline d²bᵢdxⱼdxₖ(::Val{$i}, ::Val{$j}, ::Val{$k}, t, q) = $(Symbol(
-                "d²b", INDEX_SUBSCRIPTS[i], "dx",
-                INDEX_SUBSCRIPTS[j], "dx", INDEX_SUBSCRIPTS[k]))(t, q)
-        end
-    end
+@inline function d²Aᵢdxⱼdxₖ(::Val{i}, ::Val{j}, ::Val{k}, t, P::FieldPoint) where {i, j, k}
+    P.values.DDA♭[i, j, k]
+end
+@inline function d²bᵢdxⱼdxₖ(::Val{i}, ::Val{j}, ::Val{k}, t, P::FieldPoint) where {i, j, k}
+    P.values.DDb♭[i, j, k]
 end
 
 # Contraction over the three coordinate directions. Written as a sum of three calls rather than a
@@ -55,265 +45,47 @@ end
 @inline contract(f) = f(Val(1)) + f(Val(2)) + f(Val(3))
 
 #
-# The injected field functions evaluated once per point.
+# The field tensors the right-hand sides read, evaluated once per point.
 #
 # Everything below — the constraints, their derivatives, the Hamiltonian gradients, the Poisson
-# brackets — is written against the accessors above, and each of them calls straight through to an
-# `ElectromagneticFields.@code()`-injected function. Those are the expensive part, by a wide margin:
-# `db₁dx₁` for the ITER Solov'ev X-point costs 57 ns against a `g¹¹` that folds to a constant, and a
-# single evaluation of the Hamilton-Dirac right-hand side used to call `dbᵢdxⱼ` more than seventy
-# times, because every one of the twelve Poisson bracket terms re-entered it from the top.
+# brackets — reads the field many times over: a single evaluation of the Hamilton-Dirac right-hand
+# side enters `dbᵢdxⱼ` more than seventy times, because every one of the twelve Poisson bracket terms
+# re-enters it from the top. Evaluating each tensor once per point and reading entries out of it is
+# what keeps that affordable. The functions that consume it are generic in their `q` argument, so
+# passing the `FieldPoint` where the coordinate vector would go is all the right-hand sides do.
 #
-# It used to be worse. On `ElectromagneticFields` 0.6.2 that same `db₁dx₁` was 1905 statements
-# containing 108 separate evaluations of `log(x₁)` and cost 549 ns, because `convert(Expr, ::Basic)`
-# wrote out SymEngine's expanded tree verbatim and SymEngine shares nothing. 0.6.3 eliminates common
-# subexpressions in what it emits, which is why the figure above is 57 and not 549; `Project.toml`
-# requires it. The values are unchanged — every field function this package injects is bit-identical
-# between the two versions.
+# It is parametric in the element type because the integrator evaluates the right-hand side on
+# `ForwardDiff.Dual` as well as `Float64` — four of the roughly twenty-two calls per step, for the
+# Newton Jacobian.
 #
-# `FieldValues` holds one evaluation of each. The functions that consume it need no changes at all:
-# they are already generic in their `q` argument, so passing a `FieldValues` where the coordinate
-# vector would go picks up the methods defined below by dispatch, and every field read becomes a
-# tuple index. That took `guiding_center_3d_v` from 24.7 µs to 3.6 µs — 6.9x, and 32x once 0.6.3 is
-# counted too, at 770 ns. The values are identical, so the trajectories are as well, bit for bit.
+# The second derivatives are held in a separate, larger set: `guiding_center_3d_canonical.jl`
+# differentiates the Lagrange multipliers and so reaches them, while `hodeproblem` and
+# `hodeproblem_compact` never do, and evaluating them would cost those two more than they read.
+# The mixed derivatives come as the full tensors, so `d²b₁dx₁dx₂` and `d²b₁dx₂dx₁` are two entries
+# that `ElectromagneticFields` computes separately and that need not agree in the last bit.
 #
-# It is parametric because the integrator evaluates the right-hand side on `ForwardDiff.Dual` as well
-# as `Float64` — four of the roughly twenty-two calls per step, for the Newton Jacobian.
-#
+
+const FIELDS = (:A♭, :b♭, :g♯, :B, :DB, :E♭, :φ, :DA♭, :Db♭, :Dg♯)
 
 """
-    FieldValues{T}
+    fieldpoint(field, t, q)
 
-One evaluation of every injected field function the first-derivative right-hand sides read: the
-vector potential `A`, the unit vector `b`, the diagonal metric `g`, the gradient of `B`, the electric
-field `E`, and the first derivatives of `A`, `b` and `g`.
-
-Built by [`fieldvalues`](@ref) and passed where those right-hand sides expect the coordinate vector
-`q` — they are generic in that argument, so the accessors pick this up by dispatch and every field
-read becomes a tuple index. [`SecondFieldValues`](@ref) adds the second derivatives that only the
-canonicalised formulation needs.
+The field tensors the first-derivative right-hand sides read — `A♭`, `b♭`, the metric `g♯`, `|B|`
+and its gradient, `E♭`, `φ` and the first derivatives of `A♭`, `b♭` and `g♯` — evaluated once at
+`(t, q)`. Pass the result where those right-hand sides expect `q`; see `FieldPoints`.
+[`fieldpoint²`](@ref) adds the second derivatives that only the canonicalised formulation needs.
 """
-struct FieldValues{T}
-    A::NTuple{3, T}
-    b::NTuple{3, T}
-    g::NTuple{3, T}
-    dB::NTuple{3, T}
-    E::NTuple{3, T}
-    dA::NTuple{3, NTuple{3, T}}
-    db::NTuple{3, NTuple{3, T}}
-    dg::NTuple{3, NTuple{3, T}}
-end
-
-# An expression that names an injected field function directly, rather than going through one of the
-# accessors below, reaches the two-argument `f(t, ξ)` form and indexes its second argument. That is a
-# missing cached method, not a bug in the caller, and the `MethodError` it raises names `getindex`
-# rather than the function that is missing one — so say which.
-function Base.getindex(::FieldValues, i::Integer)
-    error(
-        "a `FieldValues` was passed to an `ElectromagneticFields` field function as a coordinate " *
-        "vector. Some expression on the right-hand side names an injected function that has no " *
-        "`FieldValues` method; add one beside the others in `guiding_center_3d_constraints.jl`.")
-end
+fieldpoint(field, t, q) = FieldPoints.fieldpoint(field, t, q, Val(FIELDS))
 
 """
-    fieldvalues(t, q)
+    fieldpoint²(field, t, q)
 
-Every injected field function the first-derivative right-hand sides need, evaluated at `(t, q)`.
-Pass the result where those right-hand sides expect `q`; see [`FieldValues`](@ref).
+[`fieldpoint`](@ref) together with every second derivative the canonicalised right-hand side reads:
+the second derivatives of `A♭`, `b♭` and `g♯`, the Hessian of `|B|`, and the first derivatives of
+`E♭`. It answers everything a [`fieldpoint`](@ref) does.
 """
-@inline function fieldvalues(t, q)
-    # The generated functions return an exact `0` for a vanishing component — an `Int` literal in a
-    # cartesian chart, where `dg¹¹dx₁` and `E₁` fold away entirely — so the tuples need converting
-    # rather than merely collecting, or `FieldValues` would not be concretely typed.
-    T = eltype(q)
-    c(x) = convert(T, x)
-
-    FieldValues{T}(
-        (c(A₁(t, q)), c(A₂(t, q)), c(A₃(t, q))),
-        (c(b₁(t, q)), c(b₂(t, q)), c(b₃(t, q))),
-        (c(g¹¹(t, q)), c(g²²(t, q)), c(g³³(t, q))),
-        (c(dBdx₁(t, q)), c(dBdx₂(t, q)), c(dBdx₃(t, q))),
-        (c(E₁(t, q)), c(E₂(t, q)), c(E₃(t, q))),
-        ((c(dA₁dx₁(t, q)), c(dA₁dx₂(t, q)), c(dA₁dx₃(t, q))),
-            (c(dA₂dx₁(t, q)), c(dA₂dx₂(t, q)), c(dA₂dx₃(t, q))),
-            (c(dA₃dx₁(t, q)), c(dA₃dx₂(t, q)), c(dA₃dx₃(t, q)))),
-        ((c(db₁dx₁(t, q)), c(db₁dx₂(t, q)), c(db₁dx₃(t, q))),
-            (c(db₂dx₁(t, q)), c(db₂dx₂(t, q)), c(db₂dx₃(t, q))),
-            (c(db₃dx₁(t, q)), c(db₃dx₂(t, q)), c(db₃dx₃(t, q)))),
-        ((c(dg¹¹dx₁(t, q)), c(dg¹¹dx₂(t, q)), c(dg¹¹dx₃(t, q))),
-            (c(dg²²dx₁(t, q)), c(dg²²dx₂(t, q)), c(dg²²dx₃(t, q))),
-            (c(dg³³dx₁(t, q)), c(dg³³dx₂(t, q)), c(dg³³dx₃(t, q)))))
-end
-
-# The cached counterparts of the accessors above, and of the injected names the Hamiltonian gradients
-# call directly. Same signatures with a `FieldValues` in place of the coordinate vector, so that
-# every expression written against them works unchanged on either.
-#
-# Written out per index rather than as `Aᵢ(::Val{i}, t, F::FieldValues) where {i}`, which would be
-# ambiguous against the per-index methods above: those fix the `Val`s and leave `q` untyped, so
-# neither signature is more specific than the other and dispatch has no way to choose.
-for i in 1:3
-    @eval @inline Aᵢ(::Val{$i}, t, F::FieldValues) = F.A[$i]
-    @eval @inline bᵢ(::Val{$i}, t, F::FieldValues) = F.b[$i]
-
-    # `Aᵢ`/`bᵢ` do not cover every call: `u` and `ϑ` name `A₁`, `b₁` and their siblings directly, and
-    # without these they reach the injected functions and index the `FieldValues` as if it were the
-    # coordinate vector.
-    @eval @inline $(Symbol("A", INDEX_SUBSCRIPTS[i]))(t, F::FieldValues) = F.A[$i]
-    @eval @inline $(Symbol("b", INDEX_SUBSCRIPTS[i]))(t, F::FieldValues) = F.b[$i]
-
-    @eval @inline $(Symbol("g", INDEX_SUPERSCRIPTS[i], INDEX_SUPERSCRIPTS[i]))(t, F::FieldValues) = F.g[$i]
-    @eval @inline $(Symbol("dBdx", INDEX_SUBSCRIPTS[i]))(t, F::FieldValues) = F.dB[$i]
-    @eval @inline $(Symbol("E", INDEX_SUBSCRIPTS[i]))(t, F::FieldValues) = F.E[$i]
-
-    for j in 1:3
-        @eval @inline dAᵢdxⱼ(::Val{$i}, ::Val{$j}, t, F::FieldValues) = F.dA[$i][$j]
-        @eval @inline dbᵢdxⱼ(::Val{$i}, ::Val{$j}, t, F::FieldValues) = F.db[$i][$j]
-
-        @eval @inline $(Symbol(
-            "dg", INDEX_SUPERSCRIPTS[i], INDEX_SUPERSCRIPTS[i], "dx", INDEX_SUBSCRIPTS[j]))(
-            t, F::FieldValues) = F.dg[$i][$j]
-    end
-end
-
-#
-# The same for the second derivatives, which only the canonicalised formulation needs.
-#
-# `guiding_center_3d_canonical.jl` differentiates the Lagrange multipliers, so it reaches
-# `d²Aᵢdxⱼdxₖ`, `d²bᵢdxⱼdxₖ`, `d²gⁱⁱdxⱼdxₖ`, `d²Bdxᵢdxⱼ` and `dEᵢdxⱼ` — and reaches them far more
-# often than it has distinct values to read, because `dλ₁dqⱼ` and `dλ₂dqⱼ` recompute `λₒ` and its
-# derivative for each of the three components. `d²b₁dx₁dx₁` costs 80 ns for the ITER Solov'ev
-# X-point, and 1733 on `ElectromagneticFields` 0.6.2 where it was 6231 statements, so the repetition
-# is the whole cost of that formulation.
-#
-# Held separately from `FieldValues` rather than merged into it: `hodeproblem` and
-# `hodeproblem_compact` never touch a second derivative, and filling these ninety-nine slots would
-# cost them more than the first-derivative caching saves.
-#
-"""
-    SecondFieldValues{T,F}
-
-A [`FieldValues`](@ref) together with every second derivative the canonicalised right-hand side
-reads: the second derivatives of `A`, `b` and `g`, the Hessian of `B`, and the first derivatives of
-`E`.
-
-Built by [`secondfieldvalues`](@ref) and used the same way — it answers everything a `FieldValues`
-does, and is held separately rather than merged into it because `hodeproblem` and
-`hodeproblem_compact` never touch a second derivative.
-"""
-struct SecondFieldValues{T, F <: FieldValues{T}}
-    first::F
-    d²A::NTuple{3, NTuple{3, NTuple{3, T}}}
-    d²b::NTuple{3, NTuple{3, NTuple{3, T}}}
-    d²g::NTuple{3, NTuple{3, NTuple{3, T}}}
-    d²B::NTuple{3, NTuple{3, T}}
-    dE::NTuple{3, NTuple{3, T}}
-end
-
-function Base.getindex(::SecondFieldValues, i::Integer)
-    error(
-        "a `SecondFieldValues` was passed to an `ElectromagneticFields` field function as a coordinate " *
-        "vector. Some expression on the right-hand side names an injected function that has no " *
-        "`SecondFieldValues` method; add one beside the others in `guiding_center_3d_constraints.jl`.")
-end
-
-"""
-    secondfieldvalues(t, q)
-
-[`fieldvalues`](@ref) together with every second derivative the canonicalised right-hand side needs.
-Pass it where that right-hand side expects `q`; it answers everything a `FieldValues` does.
-
-The mixed derivatives are stored for all twenty-seven index triples rather than for the eighteen the
-symmetry of `∂²/∂xⱼ∂xₖ` leaves independent. `ElectromagneticFields` expands each one separately, so
-`d²b₁dx₁dx₂` and `d²b₁dx₂dx₁` are different floating-point expressions of the same quantity and need
-not agree in the last bit; reading one for the other would change the trajectory.
-"""
-@inline function secondfieldvalues(t, q)
-    F = fieldvalues(t, q)
-    T = eltype(q)
-    c(x) = convert(T, x)
-
-    SecondFieldValues{T, typeof(F)}(F,
-        (
-            ((c(d²A₁dx₁dx₁(t, q)), c(d²A₁dx₁dx₂(t, q)), c(d²A₁dx₁dx₃(t, q))),
-                (c(d²A₁dx₂dx₁(t, q)), c(d²A₁dx₂dx₂(t, q)), c(d²A₁dx₂dx₃(t, q))),
-                (c(d²A₁dx₃dx₁(t, q)), c(d²A₁dx₃dx₂(t, q)), c(d²A₁dx₃dx₃(t, q)))),
-            ((c(d²A₂dx₁dx₁(t, q)), c(d²A₂dx₁dx₂(t, q)), c(d²A₂dx₁dx₃(t, q))),
-                (c(d²A₂dx₂dx₁(t, q)), c(d²A₂dx₂dx₂(t, q)), c(d²A₂dx₂dx₃(t, q))),
-                (c(d²A₂dx₃dx₁(t, q)), c(d²A₂dx₃dx₂(t, q)), c(d²A₂dx₃dx₃(t, q)))),
-            ((c(d²A₃dx₁dx₁(t, q)), c(d²A₃dx₁dx₂(t, q)), c(d²A₃dx₁dx₃(t, q))),
-                (c(d²A₃dx₂dx₁(t, q)), c(d²A₃dx₂dx₂(t, q)), c(d²A₃dx₂dx₃(t, q))),
-                (c(d²A₃dx₃dx₁(t, q)), c(d²A₃dx₃dx₂(t, q)), c(d²A₃dx₃dx₃(t, q))))),
-        (
-            ((c(d²b₁dx₁dx₁(t, q)), c(d²b₁dx₁dx₂(t, q)), c(d²b₁dx₁dx₃(t, q))),
-                (c(d²b₁dx₂dx₁(t, q)), c(d²b₁dx₂dx₂(t, q)), c(d²b₁dx₂dx₃(t, q))),
-                (c(d²b₁dx₃dx₁(t, q)), c(d²b₁dx₃dx₂(t, q)), c(d²b₁dx₃dx₃(t, q)))),
-            ((c(d²b₂dx₁dx₁(t, q)), c(d²b₂dx₁dx₂(t, q)), c(d²b₂dx₁dx₃(t, q))),
-                (c(d²b₂dx₂dx₁(t, q)), c(d²b₂dx₂dx₂(t, q)), c(d²b₂dx₂dx₃(t, q))),
-                (c(d²b₂dx₃dx₁(t, q)), c(d²b₂dx₃dx₂(t, q)), c(d²b₂dx₃dx₃(t, q)))),
-            ((c(d²b₃dx₁dx₁(t, q)), c(d²b₃dx₁dx₂(t, q)), c(d²b₃dx₁dx₃(t, q))),
-                (c(d²b₃dx₂dx₁(t, q)), c(d²b₃dx₂dx₂(t, q)), c(d²b₃dx₂dx₃(t, q))),
-                (c(d²b₃dx₃dx₁(t, q)), c(d²b₃dx₃dx₂(t, q)), c(d²b₃dx₃dx₃(t, q))))),
-        (
-            ((c(d²g¹¹dx₁dx₁(t, q)), c(d²g¹¹dx₁dx₂(t, q)), c(d²g¹¹dx₁dx₃(t, q))),
-                (c(d²g¹¹dx₂dx₁(t, q)), c(d²g¹¹dx₂dx₂(t, q)), c(d²g¹¹dx₂dx₃(t, q))),
-                (c(d²g¹¹dx₃dx₁(t, q)), c(d²g¹¹dx₃dx₂(t, q)), c(d²g¹¹dx₃dx₃(t, q)))),
-            ((c(d²g²²dx₁dx₁(t, q)), c(d²g²²dx₁dx₂(t, q)), c(d²g²²dx₁dx₃(t, q))),
-                (c(d²g²²dx₂dx₁(t, q)), c(d²g²²dx₂dx₂(t, q)), c(d²g²²dx₂dx₃(t, q))),
-                (c(d²g²²dx₃dx₁(t, q)), c(d²g²²dx₃dx₂(t, q)), c(d²g²²dx₃dx₃(t, q)))),
-            ((c(d²g³³dx₁dx₁(t, q)), c(d²g³³dx₁dx₂(t, q)), c(d²g³³dx₁dx₃(t, q))),
-                (c(d²g³³dx₂dx₁(t, q)), c(d²g³³dx₂dx₂(t, q)), c(d²g³³dx₂dx₃(t, q))),
-                (c(d²g³³dx₃dx₁(t, q)), c(d²g³³dx₃dx₂(t, q)), c(d²g³³dx₃dx₃(t, q))))),
-        ((c(d²Bdx₁dx₁(t, q)), c(d²Bdx₁dx₂(t, q)), c(d²Bdx₁dx₃(t, q))),
-            (c(d²Bdx₂dx₁(t, q)), c(d²Bdx₂dx₂(t, q)), c(d²Bdx₂dx₃(t, q))),
-            (c(d²Bdx₃dx₁(t, q)), c(d²Bdx₃dx₂(t, q)), c(d²Bdx₃dx₃(t, q)))),
-        ((c(dE₁dx₁(t, q)), c(dE₁dx₂(t, q)), c(dE₁dx₃(t, q))),
-            (c(dE₂dx₁(t, q)), c(dE₂dx₂(t, q)), c(dE₂dx₃(t, q))),
-            (c(dE₃dx₁(t, q)), c(dE₃dx₂(t, q)), c(dE₃dx₃(t, q)))))
-end
-
-# Building a cache from a cache is the identity, which is what lets the canonicalised right-hand side
-# hand its `SecondFieldValues` straight to `guiding_center_3d_v` instead of having it fill a second
-# one from the coordinate vector it no longer has.
-@inline fieldvalues(t, F::FieldValues) = F
-@inline fieldvalues(t, S::SecondFieldValues) = S
-
-for i in 1:3
-    @eval @inline Aᵢ(::Val{$i}, t, S::SecondFieldValues) = S.first.A[$i]
-    @eval @inline bᵢ(::Val{$i}, t, S::SecondFieldValues) = S.first.b[$i]
-
-    @eval @inline $(Symbol("A", INDEX_SUBSCRIPTS[i]))(t, S::SecondFieldValues) = S.first.A[$i]
-    @eval @inline $(Symbol("b", INDEX_SUBSCRIPTS[i]))(t, S::SecondFieldValues) = S.first.b[$i]
-
-    @eval @inline $(Symbol("g", INDEX_SUPERSCRIPTS[i], INDEX_SUPERSCRIPTS[i]))(
-        t, S::SecondFieldValues) = S.first.g[$i]
-    @eval @inline $(Symbol("dBdx", INDEX_SUBSCRIPTS[i]))(t, S::SecondFieldValues) = S.first.dB[$i]
-    @eval @inline $(Symbol("E", INDEX_SUBSCRIPTS[i]))(t, S::SecondFieldValues) = S.first.E[$i]
-
-    for j in 1:3
-        @eval @inline dAᵢdxⱼ(::Val{$i}, ::Val{$j}, t, S::SecondFieldValues) = S.first.dA[$i][$j]
-        @eval @inline dbᵢdxⱼ(::Val{$i}, ::Val{$j}, t, S::SecondFieldValues) = S.first.db[$i][$j]
-
-        @eval @inline $(Symbol(
-            "dg", INDEX_SUPERSCRIPTS[i], INDEX_SUPERSCRIPTS[i], "dx", INDEX_SUBSCRIPTS[j]))(
-            t, S::SecondFieldValues) = S.first.dg[$i][$j]
-
-        @eval @inline $(Symbol("d²Bdx", INDEX_SUBSCRIPTS[i], "dx", INDEX_SUBSCRIPTS[j]))(
-            t, S::SecondFieldValues) = S.d²B[$i][$j]
-        @eval @inline $(Symbol("dE", INDEX_SUBSCRIPTS[i], "dx", INDEX_SUBSCRIPTS[j]))(
-            t, S::SecondFieldValues) = S.dE[$i][$j]
-
-        for k in 1:3
-            @eval @inline d²Aᵢdxⱼdxₖ(::Val{$i}, ::Val{$j}, ::Val{$k}, t,
-                S::SecondFieldValues) = S.d²A[$i][$j][$k]
-            @eval @inline d²bᵢdxⱼdxₖ(::Val{$i}, ::Val{$j}, ::Val{$k}, t,
-                S::SecondFieldValues) = S.d²b[$i][$j][$k]
-
-            @eval @inline $(Symbol("d²g", INDEX_SUPERSCRIPTS[i], INDEX_SUPERSCRIPTS[i],
-                "dx", INDEX_SUBSCRIPTS[j], "dx", INDEX_SUBSCRIPTS[k]))(
-                t, S::SecondFieldValues) = S.d²g[$i][$j][$k]
-        end
-    end
+function fieldpoint²(field, t, q)
+    FieldPoints.fieldpoint(field, t, q, Val((FIELDS..., :DDA♭, :DDb♭, :DDg♯, :DDB, :DE♭)))
 end
 
 vᵢ(::Val{i}, t, q, p) where {i} = p[i] - Aᵢ(Val(i), t, q)
@@ -376,8 +148,6 @@ constraint_pair(::Val{:g23}) = (Val(2), Val(3))
 
 constraint_pair(constraints::Symbol) = constraint_pair(Val(constraints))
 
-default_constraint_pair() = constraint_pair(default_constraints())
-
 """
     gᵏ(::Val{k}, t, q, p)
 
@@ -422,21 +192,22 @@ end
 # elsewhere in the expression from spreading through a `0 * Inf`.
 
 """
-    g₁(t, q, p)
-    g₂(t, q, p)
-    g₃(t, q, p)
+    g₁(t, q, p, params)
+    g₂(t, q, p, params)
+    g₃(t, q, p, params)
 
 The three constraints under the labelling of Li, Zhang & Liu, `gᵏ` evaluated at a fixed `k`. Note
 that `g₁` and `g₂` used to name the members of the one implemented pair, which were `g³` and `g¹` in
 this labelling; all three vanish on the constraint manifold either way.
-"""
-g₁(t, q, p) = gᵏ(Val(1), t, q, p)
-g₂(t, q, p) = gᵏ(Val(2), t, q, p)
-g₃(t, q, p) = gᵏ(Val(3), t, q, p)
 
-# The constraints do not depend on the parameters, but `GeometricSolutions.compute_invariant` calls
-# what it is given as `f(t, q, p, params)`, so these are the forms that can be passed to it — as
-# `docs/src/examples/iter_cylindrical.md` does.
-g₁(t, q, p, params) = g₁(t, q, p)
-g₂(t, q, p, params) = g₂(t, q, p)
-g₃(t, q, p, params) = g₃(t, q, p)
+They read the field from `params.field`, and `GeometricSolutions.compute_invariant` calls what it
+is given as `f(t, q, p, params)`, so these can be passed to it directly — as
+`docs/src/examples/iter_cylindrical.md` does. The three-argument forms take a `FieldPoint`.
+"""
+g₁(t, q::FieldPoint, p) = gᵏ(Val(1), t, q, p)
+g₂(t, q::FieldPoint, p) = gᵏ(Val(2), t, q, p)
+g₃(t, q::FieldPoint, p) = gᵏ(Val(3), t, q, p)
+
+g₁(t, q, p, params) = g₁(t, fieldpoint(params.field, t, q), p)
+g₂(t, q, p, params) = g₂(t, fieldpoint(params.field, t, q), p)
+g₃(t, q, p, params) = g₃(t, fieldpoint(params.field, t, q), p)

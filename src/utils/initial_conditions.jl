@@ -1,7 +1,8 @@
 
 using LinearAlgebra
 
-using ElectromagneticFields: crossproduct
+import ElectromagneticFields as EMF
+using ElectromagneticFields: FieldFunctions, crossproduct
 
 export InitialConditions, InitialConditionsGC
 export charged_particle, guiding_center, pauli_particle
@@ -63,10 +64,10 @@ Compute initial conditions from the following arguments:
 * `E`: energy
 * `M`: mass
 * `C`: charge number
-* `aₚ`, `bₚ`, `cₚ`: magnetic field unit vectors in physical coordinates
-* `b⃗`: magnetic field unit vector in contravariant coordinates
+* `â`, `b̂`, `ĉ`: magnetic field unit vectors in physical coordinates (`a♮`, `b♮`, `c♮`)
+* `b`: magnetic field unit vector in contravariant coordinates (`b♯`)
 * `B`: amplitude of magnetic field
-* `g̅`: inverse metric coefficients
+* `g̅`: inverse metric coefficients (`g♯`)
 * `DF̄`: inverse Jacobian matrix
 * `J`: Jacobian determinant
 * `l=1`: length normalization
@@ -113,10 +114,10 @@ Compute initial conditions from the following arguments:
 * `μ`: magnetic moment
 * `M`: mass
 * `C`: charge number
-* `aₚ`, `bₚ`, `cₚ`: magnetic field unit vectors in physical coordinates
-* `b⃗`: magnetic field unit vector in contravariant coordinates
+* `â`, `b̂`, `ĉ`: magnetic field unit vectors in physical coordinates (`a♮`, `b♮`, `c♮`)
+* `b`: magnetic field unit vector in contravariant coordinates (`b♯`)
 * `B`: amplitude of magnetic field
-* `g̅`: inverse metric coefficients
+* `g̅`: inverse metric coefficients (`g♯`)
 * `DF̄`: inverse Jacobian matrix
 * `J`: Jacobian determinant
 * `l=1`: length normalization
@@ -152,6 +153,32 @@ function InitialConditionsGC(X::AbstractVector{T}, θ::T, u::T, μ::T, M::T, C, 
     x = X .+ ρ
 
     InitialConditions{T}(x, X, ρ, vvec, vpar, vper, v, u, μ, θ, α, ω, M, Etot, C)
+end
+
+# The eight field functions the positional forms above take, in their order, read from `field`:
+# the physical frame `a♮`, `b♮`, `c♮`, the contravariant `b♯`, `|B|`, the inverse metric `g♯`, the
+# inverse tangent map `DF̄` and the volume element `J`.
+function initial_condition_functions(field::FieldFunctions)
+    ((t, x) -> EMF.a♮(field, t, x), (t, x) -> EMF.b♮(field, t, x),
+        (t, x) -> EMF.c♮(field, t, x), (t, x) -> EMF.b♯(field, t, x),
+        (t, x) -> EMF.B(field, t, x), (t, x) -> EMF.g♯(field, t, x),
+        (t, x) -> EMF.DF̄(field, t, x), (t, x) -> EMF.J(field, t, x))
+end
+
+"""
+    InitialConditions(X, θ, α, E, M, C, field; l₀ = 1)
+    InitialConditionsGC(X, θ, u, μ, M, C, field; l₀ = 1)
+
+The same, with the eight field functions read from `field`, an `ElectromagneticFields` field.
+"""
+function InitialConditions(X::AbstractVector{T}, θ::T, α::T, Etot::T, M::T, C,
+        field::FieldFunctions; kwargs...) where {T}
+    InitialConditions(X, θ, α, Etot, M, C, initial_condition_functions(field)...; kwargs...)
+end
+
+function InitialConditionsGC(X::AbstractVector{T}, θ::T, u::T, μ::T, M::T, C,
+        field::FieldFunctions; kwargs...) where {T}
+    InitialConditionsGC(X, θ, u, μ, M, C, initial_condition_functions(field)...; kwargs...)
 end
 
 function Base.show(io::IO, ics::InitialConditions)

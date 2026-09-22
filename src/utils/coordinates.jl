@@ -1,12 +1,29 @@
 using GeometricSolutions
+import GeometricEquations
+using ElectromagneticFields: FieldFunctions, coordinates
 
 export cartesian_solution
 
-function cartesian_solution(sol, equ)
-    R = [equ.R.(sol.t[i], sol.q[i, 1], sol.q[i, 2], sol.q[i, 3]) for i in eachindex(sol.t)]
-    X = [equ.X.(sol.t[i], sol.q[i, 1], sol.q[i, 2], sol.q[i, 3]) for i in eachindex(sol.t)]
-    Y = [equ.Y.(sol.t[i], sol.q[i, 1], sol.q[i, 2], sol.q[i, 3]) for i in eachindex(sol.t)]
-    Z = [equ.Z.(sol.t[i], sol.q[i, 1], sol.q[i, 2], sol.q[i, 3]) for i in eachindex(sol.t)]
+"""
+    cartesian_solution(sol)
+    cartesian_solution(sol, field)
+
+The solution `sol` in cartesian coordinates, together with the major radius: a named tuple of the
+time series and the `R`, `X`, `Y` and `Z` data series. The coordinate helpers come from
+`coordinates(field)`, so the field must be axisymmetric; the one-argument form takes it from the
+solution's own `parameters`.
+"""
+function cartesian_solution(sol)
+    cartesian_solution(sol, GeometricEquations.parameters(sol.problem).field)
+end
+
+function cartesian_solution(sol, field::FieldFunctions)
+    crd = coordinates(field)
+
+    R = [crd.R.(sol.t[i], sol.q[i, 1], sol.q[i, 2], sol.q[i, 3]) for i in eachindex(sol.t)]
+    X = [crd.X.(sol.t[i], sol.q[i, 1], sol.q[i, 2], sol.q[i, 3]) for i in eachindex(sol.t)]
+    Y = [crd.Y.(sol.t[i], sol.q[i, 1], sol.q[i, 2], sol.q[i, 3]) for i in eachindex(sol.t)]
+    Z = [crd.Z.(sol.t[i], sol.q[i, 1], sol.q[i, 2], sol.q[i, 3]) for i in eachindex(sol.t)]
 
     (
         t = sol.t,

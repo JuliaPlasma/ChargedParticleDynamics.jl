@@ -3,7 +3,8 @@ Analytic axisymmetric small tokamak equilibrium in cylindrical coordinates.
 """
 module TokamakSmallCylindrical
 
-import ElectromagneticFields.AxisymmetricTokamakCylindrical
+using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCylindricalEquilibrium,
+                             from_cartesian
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,7 +12,7 @@ export initial_conditions_barely_passing, initial_conditions_barely_trapped,
 
 export hamiltonian, toroidal_momentum
 
-AxisymmetricTokamakCylindrical.@code() # inject magnetic field code
+const FIELD = FieldFunctions(AxisymmetricTokamakCylindricalEquilibrium())
 
 # Δt = 500, matching this equilibrium's `GuidingCenter4d` and `PauliParticle3d` counterparts. All
 # three formulations hold it on the module's own `:g12` pair — 4.3E-3 relative energy, constraints
@@ -30,26 +31,27 @@ const xᵢ = [1.05, 0.0, 0.0]
 # antiparallel to the cartesian chart's and the sign here compensated for it. With the field
 # corrected the compensation is stale, and `u` means the same thing in all three charts.
 const uᵢ = 0.00045135897235326736
-const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
+const qᵢ = [from_cartesian(FIELD, 0, xᵢ)..., uᵢ]
 
 function initial_conditions_barely_passing()
-    merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 8.117E-4]),
-        (params = (μ = 2.448E-6,),))
+    merge(initial_conditions(0, [from_cartesian(FIELD, 0, [1.05, 0.0, 0.0])..., 8.117E-4]),
+        (params = (field = FIELD, μ = 2.448E-6),))
 end
 function initial_conditions_barely_trapped()
-    merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 7.610E-4]),
-        (params = (μ = 2.250E-6,),))
+    merge(initial_conditions(0, [from_cartesian(FIELD, 0, [1.05, 0.0, 0.0])..., 7.610E-4]),
+        (params = (field = FIELD, μ = 2.250E-6),))
 end
 function initial_conditions_deeply_passing()
-    merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 1.623E-3]),
-        (params = (μ = 2.448E-6,),))
+    merge(initial_conditions(0, [from_cartesian(FIELD, 0, [1.05, 0.0, 0.0])..., 1.623E-3]),
+        (params = (field = FIELD, μ = 2.448E-6),))
 end
 function initial_conditions_deeply_trapped()
-    merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.306E-4]),
-        (params = (μ = 2.250E-6,),))
+    merge(initial_conditions(0, [from_cartesian(FIELD, 0, [1.05, 0.0, 0.0])..., 4.306E-4]),
+        (params = (field = FIELD, μ = 2.250E-6),))
 end
 function initial_conditions_pauli()
-    merge(initial_conditions(0, [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.3E-4]), (params = (μ = 2.310E-6,),))
+    merge(initial_conditions(0, [from_cartesian(FIELD, 0, [1.05, 0.0, 0.0])..., 4.3E-4]),
+        (params = (field = FIELD, μ = 2.310E-6),))
 end
 
 u_loop() = 4.0E-4
@@ -89,8 +91,10 @@ end
 
 export default_parameters, default_constraints
 
-"The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T} = Float64) where {T} = (μ = T(2.314593645825811e-6),)
+"The field, and the magnetic moment μ this equilibrium is set up for."
+function default_parameters(::Type{T} = Float64) where {T}
+    (field = FIELD, μ = T(2.314593645825811e-6))
+end
 
 """
 The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
@@ -100,8 +104,7 @@ this equilibrium sits, so `(g³, g¹)` is singular there. `(g¹, g²)` divides b
 """
 default_constraints() = :g12
 
-include("guiding_center_3d_equations.jl")
-include("guiding_center_3d_canonical.jl")
+include("guiding_center_3d_presets.jl")
 
 # The canonical toroidal momentum is the covariant φ-component of the momentum. Since p = ϑ on the
 # constraint manifold this is simply p₃ — the previous R(t,q) * ϑ₃(t,q) both indexed q[4] of a

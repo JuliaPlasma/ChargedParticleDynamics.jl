@@ -16,6 +16,13 @@ module GuidingCenter3d
 #   Canonical Hamiltonian guiding center theory and classical intrinsic magnetic moment,
 #   Frontiers of Physics 21(2), 026200, 2026, doi:10.15302/frontphys.2026.026200.
 
+# The equations of the three formulations, written once and reading the field from `params.field`.
+# The equilibrium modules below each hold a field, an initial condition, a constraint pair and the
+# problem constructors that default to them, together with the diagnostics that read their own
+# `toroidal_momentum`.
+include("guiding_center_3d/guiding_center_3d_equations.jl")
+include("guiding_center_3d/guiding_center_3d_canonical.jl")
+
 include("guiding_center_3d/dipole.jl")
 include("guiding_center_3d/quadratic_potentials.jl")
 include("guiding_center_3d/solovev_iter.jl")

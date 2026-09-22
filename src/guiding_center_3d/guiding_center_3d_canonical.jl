@@ -355,9 +355,9 @@ end
 
 # `S` carries the second derivatives as well as the first, and goes where `q` would; the call to
 # `guiding_center_3d_v` below takes it too, so the Hamilton-Dirac part of the right-hand side does
-# not fill a cache of its own. See `guiding_center_3d_constraints.jl`.
-function guiding_center_3d_canonical_v(v, t, q, p, params, c = default_constraint_pair())
-    S = secondfieldvalues(t, q)
+# not evaluate the field a second time. See `guiding_center_3d_constraints.jl`.
+function guiding_center_3d_canonical_v(v, t, q, p, params, c)
+    S = fieldpoint²(params.field, t, q)
 
     guiding_center_3d_v(v, t, S, p, params, c)
 
@@ -369,8 +369,8 @@ function guiding_center_3d_canonical_v(v, t, q, p, params, c = default_constrain
     nothing
 end
 
-function guiding_center_3d_canonical_f(f, t, q, p, params, c = default_constraint_pair())
-    S = secondfieldvalues(t, q)
+function guiding_center_3d_canonical_f(f, t, q, p, params, c)
+    S = fieldpoint²(params.field, t, q)
 
     guiding_center_3d_f(f, t, S, p, params, c)
 
@@ -383,18 +383,16 @@ function guiding_center_3d_canonical_f(f, t, q, p, params, c = default_constrain
 end
 
 """
-    hodeproblem_canonical(q₀, p₀; kwargs...)
-    hodeproblem_canonical(x₀ = qᵢ; kwargs...)
+    hodeproblem_canonical(q₀, p₀; timespan, timestep, parameters, constraints, periodic = true)
+    hodeproblem_canonical(x₀; timespan, timestep, parameters, constraints, periodic = true)
     hodeproblem_canonical(ics::NamedTuple; kwargs...)
 
 The canonicalised guiding centre system, `H̃ = H + λ₁ g₁ + λ₂ g₂`, which agrees with
 [`hodeproblem`](@ref) on the constraint manifold but is genuinely canonical. Same three argument
 forms and the same `constraints` keyword as `hodeproblem`.
 """
-function hodeproblem_canonical(
-        q₀::AbstractVector, p₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
-        timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic = true,
-        constraints = default_constraints())
+function hodeproblem_canonical(q₀::AbstractVector, p₀::AbstractVector; timespan, timestep,
+        parameters, periodic = true, constraints)
     c = constraint_pair(constraints)
 
     _v(v, t, q, p, params) = guiding_center_3d_canonical_v(v, t, q, p, params, c)
@@ -407,12 +405,13 @@ function hodeproblem_canonical(
         _h,
         timespan, timestep, q₀, p₀;
         parameters = parameters,
-        periodicity = guiding_center_3d_periodicity(q₀, periodic))
+        periodicity = guiding_center_3d_periodicity(q₀, parameters.field, periodic))
 end
 
-function hodeproblem_canonical(x₀::AbstractVector = qᵢ; timespan = DEFAULT_TIMESPAN, kwargs...)
-    ics = initial_conditions(timespan[begin], x₀)
-    hodeproblem_canonical(ics.q, ics.p; timespan = timespan, kwargs...)
+function hodeproblem_canonical(x₀::AbstractVector; timespan, parameters, kwargs...)
+    ics = initial_conditions(timespan[begin], x₀, parameters)
+    hodeproblem_canonical(
+        ics.q, ics.p; timespan = timespan, parameters = parameters, kwargs...)
 end
 
 function hodeproblem_canonical(ics::NamedTuple; kwargs...)

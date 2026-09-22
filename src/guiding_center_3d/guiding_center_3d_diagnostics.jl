@@ -80,10 +80,13 @@ Zhang and Liu are designed to keep bounded, and the one that decides whether `ho
 and `hodeproblem_compact` agree with `hodeproblem`. Since they start at zero, the absolute value is
 the meaningful one; there is no relative-error variant.
 """
-function compute_constraints(t::SolutionTimes, q::DataSeries, p::DataSeries)
-    (g₁ = DataSeries([g₁(t[i], q[i], p[i]) for i in eachindex(t)]),
-        g₂ = DataSeries([g₂(t[i], q[i], p[i]) for i in eachindex(t)]),
-        g₃ = DataSeries([g₃(t[i], q[i], p[i]) for i in eachindex(t)]))
+function compute_constraints(t::SolutionTimes, q::DataSeries, p::DataSeries, params)
+    (g₁ = DataSeries([g₁(t[i], q[i], p[i], params) for i in eachindex(t)]),
+        g₂ = DataSeries([g₂(t[i], q[i], p[i], params) for i in eachindex(t)]),
+        g₃ = DataSeries([g₃(t[i], q[i], p[i], params) for i in eachindex(t)]))
 end
 
-compute_constraints(sol::GeometricSolution) = compute_constraints(sol.t, sol.q, sol.p)
+function compute_constraints(
+        sol::GeometricSolution, params = GeometricEquations.parameters(sol.problem))
+    compute_constraints(sol.t, sol.q, sol.p, params)
+end
