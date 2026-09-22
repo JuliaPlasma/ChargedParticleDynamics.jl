@@ -10,27 +10,28 @@ charged particle model rather than values derived here.
 """
 module TokamakSmallToroidal
 
-import ElectromagneticFields.AxisymmetricTokamakToroidal
+using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakToroidalEquilibrium,
+                             from_cartesian, DF̄
+using ..Canonical: tᵢ, charged_particle_3d_pᵢ
 
 export podeproblem, iodeproblem,
        hamiltonian, toroidal_momentum
 
-AxisymmetricTokamakToroidal.@code() # inject magnetic field code
+const FIELD = FieldFunctions(AxisymmetricTokamakToroidalEquilibrium())
 
-include("charged_particle_3d_canonical.jl")
+include("charged_particle_3d_canonical_presets.jl")
 
 export default_parameters
 
 """
-The charged particle models are parameter-free — the electromagnetic field is injected as
-code rather than passed as parameters. The method exists so that every problem in this
-package can be constructed the same way.
+The charged particle has no physical parameters, so the only entry is the field its equations
+read. The method exists so that every problem in this package can be constructed the same way.
 """
-default_parameters(::Type{T} = Float64) where {T} = NamedTuple()
+default_parameters(::Type{T} = Float64) where {T} = (field = FIELD,)
 
 const xᵢ = [1.05, 0.0, 0.0]
-const qᵢ = from_cartesian(0, xᵢ)
-const vᵢ = DF̄(0, qᵢ) * [2.1E-3, 4.3E-4, 0.0]
-const pᵢ = charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ)
+const qᵢ = Vector(from_cartesian(FIELD, 0, xᵢ))
+const vᵢ = Vector(DF̄(FIELD, 0, qᵢ) * [2.1E-3, 4.3E-4, 0.0])
+const pᵢ = charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ, default_parameters())
 
 end

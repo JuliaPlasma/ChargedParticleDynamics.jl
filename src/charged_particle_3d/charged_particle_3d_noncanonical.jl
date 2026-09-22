@@ -3,9 +3,19 @@ using LinearAlgebra: I
 using GeometricEquations: ODEProblem, IODEProblem, LODEProblem, SODEProblem
 using GeometricSolutions: GeometricSolution, DataSeries, ScalarDataSeries, TimeSeries
 using GeometricSolutions: compute_invariant, compute_invariant_error
+using ...FieldPoints
+using ...ChargedParticleDynamics: periodic_domain
+
+export hamiltonian, lagrangian, ϑ, compute_energy, compute_energy_error
 
 const DEFAULT_TIMESTEP = 0.01
 const DEFAULT_TIMESPAN = (0.0, 10.0)
+
+# The field tensors this formulation reads; see `FieldPoints`. Every function below that takes
+# `params` evaluates them from `params.field` and hands the point on in place of `q`.
+function fieldpoint(field, t, q)
+    FieldPoints.fieldpoint(field, t, q, Val((:A♭, :B♭, :DA♭, :E♭, :φ, :g♭, :Dg♭)))
+end
 
 ϑ₁(t, q) = g₁₁(t, q) * q[4] + A₁(t, q)
 ϑ₂(t, q) = g₂₂(t, q) * q[5] + A₂(t, q)
@@ -27,7 +37,7 @@ dϑ₃dx₁(t, q) = dg₃₃dx₁(t, q) * q[6] + dA₃dx₁(t, q)
 dϑ₃dx₂(t, q) = dg₃₃dx₂(t, q) * q[6] + dA₃dx₂(t, q)
 dϑ₃dx₃(t, q) = dg₃₃dx₃(t, q) * q[6] + dA₃dx₃(t, q)
 
-function ϑ(θ, t, q)
+function ϑ(θ, t, q::FieldPoint)
     θ[1] = ϑ₁(t, q)
     θ[2] = ϑ₂(t, q)
     θ[3] = ϑ₃(t, q)
@@ -36,6 +46,8 @@ function ϑ(θ, t, q)
     θ[6] = zero(eltype(q))
     nothing
 end
+
+ϑ(θ, t, q, params) = ϑ(θ, t, fieldpoint(params.field, t, q))
 
 @doc raw"""
 The symplectic two-form of the noncanonical formulation,
@@ -47,6 +59,7 @@ The velocity block is ``\partial \vartheta_{i} / \partial v^{j} = g_{ij}``, the 
 identity, which is what it reduces to in cartesian coordinates only.
 """
 function ω(Β, t, q, params)
+    q = fieldpoint(params.field, t, q)
     Β .= 0
 
     Β[1, 2] = dϑ₁dx₂(t, q) - dϑ₂dx₁(t, q)
@@ -79,6 +92,7 @@ The velocity block is ``\partial \vartheta_{i} / \partial v^{j} = g_{ij}``; it w
 set to zero, which is wrong in every coordinate system, cartesian included.
 """
 function dϑ(dϑ, t, q, params)
+    q = fieldpoint(params.field, t, q)
     dϑ .= 0
 
     dϑ[1, 1] = dϑ₁dx₁(t, q)
@@ -105,12 +119,13 @@ end
 
 β(t, q) = sqrt(β₁(t, q)^2 + β₂(t, q)^2 + β₃(t, q)^2)
 
-function hamiltonian(t, q)
+function hamiltonian(t, q::FieldPoint)
     0.5 * (g₁₁(t, q) * q[4]^2 + g₂₂(t, q) * q[5]^2 + g₃₃(t, q) * q[6]^2) + φ(t, q)
 end
-hamiltonian(t, q, params) = hamiltonian(t, q)
-hamiltonian(t, q, p, params) = hamiltonian(t, q)
+hamiltonian(t, q, params) = hamiltonian(t, fieldpoint(params.field, t, q))
+hamiltonian(t, q, p, params) = hamiltonian(t, q, params)
 function lagrangian(t, q, v, params)
+    q = fieldpoint(params.field, t, q)
     ϑ₁(t, q) * v[1] + ϑ₂(t, q) * v[2] + ϑ₃(t, q) * v[3] - hamiltonian(t, q)
 end
 
@@ -196,35 +211,20 @@ v₆(t, q, v) = (-dHdx₃(t, q) + q[4] * β₂(t, q) - q[5] * β₁(t, q)) / g�
 # (`hasperiodicity(::GEperType{<:Tuple{AT,AT}})`); a single vector of periods is silently ignored,
 # which is what this returned before.
 #
-# The periodic range of the position coordinates comes from the coordinate system, via the
-# `rangemin`/`rangemax` injected with the field code — the same mechanism the guiding centre models
-# use. Hard-coding the third coordinate to [0, 2π) would have wrapped `z` in the cartesian
-# equilibria once the periodicity started taking effect. The velocities are never periodic.
-#
-# `rangemin`/`rangemax` take an evaluation point only for uniformity with the other generated field
-# functions. The range of a coordinate is a property of the chart, and `minx¹`…`maxx³` are baked in
-# as literals when the field code is injected, so the argument is discarded; pass the origin rather
-# than the `±Inf` that `xmin`/`xmax` are initialised to.
-function charged_particle_3d_periodicity(qᵢ, periodic = true)
-    T = eltype(qᵢ)
-    xmin = -T(Inf) * ones(T, size(qᵢ, 1))
-    xmax = +T(Inf) * ones(T, size(qᵢ, 1))
+# Which position coordinates are periodic, and on what range, is a property of the chart, answered
+# by the field — the same mechanism the guiding centre models use; see `periodic_domain`.
+# Hard-coding the third coordinate to [0, 2π) would have wrapped `z` in the cartesian equilibria
+# once the periodicity started taking effect. The velocities are never periodic.
+charged_particle_3d_periodicity(qᵢ, field) = periodic_domain(field, eltype(qᵢ), length(qᵢ))
 
-    if periodic
-        xmin[1:3] .= rangemin(zeros(T, 3))
-        xmax[1:3] .= rangemax(zeros(T, 3))
-    end
-
-    return (xmin, xmax)
-end
-
-function charged_particle_3d_pᵢ(tᵢ, qᵢ)
+function charged_particle_3d_pᵢ(tᵢ, qᵢ, params)
     pᵢ = zero(qᵢ)
-    ϑ(pᵢ, tᵢ, qᵢ)
+    ϑ(pᵢ, tᵢ, qᵢ, params)
     return pᵢ
 end
 
 function charged_particle_3d_v(v, t, q, params)
+    q = fieldpoint(params.field, t, q)
     v[1] = v₁(t, q, v)
     v[2] = v₂(t, q, v)
     v[3] = v₃(t, q, v)
@@ -237,7 +237,7 @@ end
 
 charged_particle_3d_v(v, t, q, p, params) = charged_particle_3d_v(v, t, q, params)
 
-charged_particle_3d_iode_ϑ(θ, t, q, v, params) = ϑ(θ, t, q)
+charged_particle_3d_iode_ϑ(θ, t, q, v, params) = ϑ(θ, t, q, params)
 
 # fᵢ = ∂L/∂zⁱ for L = ϑ(z)·ż - H(z), i.e. (∂ϑⱼ/∂zⁱ) żʲ - ∂H/∂zⁱ.
 #
@@ -246,6 +246,7 @@ charged_particle_3d_iode_ϑ(θ, t, q, v, params) = ϑ(θ, t, q)
 # carries the metric-derivative term; the velocity block was the identity where `∂ϑⱼ/∂vⁱ = gᵢᵢ δᵢⱼ`.
 # That is the same convention `dϑ`, `ω` and `charged_particle_3d_iode_g` were corrected to.
 function charged_particle_3d_iode_f(f, t, q, v, params)
+    q = fieldpoint(params.field, t, q)
     f[1] = dϑ₁dx₁(t, q) * v[1] + dϑ₂dx₁(t, q) * v[2] + dϑ₃dx₁(t, q) * v[3] - dHdx₁(t, q)
     f[2] = dϑ₁dx₂(t, q) * v[1] + dϑ₂dx₂(t, q) * v[2] + dϑ₃dx₂(t, q) * v[3] - dHdx₂(t, q)
     f[3] = dϑ₁dx₃(t, q) * v[1] + dϑ₂dx₃(t, q) * v[2] + dϑ₃dx₃(t, q) * v[3] - dHdx₃(t, q)
@@ -263,6 +264,7 @@ end
 # ∂ϑⱼ/∂vⁱ = gᵢᵢ δᵢⱼ. That is the same convention `dϑ` and `ω` were corrected away from, so `g` had
 # been left describing a different one-form than the two functions above it.
 function charged_particle_3d_iode_g(g, t, q, v, λ, params)
+    q = fieldpoint(params.field, t, q)
     g[1] = dϑ₁dx₁(t, q) * λ[1] + dϑ₂dx₁(t, q) * λ[2] + dϑ₃dx₁(t, q) * λ[3]
     g[2] = dϑ₁dx₂(t, q) * λ[1] + dϑ₂dx₂(t, q) * λ[2] + dϑ₃dx₂(t, q) * λ[3]
     g[3] = dϑ₁dx₃(t, q) * λ[1] + dϑ₂dx₃(t, q) * λ[2] + dϑ₃dx₃(t, q) * λ[3]
@@ -335,10 +337,11 @@ function charged_particle_3d_sode_fv(
 
     x = @view q₀[1:3]
     v = @view q₀[4:6]
+    P = fieldpoint(params.field, t₀, q₀)
 
-    local lB₁ = B₁(t₀, x)
-    local lB₂ = B₂(t₀, x)
-    local lB₃ = B₃(t₀, x)
+    local lB₁ = B₁(t₀, P)
+    local lB₂ = B₂(t₀, P)
+    local lB₃ = B₃(t₀, P)
 
     # B̂ with B̂ v = v × B
     local B̂ = zeros(DT, 3, 3)
@@ -350,7 +353,7 @@ function charged_particle_3d_sode_fv(
     B̂[3, 1] = + lB₂
     B̂[3, 2] = - lB₁
 
-    local lE = DT[E₁(t₀, x), E₂(t₀, x), E₃(t₀, x)]
+    local lE = DT[E₁(t₀, P), E₂(t₀, P), E₃(t₀, P)]
 
     local h = t₁ - t₀
     v₁ = (I - h / 2 .* B̂) \ ((I + h / 2 .* B̂) * v .+ h .* lE)
@@ -363,6 +366,7 @@ end
 
 # The vector field of the substep above, for integrators that want it rather than the exact flow.
 function charged_particle_3d_sode_vv(v, t, q, params)
+    q = fieldpoint(params.field, t, q)
     v[1] = zero(eltype(q))
     v[2] = zero(eltype(q))
     v[3] = zero(eltype(q))
@@ -373,12 +377,12 @@ function charged_particle_3d_sode_vv(v, t, q, params)
     nothing
 end
 
-function odeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
-        parameters = default_parameters(), periodic = true)
+function odeproblem(qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
+        parameters, periodic = true)
     if periodic
         ODEProblem(charged_particle_3d_v, timespan, timestep, qᵢ;
             parameters = parameters, invariants = (h = hamiltonian,),
-            periodicity = charged_particle_3d_periodicity(qᵢ))
+            periodicity = charged_particle_3d_periodicity(qᵢ, parameters.field))
     else
         ODEProblem(charged_particle_3d_v, timespan, timestep, qᵢ;
             parameters = parameters, invariants = (h = hamiltonian,))
@@ -426,9 +430,10 @@ Passing `nothing` for the vector fields, as this used to, does not work: the typ
 requires `v::Tuple`, and the fallback `SODEProblem(v, args...) = SODEProblem(v, nothing, args...)`
 then recurses on itself forever, so the constructor overflowed the stack rather than building.
 """
-function sodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
-        parameters = default_parameters(), periodic = true)
-    has_trivial_metric(timespan[begin], qᵢ) || throw(ArgumentError(
+function sodeproblem(qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
+        parameters, periodic = true)
+    tᵢ = timespan[begin]
+    has_trivial_metric(tᵢ, fieldpoint(parameters.field, tᵢ, qᵢ)) || throw(ArgumentError(
         "sodeproblem is the Boris splitting of the cartesian Lorentz force and is " *
         "only a valid splitting where the metric is trivial; this equilibrium is curvilinear, " *
         "where the frozen-position kick is quadratic in v and has no exact flow. Use " *
@@ -444,7 +449,7 @@ function sodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAUL
         SODEProblem((charged_particle_3d_sode_vv, charged_particle_3d_sode_vx),
             (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
             timespan, timestep, qᵢ; v̄ = charged_particle_3d_v, parameters = parameters,
-            periodicity = charged_particle_3d_periodicity(qᵢ))
+            periodicity = charged_particle_3d_periodicity(qᵢ, parameters.field))
     else
         SODEProblem((charged_particle_3d_sode_vv, charged_particle_3d_sode_vx),
             (charged_particle_3d_sode_fv, charged_particle_3d_sode_fx),
@@ -452,26 +457,26 @@ function sodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAUL
     end
 end
 
-function iodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN,
-        timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
+function iodeproblem(qᵢ; timespan = DEFAULT_TIMESPAN,
+        timestep = DEFAULT_TIMESTEP, parameters)
     IODEProblem(
         charged_particle_3d_iode_ϑ,
         charged_particle_3d_iode_f,
         charged_particle_3d_iode_g,
-        timespan, timestep, qᵢ, charged_particle_3d_pᵢ(timespan[begin], qᵢ);
+        timespan, timestep, qᵢ, charged_particle_3d_pᵢ(timespan[begin], qᵢ, parameters);
         parameters = parameters,
         invariants = (h = hamiltonian,),
         v̄ = charged_particle_3d_v)
 end
 
-function lodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN,
-        timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
+function lodeproblem(qᵢ; timespan = DEFAULT_TIMESPAN,
+        timestep = DEFAULT_TIMESTEP, parameters)
     LODEProblem(
         charged_particle_3d_iode_ϑ,
         charged_particle_3d_iode_f,
         charged_particle_3d_iode_g,
         ω, lagrangian,
-        timespan, timestep, qᵢ, charged_particle_3d_pᵢ(timespan[begin], qᵢ);
+        timespan, timestep, qᵢ, charged_particle_3d_pᵢ(timespan[begin], qᵢ, parameters);
         parameters = parameters,
         invariants = (h = hamiltonian,),
         v̄ = charged_particle_3d_v)

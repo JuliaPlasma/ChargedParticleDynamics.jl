@@ -2,10 +2,19 @@ import GeometricEquations
 using GeometricEquations: IODEProblem, LODEProblem, PODEProblem
 using GeometricSolutions: GeometricSolution, DataSeries, ScalarDataSeries, TimeSeries
 using GeometricSolutions: compute_invariant, compute_invariant_error
+using ...FieldPoints
+
+export hamiltonian, lagrangian, toroidal_momentum, compute_energy, compute_energy_error
 
 const DEFAULT_TIMESTEP = 0.01
 const tᵢ = 0.0
 const DEFAULT_TIMESPAN = (tᵢ, 10.0)
+
+# The field tensors this formulation reads; see `FieldPoints`. Every function below that takes
+# `params` evaluates them from `params.field` and hands the point on in place of `q`.
+function fieldpoint(field, t, q)
+    FieldPoints.fieldpoint(field, t, q, Val((:A♭, :DA♭, :E♭, :φ, :g♭, :g♯, :Dg♭)))
+end
 
 ϑ₁(t, q, v) = g₁₁(t, q) * v[1] + A₁(t, q)
 ϑ₂(t, q, v) = g₂₂(t, q) * v[2] + A₂(t, q)
@@ -40,26 +49,27 @@ dϑ₃dx₃(t, q, v) = dg₃₃dx₃(t, q) * v[3] + dA₃dx₃(t, q)
 # L = ½ gᵢⱼ vⁱ vʲ + A·v - φ. The A·v term is what makes ϑ = ∂L/∂v the one-form above; without it
 # the Lagrangian is not the Legendre dual of `hamiltonian` and `lodeproblem` describes
 # a different system than `podeproblem`.
-function lagrangian(t, q, v)
+function lagrangian(t, q::FieldPoint, v)
     (g₁₁(t, q) * v[1]^2 + g₂₂(t, q) * v[2]^2 + g₃₃(t, q) * v[3]^2) / 2 +
     A₁(t, q) * v[1] + A₂(t, q) * v[2] + A₃(t, q) * v[3] - φ(t, q)
 end
-function hamiltonian(t, q, p)
+function hamiltonian(t, q::FieldPoint, p)
     (g₁₁(t, q) * v¹(t, q, p)^2 + g₂₂(t, q) * v²(t, q, p)^2 + g₃₃(t, q) * v³(t, q, p)^2) /
     2 + φ(t, q)
 end
 toroidal_momentum(t, q, p) = p[3]
 
-lagrangian(t, q, v, params) = lagrangian(t, q, v)
-hamiltonian(t, q, p, params) = hamiltonian(t, q, p)
+lagrangian(t, q, v, params) = lagrangian(t, fieldpoint(params.field, t, q), v)
+hamiltonian(t, q, p, params) = hamiltonian(t, fieldpoint(params.field, t, q), p)
 
-function charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ)
+function charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ, params)
     pᵢ = zero(qᵢ)
-    ϑ(pᵢ, tᵢ, qᵢ, vᵢ)
+    ϑ(pᵢ, tᵢ, fieldpoint(params.field, tᵢ, qᵢ), vᵢ)
     pᵢ
 end
 
 function charged_particle_3d_pode_v(v, t, q, p, params)
+    q = fieldpoint(params.field, t, q)
     v[1] = v¹(t, q, p)
     v[2] = v²(t, q, p)
     v[3] = v³(t, q, p)
@@ -67,6 +77,7 @@ function charged_particle_3d_pode_v(v, t, q, p, params)
 end
 
 function charged_particle_3d_pode_f(f, t, q, p, params)
+    q = fieldpoint(params.field, t, q)
     f[1] = dA₁dx₁(t, q) * v¹(t, q, p) + dA₂dx₁(t, q) * v²(t, q, p) +
            dA₃dx₁(t, q) * v³(t, q, p) + E₁(t, q) +
            (dg₁₁dx₁(t, q) * v¹(t, q, p)^2 + dg₂₂dx₁(t, q) * v²(t, q, p)^2 +
@@ -82,9 +93,10 @@ function charged_particle_3d_pode_f(f, t, q, p, params)
     nothing
 end
 
-charged_particle_3d_iode_ϑ(θ, t, q, v, params) = ϑ(θ, t, q, v)
+charged_particle_3d_iode_ϑ(θ, t, q, v, params) = ϑ(θ, t, fieldpoint(params.field, t, q), v)
 
 function charged_particle_3d_iode_f(f, t, q, v, params)
+    q = fieldpoint(params.field, t, q)
     f[1] = dA₁dx₁(t, q) * v[1] + dA₂dx₁(t, q) * v[2] + dA₃dx₁(t, q) * v[3] + E₁(t, q) +
            (dg₁₁dx₁(t, q) * v[1]^2 + dg₂₂dx₁(t, q) * v[2]^2 + dg₃₃dx₁(t, q) * v[3]^2) / 2
     f[2] = dA₁dx₂(t, q) * v[1] + dA₂dx₂(t, q) * v[2] + dA₃dx₂(t, q) * v[3] + E₂(t, q) +
@@ -99,6 +111,7 @@ end
 # available in the IODE `g` signature and belongs in that term. Written through the `dϑⱼdxᵢ` above
 # so that it cannot drift away from the one-form it is meant to be the gradient of.
 function charged_particle_3d_iode_g(g, t, q, v, λ, params)
+    q = fieldpoint(params.field, t, q)
     g[1] = dϑ₁dx₁(t, q, v) * λ[1] + dϑ₂dx₁(t, q, v) * λ[2] + dϑ₃dx₁(t, q, v) * λ[3]
     g[2] = dϑ₁dx₂(t, q, v) * λ[1] + dϑ₂dx₂(t, q, v) * λ[2] + dϑ₃dx₂(t, q, v) * λ[3]
     g[3] = dϑ₁dx₃(t, q, v) * λ[1] + dϑ₂dx₃(t, q, v) * λ[2] + dϑ₃dx₃(t, q, v) * λ[3]
@@ -122,6 +135,7 @@ Note that no `GeometricIntegrators` integrator currently evaluates the two-form 
 is carried by the problem for completeness and for use by projection methods.
 """
 function ω(Ω, t, q, v, params)
+    q = fieldpoint(params.field, t, q)
     Ω .= 0
 
     Ω[1, 2] = dϑ₁dx₂(t, q, v) - dϑ₂dx₁(t, q, v)
@@ -138,8 +152,8 @@ end
 # function podeproblem(q₀=qᵢ, v₀=vᵢ)
 #     PODE(charged_particle_3d_pode_v, charged_particle_3d_pode_f, q₀, charged_particle_3d_pᵢ(q₀, v₀))
 # end
-function podeproblem(q₀ = qᵢ, p₀ = pᵢ; timespan = DEFAULT_TIMESPAN,
-        timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
+function podeproblem(q₀, p₀; timespan = DEFAULT_TIMESPAN,
+        timestep = DEFAULT_TIMESTEP, parameters)
     PODEProblem(
         charged_particle_3d_pode_v,
         charged_particle_3d_pode_f,
@@ -148,8 +162,8 @@ function podeproblem(q₀ = qᵢ, p₀ = pᵢ; timespan = DEFAULT_TIMESPAN,
         invariants = (h = hamiltonian,))
 end
 
-function iodeproblem(q₀ = qᵢ, p₀ = pᵢ; timespan = DEFAULT_TIMESPAN,
-        timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
+function iodeproblem(q₀, p₀; timespan = DEFAULT_TIMESPAN,
+        timestep = DEFAULT_TIMESTEP, parameters)
     IODEProblem(
         charged_particle_3d_iode_ϑ,
         charged_particle_3d_iode_f,
@@ -161,8 +175,8 @@ function iodeproblem(q₀ = qᵢ, p₀ = pᵢ; timespan = DEFAULT_TIMESPAN,
     )
 end
 
-function lodeproblem(q₀ = qᵢ, p₀ = pᵢ; timespan = DEFAULT_TIMESPAN,
-        timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
+function lodeproblem(q₀, p₀; timespan = DEFAULT_TIMESPAN,
+        timestep = DEFAULT_TIMESTEP, parameters)
     LODEProblem(
         charged_particle_3d_iode_ϑ,
         charged_particle_3d_iode_f,
@@ -175,8 +189,7 @@ function lodeproblem(q₀ = qᵢ, p₀ = pᵢ; timespan = DEFAULT_TIMESPAN,
 end
 
 # `initial_conditions_*` returns `(q = …, p = …, params = …)`; take it directly. The charged
-# particle takes no parameters — the field is injected as code — so `params` is an empty named
-# tuple, but it is carried anyway so that every family is constructed the same way.
+# particle has no physical parameters, so `params` carries the field alone.
 for problem in (:podeproblem, :iodeproblem, :lodeproblem)
     @eval $problem(ics::NamedTuple; kwargs...) = $problem(ics.q, ics.p; parameters = ics.params, kwargs...)
 end

@@ -10,14 +10,14 @@ Pauli particle model rather than values derived here.
 """
 module TokamakSmallCartesian
 
-import ElectromagneticFields.AxisymmetricTokamakCartesian
+using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCartesianEquilibrium
 
 export podeproblem, hamiltonian, toroidal_momentum
 export initial_conditions_barely_passing, initial_conditions_barely_trapped
 export initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 export initial_conditions_pauli
 
-const equ = AxisymmetricTokamakCartesian.@code() # inject magnetic field code
+const FIELD = FieldFunctions(AxisymmetricTokamakCartesianEquilibrium())
 
 const qᵢ = [1.05, 0.0, 0.0]
 const vᵢ = [2.1E-3, 4.3E-4, 0.0]
@@ -33,15 +33,16 @@ const vᵢ = [2.1E-3, 4.3E-4, 0.0]
 const DEFAULT_TIMESTEP = 10.0
 const DEFAULT_TIMESPAN = (0.0, 1E4)
 
-include("pauli_particle_3d.jl")
+include("pauli_particle_3d_presets.jl")
 
 export default_parameters
 
 """
-The magnetic moment μ of the default initial condition `(qᵢ, vᵢ)`, obtained by splitting
-`vᵢ` into its parallel and perpendicular parts at `qᵢ`.
+The field, and the magnetic moment μ of the default initial condition `(qᵢ, vᵢ)`, obtained by
+splitting `vᵢ` into its parallel and perpendicular parts at `qᵢ`.
 """
-default_parameters(::Type{T} = Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ).params.μ),)
+default_parameters(::Type{T} = Float64) where {T} = (
+    field = FIELD, μ = T(initial_conditions(qᵢ, vᵢ).params.μ))
 
 # The same `(x, u, μ)` as this equilibrium's `GuidingCenter3d` and `GuidingCenter4d` modules, so
 # that the three families can be started from one condition and compared. This module had none,

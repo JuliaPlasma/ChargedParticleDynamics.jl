@@ -7,6 +7,17 @@ Available in a canonical formulation on the phasespace ``(x, p)`` and a noncanon
 """
 module ChargedParticle3d
 
+# The equations of the two formulations, written once and reading the field from `params.field`.
+# The equilibrium modules below each hold a field, an initial condition and the problem
+# constructors that default to them.
+module Canonical
+include("charged_particle_3d/charged_particle_3d_canonical.jl")
+end
+
+module Noncanonical
+include("charged_particle_3d/charged_particle_3d_noncanonical.jl")
+end
+
 include("charged_particle_3d/singular_field_canonical.jl")
 include("charged_particle_3d/singular_field.jl")
 include("charged_particle_3d/symmetric_field.jl")
