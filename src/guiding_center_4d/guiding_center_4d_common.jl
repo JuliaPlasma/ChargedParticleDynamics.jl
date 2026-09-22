@@ -204,7 +204,7 @@ function D²ϑd₄(D²ϑ, t, q)
     nothing
 end
 
-dϑ(dϑ, t, q, params) = dϑ(dϑ, t, fieldpoint(params.field, t, q))
+dϑ(D, t, q, params) = dϑ(D, t, fieldpoint(params.field, t, q))
 
 function dϑ(dϑ, t, q::FieldPoint)
     dϑ[1, 1] = dϑ₁dx₁(t, q)
