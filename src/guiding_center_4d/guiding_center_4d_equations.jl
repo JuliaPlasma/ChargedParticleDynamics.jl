@@ -1,36 +1,21 @@
 
-import ElectromagneticFields
-
 using GeometricEquations: ODEProblem, IODEProblem, LODEProblem
 using GeometricSolutions: GeometricSolution, DataSeries, TimeSeries
+using ..ChargedParticleDynamics: periodic_domain
 
-export odeproblem, iodeproblem, iodeproblem_λ,
-       lodeproblem,
-       iodeproblem_dg, lodeproblem_formal_lagrangian
-
-# `rangemin`/`rangemax` take an evaluation point only for uniformity with the other generated field
-# functions; the range of a coordinate is a property of the chart, and `ElectromagneticFields` bakes
-# `minx¹`…`maxx³` in as literals, so the argument is discarded. Pass the origin rather than the
-# `±Inf` that `xmin`/`xmax` are initialised to. The parallel velocity is not periodic.
-function guiding_center_4d_periodicity(::Type{T}, periodic = true) where {T}
-    xmin = -Inf * ones(T, 4)
-    xmax = +Inf * ones(T, 4)
-
-    if periodic
-        xmin[1:3] .= rangemin(zeros(T, 3))
-        xmax[1:3] .= rangemax(zeros(T, 3))
-    end
-
-    return (xmin, xmax)
+# Which coordinates are periodic, and on what range, is a property of the chart, answered by the
+# field; see `periodic_domain`. The parallel velocity is not periodic.
+function guiding_center_4d_periodicity(::Type{T}, field, periodic = true) where {T}
+    periodic ? periodic_domain(field, T, 4) : (fill(-T(Inf), 4), fill(+T(Inf), 4))
 end
 
 function guiding_center_4d_periodicity(
-        ::AbstractVector{<:AbstractArray{T}}, periodic = true) where {T <: Number}
-    guiding_center_4d_periodicity(T, periodic)
+        ::AbstractVector{<:AbstractArray{T}}, field, periodic = true) where {T <: Number}
+    guiding_center_4d_periodicity(T, field, periodic)
 end
-function guiding_center_4d_periodicity(::AbstractArray{T}, periodic = true) where {T <:
-                                                                                   Number}
-    guiding_center_4d_periodicity(T, periodic)
+function guiding_center_4d_periodicity(
+        ::AbstractArray{T}, field, periodic = true) where {T <: Number}
+    guiding_center_4d_periodicity(T, field, periodic)
 end
 
 @doc raw"""
@@ -44,14 +29,13 @@ guiding centre position and the parallel velocity. The vector field is obtained 
 The second form takes the named tuple that every `initial_conditions_*` of this module returns,
 whose `params` carry that condition's own magnetic moment `μ`.
 """
-function odeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
-        parameters = default_parameters(), periodic = true)
+function odeproblem(qᵢ; timespan, timestep, parameters, periodic = true)
     ODEProblem(
         guiding_center_4d_v,
         timespan, timestep, qᵢ;
         parameters = parameters,
         invariants = (h = hamiltonian,),
-        periodicity = guiding_center_4d_periodicity(qᵢ, periodic)
+        periodicity = guiding_center_4d_periodicity(qᵢ, parameters.field, periodic)
     )
 end
 
@@ -63,16 +47,15 @@ The same dynamics as [`odeproblem`](@ref) in implicit form, as an `IODEProblem` 
 one-form ``\vartheta = A + u b``, so that the variational and projection integrators can be applied
 to it. The initial momentum is ``\vartheta(q_{i})``.
 """
-function iodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
-        parameters = default_parameters(), periodic = true)
+function iodeproblem(qᵢ; timespan, timestep, parameters, periodic = true)
     IODEProblem(
         guiding_center_4d_ϑ,
         guiding_center_4d_f,
         guiding_center_4d_g,
-        timespan, timestep, qᵢ, guiding_center_4d_pᵢ(timespan[begin], qᵢ);
+        timespan, timestep, qᵢ, guiding_center_4d_pᵢ(timespan[begin], qᵢ, parameters);
         parameters = parameters,
         invariants = (h = hamiltonian,),
-        periodicity = guiding_center_4d_periodicity(qᵢ, periodic),
+        periodicity = guiding_center_4d_periodicity(qᵢ, parameters.field, periodic),
         v̄ = guiding_center_4d_v
     )
 end
@@ -83,17 +66,16 @@ end
 [`iodeproblem`](@ref) with the Lagrange multiplier initialised explicitly, for the integrators that
 need a starting value for it rather than taking zero.
 """
-function iodeproblem_λ(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
-        parameters = default_parameters(), periodic = true)
+function iodeproblem_λ(qᵢ; timespan, timestep, parameters, periodic = true)
     IODEProblem(
         guiding_center_4d_ϑ,
         guiding_center_4d_f,
         guiding_center_4d_g,
-        timespan, timestep, qᵢ, guiding_center_4d_pᵢ(timespan[begin], qᵢ),
+        timespan, timestep, qᵢ, guiding_center_4d_pᵢ(timespan[begin], qᵢ, parameters),
         guiding_center_4d_λᵢ(timespan[begin], qᵢ, parameters);
         parameters = parameters,
         invariants = (h = hamiltonian,),
-        periodicity = guiding_center_4d_periodicity(qᵢ, periodic),
+        periodicity = guiding_center_4d_periodicity(qᵢ, parameters.field, periodic),
         v̄ = guiding_center_4d_v
     )
 end
@@ -107,23 +89,21 @@ The 4D guiding centre dynamics as an `LODEProblem`, from the degenerate phasespa
 [`iodeproblem`](@ref); the Lagrangian and the two-form are carried in addition, for the variational
 integrators that want them.
 """
-function lodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
-        parameters = default_parameters(), periodic = true)
+function lodeproblem(qᵢ; timespan, timestep, parameters, periodic = true)
     LODEProblem(
         guiding_center_4d_ϑ,
         guiding_center_4d_f,
         guiding_center_4d_g,
         guiding_center_4d_ω, lagrangian,
-        timespan, timestep, qᵢ, guiding_center_4d_pᵢ(timespan[begin], qᵢ);
+        timespan, timestep, qᵢ, guiding_center_4d_pᵢ(timespan[begin], qᵢ, parameters);
         parameters = parameters,
         invariants = (h = hamiltonian,),
-        periodicity = guiding_center_4d_periodicity(qᵢ, periodic),
+        periodicity = guiding_center_4d_periodicity(qᵢ, parameters.field, periodic),
         v̄ = guiding_center_4d_v
     )
 end
 
-function iodeproblem_dg(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
-        parameters = default_parameters(), periodic = true, κ = 0.0)
+function iodeproblem_dg(qᵢ; timespan, timestep, parameters, periodic = true, κ = 0.0)
     # The output array comes first in every GeometricEquations callback, and `g` is called as
     # `g(g, t, q, v, λ, params)`; the κ-form of `g` ignores `v`.
     guiding_center_4d_ϑ_κ(θ, t, q, v, params) = guiding_center_4d_ϑ(θ, t, q, v, params, κ)
@@ -141,7 +121,7 @@ function iodeproblem_dg(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEF
         timespan, timestep, qᵢ, pᵢ;
         parameters = parameters,
         invariants = (h = hamiltonian,),
-        periodicity = guiding_center_4d_periodicity(qᵢ, periodic),
+        periodicity = guiding_center_4d_periodicity(qᵢ, parameters.field, periodic),
         v̄ = guiding_center_4d_v
     )
 end
@@ -160,17 +140,16 @@ end
     here. See `TODO.md`.
 """
 function lodeproblem_formal_lagrangian(
-        qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
-        parameters = default_parameters(), periodic = true)
+        qᵢ; timespan, timestep, parameters, periodic = true)
     LODEProblem(
         guiding_center_4d_ϑ,
         guiding_center_4d_f,
         guiding_center_4d_g,
         guiding_center_4d_ω, lagrangian,
-        timespan, timestep, qᵢ, guiding_center_4d_pᵢ(timespan[begin], qᵢ);
+        timespan, timestep, qᵢ, guiding_center_4d_pᵢ(timespan[begin], qᵢ, parameters);
         parameters = parameters,
         invariants = (h = hamiltonian,),
-        periodicity = guiding_center_4d_periodicity(qᵢ, periodic),
+        periodicity = guiding_center_4d_periodicity(qᵢ, parameters.field, periodic),
         v̄ = guiding_center_4d_v
     )
 end

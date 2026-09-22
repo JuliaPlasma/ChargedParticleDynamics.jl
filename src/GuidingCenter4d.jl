@@ -7,6 +7,13 @@ A noncanonical, degenerate system built from the one-form ``\vartheta = A + u b`
 """
 module GuidingCenter4d
 
+# The equations, written once and reading the field from `params.field`. The equilibrium modules
+# below each hold a field, an initial condition and the problem constructors that default to them,
+# together with the diagnostics and Poincaré invariants that read their own `toroidal_momentum`,
+# `f_loop` and `f_surface`.
+include("guiding_center_4d/guiding_center_4d_common.jl")
+include("guiding_center_4d/guiding_center_4d_equations.jl")
+
 include("guiding_center_4d/solovev_iter.jl")
 include("guiding_center_4d/solovev_iter_xpoint.jl")
 include("guiding_center_4d/solovev_symmetric.jl")

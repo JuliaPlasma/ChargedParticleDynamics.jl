@@ -3,7 +3,8 @@ Analytic axisymmetric small tokamak equilibrium in cylindrical coordinates.
 """
 module TokamakSmallCylindrical
 
-import ElectromagneticFields.AxisymmetricTokamakCylindrical
+using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCylindricalEquilibrium,
+                             from_cartesian
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,7 +12,7 @@ export initial_conditions_barely_passing, initial_conditions_barely_trapped,
 
 export hamiltonian, toroidal_momentum
 
-AxisymmetricTokamakCylindrical.@code() # inject magnetic field code
+const FIELD = FieldFunctions(AxisymmetricTokamakCylindricalEquilibrium())
 
 const DEFAULT_TIMESTEP = 500.0
 const DEFAULT_TIMESPAN = (0.0, 5E5)
@@ -23,22 +24,27 @@ const xᵢ = [1.05, 0.0, 0.0]
 # came out antiparallel to the cartesian chart's and the sign here compensated for it. With the
 # field corrected the compensation is stale, and `u` means the same thing in all three charts.
 const uᵢ = 0.00045135897235326736
-const qᵢ = [from_cartesian(0, xᵢ)..., uᵢ]
+const qᵢ = [from_cartesian(FIELD, 0, xᵢ)..., uᵢ]
 
 function initial_conditions_barely_passing()
-    (q = [from_cartesian(0, [1.05, 0.0, 0.0])..., 8.117E-4], params = (μ = 2.448E-6,))
+    (q = [from_cartesian(FIELD, 0, [1.05, 0.0, 0.0])..., 8.117E-4],
+        params = (field = FIELD, μ = 2.448E-6))
 end
 function initial_conditions_barely_trapped()
-    (q = [from_cartesian(0, [1.05, 0.0, 0.0])..., 7.610E-4], params = (μ = 2.250E-6,))
+    (q = [from_cartesian(FIELD, 0, [1.05, 0.0, 0.0])..., 7.610E-4],
+        params = (field = FIELD, μ = 2.250E-6))
 end
 function initial_conditions_deeply_passing()
-    (q = [from_cartesian(0, [1.05, 0.0, 0.0])..., 1.623E-3], params = (μ = 2.448E-6,))
+    (q = [from_cartesian(FIELD, 0, [1.05, 0.0, 0.0])..., 1.623E-3],
+        params = (field = FIELD, μ = 2.448E-6))
 end
 function initial_conditions_deeply_trapped()
-    (q = [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.306E-4], params = (μ = 2.250E-6,))
+    (q = [from_cartesian(FIELD, 0, [1.05, 0.0, 0.0])..., 4.306E-4],
+        params = (field = FIELD, μ = 2.250E-6))
 end
 function initial_conditions_pauli()
-    (q = [from_cartesian(0, [1.05, 0.0, 0.0])..., 4.3E-4], params = (μ = 2.310E-6,))
+    (q = [from_cartesian(FIELD, 0, [1.05, 0.0, 0.0])..., 4.3E-4],
+        params = (field = FIELD, μ = 2.310E-6))
 end
 
 u_loop() = 4.0E-4
@@ -78,18 +84,20 @@ end
 
 export default_parameters
 
-"The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T} = Float64) where {T} = (μ = T(2.314593645825811e-6),)
+"The field, and the magnetic moment μ this equilibrium is set up for."
+function default_parameters(::Type{T} = Float64) where {T}
+    (field = FIELD, μ = T(2.314593645825811e-6))
+end
 
-include("guiding_center_4d_common.jl")
-include("guiding_center_4d_equations.jl")
+include("guiding_center_4d_presets.jl")
 include("guiding_center_4d_loop.jl")
 include("guiding_center_4d_surface.jl")
 
 # The canonical toroidal momentum is the covariant φ-component of the one-form, ϑ₃. It was
 # previously multiplied by R, which destroys the conservation: on the small tokamak the
 # relative variation over 10³ time units is 2e-13 for ϑ₃ and 3e-3 for R ϑ₃.
-function toroidal_momentum(t, q)
+function toroidal_momentum(t, q, params)
+    q = fieldpoint(params.field, t, q)
     ϑ₃(t, q)
 end
 

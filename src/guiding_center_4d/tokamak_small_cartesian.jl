@@ -3,7 +3,7 @@ Analytic axisymmetric small tokamak equilibrium in cartesian coordinates.
 """
 module TokamakSmallCartesian
 
-import ElectromagneticFields.AxisymmetricTokamakCartesian
+using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCartesianEquilibrium
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,7 +11,7 @@ export initial_conditions_barely_passing, initial_conditions_barely_trapped,
 
 export hamiltonian, toroidal_momentum
 
-AxisymmetricTokamakCartesian.@code() # inject magnetic field code
+const FIELD = FieldFunctions(AxisymmetricTokamakCartesianEquilibrium())
 
 const DEFAULT_TIMESTEP = 500.0
 const DEFAULT_TIMESPAN = (0.0, 5E5)
@@ -19,18 +19,20 @@ const DEFAULT_TIMESPAN = (0.0, 5E5)
 const qᵢ = [1.05, 0.0, 0.0, 0.00045135897235326736]
 
 function initial_conditions_barely_passing()
-    (q = [1.05, 0.0, 0.0, 8.117E-4], params = (μ = 2.448E-6,))
+    (q = [1.05, 0.0, 0.0, 8.117E-4], params = (field = FIELD, μ = 2.448E-6))
 end
 function initial_conditions_barely_trapped()
-    (q = [1.05, 0.0, 0.0, 7.610E-4], params = (μ = 2.250E-6,))
+    (q = [1.05, 0.0, 0.0, 7.610E-4], params = (field = FIELD, μ = 2.250E-6))
 end
 function initial_conditions_deeply_passing()
-    (q = [1.05, 0.0, 0.0, 1.623E-3], params = (μ = 2.448E-6,))
+    (q = [1.05, 0.0, 0.0, 1.623E-3], params = (field = FIELD, μ = 2.448E-6))
 end
 function initial_conditions_deeply_trapped()
-    (q = [1.05, 0.0, 0.0, 4.306E-4], params = (μ = 2.250E-6,))
+    (q = [1.05, 0.0, 0.0, 4.306E-4], params = (field = FIELD, μ = 2.250E-6))
 end
-initial_conditions_pauli() = (q = [1.05, 0.0, 0.0, 4.3E-4], params = (μ = 2.310E-6,))
+function initial_conditions_pauli()
+    (q = [1.05, 0.0, 0.0, 4.3E-4], params = (field = FIELD, μ = 2.310E-6))
+end
 
 u_loop() = 4.0E-4
 μ_loop() = 2.5E-6
@@ -69,18 +71,20 @@ end
 
 export default_parameters
 
-"The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T} = Float64) where {T} = (μ = T(2.314593645825811e-6),)
+"The field, and the magnetic moment μ this equilibrium is set up for."
+function default_parameters(::Type{T} = Float64) where {T}
+    (field = FIELD, μ = T(2.314593645825811e-6))
+end
 
-include("guiding_center_4d_common.jl")
-include("guiding_center_4d_equations.jl")
+include("guiding_center_4d_presets.jl")
 include("guiding_center_4d_loop.jl")
 include("guiding_center_4d_surface.jl")
 
 # In cartesian coordinates the third coordinate is z, not an angle, so the toroidal momentum is
 # the generator of rotation about the z-axis, x ϑ₂ - y ϑ₁, rather than ϑ₃. Neither ϑ₃ nor R ϑ₃
 # is conserved here; this is, to the order of the integrator.
-function toroidal_momentum(t, q)
+function toroidal_momentum(t, q, params)
+    q = fieldpoint(params.field, t, q)
     q[1] * ϑ₂(t, q) - q[2] * ϑ₁(t, q)
 end
 

@@ -26,16 +26,17 @@ export FieldPoint, fieldpoint
     FieldPoint{T}
 
 A phasespace point `q` together with the field tensors evaluated at its first three components.
-Built by [`fieldpoint`](@ref). Indexing it indexes `q`.
+Built by [`fieldpoint`](@ref). It is an `AbstractVector` whose entries are those of `q`, so it can
+be indexed, multiplied and broadcast wherever `q` can.
 """
-struct FieldPoint{T, Q <: AbstractVector{T}, V <: NamedTuple}
+struct FieldPoint{T, Q <: AbstractVector{T}, V <: NamedTuple} <: AbstractVector{T}
     q::Q
     values::V
 end
 
-Base.getindex(P::FieldPoint, i...) = getindex(P.q, i...)
-Base.length(P::FieldPoint) = length(P.q)
-Base.eltype(::Type{<:FieldPoint{T}}) where {T} = T
+Base.size(P::FieldPoint) = size(P.q)
+Base.getindex(P::FieldPoint, i::Int) = P.q[i]
+Base.IndexStyle(::Type{<:FieldPoint}) = IndexLinear()
 
 # One call per requested tensor, spelled out so that the result is a concrete `NamedTuple`.
 @generated function fieldvalues(field, t, x, ::Val{names}) where {names}

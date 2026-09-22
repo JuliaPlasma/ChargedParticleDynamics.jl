@@ -8,7 +8,7 @@ include("utils/initial_conditions.jl")
 include("ChargedParticle3d.jl")
 # [DEBUG-cpdport] families not yet ported
 # include("GuidingCenter3d.jl")
-# include("GuidingCenter4d.jl")
+include("GuidingCenter4d.jl")
 # include("GyroKinetics4d.jl")
 include("PauliParticle3d.jl")
 
