@@ -3,7 +3,8 @@ Analytic ITER-like Solov'ev equilibrium with X-point.
 """
 module GuidingCenter4dSolovevIterXpoint
 
-using ElectromagneticFields.Solovev
+using ElectromagneticFields: FieldFunctions, SolovevXpointEquilibriumITER, from_cartesian,
+                             parameters
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,11 +12,9 @@ export initial_conditions_barely_passing, initial_conditions_barely_trapped,
 
 # export toroidal_momentum
 
-Solovev.@code_iter_xpoint() # inject magnetic field code
+const FIELD = FieldFunctions(SolovevXpointEquilibriumITER())
 
-include("coordinate_transformations.jl")
-include("gc_common.jl")
-include("gc_equations.jl")
+include("gc_presets.jl")
 
 # The state is (R, u) directly. It used to be handed to the problem constructors scaled by
 # ω₀ = B*∥(t₀, q₀), a literal reading of the "R̃ = B*∥ R" of the notes — but that shorthand
@@ -23,7 +22,8 @@ include("gc_equations.jl")
 # already carries, not a change of variables. Scaling the state on top of it, with the
 # Jacobian left off the vector field as well, integrated a different system entirely.
 function solovev_xpoint_iter_initial_conditions(t₀, q₀, μ)
-    local params = (μ = μ, R₀ = R₀, ω₀ = ωabs(t₀, q₀))
+    local params = (field = FIELD, μ = μ, R₀ = parameters(FIELD).R₀,
+        ω₀ = ωabs(t₀, q₀, (field = FIELD,)))
     (q = q₀, params = params)
 end
 
@@ -33,21 +33,22 @@ end
 const DEFAULT_TIMESTEP = 1E-3
 const DEFAULT_TIMESPAN = (0.0, 1.0)
 
-const x₀ = from_cartesian(0, [2.5, 0.0, 0.0])
+const x₀ = from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])
 const μ₀ = 1E-2
 
 export default_parameters
 
 """
-The parameters of the default initial condition: the magnetic moment `μ`, the major radius
-`R₀` of the equilibrium, and `ω₀ = B*∥` evaluated at the deeply passing initial condition.
+The parameters of the default initial condition: the field, the magnetic moment `μ`, the major
+radius `R₀` of the equilibrium, and `ω₀ = B*∥` evaluated at the deeply passing initial condition.
 
 `ω₀` is not used by the equations of motion — it is the scale factor of the coordinate
 transformation in `coordinate_transformations.jl`, which is retained as a utility but not
 applied; see the module documentation.
 """
 function default_parameters(::Type{T} = Float64) where {T}
-    (μ = T(μ₀), R₀ = T(R₀), ω₀ = T(ωabs(0, [x₀..., 5.0E-1])))
+    (field = FIELD, μ = T(μ₀), R₀ = T(parameters(FIELD).R₀),
+        ω₀ = T(ωabs(0, [x₀..., 5.0E-1], (field = FIELD,))))
 end
 
 function initial_conditions_barely_passing()
@@ -66,7 +67,7 @@ end
 function initial_conditions_trapped()
     solovev_xpoint_iter_initial_conditions(
         0, [
-            from_cartesian(0, [7.0, 0.0, 0.0])..., -2E-3], 1.88E-7)
+            from_cartesian(FIELD, 0, [7.0, 0.0, 0.0])..., -2E-3], 1.88E-7)
 end
 
 include("../guiding_center_4d/guiding_center_4d_diagnostics.jl")

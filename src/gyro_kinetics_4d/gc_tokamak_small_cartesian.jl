@@ -9,7 +9,7 @@ passing initial condition, so the rescaling is close to a no-op and the defaults
 """
 module GuidingCenter4dTokamakSmallCartesian
 
-import ElectromagneticFields.AxisymmetricTokamakCartesian
+using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCartesianEquilibrium
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -17,11 +17,9 @@ export initial_conditions_barely_passing, initial_conditions_barely_trapped,
 
 export hamiltonian, toroidal_momentum
 
-AxisymmetricTokamakCartesian.@code() # inject magnetic field code
+const FIELD = FieldFunctions(AxisymmetricTokamakCartesianEquilibrium())
 
-include("coordinate_transformations.jl")
-include("gc_common.jl")
-include("gc_equations.jl")
+include("gc_presets.jl")
 
 # Rescaled time: `Δs = Δt / ωabs`, where `ωabs = J B*∥` is the phasespace Jacobian and *not* the
 # physical `B*∥` — see the note on `ωabs` in `gc_common.jl`. Here the two agree, this chart being
@@ -33,26 +31,31 @@ const DEFAULT_TIMESPAN = (0.0, 5E5)
 export default_parameters
 
 """
-The magnetic moment `μ` of the default initial condition, shared with the 4D guiding centre
-module of the same equilibrium.
+The field, and the magnetic moment `μ` of the default initial condition, shared with the 4D
+guiding centre module of the same equilibrium.
 """
-default_parameters(::Type{T} = Float64) where {T} = (μ = T(2.314593645825811e-6),)
+default_parameters(::Type{T} = Float64) where {T} = (
+    field = FIELD, μ = T(2.314593645825811e-6))
 
 const qᵢ = [1.05, 0.0, 0.0, 0.00045135897235326736]
 
 # In cartesian coordinates the third coordinate is `z` rather than an angle, so the conserved
 # quantity is the generator of rotation about the z-axis, not `ϑ₃`.
-toroidal_momentum(t, q) = q[1] * ϑ₂(t, q) - q[2] * ϑ₁(t, q)
+function toroidal_momentum(t, q, params)
+    q = fieldpoint(params.field, t, q)
+    q[1] * ϑ₂(t, q) - q[2] * ϑ₁(t, q)
+end
 
 initial_conditions_barely_passing() = (
-    q = [1.05, 0.0, 0.0, 8.117E-4], params = (μ = 2.448E-6,))
+    q = [1.05, 0.0, 0.0, 8.117E-4], params = (field = FIELD, μ = 2.448E-6))
 initial_conditions_barely_trapped() = (
-    q = [1.05, 0.0, 0.0, 7.610E-4], params = (μ = 2.250E-6,))
+    q = [1.05, 0.0, 0.0, 7.610E-4], params = (field = FIELD, μ = 2.250E-6))
 initial_conditions_deeply_passing() = (
-    q = [1.05, 0.0, 0.0, 1.623E-3], params = (μ = 2.448E-6,))
+    q = [1.05, 0.0, 0.0, 1.623E-3], params = (field = FIELD, μ = 2.448E-6))
 initial_conditions_deeply_trapped() = (
-    q = [1.05, 0.0, 0.0, 4.306E-4], params = (μ = 2.250E-6,))
-initial_conditions_pauli() = (q = [1.05, 0.0, 0.0, 4.3E-4], params = (μ = 2.310E-6,))
+    q = [1.05, 0.0, 0.0, 4.306E-4], params = (field = FIELD, μ = 2.250E-6))
+initial_conditions_pauli() = (
+    q = [1.05, 0.0, 0.0, 4.3E-4], params = (field = FIELD, μ = 2.310E-6))
 
 include("../guiding_center_4d/guiding_center_4d_diagnostics.jl")
 
