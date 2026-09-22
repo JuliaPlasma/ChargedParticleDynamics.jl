@@ -34,21 +34,25 @@ using ChargedParticleDynamics
 using GeometricIntegrators
 using Printf
 
-const GK = ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
+const GKF = ChargedParticleDynamics.GyroKinetics4d
+const GK = GKF.GuidingCenter4dSolovevIterXpoint
 const GC = ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint
+
+# Both modules use the same equilibrium; the field travels in the parameters.
+const PARAMS = (field = GK.FIELD, μ = 1E-2)
 
 "v_gyrokinetic(q) = ωabs(q) · v_guiding_centre(q), pointwise. See the header on ωabs's orientation."
 function pointwise()
     println("Pointwise:  max |v_gk - ωabs · v_gc| / |v_gk|\n")
     @printf("  %-38s %-14s %s\n", "q = (R₁, R₂, R₃, u)", "ωabs", "rel. difference")
 
-    params = (μ = 1E-2,)
+    params = PARAMS
     for q in ([6.2, 0.3, 0.0, 3.4E-1], [5.5, -0.8, 1.1, -2.0E-1], [7.0, 0.5, 2.0, 5.0E-1])
         vgk = zeros(4)
         GK.v(vgk, 0.0, q, params)
         vgc = zeros(4)
-        GC.guiding_center_4d_v(vgc, 0.0, q, params)
-        ωfac = GK.ωabs(0.0, q)
+        ChargedParticleDynamics.GuidingCenter4d.guiding_center_4d_v(vgc, 0.0, q, params)
+        ωfac = GK.ωabs(0.0, q, params)
         rel = maximum(abs.(vgk .- ωfac .* vgc) ./ max.(abs.(vgk), 1E-30))
         @printf("  %-38s %-14.6e %.2e\n", string(round.(q, digits = 2)), ωfac, rel)
     end
@@ -59,13 +63,13 @@ The six subsystems of the splitting must reconstruct the full vector field exact
 property of the decomposition, not an approximation.
 """
 function splitting()
-    params = (μ = 1E-2,)
+    params = PARAMS
     q = [6.2, 0.3, 0.0, 3.4E-1]
 
     vfull = zeros(4)
     GK.v(vfull, 0.0, q, params)
     vsum = zeros(4)
-    for V in (GK.v₁, GK.v₂, GK.v₃, GK.v₄, GK.v₅, GK.v₆)
+    for V in (GKF.v₁, GKF.v₂, GKF.v₃, GKF.v₄, GKF.v₅, GKF.v₆)
         vᵢ = zeros(4)
         V(vᵢ, 0.0, q, params)
         vsum .+= vᵢ
@@ -86,9 +90,8 @@ function orbits()
     println("\nOrbit equivalence: GK over s against GC over t = ωabs(q₀) s\n")
     @printf("  %-12s %-14s %s\n", "s interval", "endpoint diff", "ratio")
 
-    q₀, par = GK.initial_conditions_deeply_passing()
-    params = (μ = par.μ,)
-    ωfac = GK.ωabs(0.0, q₀)
+    q₀, params = GK.initial_conditions_deeply_passing()
+    ωfac = GK.ωabs(0.0, q₀, params)
 
     previous = NaN
     for s_end in (4E-3, 2E-3, 1E-3, 5E-4)

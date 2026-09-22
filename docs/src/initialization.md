@@ -73,17 +73,17 @@ Cartesian coordinates:
 
 | Functions | Components |
 | ------------------------------ | ---------------- |
-| `a(t,x)`, `b(t,x)`, `c(t,x)` | covariant |
-| `aₚ(t,x)`, `bₚ(t,x)`, `cₚ(t,x)` | physical |
-| `a⃗(t,x)`, `b⃗(t,x)`, `c⃗(t,x)` | contravariant |
+| `a♭(field,t,x)`, `b♭(field,t,x)`, `c♭(field,t,x)` | covariant |
+| `a♮(field,t,x)`, `b♮(field,t,x)`, `c♮(field,t,x)` | physical |
+| `a♯(field,t,x)`, `b♯(field,t,x)`, `c♯(field,t,x)` | contravariant |
 
-The velocity vector $v$ is assembled in physical coordinates, that is from `aₚ`, `bₚ` and `cₚ`, and
+The velocity vector $v$ is assembled in physical coordinates, that is from `a♮`, `b♮` and `c♮`, and
 subsequently transformed to contravariant coordinates with the inverse Jacobian `DF̄`.
-The function `bₚ` returns the unit vector of the magnetic field, thus
+The function `b♮` returns the unit vector of the magnetic field, thus
 ```math
 v_{\parallel}' = \vert v' \vert \, \sqrt{1 - \sin \alpha} \, b .
 ```
-The functions `aₚ` and `cₚ` return two unit vectors that span the plane perpendicular to the magnetic field, thus
+The functions `a♮` and `c♮` return two unit vectors that span the plane perpendicular to the magnetic field, thus
 ```math
 v_{\perp}' = \vert v' \vert \, \sqrt{\sin \alpha} \, ( - a \, \sin \theta - c \, \cos \theta ) ,
 ```
@@ -202,19 +202,17 @@ using Markdown
 using ChargedParticleDynamics
 using ChargedParticleDynamics: md
 
-import ElectromagneticFields: code
-import ElectromagneticFields.Solovev: SolovevEquilibrium
-import ElectromagneticFields.SolovevITER: init
-equ = init()
-@eval $(code(equ))
+using ElectromagneticFields: FieldFunctions, SolovevEquilibriumITER, A♭, from_cartesian, parameters
+field = FieldFunctions(SolovevEquilibriumITER())
+R₀ = parameters(field).R₀
 
-X₀ = from_cartesian(0, [7.0, 0, 0])
+X₀ = Vector(from_cartesian(field, 0, [7.0, 0, 0]))
 E₀ = 1E6
 θ₀ = 0.
 α₀ = π/4
 m₀ = md
 
-ic0 = InitialConditions(X₀, θ₀, α₀, E₀, m₀, 1, aₚ, bₚ, cₚ, b⃗, B, ḡ, DF̄, J; l₀=R₀)
+ic0 = InitialConditions(X₀, θ₀, α₀, E₀, m₀, 1, field; l₀=R₀)
 
 np = 12
 nr = 100
@@ -224,13 +222,13 @@ xgrid = LinRange( 0.5,   1.5, nr)
 ygrid = LinRange(-0.75, +0.75, nz)
 # the poloidal flux is the covariant component A₃ = R A_φ = ψ itself, not A₃ / R — see the note on
 # `plot_fieldlines` in the audit
-fieldlines = [A₃(0, x, y, 0.0) for x in xgrid, y in ygrid]
+fieldlines = [A♭(field, 0, x, y, 0.0)[3] for x in xgrid, y in ygrid]
 
 px = zeros(np)
 py = zeros(np)
 
 for i in 1:np
-    ics = charged_particle(InitialConditions(X₀, 2π*i/np, α₀, E₀, m₀, 1, aₚ, bₚ, cₚ, b⃗, B, ḡ, DF̄, J; l₀=R₀))
+    ics = charged_particle(InitialConditions(X₀, 2π*i/np, α₀, E₀, m₀, 1, field; l₀=R₀))
     px[i] = ics[1][1]
     py[i] = ics[1][2]
 end

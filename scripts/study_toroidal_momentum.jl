@@ -17,6 +17,7 @@
 #
 
 using ChargedParticleDynamics
+using ElectromagneticFields: coordinates
 using GeometricIntegrators
 using Printf
 
@@ -26,10 +27,13 @@ const GC = ChargedParticleDynamics.GuidingCenter4d
 relvar(x) = (maximum(x) - minimum(x)) / max(abs(x[1]), eps())
 
 function candidates(M, sol)
-    ϑ₃ = [M.ϑ₃(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
-    Rϑ₃ = [M.R(sol.t[i], sol.q[i]) * M.ϑ₃(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
-    ang = [sol.q[i][1] * M.ϑ₂(sol.t[i], sol.q[i]) -
-           sol.q[i][2] * M.ϑ₁(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
+    # the field evaluated once at each point of the orbit
+    P = [GC.fieldpoint(M.FIELD, sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
+    R(i) = coordinates(M.FIELD).R(sol.t[i], sol.q[i][1:3])
+    ϑ₃ = [M.ϑ₃(sol.t[i], P[i]) for i in eachindex(sol.t)]
+    Rϑ₃ = [R(i) * M.ϑ₃(sol.t[i], P[i]) for i in eachindex(sol.t)]
+    ang = [sol.q[i][1] * M.ϑ₂(sol.t[i], P[i]) -
+           sol.q[i][2] * M.ϑ₁(sol.t[i], P[i]) for i in eachindex(sol.t)]
     (ϑ₃ = relvar(ϑ₃), Rϑ₃ = relvar(Rϑ₃), angular = relvar(ang))
 end
 

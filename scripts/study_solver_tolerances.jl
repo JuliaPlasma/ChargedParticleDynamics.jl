@@ -34,6 +34,7 @@
 #
 
 using ChargedParticleDynamics
+using ElectromagneticFields: A♭, b♭
 using GeometricIntegrators
 using LinearAlgebra
 using Logging
@@ -127,12 +128,12 @@ function residual_scale(family, M)
     if family == "GC4d"
         q = ic[1]
         x, u = q[1:3], q[4]
-        A = [M.A₁(0.0, x), M.A₂(0.0, x), M.A₃(0.0, x)]
-        b = [M.b₁(0.0, x), M.b₂(0.0, x), M.b₃(0.0, x)]
+        A = A♭(M.FIELD, 0.0, x)
+        b = b♭(M.FIELD, 0.0, x)
         return (x = x, normA = norm(A), normp = norm(A .+ u .* b), what = "‖ϑ‖")
     else
         q, p = ic[1], ic[2]
-        A = [M.A₁(0.0, q), M.A₂(0.0, q), M.A₃(0.0, q)]
+        A = A♭(M.FIELD, 0.0, q)
         return (x = q, normA = norm(A), normp = norm(p), what = "‖p‖")
     end
 end

@@ -238,7 +238,8 @@ below for why that is more than an aesthetic complaint.
 * `InitialConditions(X, θ, α, E, M, C, â, b̂, ĉ, b, B, g̅, DF̄, J; l₀)` — builds it from a gyro-centre
   position, gyro angle, pitch angle and an energy in eV, doing the parallel/perpendicular split
   against the equilibrium's own field and metric. `InitialConditionsGC(X, θ, u, μ, …)` is the
-  variant that starts from `(u, μ)` instead.
+  variant that starts from `(u, μ)` instead. Both also take the field itself in place of the eight
+  functions, as `InitialConditions(X, θ, α, E, M, C, field; l₀)`.
 * `charged_particle(ics)`, `guiding_center(ics)`, `pauli_particle(ics)` — per-model converters.
 
 **No equilibrium module calls any of it.** The only callers are `docs/src/initialization.md`,
@@ -258,12 +259,8 @@ that computes `u` and `μ` from physical inputs, and forty modules that hard-cod
   return that directly and the modules should be one line each:
 
   ```julia
-  initial_conditions_deeply_passing() = guiding_center(InitialConditions(x₀, θ, α, E, md, 1, …))
+  initial_conditions_deeply_passing() = guiding_center(InitialConditions(x₀, θ, α, E, md, 1, FIELD))
   ```
-
-* **The per-equilibrium field arguments.** `InitialConditions` takes nine field functions
-  positionally. Since they are all injected into the module by `@code`, a small wrapper per module —
-  or a macro alongside the injection — would remove that boilerplate.
 
 ### Provenance: why the literals cannot simply be documented
 
@@ -369,8 +366,7 @@ field, the sign made the model **chart-dependent**: the same physical particle c
 cartesian chart of the small tokamak and the other way in its cylindrical chart. Nothing in the suite
 caught it because every other assertion was a magnitude.
 
-Resolved by applying the chart's `orientation()` — generated into each module by its `@code` call,
-since `ElectromagneticFields` 0.7.1 — in `ωabs` and `v`. The trade-off
+Resolved by applying the chart's `orientation(field)` in `ωabs` and `v`. The trade-off
 this section posed — divergence-free coordinate right-hand side *versus* chart-independent `dt` — was
 not real: negating a divergence-free field leaves it divergence-free and each subsystem Hamiltonian, so
 the splitting is untouched. `s` now runs with `t` in every chart, and the already-declared positive
@@ -404,11 +400,10 @@ observed order of a few would be cheap and would validate the subsystem integrat
   (`W⊥ = W sin α` rather than `W sin²α`). Self-consistent and now flagged, but worth deciding
   whether to move to the textbook convention. Changing it perturbs every shipped initial condition,
   so it wants doing deliberately and on its own.
-* `SolovevSymmetricField` has no `GyroKinetics4d` counterpart, and cannot have one as things stand:
-  `SolovevSymmetric.@code` injects the equilibrium parameters `α` and `β` into the module, and `β`
-  collides with the vector potential `β` of `gc_common.jl`. Fixing it means renaming one of the
-  two — the model's `β` comes from the notes and is exported, the field's from
-  `ElectromagneticFields` — so neither rename is local to this package.
+* `SolovevSymmetricField` has no `GyroKinetics4d` counterpart. Nothing blocks one: the field is a
+  value in `params`, so its parameters `α` and `β` do not collide with the vector potential `β` of
+  `gc_common.jl`. It wants a module with its field, an initial condition and a `DEFAULT_TIMESTEP`
+  rescaled for this model.
 
 
 ---

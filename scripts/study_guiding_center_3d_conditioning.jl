@@ -45,6 +45,7 @@
 #
 
 using ChargedParticleDynamics
+using ElectromagneticFields: b♭
 using GeometricIntegrators
 using LinearAlgebra
 using Logging
@@ -158,11 +159,12 @@ function conditioning()
         ic = initial(M, icsname)
         q, p, t = ic.q, ic.p, 0.0
 
-        λ = [M.λₒ(t, q, p, M.constraint_pair(s)) for s in PAIRS]
+        λ = [M.λₒ(t, q, p, ic.params, M.constraint_pair(s)) for s in PAIRS]
 
         @printf("  %-26s %-12s %10.3e %10.3e %10.3e   %11.3e %11.3e %11.3e   %10.3e %8s\n",
-            name, coords, M.b₁(t, q), M.b₂(t, q), M.b₃(t, q), λ...,
-            M.compact_denominator(t, q, p), M.default_constraints())
+            name, coords, b♭(M.FIELD, t, q)..., λ...,
+            G3.compact_denominator(t, M.fieldpoint(M.FIELD, t, q), p),
+            M.default_constraints())
     end
     flush(stdout)
 
@@ -216,9 +218,10 @@ function variants(M, ic)
     q, p, t = ic.q, ic.p, 0.0
 
     # a pair is usable where the bracket it divides by does not vanish …
-    pairok(s) = (λ = M.λₒ(t, q, p, M.constraint_pair(s)); isfinite(λ) && !iszero(λ))
+    pairok(s) = (
+        λ = M.λₒ(t, q, p, ic.params, M.constraint_pair(s)); isfinite(λ) && !iszero(λ))
     # … and the literal compact form where the single component of b it divides by does not
-    compactok(s) = !iszero(M.bᵢ(M.compact_index(s), t, q))
+    compactok(s) = !iszero(G3.bᵢ(M.compact_index(s), t, M.fieldpoint(M.FIELD, t, q)))
 
     (("hode :g31", pairok(:g31), ic -> M.hodeproblem(ic; constraints = :g31, w...)),
         ("hode :g12", pairok(:g12), ic -> M.hodeproblem(ic; constraints = :g12, w...)),

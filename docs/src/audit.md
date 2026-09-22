@@ -91,12 +91,12 @@ equilibria — including the toroidal `TokamakSmallNoncanonical` — are self-co
 
 ### `plot_fieldlines` is restricted to axisymmetric cylindrical equilibria
 
-It contours the poloidal flux as `equ.A₃(0, x, y, 0)`, reading the first two coordinates as
+It contours the poloidal flux as `A♭(field, 0, x, y, 0)[3]`, reading the first two coordinates as
 ``(R, Z)`` and the third as the toroidal angle. That reading is meaningless for a cartesian or
 toroidal equilibrium, and it used to draw a plausible-looking wrong picture for them rather than
 failing. It now rejects any chart it is not valid in, and so does
-`plot_trajectory_poloidal(R, Z, equ)`, which forwards its equilibrium to it. The predicate is
-`is_axisymmetric_cylindrical`, decided from the coordinate ranges the field code injects.
+`plot_trajectory_poloidal(R, Z, field)`, which forwards its field to it. The predicate is
+`is_axisymmetric_cylindrical`, decided from `periodic(field)`.
 
 The quantity is the *covariant* component ``A_3 = R A_{\varphi} = \psi``, not the physical
 ``A_{\varphi} = A_3 / R``: it is ``B \cdot \nabla A_3`` that vanishes, so only ``A_3`` has the flux
@@ -272,9 +272,11 @@ See [Findings](@ref) for the measurements behind these numbers.
 ### Parameters
 
 Every equilibrium module provides `default_parameters(::Type{T} = Float64)` returning a named
-tuple, following `GeometricProblems`. For the charged particle models, which take no parameters —
-the electromagnetic field is injected as code rather than passed in — it returns an empty named
-tuple, so that every problem in the package can be constructed the same way.
+tuple, following `GeometricProblems`. Its `field` entry is the module's `FIELD`, the
+`ElectromagneticFields.FieldFunctions` that every equation of the model reads. For the charged
+particle models, which take no physical parameters, the field is the only entry, so that every
+problem in the package can be constructed the same way. To integrate a model in another field,
+pass `parameters = (field = FieldFunctions(equilibrium), …)` to any constructor.
 
 
 ## Documentation coverage

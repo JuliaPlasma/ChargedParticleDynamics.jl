@@ -17,15 +17,19 @@ import ChargedParticleDynamics.GuidingCenter3d
 import ChargedParticleDynamics.GuidingCenter4d
 import ChargedParticleDynamics.PauliParticle3d
 
-import .ChargedParticle3d.TokamakIterCylindrical: from_cartesian, g₁₁, g₂₂, g₃₃
-import .ChargedParticle3d.TokamakIterCylindrical: R₀, B, b, aₚ, bₚ, cₚ, b⃗, ḡ, DF̄, J
+using ElectromagneticFields: from_cartesian
+```
+
+Every model below uses the same equilibrium, and every problem carries its field in `parameters`:
+```@example 1
+field = ChargedParticle3d.TokamakIterCylindrical.FIELD
 ```
 
 
 ## Magnetic Field
 
 ```@example 1
-fig, ax = plot_fieldlines(ChargedParticle3d.TokamakIterCylindrical; xrange = (3., 11.), yrange = (-4., +4.),  levels = 25)
+fig, ax = plot_fieldlines(field; xrange = (3., 11.), yrange = (-4., +4.),  levels = 25)
 fig
 ```
 
@@ -34,19 +38,19 @@ fig
 
 Set and initialize initial conditions:
 ```@example 1
-X₀ = from_cartesian(0, [7.0, 0, 0])
+X₀ = Vector(from_cartesian(field, 0, [7.0, 0, 0]))
 E₀ = 1E6
 θ₀ = 0.
 α₀ = π*5/16
 m₀ = md
 
-ics = InitialConditions(X₀, θ₀, α₀, E₀, m₀, 1, aₚ, bₚ, cₚ, b⃗, B, ḡ, DF̄, J)
+ics = InitialConditions(X₀, θ₀, α₀, E₀, m₀, 1, field)
 ```
 
 Obtain charged particle initial conditions:
 ```@example 1
 x₀, v₀ = charged_particle(ics)
-p₀ = ChargedParticle3d.TokamakIterCylindrical.charged_particle_3d_pᵢ(0, x₀, v₀)
+p₀ = ChargedParticle3d.Canonical.charged_particle_3d_pᵢ(0, x₀, v₀, (field = field,))
 ```
 
 Obtain Pauli particle initial conditions:
@@ -69,7 +73,7 @@ q3₀ = q₀
 
 Parameters:
 ```@example 1
-parameters = (μ=μ,)
+parameters = (field=field, μ=μ)
 ```
 
 Time step size and integration intervals:
@@ -100,12 +104,12 @@ Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
 code = ChargedParticle3d.TokamakIterCylindrical.podeproblem(x₀, p₀; timestep=Δt1, timespan=timespan)
 csol = integrate(code, PartitionedGauss(1); options...)
-ccar = cartesian_solution(csol, ChargedParticle3d.TokamakIterCylindrical);
+ccar = cartesian_solution(csol);
 ```
 
 Plot solution and energy error:
 ```@example 1
-fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, ChargedParticle3d.TokamakIterCylindrical; linewidth = 1)
+fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, field; linewidth = 1)
 fig
 ```
 
@@ -123,7 +127,7 @@ Integrate charged particle dynamics with large time step and convert result to c
 ```@example 1
 code_Δt2 = ChargedParticle3d.TokamakIterCylindrical.podeproblem(x₀, p₀; timestep=Δt2, timespan=timespan)
 csol_Δt2 = integrate(code_Δt2, PartitionedGauss(1); options...)
-ccar_Δt2 = cartesian_solution(csol_Δt2, ChargedParticle3d.TokamakIterCylindrical);
+ccar_Δt2 = cartesian_solution(csol_Δt2);
 ```
 
 ## Pauli Particle with Symplectic Integrator
@@ -132,12 +136,12 @@ Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
 hode = PauliParticle3d.TokamakIterCylindrical.hodeproblem(X₀, u₀; parameters = parameters, timestep=Δt3, timespan=timespan)
 hsol = integrate(hode, PartitionedGauss(1); options...)
-hcar = cartesian_solution(hsol, PauliParticle3d.TokamakIterCylindrical);
+hcar = cartesian_solution(hsol);
 ```
 
 Plot solution and energy error:
 ```@example 1
-fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, ChargedParticle3d.TokamakIterCylindrical; label="Charged Particle Δt=0.01", linewidth = 1)
+fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, field; label="Charged Particle Δt=0.01", linewidth = 1)
 plot_trajectory_scatter!(fig, ax, hcar.R, hcar.Z; label="Pauli Particle Δt=1.0")
 axislegend(ax)
 fig
@@ -158,7 +162,7 @@ Integrate charged particle dynamics with large time step and convert result to c
 ```@example 1
 hode_Δt5 = PauliParticle3d.TokamakIterCylindrical.hodeproblem(X₀, u₀; parameters = parameters, timestep=Δt5, timespan=timespan_long)
 hsol_Δt5 = integrate(hode_Δt5, PartitionedGauss(1); initialguess=NoInitialGuess(), options...);
-hcar_Δt5 = cartesian_solution(hsol_Δt5, PauliParticle3d.TokamakIterCylindrical);
+hcar_Δt5 = cartesian_solution(hsol_Δt5);
 ```
 
 ## Pauli Particle with Variational Integrator
@@ -167,12 +171,12 @@ Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
 pode = PauliParticle3d.TokamakIterCylindrical.iodeproblem(X₀, u₀; parameters = parameters, timestep=Δt3, timespan=timespan)
 psol = integrate(pode, VPRKGauss(1); options...)
-pcar = cartesian_solution(psol, PauliParticle3d.TokamakIterCylindrical);
+pcar = cartesian_solution(psol);
 ```
 
 Plot solution and energy error:
 ```@example 1
-fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, ChargedParticle3d.TokamakIterCylindrical; label="Charged Particle Δt=0.01", linewidth = 1)
+fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, field; label="Charged Particle Δt=0.01", linewidth = 1)
 plot_trajectory_scatter!(fig, ax, pcar.R, pcar.Z; label="Pauli Particle Δt=1.0")
 axislegend(ax)
 fig
@@ -193,7 +197,7 @@ Integrate charged particle dynamics with large time step and convert result to c
 ```@example 1
 pode_Δt5 = PauliParticle3d.TokamakIterCylindrical.iodeproblem(X₀, u₀; parameters = parameters, timestep=Δt5, timespan=timespan_long)
 psol_Δt5 = integrate(pode_Δt5, VPRKGauss(1); initialguess=NoInitialGuess(), options...);
-pcar_Δt5 = cartesian_solution(psol_Δt5, PauliParticle3d.TokamakIterCylindrical);
+pcar_Δt5 = cartesian_solution(psol_Δt5);
 ```
 
 
@@ -211,12 +215,12 @@ Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
 vode = GuidingCenter4d.TokamakIterCylindrical.iodeproblem(q₀; parameters = parameters, timestep=10., timespan=(0,1800))
 vsol = integrate(vode, SymmetricProjection(VPRKLobattoIIIAIIIB(2)); options...)
-vcar = cartesian_solution(vsol, GuidingCenter4d.TokamakIterCylindrical);
+vcar = cartesian_solution(vsol);
 ```
 
 Plot solution and energy error:
 ```@example 1
-fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, ChargedParticle3d.TokamakIterCylindrical; label="Charged Particle Δt=0.01", linewidth = 1)
+fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, field; label="Charged Particle Δt=0.01", linewidth = 1)
 plot_trajectory_scatter!(fig, ax, vcar.R, vcar.Z; label="Guiding Center Δt=10.0", color=:orange, markersize=10)
 axislegend(ax)
 fig
@@ -239,12 +243,12 @@ Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
 gode = GuidingCenter4d.TokamakIterCylindrical.iodeproblem(q₀; parameters = parameters, timestep=Δt3, timespan=timespan)
 gsol = integrate(gode, SymmetricProjection(VPRKGauss(1)); options...)
-gcar = cartesian_solution(gsol, GuidingCenter4d.TokamakIterCylindrical);
+gcar = cartesian_solution(gsol);
 ```
 
 Plot solution and energy error:
 ```@example 1
-fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, ChargedParticle3d.TokamakIterCylindrical; label="Charged Particle Δt=0.01", linewidth = 1)
+fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, field; label="Charged Particle Δt=0.01", linewidth = 1)
 plot_trajectory_scatter!(fig, ax, gcar.R, gcar.Z; label="Guiding Center 4D Δt=1.0")
 axislegend(ax)
 fig
@@ -265,7 +269,7 @@ Integrate charged particle dynamics with large time step and convert result to c
 ```@example 1
 gode_Δt5 = GuidingCenter4d.TokamakIterCylindrical.iodeproblem(q₀; parameters = parameters, timestep=Δt5, timespan=timespan_long)
 gsol_Δt5 = integrate(gode_Δt5, SymmetricProjection(VPRKGauss(1)); options...);
-gcar_Δt5 = cartesian_solution(gsol_Δt5, GuidingCenter4d.TokamakIterCylindrical);
+gcar_Δt5 = cartesian_solution(gsol_Δt5);
 ```
 
 
@@ -275,12 +279,12 @@ Integrate charged particle dynamics and convert result to cartesian coordinates:
 ```@example 1
 g3ode = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(q3₀; parameters = parameters, timestep=Δt3, timespan=(0., 19_189.))
 g3sol = integrate(g3ode, PartitionedGauss(1); initialguess=NoInitialGuess(), options...)
-g3car = cartesian_solution(g3sol, GuidingCenter3d.TokamakIterCylindrical);
+g3car = cartesian_solution(g3sol);
 ```
 
 Plot solution and energy error:
 ```@example 1
-fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, ChargedParticle3d.TokamakIterCylindrical; label="Charged Particle Δt=0.01", linewidth = 1)
+fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, field; label="Charged Particle Δt=0.01", linewidth = 1)
 plot_trajectory_scatter!(fig, ax, g3car.R, g3car.Z; label="Guiding Center 3D Δt=1.0", color=:orange)
 axislegend(ax)
 fig
@@ -325,18 +329,18 @@ Integrate charged particle dynamics with large time step and convert result to c
 ```@example 1
 g3ode_Δt4 = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(q3₀; parameters = parameters, timestep=Δt4, timespan=(0, 100*Δt4))
 g3sol_Δt4 = integrate(g3ode_Δt4, PartitionedGauss(1); initialguess=MidpointExtrapolation(5, 1.0), options...)
-g3car_Δt4 = cartesian_solution(g3sol_Δt4, GuidingCenter3d.TokamakIterCylindrical);
+g3car_Δt4 = cartesian_solution(g3sol_Δt4);
 ```
 
 ```@example 1
 g3ode_Δt5 = GuidingCenter3d.TokamakIterCylindrical.hodeproblem(q3₀; parameters = parameters, timestep=Δt5, timespan=(0, 100*Δt4))
 g3sol_Δt5 = integrate(g3ode_Δt5, PartitionedGauss(1); initialguess=MidpointExtrapolation(5, 1.0), options...)
-g3car_Δt5 = cartesian_solution(g3sol_Δt5, GuidingCenter3d.TokamakIterCylindrical);
+g3car_Δt5 = cartesian_solution(g3sol_Δt5);
 ```
 
 Plot solution, energy error and constraints:
 ```@example 1
-fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, ChargedParticle3d.TokamakIterCylindrical; label="Charged Particle Δt=0.01", linewidth = 1)
+fig, ax = plot_trajectory_poloidal(ccar.R, ccar.Z, field; label="Charged Particle Δt=0.01", linewidth = 1)
 plot_trajectory_scatter!(fig, ax, g3car.R, g3car.Z; label="Guiding Center 3D Δt=1.0", markersize=12, color=Makie.wong_colors()[6])
 plot_trajectory_scatter!(fig, ax, g3car_Δt4.R, g3car_Δt4.Z; label="Guiding Center 3D Δt=10.0", markersize=12, color=Makie.wong_colors()[3])
 plot_trajectory_scatter!(fig, ax, g3car_Δt5.R, g3car_Δt5.Z; label="Guiding Center 3D Δt=50.0", markersize=12, color=Makie.wong_colors()[2])

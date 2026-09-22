@@ -6,10 +6,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [Unreleased] — targeting 0.5.0
+
+`ElectromagneticFields` 0.9 replaces the SymEngine code generator, and the `@code` macros that
+injected a field's functions into a module with it, by `FieldFunctions`: the field is a value. This
+release follows it. Each equation is written once per model family and reads its field from
+`params.field`, and each equilibrium module is a preset — a field, an initial condition and
+constructors that default to them. It is breaking. Every result is unchanged: 4531 recorded values
+of right-hand sides, one-forms, Hamiltonians, invariants and initial conditions, across all five
+families, agree with 0.4.1 to a relative 1e-10.
 
 ### Changed
 
+- **`ElectromagneticFields` 0.9 is now required**, up from 0.8, in the root project and in the
+  `docs/` and `scripts/` environments. `test/` now depends on it directly, with the same bound,
+  because the tests read the field through its accessors. `StaticArrays` is a new dependency.
+- **The field travels in `parameters`.** Every equilibrium module defines `const FIELD =
+  FieldFunctions(…)`, and its `default_parameters()` returns `(field = FIELD, …)`. For the charged
+  particle, which has no physical parameter, that is `(field = FIELD,)`. So any model runs in any
+  field: pass `parameters = (field = FieldFunctions(equilibrium), μ = …)` to a constructor.
+  A `parameters` tuple without `field`, such as the `(μ = μ,)` that 0.4 accepted, now fails
+  with an error that names the missing `field`.
+- **The injected field namespace is gone.** An equilibrium module no longer defines `A₁`…`A₃`,
+  `b₁`…`b₃`, `b⃗`, `B`, `g₁₁`…`g₃₃`, `ḡ`, `aₚ`/`bₚ`/`cₚ`, `DF̄`, `J`, `R`, `from_cartesian`,
+  `orientation`, the equilibrium parameters such as `R₀`, or their derivatives. Read them from the
+  field with the `ElectromagneticFields` accessors, for example `b♭(M.FIELD, t, x)` for the old
+  covariant `b₁`…`b₃`, `b♯` for `b⃗`, `b♮` for `bₚ`, `g♯` for `ḡ`, `A♭(…)[3]` for `A₃`,
+  `coordinates(M.FIELD).R` for `R` and `parameters(M.FIELD).R₀` for `R₀`.
+- **Every function that reads the field takes `params`.** The params-free forms are removed. Among
+  the public ones: `GuidingCenter3d.u(t, q, p, params)`, `g₁`…`g₃(t, q, p, params)`,
+  `λₒ(t, q, p, params, c)`, `initial_conditions(tᵢ, Qᵢ, params)` and
+  `compute_constraints(t, q, p, params)`; `GuidingCenter4d.ϑ(θ, t, q, params)`, `ω` and `dϑ`
+  likewise; `GyroKinetics4d.ωabs(t, q, params)`; and
+  `ChargedParticle3d.Canonical.charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ, params)`. Each module's own
+  `initial_conditions` and constructors keep their 0.4 call forms and supply the module's field.
+- **The 3D guiding centre constraint pair is required** where it used to default: in `λₒ`, `λ₁`,
+  `λ₂`, `multipliers`, `hamiltonian_canonical` and the right-hand sides. `default_constraint_pair`
+  is removed; each module's `default_constraints()` still names its pair. The family-level
+  constructors take `timespan`, `timestep`, `parameters` and `constraints` as required keywords;
+  the module constructors default all four.
+- **The charged particle modules share two formulations**, `ChargedParticle3d.Canonical` and
+  `ChargedParticle3d.Noncanonical`. The equilibrium modules stay where they were.
+- **`cartesian_solution(sol)`** reads the field from the solution's own parameters. The two-argument
+  form takes a field, `cartesian_solution(sol, field)`, where it used to take an equilibrium module.
+- **`InitialConditions(X, θ, α, E, M, C, field; l₀)`** and the same form of `InitialConditionsGC`
+  take the field in place of the eight field functions. The positional form stays.
+- **`plot_fieldlines(field; …)`, `plot_trajectory_poloidal(R, Z, field; …)` and
+  `is_axisymmetric_cylindrical(field)`** take a field in place of an equilibrium module. The chart
+  test now reads `periodic(field)`.
+- `docs/` and `scripts/` are ported. Six scripts read the injected namespace and are rewritten for
+  the accessors: `guiding_center_3d.jl`, `study_guiding_center_3d_conditioning.jl`,
+  `study_gyrokinetic_rescaling.jl`, `study_model_agreement.jl`, `study_solver_tolerances.jl` and
+  `study_toroidal_momentum.jl`.
 - `src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl` and
   `src/utils/initial_conditions.jl` are now Unicode NFC-normalised. They stored `ṽ`, `Ṽ`, `Ỹ`, `â`
   and `ĉ` as a base letter plus a combining mark, inherited from macOS rather than chosen. Nothing
@@ -21,6 +69,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   along with the identifiers: the field list of `IntegratorCacheFIRKwCT` names `ṽ`, which
   recomposes with the field it documents. No other string literal is affected, and that docstring
   is rendered rather than compared.
+
+### Performance
+
+Each right-hand side evaluates the field tensors it needs once, into a `FieldPoint`, and reads its
+components from there. Minimum over three cold runs, BLAS pinned to one thread, ns per call:
+
+| case | 0.4.1 | now |
+|:--|--:|--:|
+| charged particle, canonical `f` | 128 | 94 |
+| charged particle, noncanonical `v` | 116 | 82 |
+| Pauli `f` | 159 | 131 |
+| 4D guiding centre `v` | 294 | 240 |
+| 4D guiding centre `iodeproblem` `f` | 540 | 352 |
+| gyrokinetic `v` | 940 | 515 |
+| 3D guiding centre `hodeproblem` `v` | 720 | 635 |
+| 3D guiding centre canonical `f` | ≈ 3950 | ≈ 4390 |
+| 3D guiding centre compact `f` | ≈ 846 | ≈ 866 |
+
+**The canonicalised 3D guiding centre is about 11 % slower**, and the compact form about 2 %. For
+the canonical form the field evaluation is faster, 1592 ns against 898 ns, so the loss is in the
+arithmetic on the evaluated point. Its typed IR is 1206 lines against 125, which points at inlining
+rather than at the field layer, but that has not been measured further.
 
 ## [0.4.1] - 2026-08-10
 
