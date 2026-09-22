@@ -278,6 +278,14 @@ particle models, which take no physical parameters, the field is the only entry,
 problem in the package can be constructed the same way. To integrate a model in another field,
 pass `parameters = (field = FieldFunctions(equilibrium), …)` to any constructor.
 
+Every right-hand side reads the field through one `FieldPoint`, built on entry:
+
+```@docs
+ChargedParticleDynamics.FieldPoints
+ChargedParticleDynamics.FieldPoints.FieldPoint
+ChargedParticleDynamics.FieldPoints.fieldpoint
+```
+
 
 ## Documentation coverage
 

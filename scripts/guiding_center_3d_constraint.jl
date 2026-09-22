@@ -1,22 +1,22 @@
 using GeometricIntegrators
 using SimpleSolvers: Options
 
+using ElectromagneticFields: b♭
+using ChargedParticleDynamics.GuidingCenter3d: gᵏ, dgᵏdqₗ, dgᵏdpₗ
+
 using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian
-using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian: hamiltonian,
+using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian: FIELD, hamiltonian,
                                                                       hamiltonian_u, g₁, g₂,
-                                                                      g₃, λₒ, λ₁, λ₂, b₁,
-                                                                      b₂, b₃
-using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian: gᵏ, dgᵏdqₗ, dgᵏdpₗ,
+                                                                      g₃, λₒ, λ₁, λ₂,
                                                                       constraint_pair,
-                                                                      default_constraints
+                                                                      default_constraints,
+                                                                      fieldpoint²
 
 # using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical
-# using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical: hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, b₁, b₂, b₃
-# using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical: gᵏ, dgᵏdqₗ, dgᵏdpₗ, constraint_pair, default_constraints
+# using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical: FIELD, hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, constraint_pair, default_constraints, fieldpoint²
 
 # using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal
-# using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal: hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, b₁, b₂, b₃
-# using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal: gᵏ, dgᵏdqₗ, dgᵏdpₗ, constraint_pair, default_constraints
+# using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal: FIELD, hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, constraint_pair, default_constraints, fieldpoint²
 
 # `f_abstol` is an absolute bound on the residual and has to stay above its round-off floor, which
 # for these models is `‖ϑ‖ eps`. The 1E-14 this script used to ask for is below it, so the solver
@@ -31,22 +31,23 @@ equ = hodeproblem(initial_conditions_barely_passing())
 
 sol = integrate(equ, PartitionedGauss(1); options...)
 
-h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
-hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], parameters(equ))
-      for i in eachindex(sol.t)]
-λ0 = [λₒ(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-λ1 = [λ₁(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
-λ2 = [λ₂(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
-g1 = [g₁(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-g2 = [g₂(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-g3 = [g₃(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-b1 = [b₁(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
-b2 = [b₂(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
-b3 = [b₃(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
-
 # The pair the problem above was built with, in the order the multipliers see it. `λ₁` divides
 # `{g₂, H}` and `λ₂` divides `-{g₁, H}` by `λₒ = {g₁, g₂}`, where `g₁` and `g₂` mean these two.
 const c = constraint_pair(default_constraints())
+
+# The field and its first and second derivatives at a point, which `gᵏ` and its derivatives read.
+P(i) = fieldpoint²(FIELD, sol.t[i], sol.q[i])
+
+params = parameters(equ)
+h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+λ0 = [λₒ(sol.t[i], sol.q[i], sol.p[i], params, c) for i in eachindex(sol.t)]
+λ1 = [λ₁(sol.t[i], sol.q[i], sol.p[i], params, c) for i in eachindex(sol.t)]
+λ2 = [λ₂(sol.t[i], sol.q[i], sol.p[i], params, c) for i in eachindex(sol.t)]
+g1 = [g₁(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+g2 = [g₂(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+g3 = [g₃(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+b = [b♭(FIELD, sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
 
 println()
 println("constraint pair = ", default_constraints(), "  ", c)
@@ -71,22 +72,22 @@ println("λ₀(0) = ", λ0[begin])
 println("λ₀(T) = ", λ0[end])
 println()
 println("λ₁ g₁ + λ₂ g₂ (0) = ",
-    λ1[begin] * gᵏ(c[1], sol.t[begin], sol.q[begin], sol.p[begin]) +
-    λ2[begin] * gᵏ(c[2], sol.t[begin], sol.q[begin], sol.p[begin]))
+    λ1[begin] * gᵏ(c[1], sol.t[begin], P(firstindex(sol.t)), sol.p[begin]) +
+    λ2[begin] * gᵏ(c[2], sol.t[begin], P(firstindex(sol.t)), sol.p[begin]))
 println("λ₁ g₁ + λ₂ g₂ (T) = ",
-    λ1[end] * gᵏ(c[1], sol.t[end], sol.q[end], sol.p[end]) +
-    λ2[end] * gᵏ(c[2], sol.t[end], sol.q[end], sol.p[end]))
+    λ1[end] * gᵏ(c[1], sol.t[end], P(lastindex(sol.t)), sol.p[end]) +
+    λ2[end] * gᵏ(c[2], sol.t[end], P(lastindex(sol.t)), sol.p[end]))
 println()
 
 println()
-println("b₁(x₀) = ", b1[begin])
-println("b₂(x₀) = ", b2[begin])
-println("b₃(x₀) = ", b3[begin])
+println("b₁(x₀) = ", b[begin][1])
+println("b₂(x₀) = ", b[begin][2])
+println("b₃(x₀) = ", b[begin][3])
 println()
 
 # The six products that make up λₒ = Σₗ (∂g₁/∂qₗ ∂g₂/∂pₗ - ∂g₁/∂pₗ ∂g₂/∂qₗ). Which of them carry the
 # vanishing component of b is what decides whether the pair is usable at this initial condition.
-let t₀ = sol.t[begin], q₀ = sol.q[begin], p₀ = sol.p[begin]
+let t₀ = sol.t[begin], q₀ = P(firstindex(sol.t)), p₀ = sol.p[begin]
     println()
     for i in 1:3
         l = Val(i)

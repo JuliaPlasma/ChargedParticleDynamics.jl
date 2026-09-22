@@ -41,7 +41,7 @@ export default_parameters, default_constraints
 default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(1E-2))
 
 """
-The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+The constraint pair [`hodeproblem`](@ref ChargedParticleDynamics.GuidingCenter3d.hodeproblem) and its siblings use here by default.
 
 All three pairs are regular at the initial condition — `λₒ` is -34, 34 and 68 — but only this one stays
 that way, because the orbit takes `b₁` and `b₂` through zero and the other two pairs divide by them.

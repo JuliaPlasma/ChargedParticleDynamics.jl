@@ -57,13 +57,13 @@ end
 # `expander_pipeline.jl` uses it to filter which docstrings a `@docs` or `@autodocs` block is
 # *allowed* to render. One set, both jobs.
 #
-# That is irreconcilable with how this package is laid out. Each equilibrium module `include`s the
-# shared model code, so all fifty-odd of them carry their own copy of every shared docstring — 491
-# across the package — and the model pages render each once, from an anchor module, listing the rest
-# in `@docs` blocks for their module docstring alone. Passing every module makes the pages work and
-# reports 382 docstrings as "not included in the manual", every one of them excluded on purpose.
-# Narrowing the set with `checkdocs_ignored_modules` silences those, and simultaneously makes the
-# `@docs` blocks naming those modules fail with "no docs found", because it is the same set.
+# That is irreconcilable with how this package is laid out. The equations live once, in the family
+# modules, but each equilibrium module `include`s its family's preset file, so all fifty-odd of them
+# carry their own copy of every preset docstring. The model pages render each once, from an anchor
+# module, and list the rest in `@docs` blocks for their module docstring alone. Passing every module
+# makes the pages work and reports every other copy as "not included in the manual", each excluded
+# on purpose. Narrowing the set with `checkdocs_ignored_modules` silences those, and simultaneously
+# makes the `@docs` blocks naming those modules fail with "no docs found", because it is the same set.
 #
 # So the check below does the job directly, and more precisely than the built-in would: every module
 # in the package must have a docstring of its own, and must be named in some `@docs`/`@autodocs`
@@ -71,8 +71,9 @@ end
 # so. Warnings rather than errors, so the build still completes.
 #
 # What this does not cover is a *function* docstring that stops being rendered. The pages render the
-# shared API through `@autodocs` on the anchor modules, which takes everything those modules own, so
-# that can only regress by someone replacing an `@autodocs` block with a partial `@docs` list.
+# API through `@autodocs` on the family modules and the anchor modules, which takes everything those
+# modules own, so that can only regress by someone replacing an `@autodocs` block with a partial
+# `@docs` list.
 let documented = documented_names(joinpath(@__DIR__, "src")), undocumented = String[],
     unlisted = String[]
 

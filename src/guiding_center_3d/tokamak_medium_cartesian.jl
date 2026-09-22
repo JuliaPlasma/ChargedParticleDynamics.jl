@@ -93,7 +93,7 @@ export default_parameters, default_constraints
 default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(1E-2))
 
 """
-The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+The constraint pair [`hodeproblem`](@ref ChargedParticleDynamics.GuidingCenter3d.hodeproblem) and its siblings use here by default.
 
 `(g², g³)`, which divides by `b₂ = 0.9923` — the largest component of `b` at this initial condition, so
 the best conditioned of the three pairs. `(g³, g¹)` divides by `b₁`, which vanishes identically on

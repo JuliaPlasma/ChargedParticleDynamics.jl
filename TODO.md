@@ -196,9 +196,9 @@ search being 8 % of wall clock against the Jacobian's 13 %.
 
 There were three real costs. Two are fixed here. `MidpointExtrapolation(5)`, which is not the default
 for either method, was 70 % of wall clock and is no longer requested. The right-hand side no longer
-re-enters the generated field code once per bracket term: `fieldvalues` evaluates each injected
-function once into a `FieldValues`, and `SecondFieldValues` does the same for the second derivatives
-the canonicalised form needs.
+re-enters the generated field code once per bracket term: each right-hand side evaluates the field
+once into a `FieldPoint`, and `fieldpoint²` adds the second derivatives the canonicalised form
+needs.
 
 The third was the expression swell in the generated code itself, and lives upstream. It is delivered:
 [JuliaPlasma/ElectromagneticFields.jl#10](https://github.com/JuliaPlasma/ElectromagneticFields.jl/pull/10)

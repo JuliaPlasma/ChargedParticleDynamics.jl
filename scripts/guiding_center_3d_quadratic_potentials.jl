@@ -1,10 +1,13 @@
 using GeometricIntegrators
 
+using ElectromagneticFields: b♭
+
 using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d
-using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: hamiltonian,
+using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: FIELD, hamiltonian,
                                                                      hamiltonian_u, g₁, g₂,
-                                                                     g₃, λₒ, λ₁, λ₂, b₁, b₂,
-                                                                     b₃
+                                                                     g₃, λₒ, λ₁, λ₂,
+                                                                     constraint_pair,
+                                                                     default_constraints
 
 # As in `guiding_center_3d_dipole.jl`: `f_abstol` has to stay above the residual's `‖ϑ‖ eps` floor,
 # which is `4.0E-15` here (`‖p‖ ≈ 18`), so the `2eps() = 4.4E-16` this asked for was unreachable.
@@ -28,19 +31,22 @@ sol = integrate(equ, PartitionedGauss(1); options...)
 # sol = integrate(equ, PartitionedGauss(2); initialguess=MidpointExtrapolation(2), options...)
 # sol = integrate(equ, IRK3(); options...)
 
-h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
+# the pair the problem above was built with
+c = constraint_pair(default_constraints())
+
+params = parameters(equ)
+h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
 h0 = h[begin]
-hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], parameters(equ))
-      for i in eachindex(sol.t)]
-λ0 = [λₒ(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-λ1 = [λ₁(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
-λ2 = [λ₂(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
-g1 = [g₁(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-g2 = [g₂(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-g3 = [g₃(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-b1 = [b₁(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
-b2 = [b₂(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
-b3 = [b₃(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
+hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+λ0 = [λₒ(sol.t[i], sol.q[i], sol.p[i], params, c) for i in eachindex(sol.t)]
+λ1 = [λ₁(sol.t[i], sol.q[i], sol.p[i], params, c) for i in eachindex(sol.t)]
+λ2 = [λ₂(sol.t[i], sol.q[i], sol.p[i], params, c) for i in eachindex(sol.t)]
+g1 = [g₁(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+g2 = [g₂(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+g3 = [g₃(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+b1 = [b♭(FIELD, sol.t[i], sol.q[i])[1] for i in eachindex(sol.t)]
+b2 = [b♭(FIELD, sol.t[i], sol.q[i])[2] for i in eachindex(sol.t)]
+b3 = [b♭(FIELD, sol.t[i], sol.q[i])[3] for i in eachindex(sol.t)]
 R = [sqrt(sol.q[i, 1]^2 + sol.q[i, 2]^2) for i in eachindex(sol.t)]
 Z = sol.q[:, 3]
 

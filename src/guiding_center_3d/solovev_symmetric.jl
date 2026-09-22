@@ -44,7 +44,7 @@ export default_parameters, default_constraints
 default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(1E-2))
 
 """
-The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+The constraint pair [`hodeproblem`](@ref ChargedParticleDynamics.GuidingCenter3d.hodeproblem) and its siblings use here by default.
 
 Both `b₁` and `b₃` vanish at the initial conditions of this equilibrium,
 where `b = e₂`, which leaves `(g², g³)` as the only regular pair.

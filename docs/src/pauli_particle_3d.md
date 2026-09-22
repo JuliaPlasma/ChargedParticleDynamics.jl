@@ -150,12 +150,15 @@ The three models can therefore be compared directly on the same physical orbit â
 ChargedParticleDynamics.PauliParticle3d
 ```
 
-Each equilibrium is its own module, and every one of them `include`s the same
-`pauli_particle_3d.jl`. The model's functions are therefore documented once, below, under
-`TokamakSmallCylindrical`, and hold verbatim for all eight. What differs between the modules is the
-chart, the equilibrium parameters and the initial conditions, which is what these docstrings record:
+The equations are written once, in `PauliParticle3d`, and read the field from `params.field`. They
+are documented below. Each equilibrium is its own module, holding its field as `FIELD`, its initial
+conditions and problem constructors that default to them. The constructors are documented once,
+under `TokamakSmallCylindrical`, and hold verbatim for all eight. What differs between the modules
+is the chart, the equilibrium parameters and the initial conditions, which is what these docstrings
+record:
 
 ```@docs
+ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical
 ChargedParticleDynamics.PauliParticle3d.SymmetricField
 ChargedParticleDynamics.PauliParticle3d.ThetaPinchField
 ChargedParticleDynamics.PauliParticle3d.TokamakSmallCartesian
@@ -166,5 +169,7 @@ ChargedParticleDynamics.PauliParticle3d.SolovevIterXpoint
 ```
 
 ```@autodocs
-Modules = [ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical]
+Modules = [ChargedParticleDynamics.PauliParticle3d,
+           ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical]
+Order   = [:function, :type, :constant, :macro]
 ```

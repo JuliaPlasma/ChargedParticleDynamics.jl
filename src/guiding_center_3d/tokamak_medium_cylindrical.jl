@@ -78,7 +78,7 @@ export default_parameters, default_constraints
 default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(1E-2))
 
 """
-The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+The constraint pair [`hodeproblem`](@ref ChargedParticleDynamics.GuidingCenter3d.hodeproblem) and its siblings use here by default.
 
 `b₁ = b_R` vanishes on the midplane, where every initial condition of
 this equilibrium sits, so `(g³, g¹)` is singular there. `(g¹, g²)` divides by `b₃ = b_φ` instead.

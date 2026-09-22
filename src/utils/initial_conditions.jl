@@ -70,7 +70,7 @@ Compute initial conditions from the following arguments:
 * `g̅`: inverse metric coefficients (`g♯`)
 * `DF̄`: inverse Jacobian matrix
 * `J`: Jacobian determinant
-* `l=1`: length normalization
+* `l₀ = 1`: length normalization
 """
 function InitialConditions(X::AbstractVector{T}, θ::T, α::T, Etot::T, M::T, C, â::Function,
         b̂::Function, ĉ::Function, b::Function, B::Function,
@@ -120,7 +120,7 @@ Compute initial conditions from the following arguments:
 * `g̅`: inverse metric coefficients (`g♯`)
 * `DF̄`: inverse Jacobian matrix
 * `J`: Jacobian determinant
-* `l=1`: length normalization
+* `l₀ = 1`: length normalization
 """
 function InitialConditionsGC(X::AbstractVector{T}, θ::T, u::T, μ::T, M::T, C, â::Function,
         b̂::Function, ĉ::Function, b::Function, B::Function,

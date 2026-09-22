@@ -62,7 +62,7 @@ end
 @inline fieldpoint(field, t, P::FieldPoint, ::Val) = P
 
 #
-# The scalar accessors, under the names `ElectromagneticFields` 0.8 generated into each module:
+# The scalar accessors, named in the component notation the equations are written in:
 # `A₁` is the first covariant component of `A♭`, `b¹` the first contravariant one of `b♯`,
 # `dA₁dx₂` is `DA♭[1, 2]`, `dg¹¹dx₂` is `Dg♯[1, 1, 2]`, and so on. The metric appears only through
 # its diagonal, since every chart this package uses is orthogonal.

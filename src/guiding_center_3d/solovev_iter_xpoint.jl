@@ -36,7 +36,7 @@ function default_parameters(::Type{T} = Float64) where {T}
 end
 
 """
-The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+The constraint pair [`hodeproblem`](@ref ChargedParticleDynamics.GuidingCenter3d.hodeproblem) and its siblings use here by default.
 
 `b₁` is small but non-zero at every initial condition of this
 equilibrium, so the historical pair is still usable.

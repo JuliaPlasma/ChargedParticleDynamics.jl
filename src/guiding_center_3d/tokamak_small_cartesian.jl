@@ -91,7 +91,7 @@ export default_parameters, default_constraints
 default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(3.2e-7))
 
 """
-The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+The constraint pair [`hodeproblem`](@ref ChargedParticleDynamics.GuidingCenter3d.hodeproblem) and its siblings use here by default.
 
 `b₁ = B_x` vanishes at the initial conditions of this equilibrium,
 which sit at `y = z = 0`, so `(g³, g¹)` is singular there. `(g², g³)` divides by `b₂`, the toroidal

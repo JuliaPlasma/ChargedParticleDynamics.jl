@@ -1,9 +1,12 @@
 using GeometricIntegrators
 using SimpleSolvers
 
+using ElectromagneticFields: b♭
+
 using ChargedParticleDynamics.GuidingCenter3d.Dipole3d
-using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: hamiltonian, hamiltonian_u, g₁, g₂,
-                                                        g₃, λₒ, λ₁, λ₂, b₁, b₂, b₃
+using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: FIELD, hamiltonian, hamiltonian_u,
+                                                        g₁, g₂, g₃, λₒ, λ₁, λ₂,
+                                                        constraint_pair, default_constraints
 
 # `f_abstol` has to sit above the round-off floor of the residual, which for the variational
 # residual is `‖ϑ‖ eps`. `Dipole3d` ships `‖p‖ ≈ 152`, i.e. a floor of `3.4E-14`, so the `8eps() =
@@ -27,19 +30,22 @@ sol = integrate(equ, PartitionedGauss(1); options...)
 # sol = integrate(equ, PartitionedGauss(2); initialguess=MidpointExtrapolation(2), options...)
 # sol = integrate(equ, IRK3(); options...)
 
-h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
+# the pair the problem above was built with
+c = constraint_pair(default_constraints())
+
+params = parameters(equ)
+h = [hamiltonian(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
 h0 = h[begin]
-hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], parameters(equ))
-      for i in eachindex(sol.t)]
-λ0 = [λₒ(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-λ1 = [λ₁(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
-λ2 = [λ₂(sol.t[i], sol.q[i], sol.p[i], parameters(equ)) for i in eachindex(sol.t)]
-g1 = [g₁(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-g2 = [g₂(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-g3 = [g₃(sol.t[i], sol.q[i], sol.p[i]) for i in eachindex(sol.t)]
-b1 = [b₁(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
-b2 = [b₂(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
-b3 = [b₃(sol.t[i], sol.q[i]) for i in eachindex(sol.t)]
+hu = [hamiltonian_u(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+λ0 = [λₒ(sol.t[i], sol.q[i], sol.p[i], params, c) for i in eachindex(sol.t)]
+λ1 = [λ₁(sol.t[i], sol.q[i], sol.p[i], params, c) for i in eachindex(sol.t)]
+λ2 = [λ₂(sol.t[i], sol.q[i], sol.p[i], params, c) for i in eachindex(sol.t)]
+g1 = [g₁(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+g2 = [g₂(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+g3 = [g₃(sol.t[i], sol.q[i], sol.p[i], params) for i in eachindex(sol.t)]
+b1 = [b♭(FIELD, sol.t[i], sol.q[i])[1] for i in eachindex(sol.t)]
+b2 = [b♭(FIELD, sol.t[i], sol.q[i])[2] for i in eachindex(sol.t)]
+b3 = [b♭(FIELD, sol.t[i], sol.q[i])[3] for i in eachindex(sol.t)]
 R = [sqrt(sol.q[i, 1]^2 + sol.q[i, 2]^2) for i in eachindex(sol.t)]
 Z = sol.q[:, 3]
 

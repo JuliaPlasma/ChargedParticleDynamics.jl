@@ -15,10 +15,9 @@ module GyroKinetics4d
 #   * `SymmetricField` and `ThetaPinchField` carry only a Poincaré loop and surface
 #     parameterisation and no point initial condition, and this model has no loop/surface
 #     machinery, so there is nothing for them to integrate here.
-#   * `SolovevSymmetricField` has no module here. The field is a value in `params` and no
-#     longer defines the equilibrium parameters `α` and `β` as constants of the module, so its
-#     `β` no longer collides with the vector potential `β` of `gc_common.jl`; the module has
-#     simply not been written.
+#   * `SolovevSymmetricField` has no module here, and nothing blocks one: the field is a value in
+#     `params`, so its equilibrium parameters `α` and `β` do not collide with the vector potential
+#     `β` of `gc_common.jl`. The module is not written.
 #
 # The equations, written once and reading the field from `params.field`. The equilibrium modules
 # below each hold a field, an initial condition and the problem constructors that default to them.

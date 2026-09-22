@@ -456,7 +456,7 @@ end
     using Test
 
     # `∂λ/∂q` and `∂λ/∂p` are the only *composed* derivatives in the model — everything else is read
-    # straight off the injected field functions — and they are what separates `hodeproblem_canonical`
+    # straight off the field tensors — and they are what separates `hodeproblem_canonical`
     # from `hodeproblem`. `dλ₂` carried the `∂λₒ` term with the wrong sign, which this catches.
     #
     # The test point has to sit *off* the constraint manifold. In the right-hand side both `∂λ/∂q g`
@@ -501,8 +501,8 @@ end
     # `guiding_center_3d_compact.jl` does not port Eq. (29) of Li, Zhang & Liu — that equation is
     # written with cartesian vector identities and `H = ½Σ(pᵢ-Aᵢ)²`, and eight of the thirteen
     # equilibria here are curvilinear — but derives an equivalent from the model's own objects. This
-    # pins that derivation against the paper by spelling Eq. (29) out directly from the injected field
-    # functions, which is only possible in the cartesian charts, where the metric is the identity.
+    # pins that derivation against the paper by spelling Eq. (29) out directly from the field
+    # tensors, which is only possible in the cartesian charts, where the metric is the identity.
     G = GuidingCenter3d
     using ElectromagneticFields: g♯, b♭, A♭, Db♭, DA♭, DB, E♭, B
 

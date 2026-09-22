@@ -192,7 +192,7 @@ Order   = [:type, :function]
 
 ## Example
 
-As an example, let us consider a deuteron in an ITER-like analytical equilibrium (obtained from `ElectromagneticFields.SolovevITER`). The guiding center position is $[7, 0, 0]$, the energy is $1 \, \mathrm{MeV}$, and the pitch angle is $\pi / 2$.
+As an example, let us consider a deuteron in an ITER-like analytical equilibrium (obtained from `ElectromagneticFields.SolovevEquilibriumITER`). The guiding center position is $[7, 0, 0]$, the energy is $1 \, \mathrm{MeV}$, and the pitch angle is $\pi / 2$.
 
 ```@eval
 using CairoMakie

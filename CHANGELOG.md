@@ -54,10 +54,10 @@ families, agree with 0.4.1 to a relative 1e-10.
 - **`plot_fieldlines(field; …)`, `plot_trajectory_poloidal(R, Z, field; …)` and
   `is_axisymmetric_cylindrical(field)`** take a field in place of an equilibrium module. The chart
   test now reads `periodic(field)`.
-- `docs/` and `scripts/` are ported. Six scripts read the injected namespace and are rewritten for
-  the accessors: `guiding_center_3d.jl`, `study_guiding_center_3d_conditioning.jl`,
-  `study_gyrokinetic_rescaling.jl`, `study_model_agreement.jl`, `study_solver_tolerances.jl` and
-  `study_toroidal_momentum.jl`.
+- `docs/` and `scripts/` are ported. Twelve of the fourteen scripts read the injected namespace or a
+  removed params-free form, and are rewritten for the accessors; `study_invariant_conservation.jl`
+  and `study_volume_preservation.jl` needed no change. The model pages render the equations from the
+  family modules, where they now live, and the constructors from one equilibrium module each.
 - `src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl` and
   `src/utils/initial_conditions.jl` are now Unicode NFC-normalised. They stored `ṽ`, `Ṽ`, `Ỹ`, `â`
   and `ĉ` as a base letter plus a combining mark, inherited from macOS rather than chosen. Nothing
