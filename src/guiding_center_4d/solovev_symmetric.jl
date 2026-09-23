@@ -36,8 +36,8 @@ default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(1E-2)
 
 include("guiding_center_4d_presets.jl")
 
-# The canonical toroidal momentum is the covariant φ-component of the one-form, ϑ₃. It was
-# previously multiplied by R, which destroys the conservation: on the small tokamak the
+# The canonical toroidal momentum is the covariant φ-component of the one-form, ϑ₃, and not
+# R ϑ₃, which destroys the conservation: on the small tokamak the
 # relative variation over 10³ time units is 2e-13 for ϑ₃ and 3e-3 for R ϑ₃.
 function toroidal_momentum(t, q, params)
     check_chart(params.field, FIELD)
