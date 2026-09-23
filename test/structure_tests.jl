@@ -375,15 +375,24 @@ end
 
     # The three constraints and every one of their first and second derivatives come from one indexed
     # definition each in `guiding_center_3d_constraints.jl`, so a sign or an index that is wrong is
-    # wrong for all three pairs at once — and only two of the three used to exist at all. This checks
-    # each of them against a central difference of the derivative one order below, for every index
-    # combination, in three charts.
+    # wrong for all three pairs at once. This checks each of them against a central difference of the
+    # derivative one order below, for every index combination, in three charts, and on the two
+    # Poincaré-invariant fixtures, whose `b = e₃` makes `b₁` and `b₂` vanish. The fixtures have no
+    # named initial condition, so a point on their loop serves.
     G = GuidingCenter3d
+    test_point(M) =
+        if isdefined(M, :initial_conditions_barely_passing)
+            M.initial_conditions_barely_passing()
+        else
+            M.initial_conditions(0.0, M.f_loop(0.1))
+        end
 
     for M in (G.SolovevIterXpoint,        # cylindrical
         G.TokamakMediumCartesian,   # cartesian
-        G.TokamakSmallToroidal)     # toroidal
-        ic = M.initial_conditions_barely_passing()
+        G.TokamakSmallToroidal,     # toroidal
+        G.SymmetricField,           # b = e₃
+        G.ThetaPinchField)          # b = e₃
+        ic = test_point(M)
         t, q, p = 0.0, ic.q, ic.p
         P(x) = G.fieldpoint²(M.FIELD, t, x)
         Pq = P(q)
@@ -701,14 +710,14 @@ end
     using GeometricIntegrators
     using Test
 
-    # `toroidal_momentum` used to be R ϑ₃ everywhere, which is not conserved: the factor of R is
-    # spurious, since ϑ₃ is already the covariant φ-component. On the small tokamak the relative
-    # variation over 10³ time units was 3e-3 for R ϑ₃ against 2e-13 for ϑ₃. In cartesian
-    # coordinates the third coordinate is z rather than an angle, so neither is right there and
-    # the momentum is the generator of rotation about the z-axis instead.
+    # `toroidal_momentum` is ϑ₃, the covariant φ-component of the one-form, and not R ϑ₃, which is
+    # not conserved: on the small cylindrical tokamak the relative variation over 10³ time units is
+    # 2e-14 for ϑ₃ and 4e-3 for R ϑ₃. In cartesian coordinates the third coordinate is z rather
+    # than an angle, so neither is right there and the momentum is the generator of rotation about
+    # the z-axis instead.
     #
-    # The tolerances below are far tighter than the old definition could ever reach, which is the
-    # point of the test; they are loose relative to what the integrator achieves.
+    # The tolerances below are far tighter than R ϑ₃ can reach, which is the point of the test;
+    # they are loose relative to what the integrator achieves.
     cases = (
         (GuidingCenter4d.TokamakSmallCylindrical,
             (timestep = 10.0, timespan = (0.0, 1e3)), 1e-10),
