@@ -343,11 +343,12 @@ GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics i
 end
 
 # `SymmetricField` and `ThetaPinchField` have no integration test block. Both are Poincaré-invariant
-# fixtures: they ship `f_loop`/`f_surface` rather than `initial_conditions_*`, and the blocks that
-# used to stand here called `guiding_center_3d_loop_ode` and `guiding_center_3d_surface_ode`, which
-# this package no longer defines. Their constraints are exercised instead by the derivative tests in
-# `test/structure_tests.jl`, which reach every module. Note that `b = e₃` in both, so `(g¹, g²)` is
-# the only pair either of them can use.
+# fixtures: they ship `f_loop`, and `SymmetricField` also `f_surface`, rather than
+# `initial_conditions_*`, and `GuidingCenter3d` defines no loop or surface problem to integrate them
+# with. No test evaluates their constraints: the constraint derivative tests in
+# `test/structure_tests.jl` run on `SolovevIterXpoint`, `TokamakMediumCartesian` and
+# `TokamakSmallToroidal`, one chart of each kind. Note that `b = e₃` in both, so `(g¹, g²)` is the
+# only pair either of them can use.
 
 @safetestset "Guiding Centre Dynamics in 3D: the constraint formulations agree                                    " begin
     using ChargedParticleDynamics.GuidingCenter3d
@@ -361,13 +362,14 @@ end
     # the nonlinear solve. That needs an equilibrium at which no component of `b` vanishes, so that all
     # three pairs are regular at once.
     #
-    # This was `TokamakMediumCartesian` until its initial conditions moved to `y = 0` to match its 4D
-    # and Pauli counterparts. In a cartesian chart `b₁ = b_x` vanishes identically on `y = z = 0`, so
-    # `:g31` is now singular there and only two pairs survive. `SolovevIterXpoint` is the replacement
-    # and is a better one: `b = (-5.9E-3, -2.6E-2, 2.5)` has no vanishing component either, and being
-    # curvilinear it is far less stiff, so the three pairs agree to 8E-16 here against the cartesian
-    # chart's 6E-9. The three equilibria with all three pairs regular are now `Dipole3d`,
-    # `QuadraticPotentials3d` and this one; see the conditioning table in `docs/src/findings.md`.
+    # `SolovevIterXpoint` is that equilibrium: `b = (-5.9E-3, -2.6E-2, 2.5)` has no vanishing
+    # component, and being curvilinear it is far less stiff than the cartesian tokamak, so the three
+    # pairs agree to 8E-16 here against 6E-9 on `TokamakMediumCartesian` started off the midplane at
+    # `y = 0.1`. `TokamakMediumCartesian` cannot serve: its initial conditions lie on `y = 0`, to
+    # match its 4D counterpart, and in a cartesian chart `b₁ = b_x` vanishes identically on
+    # `y = z = 0`, so `:g31` is singular there. The three equilibria with all three pairs regular
+    # are `Dipole3d`, `QuadraticPotentials3d` and this one; see the conditioning table in
+    # `docs/src/findings.md`.
     mx(ds) = maximum(abs(ds[i]) for i in eachindex(ds))
 
     M = GuidingCenter3d.SolovevIterXpoint
