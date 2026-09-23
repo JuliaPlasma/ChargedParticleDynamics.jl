@@ -1,5 +1,5 @@
 """
-Analytic axisymmetric medium-size tokamak equilibrium in cartesian coordinates.
+Analytic axisymmetric medium-size tokamak equilibrium in cylindrical coordinates.
 """
 module TokamakMediumCylindrical
 
