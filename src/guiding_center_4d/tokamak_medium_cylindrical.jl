@@ -78,8 +78,8 @@ include("guiding_center_4d_loop.jl")
 include("guiding_center_4d_surface.jl")
 
 # The canonical toroidal momentum is the covariant φ-component of the one-form, ϑ₃, and not
-# R ϑ₃, which destroys the conservation: on the small tokamak the
-# relative variation over 10³ time units is 2e-13 for ϑ₃ and 3e-3 for R ϑ₃.
+# R ϑ₃, which destroys the conservation: on the small cylindrical tokamak the relative variation
+# over 10³ time units is 2e-14 for ϑ₃ and 4e-3 for R ϑ₃.
 function toroidal_momentum(t, q, params)
     check_chart(params.field, FIELD)
     ϑ₃(t, q, params)
