@@ -12,15 +12,15 @@ export poincare_invariant_2nd,
 # loop, their initial condition is a placeholder that `PIEnsembleProblem` replaces with the sampled
 # points of `f_surface`.
 function surface_odeproblem(; kwargs...)
-    odeproblem(f_surface(0.0, 0.0); parameters = (μ = μ_surface(),), periodic = false, kwargs...)
+    odeproblem(f_surface(0.0, 0.0); parameters = (field = FIELD, μ = μ_surface()), periodic = false, kwargs...)
 end
 
 function surface_iodeproblem(; kwargs...)
-    iodeproblem(f_surface(0.0, 0.0); parameters = (μ = μ_surface(),), periodic = false, kwargs...)
+    iodeproblem(f_surface(0.0, 0.0); parameters = (field = FIELD, μ = μ_surface()), periodic = false, kwargs...)
 end
 
 function surface_lodeproblem(; kwargs...)
-    lodeproblem(f_surface(0.0, 0.0); parameters = (μ = μ_surface(),), periodic = false, kwargs...)
+    lodeproblem(f_surface(0.0, 0.0); parameters = (field = FIELD, μ = μ_surface()), periodic = false, kwargs...)
 end
 
 @doc raw"""

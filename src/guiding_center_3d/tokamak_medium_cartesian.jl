@@ -3,14 +3,14 @@ Analytic axisymmetric medium-size tokamak equilibrium in cartesian coordinates.
 """
 module TokamakMediumCartesian
 
-import ElectromagneticFields.AxisymmetricTokamakCartesian
+using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCartesianEquilibrium
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 
 export hamiltonian
 
-AxisymmetricTokamakCartesian.@code(2.0, 5.0, 2.0) # inject magnetic field code
+const FIELD = FieldFunctions(AxisymmetricTokamakCartesianEquilibrium(2.0, 5.0, 2.0))
 
 # `hodeproblem` and `hodeproblem_compact` hold this thousand-step example on the module's `:g23` pair,
 # at 2.6E-6 and 2.2E-9 in `max|gᵏ|` for `barely_passing`. `hodeproblem_canonical` does not: it loses
@@ -37,16 +37,20 @@ const DEFAULT_TIMESPAN = (0.0, 1E2)
 # once; `SolovevIterXpoint` is now the sharpest case for that comparison. See `default_constraints`
 # below and the conditioning table in `docs/src/findings.md`.
 function initial_conditions_barely_passing()
-    merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.425E-1]), (params = (μ = 1E-2,),))
+    merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.425E-1]), (params = (
+        field = FIELD, μ = 1E-2),))
 end
 function initial_conditions_barely_trapped()
-    merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.375E-1]), (params = (μ = 1E-2,),))
+    merge(initial_conditions(0, [2.5, 0.0, 0.0, 3.375E-1]), (params = (
+        field = FIELD, μ = 1E-2),))
 end
 function initial_conditions_deeply_passing()
-    merge(initial_conditions(0, [2.5, 0.0, 0.0, 5E-1]), (params = (μ = 1E-2,),))
+    merge(initial_conditions(0, [2.5, 0.0, 0.0, 5E-1]), (params = (
+        field = FIELD, μ = 1E-2),))
 end
 function initial_conditions_deeply_trapped()
-    merge(initial_conditions(0, [2.5, 0.0, 0.0, 1E-1]), (params = (μ = 1E-2,),))
+    merge(initial_conditions(0, [2.5, 0.0, 0.0, 1E-1]), (params = (
+        field = FIELD, μ = 1E-2),))
 end
 
 μ_loop() = 1E-3
@@ -85,11 +89,11 @@ end
 
 export default_parameters, default_constraints
 
-"The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T} = Float64) where {T} = (μ = T(1E-2),)
+"The field, and the magnetic moment μ this equilibrium is set up for."
+default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(1E-2))
 
 """
-The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+The constraint pair [`hodeproblem`](@ref ChargedParticleDynamics.GuidingCenter3d.hodeproblem) and its siblings use here by default.
 
 `(g², g³)`, which divides by `b₂ = 0.9923` — the largest component of `b` at this initial condition, so
 the best conditioned of the three pairs. `(g³, g¹)` divides by `b₁`, which vanishes identically on
@@ -107,8 +111,7 @@ condition and it is the *orbit* that takes `b₁` and `b₂` through zero. See `
 """
 default_constraints() = :g23
 
-include("guiding_center_3d_equations.jl")
-include("guiding_center_3d_canonical.jl")
+include("guiding_center_3d_presets.jl")
 include("guiding_center_3d_diagnostics.jl")
 
 end

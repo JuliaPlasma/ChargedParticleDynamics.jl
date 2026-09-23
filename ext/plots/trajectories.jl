@@ -13,10 +13,10 @@ function plot_trajectory_poloidal!(fg, ax, R, Z; kwargs...)
 end
 
 function plot_trajectory_poloidal(
-        R, Z, equ; label = nothing, linewidth = trajectory_poloidal_linewidth, kwargs...)
+        R, Z, field; label = nothing, linewidth = trajectory_poloidal_linewidth, kwargs...)
     xrange = (floor(minimum(R); digits = 1), ceil(maximum(R); digits = 1))
     yrange = (floor(minimum(Z); digits = 1), ceil(maximum(Z); digits = 1))
-    fg, ax = plot_fieldlines(equ; xrange = xrange, yrange = yrange, kwargs...)
+    fg, ax = plot_fieldlines(field; xrange = xrange, yrange = yrange, kwargs...)
     plot_trajectory_poloidal!(fg, ax, R, Z; label = label, linewidth = linewidth)
     fg, ax
 end

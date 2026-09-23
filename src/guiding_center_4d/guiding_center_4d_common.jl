@@ -1,7 +1,18 @@
 
 using Parameters
+using ..FieldPoints
 
-export hamiltonian, u, ω, ϑ, ϑ₁, ϑ₂, ϑ₃, ϑ₄, dϑ, β₁, β₂, β₃, B, B₁, B₂, B₃, b₁, b₂, b₃, dH
+export hamiltonian, u, ω, ϑ, ϑ₁, ϑ₂, ϑ₃, ϑ₄, dϑ, β₁, β₂, β₃, dH
+
+# The field tensors this model reads; see `FieldPoints`. Every function below that takes `params`
+# evaluates them from `params.field` and hands the point on in place of `q`. Only the κ-forms read
+# second derivatives, so they alone evaluate the larger set.
+const FIELDS = (:A♭, :b♭, :B♭, :B, :DB, :E♭, :φ, :DA♭, :Db♭)
+
+fieldpoint(field, t, q) = FieldPoints.fieldpoint(field, t, q, Val(FIELDS))
+function fieldpoint²(field, t, q)
+    FieldPoints.fieldpoint(field, t, q, Val((FIELDS..., :DDA♭, :DDb♭)))
+end
 
 @inline u(t, q) = q[4]
 
@@ -9,6 +20,12 @@ export hamiltonian, u, ω, ϑ, ϑ₁, ϑ₂, ϑ₃, ϑ₄, dϑ, β₁, β₂, β
 ϑ₂(t, q) = A₂(t, q) + u(t, q) * b₂(t, q)
 ϑ₃(t, q) = A₃(t, q) + u(t, q) * b₃(t, q)
 ϑ₄(t, q) = zero(eltype(q))
+
+# The components of the one-form at a coordinate vector, with the field read from `params`.
+ϑ₁(t, q, params) = ϑ₁(t, fieldpoint(params.field, t, q))
+ϑ₂(t, q, params) = ϑ₂(t, fieldpoint(params.field, t, q))
+ϑ₃(t, q, params) = ϑ₃(t, fieldpoint(params.field, t, q))
+ϑ₄(t, q, params) = ϑ₄(t, q)
 
 dϑ₁dx₁(t, q) = dA₁dx₁(t, q) + u(t, q) * db₁dx₁(t, q)
 dϑ₁dx₂(t, q) = dA₁dx₂(t, q) + u(t, q) * db₁dx₂(t, q)
@@ -30,7 +47,7 @@ dϑ₄dx₂(t, q) = zero(eltype(q))
 dϑ₄dx₃(t, q) = zero(eltype(q))
 dϑ₄dx₄(t, q) = zero(eltype(q))
 
-function ϑ(θ::AbstractVector, t::Number, q::AbstractVector)
+function ϑ(θ::AbstractVector, t::Number, q::FieldPoint)
     θ[1] = ϑ₁(t, q)
     θ[2] = ϑ₂(t, q)
     θ[3] = ϑ₃(t, q)
@@ -38,12 +55,16 @@ function ϑ(θ::AbstractVector, t::Number, q::AbstractVector)
     nothing
 end
 
-# The one-form is built from the magnetic field alone, so it does not depend on the parameters.
-# This method exists so that `ϑ` can be handed to `PoincareInvariants` — and to anything else
-# following the `form(out, t, q, params)` convention of `GeometricEquations` — unwrapped.
-ϑ(θ::AbstractVector, t::Number, q::AbstractVector, params) = ϑ(θ, t, q)
+# The one-form reads the field and nothing else from the parameters. This is the method that
+# `PoincareInvariants` — and anything else following the `form(out, t, q, params)` convention of
+# `GeometricEquations` — is handed.
+function ϑ(θ::AbstractVector, t::Number, q::AbstractVector, params)
+    ϑ(θ, t, fieldpoint(params.field, t, q))
+end
 
-function ϑ(t::Number, q::AbstractVector, k::Int)
+ϑ(t::Number, q::AbstractVector, params, k::Int) = ϑ(t, fieldpoint(params.field, t, q), k)
+
+function ϑ(t::Number, q::FieldPoint, k::Int)
     if k == 1
         ϑ₁(t, q)
     elseif k == 2
@@ -57,7 +78,7 @@ function ϑ(t::Number, q::AbstractVector, k::Int)
     end
 end
 
-function ω(Ω, t, q)
+function ω(Ω, t, q::FieldPoint)
     Ω[1, 1] = 0
     Ω[1, 2] = dϑ₁dx₂(t, q) - dϑ₂dx₁(t, q)
     Ω[1, 3] = dϑ₁dx₃(t, q) - dϑ₃dx₁(t, q)
@@ -81,9 +102,9 @@ function ω(Ω, t, q)
     nothing
 end
 
-# As for `ϑ` above: `ω = dϑ` does not depend on the parameters either, and this method lets it be
-# passed straight to `PoincareInvariants` as a `form(out, t, q, params)`.
-ω(Ω, t, q, params) = ω(Ω, t, q)
+# As for `ϑ` above: `ω = dϑ` reads the field alone, and this method lets it be passed straight to
+# `PoincareInvariants` as a `form(out, t, q, params)`.
+ω(Ω, t, q, params) = ω(Ω, t, fieldpoint(params.field, t, q))
 
 # D²ϑd₁[l,j] = ∂²ϑ_l/∂x₁∂x_j: row l runs over the components of the one-form, column j
 # over the coordinate differentiated second. Contracted as qᵀ (D²ϑd_k v) this is the ḡ_k of the
@@ -191,7 +212,9 @@ function D²ϑd₄(D²ϑ, t, q)
     nothing
 end
 
-function dϑ(dϑ, t, q)
+dϑ(D, t, q, params) = dϑ(D, t, fieldpoint(params.field, t, q))
+
+function dϑ(dϑ, t, q::FieldPoint)
     dϑ[1, 1] = dϑ₁dx₁(t, q)
     dϑ[1, 2] = dϑ₁dx₂(t, q)
     dϑ[1, 3] = dϑ₁dx₃(t, q)
@@ -219,6 +242,10 @@ end
 β₂(t, q) = dϑ₁dx₃(t, q) - dϑ₃dx₁(t, q)
 β₃(t, q) = dϑ₂dx₁(t, q) - dϑ₁dx₂(t, q)
 
+β₁(t, q, params) = β₁(t, fieldpoint(params.field, t, q))
+β₂(t, q, params) = β₂(t, fieldpoint(params.field, t, q))
+β₃(t, q, params) = β₃(t, fieldpoint(params.field, t, q))
+
 # function β(t,q)
 #    return sqrt(β1(t,q)^2 + β2(t,q)^2 + β3(t,q)^2)
 # end
@@ -236,11 +263,13 @@ ships, so adding it changed no result, but the model is now the one both referen
 """
 function hamiltonian(t, q, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     0.5 * u(t, q)^2 + μ*B(t, q) + φ(t, q)
 end
 
 hamiltonian(t, q, p, params) = hamiltonian(t, q, params)
 function lagrangian(t, q, v, params)
+    q = fieldpoint(params.field, t, q)
     ϑ₁(t, q) * v[1] + ϑ₂(t, q) * v[2] + ϑ₃(t, q) * v[3] - hamiltonian(t, q, params)
 end
 
@@ -253,6 +282,7 @@ dHdx₄(t, q, μ) = u(t, q)
 
 function dH(dH, t, q, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     dH[1] = dHdx₁(t, q, μ)
     dH[2] = dHdx₂(t, q, μ)
     dH[3] = dHdx₃(t, q, μ)
@@ -312,6 +342,7 @@ end
 
 function guiding_center_4d_v(v::AbstractVector, t, q::AbstractVector, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
 
     local lB₁ = B₁(t, q)
     local lB₂ = B₂(t, q)
@@ -345,11 +376,12 @@ end
 
 function guiding_center_4d_ϑ(
         θ::AbstractVector, t, q::AbstractVector, v::AbstractVector, params)
-    ϑ(θ, t, q)
+    ϑ(θ, t, q, params)
 end
 
 function guiding_center_4d_ϑ(
         θ::AbstractVector, t, q::AbstractVector, v::AbstractVector, params, κ)
+    q = fieldpoint(params.field, t, q)
     θ[1] = (1-κ) * ϑ₁(t, q) - κ * f₁(t, q, q)
     θ[2] = (1-κ) * ϑ₂(t, q) - κ * f₂(t, q, q)
     θ[3] = (1-κ) * ϑ₃(t, q) - κ * f₃(t, q, q)
@@ -360,6 +392,7 @@ end
 function guiding_center_4d_f(
         f::AbstractVector, t, q::AbstractVector, v::AbstractVector, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     f[1] = f₁(t, q, v) - dHdx₁(t, q, μ)
     f[2] = f₂(t, q, v) - dHdx₂(t, q, μ)
     f[3] = f₃(t, q, v) - dHdx₃(t, q, μ)
@@ -370,6 +403,7 @@ end
 function guiding_center_4d_f(
         f::AbstractVector, t, q::AbstractVector, v::AbstractVector, params, κ)
     @unpack μ = params
+    q = fieldpoint²(params.field, t, q)
     f[1] = (1-κ) * f₁(t, q, v) - κ * (g₁(t, q, v) + g̅₁(t, q, v)) - dHdx₁(t, q, μ)
     f[2] = (1-κ) * f₂(t, q, v) - κ * (g₂(t, q, v) + g̅₂(t, q, v)) - dHdx₂(t, q, μ)
     f[3] = (1-κ) * f₃(t, q, v) - κ * (g₃(t, q, v) + g̅₃(t, q, v)) - dHdx₃(t, q, μ)
@@ -379,6 +413,7 @@ end
 
 function guiding_center_4d_g(g::AbstractVector, t::Number, q::AbstractVector,
         v::AbstractVector, λ::AbstractVector, params)
+    q = fieldpoint(params.field, t, q)
     g[1] = f₁(t, q, λ)
     g[2] = f₂(t, q, λ)
     g[3] = f₃(t, q, λ)
@@ -396,6 +431,7 @@ end
 
 function guiding_center_4d_g(
         g::AbstractVector, t, q::AbstractVector, λ::AbstractVector, params, κ)
+    q = fieldpoint²(params.field, t, q)
     g[1] = (1-κ) * f₁(t, q, λ) - κ * (g₁(t, q, λ) + g̅₁(t, q, λ))
     g[2] = (1-κ) * f₂(t, q, λ) - κ * (g₂(t, q, λ) + g̅₂(t, q, λ))
     g[3] = (1-κ) * f₃(t, q, λ) - κ * (g₃(t, q, λ) + g̅₃(t, q, λ))
@@ -417,15 +453,16 @@ end
 
 function guiding_center_4d_ω(
         Ω::AbstractMatrix, t::Number, q::AbstractVector, v::AbstractVector, params)
-    ω(Ω, t, q)
+    ω(Ω, t, q, params)
 end
 
 # Solve Ω(q) λ = ∇H(q) for λ. `params` is the parameter named tuple the model is built with —
 # it is forwarded to `dH`, which unpacks `μ` from it, so passing a bare `μ` here does not work.
 function guiding_center_4d_λ(λ::AbstractVector, t::Number, q::AbstractVector,
         params, Ω::AbstractMatrix, dh::AbstractVector)
-    dH(dh, t, q, params)
-    ω(Ω, t, q)
+    P = fieldpoint(params.field, t, q)
+    dH(dh, t, P, params)
+    ω(Ω, t, P)
     λ .= Ω \ dh
     nothing
 end
@@ -437,15 +474,15 @@ function guiding_center_4d_λ(λ::AbstractVector, t::Number, q::AbstractVector, 
     guiding_center_4d_λ(λ, t, q, params, zeros(DT, D, D), zeros(DT, D))
 end
 
-function guiding_center_4d_pᵢ(tᵢ, qᵢ::AbstractArray{T}) where {T <: Number}
+function guiding_center_4d_pᵢ(tᵢ, qᵢ::AbstractArray{T}, params) where {T <: Number}
     pᵢ = zero(qᵢ)
-    ϑ(pᵢ, tᵢ, qᵢ)
+    ϑ(pᵢ, tᵢ, qᵢ, params)
     return pᵢ
 end
 
-function guiding_center_4d_pᵢ(tᵢ, qᵢ::AbstractVector{<:AbstractArray{T}}) where {T <:
-                                                                                 Number}
-    [guiding_center_4d_pᵢ(tᵢ, q) for q in qᵢ]
+function guiding_center_4d_pᵢ(tᵢ, qᵢ::AbstractVector{<:AbstractArray{T}}, params) where {T <:
+                                                                                         Number}
+    [guiding_center_4d_pᵢ(tᵢ, q, params) for q in qᵢ]
 end
 
 function guiding_center_4d_λᵢ(tᵢ, qᵢ::AbstractVector, params)

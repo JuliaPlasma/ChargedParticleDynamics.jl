@@ -1,6 +1,7 @@
 module ChargedParticlePlots
 
 using ChargedParticleDynamics
+using ElectromagneticFields: FieldFunctions, A♭, equilibrium, periodic
 using GeometricSolutions
 using LaTeXStrings
 using Makie

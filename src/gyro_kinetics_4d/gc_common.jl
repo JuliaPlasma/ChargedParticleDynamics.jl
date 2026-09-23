@@ -1,7 +1,17 @@
 
 using Parameters
+using ElectromagneticFields: orientation
+using ..FieldPoints
 
 export hamiltonian, ϑ, ω, ωabs, β, γ, v
+
+# The field tensors this model reads; see `FieldPoints`. Every function below that takes `params`
+# evaluates them from `params.field` and hands the point on in place of `q`. The vector field is
+# built from the derivatives of `β` and `γ`, so it reads second derivatives on every call.
+function fieldpoint(field, t, q)
+    FieldPoints.fieldpoint(field, t, q,
+        Val((:A♭, :b♭, :B, :DB, :DDB, :E♭, :DE♭, :φ, :DA♭, :Db♭, :DDA♭, :DDb♭)))
+end
 
 @inline function u(t, q)
     q[4]
@@ -21,6 +31,7 @@ as well; only ``H_{0}`` is implemented. See `TODO.md`.
 """
 function hamiltonian(t, q, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     0.5 * u(t, q)^2 + μ*B(t, q) + φ(t, q)
 end
 
@@ -32,6 +43,7 @@ dHdx₄(t, q, μ) = u(t, q)
 
 function dH(dH, t, q, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     dH[1] = dHdx₁(t, q, μ)
     dH[2] = dHdx₂(t, q, μ)
     dH[3] = dHdx₃(t, q, μ)
@@ -62,6 +74,7 @@ d²Hdx₄dx₄(t, q, μ) = one(eltype(q))
 ϑ₄(t, q) = zero(eltype(q))
 
 function ϑ(ϑ, t, q, params)
+    q = fieldpoint(params.field, t, q)
     ϑ[1] = ϑ₁(t, q)
     ϑ[2] = ϑ₂(t, q)
     ϑ[3] = ϑ₃(t, q)
@@ -170,14 +183,16 @@ d²ϑ₄dx₄dx₄(t, q) = zero(eltype(q))
 ω₂(t, q) = dϑ₁dx₃(t, q) - dϑ₃dx₁(t, q)
 ω₃(t, q) = dϑ₂dx₁(t, q) - dϑ₁dx₂(t, q)
 
-function ω(ω::Vector, t, q, params = NamedTuple())
+function ω(ω::Vector, t, q, params)
+    q = fieldpoint(params.field, t, q)
     ω[1] = ω₁(t, q)
     ω[2] = ω₂(t, q)
     ω[3] = ω₃(t, q)
     nothing
 end
 
-function ω(Ω::Matrix, t, q, params = NamedTuple())
+function ω(Ω::Matrix, t, q, params)
+    q = fieldpoint(params.field, t, q)
     Ω[1, 1] = 0
     Ω[1, 2] = dϑ₁dx₂(t, q) - dϑ₂dx₁(t, q)
     Ω[1, 3] = dϑ₁dx₃(t, q) - dϑ₃dx₁(t, q)
@@ -210,18 +225,18 @@ The factor by which this module's vector field is rescaled relative to the 4D gu
 the contraction ``\omega \cdot \partial\vartheta/\partial u`` of the curl of the one-form against
 ``b``, taken with the chart's orientation so that it is **positive in every chart**.
 
-!!! note "Why `orientation()` appears here"
+!!! note "Why `orientation(field)` appears here"
     `ω₁ = ∂₂ϑ₃ - ∂₃ϑ₂` is the *coordinate* curl, which is `det(DF)` times the contravariant one —
     the signed Jacobian, not the volume element `J`. The bare contraction is therefore
-    `det(DF) · B*∥ = orientation() · J · B*∥`, and in the four left-handed charts of
+    `det(DF) · B*∥ = orientation(field) · J · B*∥`, and in the four left-handed charts of
     `ElectromagneticFields` — the cylindrical, the two toroidal and every `Solovev*` other than
     `SolovevSymmetric` — it comes out **negative** while the physical ``B^{\star}_{\parallel}`` is
-    positive. Multiplying by `orientation()` recovers the Liouville density `√det Ω = |Pf(Ω)|`,
-    which is non-negative by construction — as the name of this function says it should be.
+    positive. Multiplying by `orientation(field)` recovers the Liouville density
+    `√det Ω = |Pf(Ω)|`, which is non-negative by construction — as the name of this function says
+    it should be.
 
-    `orientation()` is generated into this module by the `@code` call at its top, alongside `J`,
-    `DF` and the metric: `ElectromagneticFields` 0.7.1 emits the sign its own generator already
-    reads to build `det DF`. It is the one generated function taking no arguments, since the
+    `orientation(field)` is the sign `ElectromagneticFields` itself reads to build `det DF`, stored
+    with the field in `params.field`. It is data rather than a function of the point, since the
     handedness of a chart depends on neither `t` nor `q`. Nothing here declares it — asking the
     field for its own orientation is what keeps the two from drifting apart.
 
@@ -236,7 +251,7 @@ the contraction ``\omega \cdot \partial\vartheta/\partial u`` of the curl of the
     three charts of the small tokamak give `0.9511`, `0.9986` and `0.0499` for the same `B*∥ = 0.9511`.
     Only the sign was wrong.
 
-    `orientation()` multiplies here and in [`v`](@ref) and nowhere else. `ω`, `Ω`, [`β`](@ref) and
+    `orientation(field)` multiplies here and in [`v`](@ref) and nowhere else. `ω`, `Ω`, [`β`](@ref) and
     [`γ`](@ref) stay the plain coordinate objects they are — `Ω = dϑ` in particular must not be
     touched — so the identity `v_gk = ωabs · v_gc` holds exactly with both factors oriented.
 
@@ -244,8 +259,9 @@ the contraction ``\omega \cdot \partial\vartheta/\partial u`` of the curl of the
     those charts, so the two sign errors cancelled and the bare contraction came out positive
     everywhere.
 """
-function ωabs(t, q, params = NamedTuple())
-    orientation() *
+function ωabs(t, q, params)
+    q = fieldpoint(params.field, t, q)
+    orientation(params.field) *
     (ω₁(t, q) * dϑ₁dx₄(t, q) + ω₂(t, q) * dϑ₂dx₄(t, q) + ω₃(t, q) * dϑ₃dx₄(t, q))
 end
 
@@ -281,6 +297,7 @@ Together with [`γ`](@ref) it writes the equations of motion in the manifestly d
 """
 function β(β, t, q, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     β[1] = β₁(t, q, μ)
     β[2] = β₂(t, q, μ)
     β[3] = β₃(t, q, μ)
@@ -305,6 +322,7 @@ Hamiltonian implemented here. See [`β`](@ref).
 """
 function γ(γ, t, q, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     γ[1] = γ₁(t, q, μ)
     γ[2] = γ₂(t, q, μ)
     γ[3] = γ₃(t, q, μ)
@@ -373,7 +391,7 @@ function dγ₃dx₄(t, q, μ)
     d²Hdx₁dx₄(t, q, μ) * ϑ₂(t, q) - dHdx₁(t, q, μ) * dϑ₂dx₄(t, q)
 end
 
-# `orientation()` multiplies every subsystem, for the reason given on `ωabs`: the coordinate curl
+# `orientation(field)` multiplies every subsystem, for the reason given on `ωabs`: the coordinate curl
 # below carries `det(DF)`, and the rescaling factor has to be the phasespace Jacobian `√det Ω`,
 # which is positive. Negating a divergence-free field leaves it divergence-free and a Hamiltonian
 # vector field Hamiltonian, so nothing about the splitting changes — each `vᵢ` is still symplectic
@@ -381,50 +399,56 @@ end
 
 function v₁(v, t, q, params)
     @unpack μ = params
-    v[1] = + orientation() * dβ₃dx₂(t, q, μ)
-    v[2] = - orientation() * dβ₃dx₁(t, q, μ)
+    q = fieldpoint(params.field, t, q)
+    v[1] = + orientation(params.field) * dβ₃dx₂(t, q, μ)
+    v[2] = - orientation(params.field) * dβ₃dx₁(t, q, μ)
     v[3] = 0
     v[4] = 0
 end
 
 function v₂(v, t, q, params)
     @unpack μ = params
-    v[1] = - orientation() * dβ₂dx₃(t, q, μ)
+    q = fieldpoint(params.field, t, q)
+    v[1] = - orientation(params.field) * dβ₂dx₃(t, q, μ)
     v[2] = 0
-    v[3] = + orientation() * dβ₂dx₁(t, q, μ)
+    v[3] = + orientation(params.field) * dβ₂dx₁(t, q, μ)
     v[4] = 0
 end
 
 function v₃(v, t, q, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     v[1] = 0
-    v[2] = + orientation() * dβ₁dx₃(t, q, μ)
-    v[3] = - orientation() * dβ₁dx₂(t, q, μ)
+    v[2] = + orientation(params.field) * dβ₁dx₃(t, q, μ)
+    v[3] = - orientation(params.field) * dβ₁dx₂(t, q, μ)
     v[4] = 0
 end
 
 function v₄(v, t, q, params)
     @unpack μ = params
-    v[1] = + orientation() * dγ₁dx₄(t, q, μ)
+    q = fieldpoint(params.field, t, q)
+    v[1] = + orientation(params.field) * dγ₁dx₄(t, q, μ)
     v[2] = 0
     v[3] = 0
-    v[4] = - orientation() * dγ₁dx₁(t, q, μ)
+    v[4] = - orientation(params.field) * dγ₁dx₁(t, q, μ)
 end
 
 function v₅(v, t, q, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     v[1] = 0
-    v[2] = + orientation() * dγ₂dx₄(t, q, μ)
+    v[2] = + orientation(params.field) * dγ₂dx₄(t, q, μ)
     v[3] = 0
-    v[4] = - orientation() * dγ₂dx₂(t, q, μ)
+    v[4] = - orientation(params.field) * dγ₂dx₂(t, q, μ)
 end
 
 function v₆(v, t, q, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     v[1] = 0
     v[2] = 0
-    v[3] = + orientation() * dγ₃dx₄(t, q, μ)
-    v[4] = - orientation() * dγ₃dx₃(t, q, μ)
+    v[3] = + orientation(params.field) * dγ₃dx₄(t, q, μ)
+    v[4] = - orientation(params.field) * dγ₃dx₃(t, q, μ)
 end
 
 @doc raw"""
@@ -438,7 +462,7 @@ The gyrokinetic guiding centre vector field in the rescaled time,
 \dfrac{du}{ds} = - \sigma \, \nabla \cdot \gamma ,
 ```
 
-built from the potentials [`β`](@ref) and [`γ`](@ref), with ``\sigma =`` `orientation()` the sign of
+built from the potentials [`β`](@ref) and [`γ`](@ref), with ``\sigma =`` `orientation(field)` the sign of
 `det(DF)` for this module's chart, as `ElectromagneticFields` generates it. The ``\nabla \times``
 above is the *coordinate* curl, which carries `det(DF)`; ``\sigma`` restores the orientation, so the
 bracket is the properly oriented curl and the field is the guiding centre one multiplied by the
@@ -454,9 +478,11 @@ The sub-fields `v₁` … `v₆` are the six subsystems this splits into; they s
 """
 function v(v, t, q, params)
     @unpack μ = params
-    v[1] = orientation() * (dγ₁dx₄(t, q, μ) + dβ₃dx₂(t, q, μ) - dβ₂dx₃(t, q, μ))
-    v[2] = orientation() * (dγ₂dx₄(t, q, μ) + dβ₁dx₃(t, q, μ) - dβ₃dx₁(t, q, μ))
-    v[3] = orientation() * (dγ₃dx₄(t, q, μ) + dβ₂dx₁(t, q, μ) - dβ₁dx₂(t, q, μ))
-    v[4] = orientation() * (-dγ₁dx₁(t, q, μ) - dγ₂dx₂(t, q, μ) - dγ₃dx₃(t, q, μ))
+    q = fieldpoint(params.field, t, q)
+    v[1] = orientation(params.field) * (dγ₁dx₄(t, q, μ) + dβ₃dx₂(t, q, μ) - dβ₂dx₃(t, q, μ))
+    v[2] = orientation(params.field) * (dγ₂dx₄(t, q, μ) + dβ₁dx₃(t, q, μ) - dβ₃dx₁(t, q, μ))
+    v[3] = orientation(params.field) * (dγ₃dx₄(t, q, μ) + dβ₂dx₁(t, q, μ) - dβ₁dx₂(t, q, μ))
+    v[4] = orientation(params.field) *
+           (-dγ₁dx₁(t, q, μ) - dγ₂dx₂(t, q, μ) - dγ₃dx₃(t, q, μ))
     nothing
 end

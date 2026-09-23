@@ -55,14 +55,16 @@ With it the Euler-Lagrange equations of ``L = \vartheta \cdot \dot{q} - H`` read
 ChargedParticleDynamics.GuidingCenter4d
 ```
 
-Each equilibrium is its own module, and every one of them `include`s the same
-`guiding_center_4d_common.jl` and `guiding_center_4d_equations.jl` — plus
-`guiding_center_4d_loop.jl` and `guiding_center_4d_surface.jl` where the equilibrium defines a
-Poincaré loop or surface. The model's functions are therefore documented once, below, under
-`TokamakSmallCylindrical`, and hold verbatim for all eleven. What differs between the modules is the
-chart, the equilibrium parameters and the initial conditions, which is what these docstrings record:
+The equations are written once, in `GuidingCenter4d`, and read the field from `params.field`. They
+are documented below. Each equilibrium is its own module, holding its field as `FIELD`, its initial
+conditions and problem constructors that default to them, and it `include`s the diagnostics —
+plus `guiding_center_4d_loop.jl` and `guiding_center_4d_surface.jl` where it defines a Poincaré
+loop or surface. Those are documented once, under `TokamakSmallCylindrical`, and hold verbatim for
+all eleven. What differs between the modules is the chart, the equilibrium parameters and the
+initial conditions, which is what these docstrings record:
 
 ```@docs
+ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical
 ChargedParticleDynamics.GuidingCenter4d.SymmetricField
 ChargedParticleDynamics.GuidingCenter4d.ThetaPinchField
 ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian
@@ -76,5 +78,7 @@ ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint
 ```
 
 ```@autodocs
-Modules = [ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical]
+Modules = [ChargedParticleDynamics.GuidingCenter4d,
+           ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical]
+Order   = [:function, :type, :constant, :macro]
 ```

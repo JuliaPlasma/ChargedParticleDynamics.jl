@@ -49,7 +49,7 @@ The canonical toroidal momentum `ϑ₃` along the solution, as a `DataSeries`. I
 axisymmetric equilibrium.
 """
 function compute_toroidal_momentum(t::SolutionTimes, q::DataSeries, params)
-    compute_invariant(t, q, params, (t, q, params) -> toroidal_momentum(t, q))
+    compute_invariant(t, q, params, toroidal_momentum)
 end
 function compute_toroidal_momentum(sol::GeometricSolution, params = GeometricEquations.parameters(sol.problem))
     compute_toroidal_momentum(sol.t, sol.q, params)
@@ -61,7 +61,7 @@ end
 Returns a `(value, error)` pair; see [`compute_energy_error`](@ref).
 """
 function compute_toroidal_momentum_error(t::SolutionTimes, q::DataSeries, params)
-    compute_invariant_error(t, q, params, (t, q, params) -> toroidal_momentum(t, q))
+    compute_invariant_error(t, q, params, toroidal_momentum)
 end
 function compute_toroidal_momentum_error(
         sol::GeometricSolution, params = GeometricEquations.parameters(sol.problem))

@@ -28,6 +28,9 @@ const FAMILIES = (:ChargedParticle3d, :GuidingCenter3d, :GuidingCenter4d,
 
 """
 Apply `f(family, name, module)` to every equilibrium submodule of every model family.
+
+An equilibrium module is one that holds a field as `FIELD`. That leaves out the submodules holding
+a family's equations, `ChargedParticle3d.Canonical` and `ChargedParticle3d.Noncanonical`.
 """
 function eachmodel(f, families = FAMILIES)
     for fam in families
@@ -39,7 +42,7 @@ function eachmodel(f, families = FAMILIES)
             catch
                 continue
             end
-            (M isa Module && M !== F) || continue
+            (M isa Module && M !== F && isdefined(M, :FIELD)) || continue
             f(fam, mname, M)
         end
     end
@@ -87,9 +90,12 @@ end
         isdefined(M, :default_parameters) || return
         p = M.default_parameters()
         @test p isa NamedTuple
-        # The type argument must propagate, as it does in GeometricProblems.
+        # Every problem reads its field from `params.field`, and it is the module's own.
+        @test p.field === M.FIELD
+        # The type argument must propagate to the physical parameters, as it does in
+        # GeometricProblems. The field is a value of its own and is not converted.
         p32 = M.default_parameters(Float32)
-        @test all(v -> v isa Float32, values(p32))
+        @test all(v -> v isa Float32, values(Base.structdiff(p32, (field = nothing,))))
         n += 1
     end
     @test n > 40
@@ -155,6 +161,9 @@ end
         ChargedParticle3d.ThetaPinchNoncanonical)
     curvilinear = (ChargedParticle3d.TokamakSmallNoncanonical,)
 
+    # The equations of the formulation, which every one of the modules above forwards to.
+    N = ChargedParticle3d.Noncanonical
+
     for M in (cartesian..., curvilinear...)
         @test (M.odeproblem(); true)
         @test (M.iodeproblem(); true)
@@ -166,17 +175,20 @@ end
     # splitting has no exact flow; the constructor refuses rather than integrating a different
     # model. This is the assertion that fails if that guard is ever dropped.
     for M in curvilinear
-        @test !M.has_trivial_metric(0.0, collect(float.(M.qᵢ)))
+        q₀ = collect(float.(M.qᵢ))
+        @test !N.has_trivial_metric(0.0, N.fieldpoint(M.FIELD, 0.0, q₀))
         @test_throws ArgumentError M.sodeproblem()
     end
 
     for M in cartesian
-        @test M.has_trivial_metric(0.0, collect(float.(M.qᵢ)))
+        params = M.default_parameters()
+        q₀ = collect(float.(M.qᵢ))
+        @test N.has_trivial_metric(0.0, N.fieldpoint(M.FIELD, 0.0, q₀))
         @test (M.sodeproblem(); true)
 
         # `sodeproblem` used to accept `parameters` and then not forward it to `SODEProblem`, so
         # the keyword — and anything the named-tuple form put into it — was silently dropped.
-        @test parameters(M.sodeproblem(; parameters = (a = 1,))) == (a = 1,)
+        @test parameters(M.sodeproblem(; parameters = (field = M.FIELD, a = 1))).a == 1
 
         # The two maps of the splitting must sum to the full vector field. To first order in h,
         #     (fv(q₀) - q₀)/h + (fx(q₀) - q₀)/h  →  charged_particle_3d_v(q₀) ,
@@ -185,22 +197,21 @@ end
         # both maps; every shipped equilibrium has φ = 0, so this passes either way today, but it
         # is the assertion that fails the moment a noncanonical equilibrium with a potential is
         # added — which is how that omission should have been caught.
-        q₀ = collect(float.(M.qᵢ))
         h = 1e-7
         qv = zero(q₀)
-        M.charged_particle_3d_sode_fv(qv, h, q₀, 0.0, NamedTuple())
+        N.charged_particle_3d_sode_fv(qv, h, q₀, 0.0, params)
         qx = zero(q₀)
-        M.charged_particle_3d_sode_fx(qx, h, q₀, 0.0, NamedTuple())
+        N.charged_particle_3d_sode_fx(qx, h, q₀, 0.0, params)
         vfull = zero(q₀)
-        M.charged_particle_3d_v(vfull, 0.0, q₀, NamedTuple())
+        N.charged_particle_3d_v(vfull, 0.0, q₀, params)
 
         @test isapprox((qv .- q₀) ./ h .+ (qx .- q₀) ./ h, vfull; rtol = 1e-5, atol = 1e-9)
 
         # and each solution map must agree with the vector field of its own substep
         vv = zero(q₀)
-        M.charged_particle_3d_sode_vv(vv, 0.0, q₀, NamedTuple())
+        N.charged_particle_3d_sode_vv(vv, 0.0, q₀, params)
         vx = zero(q₀)
-        M.charged_particle_3d_sode_vx(vx, 0.0, q₀, NamedTuple())
+        N.charged_particle_3d_sode_vx(vx, 0.0, q₀, params)
 
         @test isapprox((qv .- q₀) ./ h, vv; rtol = 1e-5, atol = 1e-9)
         @test isapprox((qx .- q₀) ./ h, vx; rtol = 1e-5, atol = 1e-9)
@@ -226,124 +237,103 @@ end
     #     metric-free Hamiltonian, and referred to a `dφdxᵢ` that the field-code generator does not
     #     even emit, so it raised an `UndefVarError` on every call;
     #   * the vector field really is -Ω⁻¹∇H for the module's own `ω`.
+    N = ChargedParticle3d.Noncanonical
+
     for M in (ChargedParticle3d.SingularField,
         ChargedParticle3d.SymmetricField,
         ChargedParticle3d.ThetaPinchNoncanonical,
         ChargedParticle3d.TokamakSmallNoncanonical)
+        params = M.default_parameters()
 
         # displaced off the initial condition, which sits on a symmetry axis where several of the
         # metric derivatives vanish and would not exercise the new terms
         q = collect(float.(M.qᵢ)) .+ 0.01 .* [1.0, 2.0, 3.0, 1.0, 2.0, 3.0]
 
         g = zeros(6)
-        M.dH(g, 0.0, q)
-        fd = [(M.hamiltonian(0.0, (h = zeros(6); h[i] = 1e-6; q .+ h)) -
-               M.hamiltonian(0.0, (h = zeros(6); h[i] = 1e-6; q .- h))) / 2e-6 for i in 1:6]
+        N.dH(g, 0.0, N.fieldpoint(M.FIELD, 0.0, q))
+        fd = [(M.hamiltonian(0.0, (h = zeros(6); h[i] = 1e-6; q .+ h), params) -
+               M.hamiltonian(0.0, (h = zeros(6); h[i] = 1e-6; q .- h), params)) / 2e-6
+              for i in 1:6]
         @test isapprox(g, fd; rtol = 1e-6, atol = 1e-10)
 
         Ω = zeros(6, 6)
-        M.ω(Ω, 0.0, q, NamedTuple())
+        N.ω(Ω, 0.0, q, params)
         v = zeros(6)
-        M.charged_particle_3d_v(v, 0.0, q, NamedTuple())
+        N.charged_particle_3d_v(v, 0.0, q, params)
         @test isapprox(v, -Ω \ g; rtol = 1e-10, atol = 1e-14)
     end
 end
 
-@safetestset "3D guiding centre: the cached field values are the field functions                                  " begin
+@safetestset "3D guiding centre: the field accessors are the derivatives they name                             " begin
     using ChargedParticleDynamics.GuidingCenter3d
+    using ..StructureTestUtils
     using Test
 
-    # `guiding_center_3d_v`/`_f` evaluate every injected field function once into a `FieldValues` and
-    # then read the results out of it, which is what makes them 6.9x faster than calling through to
-    # the generated code on every one of the twelve Poisson-bracket terms. The whole construction rests on
-    # the cached accessors returning exactly what the uncached ones do — not approximately, exactly —
-    # so that is what is asserted, on one chart of each kind.
-    #
-    # A field left out of `fieldvalues`, or filled from the wrong index, would otherwise surface only
-    # as a silently wrong trajectory: the right-hand side would still run, and every one of these
-    # equilibria integrates happily with a corrupted `∂b/∂x`.
-    for M in (GuidingCenter3d.SolovevIterXpoint,        # cylindrical
-        GuidingCenter3d.TokamakMediumCartesian,   # cartesian
-        GuidingCenter3d.TokamakSmallToroidal)     # toroidal
+    # `guiding_center_3d_v`/`_f` evaluate every field tensor once into a `FieldPoint` and read single
+    # entries out of it, by the component names the equations are written in — `dA₁dx₂` is
+    # `DA♭[1, 2]`, `dg¹¹dx₂` is `Dg♯[1, 1, 2]`. A transposed index there would surface only as a
+    # silently wrong trajectory: the right-hand side would still run, and every one of these
+    # equilibria integrates happily with a corrupted `∂b/∂x`. So each derivative accessor is checked
+    # against a finite difference of the accessor it differentiates, on one chart of each kind.
+    G = GuidingCenter3d
+    V = (Val(1), Val(2), Val(3))
+
+    for M in (G.SolovevIterXpoint,        # cylindrical
+        G.TokamakMediumCartesian,   # cartesian
+        G.TokamakSmallToroidal)     # toroidal
         ic = M.initial_conditions_barely_passing()
-        t, q, p = 0.0, ic.q, ic.p
-        F = M.fieldvalues(t, q)
+        t, q = 0.0, ic.q
+        F = G.fieldpoint(M.FIELD, t, q)
+        S = G.fieldpoint²(M.FIELD, t, q)
+        P(x) = G.fieldpoint²(M.FIELD, t, x)
 
         @test isconcretetype(typeof(F))
-
-        for i in 1:3
-            # `==` rather than `===`: a vanishing component comes back from the generated code as an
-            # `Int` literal — `E₁` and `dg¹¹dx₁` both do in a cartesian chart — and `fieldvalues`
-            # converts it to the element type of the coordinate vector. The value is what matters.
-            @test M.Aᵢ(Val(i), t, F) == M.Aᵢ(Val(i), t, q)
-            @test M.bᵢ(Val(i), t, F) == M.bᵢ(Val(i), t, q)
-
-            for j in 1:3
-                @test M.dAᵢdxⱼ(Val(i), Val(j), t, F) == M.dAᵢdxⱼ(Val(i), Val(j), t, q)
-                @test M.dbᵢdxⱼ(Val(i), Val(j), t, F) == M.dbᵢdxⱼ(Val(i), Val(j), t, q)
-            end
-        end
-
-        # The injected names the Hamiltonian gradients and `u` call without going through an accessor.
-        for (f, g) in ((M.g¹¹, M.g¹¹), (M.g²², M.g²²), (M.g³³, M.g³³),
-            (M.dBdx₁, M.dBdx₁), (M.dBdx₂, M.dBdx₂), (M.dBdx₃, M.dBdx₃),
-            (M.E₁, M.E₁), (M.E₂, M.E₂), (M.E₃, M.E₃),
-            (M.A₁, M.A₁), (M.b₁, M.b₁), (M.b₂, M.b₂), (M.b₃, M.b₃),
-            (M.dg¹¹dx₁, M.dg¹¹dx₁), (M.dg²²dx₂, M.dg²²dx₂), (M.dg³³dx₃, M.dg³³dx₃),
-            (M.dg¹¹dx₃, M.dg¹¹dx₃), (M.dg³³dx₁, M.dg³³dx₁))
-            @test f(t, F) == g(t, q)
-        end
-
-        # And the composites, which is what actually catches a wrong index: they contract several
-        # cached fields together, so a transposed `db` shows up here even where it agrees componentwise.
-        c = M.constraint_pair(M.default_constraints())
-        @test M.u(t, F, p) == M.u(t, q, p)
-        @test M.λₒ(t, F, p, c) == M.λₒ(t, q, p, c)
-
-        for i in 1:3
-            @test M.dHdqᵢ(Val(i), t, F, p, ic.params) == M.dHdqᵢ(Val(i), t, q, p, ic.params)
-            @test M.dHdpᵢ(Val(i), t, F, p, ic.params) == M.dHdpᵢ(Val(i), t, q, p, ic.params)
-
-            for k in 1:3
-                @test M.dgᵏdqₗ(Val(k), Val(i), t, F, p) == M.dgᵏdqₗ(Val(k), Val(i), t, q, p)
-                @test M.dgᵏdpₗ(Val(k), Val(i), t, F, p) == M.dgᵏdpₗ(Val(k), Val(i), t, q, p)
-            end
-        end
-
-        # The canonicalised formulation's cache, which answers everything the first-derivative one
-        # does and the second derivatives besides. The mixed ones are stored for all twenty-seven
-        # index triples rather than the eighteen symmetry leaves independent, because
-        # `ElectromagneticFields` expands `d²b₁dx₁dx₂` and `d²b₁dx₂dx₁` separately and they need not
-        # agree in the last bit — so both orderings are asserted here. Still true on 0.6.3: its
-        # common-subexpression pass shares within one generated body, not across two, and none of the
-        # twenty-seven triples agrees bitwise with its transpose on `SolovevIterXpoint`.
-        S = M.secondfieldvalues(t, q)
-
         @test isconcretetype(typeof(S))
-        @test M.λₒ(t, S, p, c) == M.λₒ(t, q, p, c)
+
+        fd(f, j) = central_difference(x -> f(P(x)), q, j)
+        agree(a, b) = isapprox(a, b; rtol = 1e-5, atol = 1e-8)
 
         for i in 1:3, j in 1:3
 
-            @test M.dAᵢdxⱼ(Val(i), Val(j), t, S) == M.dAᵢdxⱼ(Val(i), Val(j), t, q)
-            @test M.dbᵢdxⱼ(Val(i), Val(j), t, S) == M.dbᵢdxⱼ(Val(i), Val(j), t, q)
+            @test agree(G.dAᵢdxⱼ(V[i], V[j], t, F), fd(x -> G.Aᵢ(V[i], t, x), j))
+            @test agree(G.dbᵢdxⱼ(V[i], V[j], t, F), fd(x -> G.bᵢ(V[i], t, x), j))
 
             for k in 1:3
-                @test M.d²Aᵢdxⱼdxₖ(Val(i), Val(j), Val(k), t, S) ==
-                      M.d²Aᵢdxⱼdxₖ(Val(i), Val(j), Val(k), t, q)
-                @test M.d²bᵢdxⱼdxₖ(Val(i), Val(j), Val(k), t, S) ==
-                      M.d²bᵢdxⱼdxₖ(Val(i), Val(j), Val(k), t, q)
-                @test M.d²gᵏdqₗdqₘ(Val(i), Val(j), Val(k), t, S, p) ==
-                      M.d²gᵏdqₗdqₘ(Val(i), Val(j), Val(k), t, q, p)
-                @test M.d²Hdqᵢdqⱼ(Val(i), Val(j), t, S, p, ic.params) ==
-                      M.d²Hdqᵢdqⱼ(Val(i), Val(j), t, q, p, ic.params)
-                @test M.d²Hdqᵢdpⱼ(Val(i), Val(j), t, S, p, ic.params) ==
-                      M.d²Hdqᵢdpⱼ(Val(i), Val(j), t, q, p, ic.params)
+                @test agree(G.d²Aᵢdxⱼdxₖ(V[i], V[j], V[k], t, S),
+                    fd(x -> G.dAᵢdxⱼ(V[i], V[j], t, x), k))
+                @test agree(G.d²bᵢdxⱼdxₖ(V[i], V[j], V[k], t, S),
+                    fd(x -> G.dbᵢdxⱼ(V[i], V[j], t, x), k))
             end
+        end
 
-            @test M.dλ₁dqⱼ(Val(i), t, S, p, ic.params, c) ==
-                  M.dλ₁dqⱼ(Val(i), t, q, p, ic.params, c)
-            @test M.dλ₂dpⱼ(Val(i), t, S, p, ic.params, c) ==
-                  M.dλ₂dpⱼ(Val(i), t, q, p, ic.params, c)
+        # The per-component names the Hamiltonian gradients and `u` call without an index accessor.
+        g = (G.g¹¹, G.g²², G.g³³)
+        dg = ((G.dg¹¹dx₁, G.dg¹¹dx₂, G.dg¹¹dx₃), (G.dg²²dx₁, G.dg²²dx₂, G.dg²²dx₃),
+            (G.dg³³dx₁, G.dg³³dx₂, G.dg³³dx₃))
+        d²g¹¹ = ((G.d²g¹¹dx₁dx₁, G.d²g¹¹dx₁dx₂, G.d²g¹¹dx₁dx₃),
+            (G.d²g¹¹dx₂dx₁, G.d²g¹¹dx₂dx₂, G.d²g¹¹dx₂dx₃),
+            (G.d²g¹¹dx₃dx₁, G.d²g¹¹dx₃dx₂, G.d²g¹¹dx₃dx₃))
+        dB = (G.dBdx₁, G.dBdx₂, G.dBdx₃)
+        d²B = ((G.d²Bdx₁dx₁, G.d²Bdx₁dx₂, G.d²Bdx₁dx₃),
+            (G.d²Bdx₂dx₁, G.d²Bdx₂dx₂, G.d²Bdx₂dx₃),
+            (G.d²Bdx₃dx₁, G.d²Bdx₃dx₂, G.d²Bdx₃dx₃))
+
+        for i in 1:3, j in 1:3
+
+            @test agree(dg[i][j](t, F), fd(x -> g[i](t, x), j))
+            @test agree(d²g¹¹[i][j](t, S), fd(x -> dg[1][i](t, x), j))
+            @test agree(d²B[i][j](t, S), fd(x -> dB[i](t, x), j))
+        end
+        for j in 1:3
+            @test agree(dB[j](t, F), fd(x -> G.B(t, x), j))
+        end
+
+        # The larger point answers everything the smaller one does, from the same tensors.
+        for i in 1:3
+            @test G.Aᵢ(V[i], t, S) == G.Aᵢ(V[i], t, F)
+            @test G.bᵢ(V[i], t, S) == G.bᵢ(V[i], t, F)
+            @test g[i](t, S) == g[i](t, F)
+            @test dB[i](t, S) == dB[i](t, F)
         end
     end
 end
@@ -356,22 +346,24 @@ end
     # The metric cross-term of ∂²H/∂qᵢ∂qⱼ carried a factor of two that is only correct on the
     # diagonal, which made the Hessian asymmetric — by 65 % on the ITER Solov'ev X-point — in every
     # curvilinear coordinate system. Both the symmetry and the value are checked here.
-    for M in (GuidingCenter3d.SolovevIterXpoint,        # cylindrical
-        GuidingCenter3d.TokamakMediumCartesian,   # cartesian
-        GuidingCenter3d.TokamakSmallCylindrical,  # cylindrical
-        GuidingCenter3d.TokamakSmallToroidal)     # toroidal
+    G = GuidingCenter3d
+
+    for M in (G.SolovevIterXpoint,        # cylindrical
+        G.TokamakMediumCartesian,   # cartesian
+        G.TokamakSmallCylindrical,  # cylindrical
+        G.TokamakSmallToroidal)     # toroidal
         ic = M.initial_conditions_barely_passing()
         t, q, p, par = 0.0, ic.q, ic.p, ic.params
+        P(x) = G.fieldpoint²(M.FIELD, t, x)
 
-        dH = (M.dHdq₁, M.dHdq₂, M.dHdq₃)
-        d2H = [M.d²Hdq₁dq₂ M.d²Hdq₁dq₃ M.d²Hdq₂dq₃]
+        dH = (G.dHdq₁, G.dHdq₂, G.dHdq₃)
 
-        for (i, j, f) in ((1, 2, M.d²Hdq₁dq₂), (1, 3, M.d²Hdq₁dq₃), (2, 3, M.d²Hdq₂dq₃),
-            (1, 1, M.d²Hdq₁dq₁), (2, 2, M.d²Hdq₂dq₂), (3, 3, M.d²Hdq₃dq₃))
-            ana = f(t, q, p, par)
+        for (i, j, f) in ((1, 2, G.d²Hdq₁dq₂), (1, 3, G.d²Hdq₁dq₃), (2, 3, G.d²Hdq₂dq₃),
+            (1, 1, G.d²Hdq₁dq₁), (2, 2, G.d²Hdq₂dq₂), (3, 3, G.d²Hdq₃dq₃))
+            ana = f(t, P(q), p, par)
             # ∂/∂qⱼ of ∂H/∂qᵢ and ∂/∂qᵢ of ∂H/∂qⱼ must both reproduce it
-            @test ana ≈ central_difference(x -> dH[i](t, x, p, par), q, j) rtol = 1e-5
-            @test ana ≈ central_difference(x -> dH[j](t, x, p, par), q, i) rtol = 1e-5
+            @test ana ≈ central_difference(x -> dH[i](t, P(x), p, par), q, j) rtol = 1e-5
+            @test ana ≈ central_difference(x -> dH[j](t, P(x), p, par), q, i) rtol = 1e-5
         end
     end
 end
@@ -386,11 +378,15 @@ end
     # wrong for all three pairs at once — and only two of the three used to exist at all. This checks
     # each of them against a central difference of the derivative one order below, for every index
     # combination, in three charts.
-    for M in (GuidingCenter3d.SolovevIterXpoint,        # cylindrical
-        GuidingCenter3d.TokamakMediumCartesian,   # cartesian
-        GuidingCenter3d.TokamakSmallToroidal)     # toroidal
+    G = GuidingCenter3d
+
+    for M in (G.SolovevIterXpoint,        # cylindrical
+        G.TokamakMediumCartesian,   # cartesian
+        G.TokamakSmallToroidal)     # toroidal
         ic = M.initial_conditions_barely_passing()
         t, q, p = 0.0, ic.q, ic.p
+        P(x) = G.fieldpoint²(M.FIELD, t, x)
+        Pq = P(q)
 
         # A central difference at h = 1e-6 of a quantity of size s carries about `eps * s / h ≈
         # 2E-10 s` of round-off, and several entries of these Hessians vanish exactly, so the
@@ -403,28 +399,28 @@ end
             k, l = Val(ki), Val(li)
 
             # ∂gᵏ/∂qₗ and ∂gᵏ/∂pₗ against a difference of gᵏ itself
-            @test isapprox(M.dgᵏdqₗ(k, l, t, q, p),
-                central_difference(x -> M.gᵏ(k, t, x, p), q, li); rtol = 1e-5, atol = atol)
-            @test isapprox(M.dgᵏdpₗ(k, l, t, q, p),
-                central_difference(y -> M.gᵏ(k, t, q, y), p, li); rtol = 1e-5, atol = atol)
+            @test isapprox(G.dgᵏdqₗ(k, l, t, Pq, p),
+                central_difference(x -> G.gᵏ(k, t, P(x), p), q, li); rtol = 1e-5, atol = atol)
+            @test isapprox(G.dgᵏdpₗ(k, l, t, Pq, p),
+                central_difference(y -> G.gᵏ(k, t, Pq, y), p, li); rtol = 1e-5, atol = atol)
 
             for mi in 1:3
                 m = Val(mi)
 
                 # ∂²gᵏ/∂qₗ∂qₘ has to reproduce a difference of ∂gᵏ/∂qₗ, and to be symmetric in the
                 # two indices.
-                @test isapprox(M.d²gᵏdqₗdqₘ(k, l, m, t, q, p),
-                    central_difference(x -> M.dgᵏdqₗ(k, l, t, x, p), q, mi);
+                @test isapprox(G.d²gᵏdqₗdqₘ(k, l, m, t, Pq, p),
+                    central_difference(x -> G.dgᵏdqₗ(k, l, t, P(x), p), q, mi);
                     rtol = 1e-4, atol = atol)
-                @test isapprox(M.d²gᵏdqₗdqₘ(k, l, m, t, q, p),
-                    M.d²gᵏdqₗdqₘ(k, m, l, t, q, p); rtol = 1e-12, atol = 1e-14)
+                @test isapprox(G.d²gᵏdqₗdqₘ(k, l, m, t, Pq, p),
+                    G.d²gᵏdqₗdqₘ(k, m, l, t, Pq, p); rtol = 1e-12, atol = 1e-14)
 
                 # ∂²gᵏ/∂qₗ∂pₘ likewise, differentiated from either side
-                @test isapprox(M.d²gᵏdqₗdpₘ(k, l, m, t, q, p),
-                    central_difference(y -> M.dgᵏdqₗ(k, l, t, q, y), p, mi);
+                @test isapprox(G.d²gᵏdqₗdpₘ(k, l, m, t, Pq, p),
+                    central_difference(y -> G.dgᵏdqₗ(k, l, t, Pq, y), p, mi);
                     rtol = 1e-4, atol = atol)
-                @test isapprox(M.d²gᵏdqₗdpₘ(k, l, m, t, q, p),
-                    central_difference(x -> M.dgᵏdpₗ(k, m, t, x, p), q, li);
+                @test isapprox(G.d²gᵏdqₗdpₘ(k, l, m, t, Pq, p),
+                    central_difference(x -> G.dgᵏdpₗ(k, m, t, P(x), p), q, li);
                     rtol = 1e-4, atol = atol)
             end
         end
@@ -434,11 +430,11 @@ end
         # derivation that is not pure algebra — it has to hold in every chart, which is exactly what
         # cannot be read off the paper, since Eq. (29) is written in cartesian coordinates. Checked
         # here in all three chart types.
-        D = M.compact_denominator(t, q, p)
+        D = G.compact_denominator(t, Pq, p)
         for m in (Val(1), Val(2), Val(3))
-            b = M.bᵢ(m, t, q)
+            b = G.bᵢ(m, t, Pq)
             iszero(b) && continue
-            @test M.bracket_cc(m, t, q, p) / b ≈ D rtol = 1e-10
+            @test G.bracket_cc(m, t, Pq, p) / b ≈ D rtol = 1e-10
         end
 
         # b·(b×v) = 0 identically, which in the paper's labelling reads b₁g² - b₂g¹ + b₃g³ = 0. It is
@@ -446,8 +442,8 @@ end
         # or not the constraints themselves do.
         for y in (p, p .+ 0.1)
             @test isapprox(
-                M.b₁(t, q) * M.g₂(t, q, y) - M.b₂(t, q) * M.g₁(t, q, y) +
-                M.b₃(t, q) * M.g₃(t, q, y),
+                G.b₁(t, Pq) * G.g₂(t, Pq, y) - G.b₂(t, Pq) * G.g₁(t, Pq, y) +
+                G.b₃(t, Pq) * G.g₃(t, Pq, y),
                 0.0;
                 atol = 1e-12)
         end
@@ -460,33 +456,36 @@ end
     using Test
 
     # `∂λ/∂q` and `∂λ/∂p` are the only *composed* derivatives in the model — everything else is read
-    # straight off the injected field functions — and they are what separates `hodeproblem_canonical`
+    # straight off the field tensors — and they are what separates `hodeproblem_canonical`
     # from `hodeproblem`. `dλ₂` carried the `∂λₒ` term with the wrong sign, which this catches.
     #
     # The test point has to sit *off* the constraint manifold. In the right-hand side both `∂λ/∂q g`
     # terms are multiplied by a constraint, so at the shipped initial condition the sign of the `∂λₒ`
     # term is invisible: `λ₁` and `λ₂` themselves are still finite and correct there, and only their
     # derivatives are wrong. Displacing `q` breaks `v × b = 0` and makes the term measurable.
-    for M in (GuidingCenter3d.SolovevIterXpoint,        # cylindrical
-        GuidingCenter3d.TokamakMediumCartesian,   # cartesian
-        GuidingCenter3d.TokamakSmallToroidal)     # toroidal
+    G = GuidingCenter3d
+
+    for M in (G.SolovevIterXpoint,        # cylindrical
+        G.TokamakMediumCartesian,   # cartesian
+        G.TokamakSmallToroidal)     # toroidal
         ic = M.initial_conditions_barely_passing()
         t, p, par = 0.0, ic.p, ic.params
         q = ic.q .+ 0.01 .* [1.0, 2.0, 3.0]
-        c = M.constraint_pair(M.default_constraints())
+        c = G.constraint_pair(M.default_constraints())
+        S = G.fieldpoint²(M.FIELD, t, q)
 
         # Same reasoning as the constraint block above: a central difference at h = 1e-6 carries about
         # `eps * s / h` of round-off, and the multipliers run over several orders of magnitude between
         # these equilibria, so the floor is scaled to the problem rather than fixed.
         atol = 1e-8 * max(1.0, maximum(abs, p))
 
-        for (λ, dλdq, dλdp) in ((M.λ₁, M.dλ₁dqⱼ, M.dλ₁dpⱼ), (M.λ₂, M.dλ₂dqⱼ, M.dλ₂dpⱼ))
+        for (λ, dλdq, dλdp) in ((G.λ₁, G.dλ₁dqⱼ, G.dλ₁dpⱼ), (G.λ₂, G.dλ₂dqⱼ, G.dλ₂dpⱼ))
             for ji in 1:3
                 j = Val(ji)
-                @test isapprox(dλdq(j, t, q, p, par, c),
+                @test isapprox(dλdq(j, t, S, p, par, c),
                     central_difference(x -> λ(t, x, p, par, c), q, ji);
                     rtol = 1e-5, atol = atol)
-                @test isapprox(dλdp(j, t, q, p, par, c),
+                @test isapprox(dλdp(j, t, S, p, par, c),
                     central_difference(y -> λ(t, q, y, par, c), p, ji);
                     rtol = 1e-5, atol = atol)
             end
@@ -502,36 +501,37 @@ end
     # `guiding_center_3d_compact.jl` does not port Eq. (29) of Li, Zhang & Liu — that equation is
     # written with cartesian vector identities and `H = ½Σ(pᵢ-Aᵢ)²`, and eight of the thirteen
     # equilibria here are curvilinear — but derives an equivalent from the model's own objects. This
-    # pins that derivation against the paper by spelling Eq. (29) out directly from the injected field
-    # functions, which is only possible in the cartesian charts, where the metric is the identity.
-    for M in (GuidingCenter3d.Dipole3d, GuidingCenter3d.QuadraticPotentials3d,
-        GuidingCenter3d.TokamakMediumCartesian)
+    # pins that derivation against the paper by spelling Eq. (29) out directly from the field
+    # tensors, which is only possible in the cartesian charts, where the metric is the identity.
+    G = GuidingCenter3d
+    using ElectromagneticFields: g♯, b♭, A♭, Db♭, DA♭, DB, E♭, B
+
+    # The field is read here straight from `ElectromagneticFields`, not through the component names
+    # the right-hand side is written in, so that the check is independent of them.
+    for M in (G.Dipole3d, G.QuadraticPotentials3d, G.TokamakMediumCartesian)
         ic = isdefined(M, :initial_conditions_dipole) ? M.initial_conditions_dipole() :
              isdefined(M, :initial_conditions_quadratic) ?
              M.initial_conditions_quadratic() :
              M.initial_conditions_barely_passing()
         t, q, p, par = 0.0, ic.q, ic.p, ic.params
+        field = par.field
 
-        @test (M.g¹¹(t, q), M.g²²(t, q), M.g³³(t, q)) == (1, 1, 1)
+        @test g♯(field, t, q) == I
 
-        b = [M.b₁(t, q), M.b₂(t, q), M.b₃(t, q)]
-        A = [M.A₁(t, q), M.A₂(t, q), M.A₃(t, q)]
+        b = Vector(b♭(field, t, q))
+        A = Vector(A♭(field, t, q))
         v = p .- A
-        db = [M.db₁dx₁(t, q) M.db₁dx₂(t, q) M.db₁dx₃(t, q)
-              M.db₂dx₁(t, q) M.db₂dx₂(t, q) M.db₂dx₃(t, q)
-              M.db₃dx₁(t, q) M.db₃dx₂(t, q) M.db₃dx₃(t, q)]
-        dA = [M.dA₁dx₁(t, q) M.dA₁dx₂(t, q) M.dA₁dx₃(t, q)
-              M.dA₂dx₁(t, q) M.dA₂dx₂(t, q) M.dA₂dx₃(t, q)
-              M.dA₃dx₁(t, q) M.dA₃dx₂(t, q) M.dA₃dx₃(t, q)]
-        ∇B = [M.dBdx₁(t, q), M.dBdx₂(t, q), M.dBdx₃(t, q)]
+        db = Matrix(Db♭(field, t, q))
+        dA = Matrix(DA♭(field, t, q))
+        ∇B = Vector(DB(field, t, q))
         # `E = -∇Φ`: `hamiltonian` carries `+φ` while `dHdqᵢ` subtracts `Eᵢ`.
-        ∇Φ = -[M.E₁(t, q), M.E₂(t, q), M.E₃(t, q)]
+        ∇Φ = -Vector(E♭(field, t, q))
         ∇xb = [db[3, 2] - db[2, 3], db[1, 3] - db[3, 1], db[2, 1] - db[1, 2]]
 
         # The scalar denominator of Eq. (24), which `compact_denominator` reaches without ever
         # dividing by a component of b.
-        D = M.B(t, q) + dot(v, ∇xb)
-        @test M.compact_denominator(t, q, p) ≈ D rtol = 1e-12
+        D = B(field, t, q) + dot(v, ∇xb)
+        @test G.compact_denominator(t, G.fieldpoint(field, t, q), p) ≈ D rtol = 1e-12
 
         ξ = cross(v, db * v)                                                             # Eq. (26)
         Ẋ = v .+ (ξ .+ par.μ .* cross(b, ∇B) .+ cross(b, ∇Φ)) ./ D                       # Eq. (29a)
@@ -542,11 +542,11 @@ end
         for constraints in (:g12, :parallel)
             # The two branches differ only in how they evaluate the parallel velocity and the
             # denominator, which agree on the constraint manifold the initial condition sits on.
-            m = M.compact_index(constraints)
+            m = G.compact_index(constraints)
             v̄ = zeros(3)
             f̄ = zeros(3)
-            M.guiding_center_3d_compact_v(v̄, t, q, p, par, m)
-            M.guiding_center_3d_compact_f(f̄, t, q, p, par, m)
+            G.guiding_center_3d_compact_v(v̄, t, q, p, par, m)
+            G.guiding_center_3d_compact_f(f̄, t, q, p, par, m)
 
             @test isapprox(v̄, Ẋ; rtol = 1e-10)
             @test isapprox(f̄, ṗ; rtol = 1e-10, atol = 1e-14)
@@ -566,21 +566,58 @@ end
         (GuidingCenter4d.TokamakMediumCylindrical, [2.4, 0.15, 0.3, 0.2]),
         (GuidingCenter4d.TokamakSmallToroidal, [0.06, 0.4, 0.3, 3e-4]))
 
+    G = GuidingCenter4d
+
     for (M, q0) in cases
         t = 0.0
         q = collect(float.(q0))
         v = [0.7, -0.3, 0.45, 0.2]
         buf = zeros(4, 4)
+        params = M.default_parameters()
 
-        dϑk_dot_q(x, k) = (M.dϑ(buf, t, x); sum(buf[l, k] * q[l] for l in 1:4))
+        dϑk_dot_q(x, k) = (M.dϑ(buf, t, x, params); sum(buf[l, k] * q[l] for l in 1:4))
 
-        for (k, ḡ) in enumerate((M.g̅₁, M.g̅₂, M.g̅₃, M.g̅₄))
-            ana = ḡ(t, q, v)
+        for (k, ḡ) in enumerate((G.g̅₁, G.g̅₂, G.g̅₃, G.g̅₄))
+            ana = ḡ(t, G.fieldpoint²(M.FIELD, t, q), v)
             num = sum(central_difference(x -> dϑk_dot_q(x, k), q, j) * v[j] for j in 1:4)
             # Absolute tolerance as well: ḡ₄ vanishes identically where b is constant, and the
             # central difference of an O(1) quantity at h = 1e-6 carries ~1e-10 of noise.
             @test isapprox(ana, num; rtol = 1e-5, atol = 1e-9)
         end
+    end
+end
+
+@safetestset "4D guiding centre: the one-form and its curl take a coordinate vector and params                    " begin
+    using ChargedParticleDynamics.GuidingCenter4d
+    using ElectromagneticFields: A♭, b♭
+    using ..StructureTestUtils
+    using Test
+
+    # `ϑ₁`…`ϑ₄`, `β₁`…`β₃` and `ϑ(t, q, params, k)` are exported, and a caller holds a coordinate
+    # vector rather than a `FieldPoint`. The expected values do not come from the code under test:
+    # the one-form is the field's own `A♭ + u b♭`, and its curl `β = ∇ × ϑ` is taken by central
+    # differences of the one-form.
+    G = GuidingCenter4d
+
+    for M in (G.SolovevIterXpoint, G.TokamakSmallCartesian, G.TokamakSmallToroidal)
+        ic = M.initial_conditions_barely_passing()
+        t, q, par = 0.0, ic.q, ic.params
+        x = q[1:3]
+        θ = A♭(par.field, t, x) .+ q[4] .* b♭(par.field, t, x)
+        ϑs = (G.ϑ₁, G.ϑ₂, G.ϑ₃)
+
+        for k in 1:3
+            @test ϑs[k](t, q, par) ≈ θ[k] rtol = 1e-14
+            @test G.ϑ(t, q, par, k) == ϑs[k](t, q, par)
+        end
+        @test G.ϑ₄(t, q, par) == 0
+        @test G.ϑ(t, q, par, 4) == 0
+
+        d(k, j) = central_difference(y -> ϑs[k](t, y, par), q, j)
+        atol = 1e-8 * max(1.0, maximum(abs, θ))
+        @test isapprox(G.β₁(t, q, par), d(3, 2) - d(2, 3); rtol = 1e-6, atol = atol)
+        @test isapprox(G.β₂(t, q, par), d(1, 3) - d(3, 1); rtol = 1e-6, atol = atol)
+        @test isapprox(G.β₃(t, q, par), d(2, 1) - d(1, 2); rtol = 1e-6, atol = atol)
     end
 end
 
@@ -608,18 +645,30 @@ end
         Mc = ChargedParticle3d.SolovevIterXpoint
         Mn = ChargedParticle3d.TokamakSmallNoncanonical
 
+        # the equations each of the three modules forwards to
+        Fp = PauliParticle3d
+        Fc = ChargedParticle3d.Canonical
+        Fn = ChargedParticle3d.Noncanonical
+
         v = [1.3e-3, -4.0e-4, 7.0e-4]
         λ3 = [0.31, -0.17, 0.42]
         λ6 = [0.31, -0.17, 0.42, 0.23, -0.51, 0.11]
 
         # (module, g, state, oneform, nz, λ, params)
+        pp = (field = Mp.FIELD, μ = 2.31e-6)
+        pc = Mc.default_parameters()
+        pn = Mn.default_parameters()
         cases = (
-            (Mp, Mp.pauli_particle_3d_iode_g, [1.05, 0.0, 0.0],
-                (z, vv) -> (θ = zeros(3); Mp.ϑ(θ, 0.0, z, vv); θ), 3, λ3, (μ = 2.31e-6,)),
-            (Mc, Mc.charged_particle_3d_iode_g, [2.5, 0.0, 0.0],
-                (z, vv) -> (θ = zeros(3); Mc.ϑ(θ, 0.0, z, vv); θ), 3, λ3, NamedTuple()),
-            (Mn, Mn.charged_particle_3d_iode_g, collect(float.(Mn.qᵢ)),
-                (z, vv) -> (θ = zeros(6); Mn.ϑ(θ, 0.0, z); θ), 6, λ6, NamedTuple())
+            (Mp, Fp.pauli_particle_3d_iode_g, [1.05, 0.0, 0.0],
+                (z, vv) -> (
+                    θ = zeros(3); Fp.pauli_particle_3d_iode_ϑ(θ, 0.0, z, vv, pp); θ),
+                3, λ3, pp),
+            (Mc, Fc.charged_particle_3d_iode_g, [2.5, 0.0, 0.0],
+                (z, vv) -> (
+                    θ = zeros(3); Fc.charged_particle_3d_iode_ϑ(θ, 0.0, z, vv, pc); θ),
+                3, λ3, pc),
+            (Mn, Fn.charged_particle_3d_iode_g, collect(float.(Mn.qᵢ)),
+                (z, vv) -> (θ = zeros(6); Mn.ϑ(θ, 0.0, z, pn); θ), 6, λ6, pn)
         )
 
         for (M, g, z, oneform, nz, λ, par) in cases
@@ -675,6 +724,39 @@ end
         _, perr = M.compute_toroidal_momentum_error(sol)
         @test maximum(abs(perr[i]) for i in eachindex(perr)) < tol
     end
+end
+
+@safetestset "A formula written in one chart refuses a field in another                                           " begin
+    using ChargedParticleDynamics
+    using ChargedParticleDynamics.GuidingCenter4d
+    using Test
+
+    # The right-hand sides take any field whose chart is orthogonal. Two things are narrower, and
+    # both refuse rather than answer wrongly: `toroidal_momentum`, whose formula each module writes
+    # in its own chart, and the metric accessors of `FieldPoints`, which read the diagonal only.
+    G = GuidingCenter4d
+    cart, cyl = G.TokamakSmallCartesian, G.TokamakSmallCylindrical
+    ic = cyl.initial_conditions_barely_passing()
+    foreign = (field = cart.FIELD, μ = ic.params.μ)
+
+    @test cyl.toroidal_momentum(0.0, ic.q, ic.params) isa Float64
+    @test_throws ArgumentError cyl.toroidal_momentum(0.0, ic.q, foreign)
+    @test_throws ArgumentError cart.toroidal_momentum(0.0, ic.q, ic.params)
+
+    # The same kind of equilibrium with other parameters is the same chart; `GuidingCenter3d`'s
+    # `compute_toroidal_momentum` goes through this check.
+    @test ChargedParticleDynamics.check_chart(
+        cyl.FIELD, G.TokamakMediumCylindrical.FIELD) === nothing
+    @test_throws ArgumentError ChargedParticleDynamics.check_chart(cart.FIELD, cyl.FIELD)
+
+    FP = ChargedParticleDynamics.FieldPoints
+    x = [1.0, 0.0, 0.0]
+    diagonal = [1.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 3.0]
+    skew = [1.0 0.1 0.0; 0.1 2.0 0.0; 0.0 0.0 3.0]
+    @test FP.check_orthogonal((g♭ = diagonal, g♯ = diagonal), x) === nothing
+    @test FP.check_orthogonal((B = 1.0,), x) === nothing
+    @test_throws ArgumentError FP.check_orthogonal((g♭ = skew,), x)
+    @test_throws ArgumentError FP.check_orthogonal((g♯ = skew,), x)
 end
 
 @safetestset "3D guiding centre diagnostics                                                                       " begin
@@ -753,15 +835,16 @@ end
         # whose `bₘ` is largest, and the reason `compute_constraints` reports all three.
         c = M.compute_constraints(sol)
         gs = (c.g₁, c.g₂, c.g₃)
-        bs = (M.b₁, M.b₂, M.b₃)
+        G = GuidingCenter3d
+        bs = map(b -> (t, x) -> b(t, G.fieldpoint(M.FIELD, t, x)), (G.b₁, G.b₂, G.b₃))
 
-        retained = map(M.unval, M.constraint_pair(M.default_constraints()))
+        retained = map(G.unval, G.constraint_pair(M.default_constraints()))
         omitted = only(setdiff(1:3, retained))
 
         # `compact_index` is the component of `b` the pair divides by, which is not `omitted`: the
         # labelling of the `gᵏ` is not the antisymmetric one, so `(g³, g¹)` omits `g²` but divides by
         # `b₁`.
-        m = M.unval(M.compact_index(M.default_constraints()))
+        m = G.unval(G.compact_index(M.default_constraints()))
         bmin = minimum(abs(bs[m](sol.t[i], sol.q[i])) for i in eachindex(sol.t))
 
         for k in retained
@@ -803,26 +886,27 @@ end
     let M = GuidingCenter4d.TokamakSmallCylindrical
         q = [1.05, 0.0, 0.0, 4.3e-4]
         Ω = zeros(length(q), length(q))
-        M.ω(Ω, 0.0, q)
+        M.ω(Ω, 0.0, q, M.default_parameters())
         @test Ω ≈ -transpose(Ω)
     end
 
     let M = ChargedParticle3d.TokamakSmallNoncanonical
         q = collect(float.(M.qᵢ))
         Ω = zeros(length(q), length(q))
-        M.ω(Ω, 0.0, q, NamedTuple())
+        ChargedParticle3d.Noncanonical.ω(Ω, 0.0, q, M.default_parameters())
         @test Ω ≈ -transpose(Ω)
     end
 
-    let M = ChargedParticle3d.SolovevIterXpoint
+    let M = ChargedParticle3d.SolovevIterXpoint, C = ChargedParticle3d.Canonical
+        params = M.default_parameters()
         q = [2.5, 0.0, 0.0]
         v = [1.3e-3, -4.0e-4, 7.0e-4]
         Ω = zeros(length(q), length(q))
-        M.ω(Ω, 0.0, q, v, NamedTuple())
+        C.ω(Ω, 0.0, q, v, params)
         @test Ω ≈ -transpose(Ω)
 
         # Ωᵢⱼ = ∂ϑᵢ/∂qʲ - ∂ϑⱼ/∂qⁱ, against central differences of the one-form itself.
-        ϑi(x, i) = (θ = zeros(3); M.ϑ(θ, 0.0, x, v); θ[i])
+        ϑi(x, i) = (θ = zeros(3); C.charged_particle_3d_iode_ϑ(θ, 0.0, x, v, params); θ[i])
         for i in 1:3, j in 1:3
 
             num = central_difference(x -> ϑi(x, i), q, j) -

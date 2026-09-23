@@ -171,7 +171,7 @@ Passing `:g31`, `:g12` or `:g23` to `hodeproblem_compact` exhibits that dependen
 
 The second row is Eq. (29) as printed. The first is not: the paper evaluates the scale from ``D`` written out as ``\vert B \vert + (p-A) \cdot (\nabla \times b)``, which is regular everywhere, so its Eq. (29) carries one ``b_{m}`` denominator and the pair variants here carry two. Taking the scale from the pair's own bracket instead is a choice made in this implementation. Both denominators vanish on the same surface, so it changes nothing about *where* the variant is singular — but it does mean these variants are not a literal transcription, and the reason to keep them is to exhibit the pair dependence of Eq. (29), not to integrate with. Section 1 of `scripts/study_guiding_center_3d_conditioning.jl` shows the regularised and the pair-dependent denominators side by side.
 
-The equivalence is pinned by a test: `test/structure_tests.jl` spells Eq. (29) out directly from the injected field functions for the three cartesian equilibria — including `QuadraticPotentials3d`, the one with a non-zero electrostatic potential — and checks both variants against it to round-off.
+The equivalence is pinned by a test: `test/structure_tests.jl` spells Eq. (29) out directly from the `ElectromagneticFields` accessors for the three cartesian equilibria — including `QuadraticPotentials3d`, the one with a non-zero electrostatic potential — and checks both variants against it to round-off.
 
 On cost, the pair-dependent variant used to be the cheapest of the three formulations at 0.79 to 0.93 of the Hamilton-Dirac form per step across the eleven equilibria: it replaces the two multipliers by a single bracket ratio and needs no second derivatives at all. It no longer is. That saving was three bracket terms rather than six, and it only mattered while each of those terms re-entered the generated field code from the top; now that the field values are read once per right-hand side and shared, the variant costs 1.02 to 1.10 — slightly *more* than Hamilton-Dirac, the difference being its parallel velocity and the contraction in its momentum equation. `:parallel`, which cannot take that saving anyway, lands at 1.11 to 1.37. Both remain a cheap price for never dividing by a component of ``b``, and several times below the canonicalised system.
 
@@ -194,7 +194,7 @@ On cost, the pair-dependent variant used to be the cheapest of the three formula
 
 ## Usage
 
-Each equilibrium is wrapped in its own module, which injects the magnetic field code and provides
+Each equilibrium is wrapped in its own module, which holds its field as `FIELD` and provides
 `initial_conditions` for converting ``(r,u)`` into ``(r,p)`` as well as `hodeproblem`,
 `hodeproblem_canonical` and `hodeproblem_compact`:
 
@@ -216,16 +216,16 @@ problem retained, since all three vanish along the exact flow.
 ChargedParticleDynamics.GuidingCenter3d
 ```
 
-Each equilibrium is its own module, and every one of them `include`s the same
-`guiding_center_3d_equations.jl`, `guiding_center_3d_canonical.jl` and
-`guiding_center_3d_diagnostics.jl` — the first of which pulls in both
-`guiding_center_3d_constraints.jl` and `guiding_center_3d_compact.jl`, since neither of those depends
-on the canonicalised system. The model's
-functions are therefore documented once, below, under `TokamakSmallCylindrical`, and hold verbatim
-for all thirteen. What differs between the modules is the chart, the equilibrium parameters, the
-initial conditions and the constraint pair they default to, which is what these docstrings record:
+The equations are written once, in `GuidingCenter3d`, and read the field from `params.field`: the
+Hamilton-Dirac equations, the constraints, the compact form, the canonicalised system and the
+diagnostics. They are documented below. Each equilibrium is its own module, holding its field as
+`FIELD`, its initial conditions and problem constructors that default to them. The constructors
+are documented once, under `TokamakSmallCylindrical`, and hold verbatim for all thirteen. What
+differs between the modules is the chart, the equilibrium parameters, the initial conditions and the
+constraint pair they default to, which is what these docstrings record:
 
 ```@docs
+ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCylindrical
 ChargedParticleDynamics.GuidingCenter3d.Dipole3d
 ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d
 ChargedParticleDynamics.GuidingCenter3d.SymmetricField
@@ -241,5 +241,7 @@ ChargedParticleDynamics.GuidingCenter3d.SolovevIterXpoint
 ```
 
 ```@autodocs
-Modules = [ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCylindrical]
+Modules = [ChargedParticleDynamics.GuidingCenter3d,
+           ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCylindrical]
+Order   = [:function, :type, :constant, :macro]
 ```

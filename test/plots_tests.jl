@@ -16,10 +16,10 @@ using SafeTestsets
     using PoincareInvariants
     using ChargedParticleDynamics
     using ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCylindrical
+    using ElectromagneticFields: to_cartesian
 
-    # The equilibrium is the module itself: the magnetic field code is injected into it by
-    # `ElectromagneticFields.@code`, so `equ.R`, `equ.X`, … are its functions.
-    equ = ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCylindrical
+    # The equilibrium's field, which every problem of the module carries in its `parameters`.
+    field = ChargedParticleDynamics.GuidingCenter4d.TokamakMediumCylindrical.FIELD
 
     prob = odeproblem(initial_conditions_deeply_passing())
     sol = integrate(prob, Gauss(2))
@@ -29,11 +29,12 @@ using SafeTestsets
         @test compute_energy_error(sol) isa Tuple
         @test compute_toroidal_momentum(sol) isa ScalarDataSeries
         @test compute_toroidal_momentum_error(sol) isa Tuple
-        @test cartesian_solution(sol, equ) isa NamedTuple
+        @test cartesian_solution(sol) isa NamedTuple
+        @test cartesian_solution(sol, field) isa NamedTuple
     end
 
     @testset "Trajectory and field plots" begin
-        cs = cartesian_solution(sol, equ)
+        cs = cartesian_solution(sol)
         R = [q[1] for q in sol.q]
         Z = [q[2] for q in sol.q]
         φ = [q[3] for q in sol.q]
@@ -50,18 +51,18 @@ using SafeTestsets
         @test plot_trajectory_projection(cs.X, cs.Y) isa Tuple
         @test plot_trajectory_3d(cs.X, cs.Y, cs.Z) isa Tuple
         @test plot_trajectory_cylindrical(sol.t, R, Z, φ, u) isa Tuple
-        @test plot_fieldlines(equ; xrange = (1.0, 2.5), yrange = (-0.8, 0.8), ngrid = (
+        @test plot_fieldlines(field; xrange = (1.0, 2.5), yrange = (-0.8, 0.8), ngrid = (
             40, 30)) isa Tuple
     end
 
     # `plot_fieldlines` contours ψ = A₃, which is only meaningful in an axisymmetric cylindrical
     # chart. It used to accept any equilibrium and draw a plausible-looking wrong picture for the
-    # cartesian and toroidal ones; it now refuses, and so does `plot_trajectory_poloidal(R, Z, equ)`,
-    # which forwards its equilibrium here.
+    # cartesian and toroidal ones; it now refuses, and so does `plot_trajectory_poloidal(R, Z, field)`,
+    # which forwards its field here.
     @testset "Field lines reject charts they are not valid in" begin
-        cylindrical = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical
-        cartesian = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian
-        toroidal = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallToroidal
+        cylindrical = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCylindrical.FIELD
+        cartesian = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallCartesian.FIELD
+        toroidal = ChargedParticleDynamics.GuidingCenter4d.TokamakSmallToroidal.FIELD
 
         @test is_axisymmetric_cylindrical(cylindrical)
         @test !is_axisymmetric_cylindrical(cartesian)
@@ -101,7 +102,7 @@ using SafeTestsets
 
         # `plot_poincare_*` take plain coordinate vectors, one entry per plotted time.
         ts = [lsol[1].t[n] for n in 0:ntime(lsol[1])]
-        cart(j, n) = to_cartesian(lsol[j].t[n], lsol[j].q[n])
+        cart(j, n) = to_cartesian(field, lsol[j].t[n], lsol[j].q[n][1:3])
         X = [[cart(j, n)[1] for j in 1:nsamples(lsol)] for n in 0:(length(ts) - 1)]
         Y = [[cart(j, n)[2] for j in 1:nsamples(lsol)] for n in 0:(length(ts) - 1)]
         Z = [[cart(j, n)[3] for j in 1:nsamples(lsol)] for n in 0:(length(ts) - 1)]

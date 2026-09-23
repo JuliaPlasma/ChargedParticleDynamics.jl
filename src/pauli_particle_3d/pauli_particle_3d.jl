@@ -2,6 +2,16 @@
 using Parameters
 
 using GeometricEquations: HODEProblem, IODEProblem, LODEProblem, PODEProblem
+import ElectromagneticFields as EMF
+using ..FieldPoints
+
+export hamiltonian
+
+# The field tensors this model reads; see `FieldPoints`. Every function below that takes `params`
+# evaluates them from `params.field` and hands the point on in place of `q`.
+function fieldpoint(field, t, q)
+    FieldPoints.fieldpoint(field, t, q, Val((:A♭, :B, :DB, :DA♭, :E♭, :φ, :g♭, :g♯, :Dg♭)))
+end
 
 ϑ₁(t, q, v) = g₁₁(t, q) * v[1] + A₁(t, q)
 ϑ₂(t, q, v) = g₂₂(t, q) * v[2] + A₂(t, q)
@@ -29,39 +39,40 @@ v(t, q, p) = [v¹(t, q, p), v²(t, q, p), v³(t, q, p)]
 
 function hamiltonian(t, q, p, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     0.5 *
     (g₁₁(t, q) * v¹(t, q, p)^2 + g₂₂(t, q) * v²(t, q, p)^2 + g₃₃(t, q) * v³(t, q, p)^2) +
     μ * B(t, q) + φ(t, q)
 end
 
 """
-    initial_conditions(x₀, v₀::AbstractVector)
+    initial_conditions(field, x₀, v₀::AbstractVector)
 
 Split the *full* velocity `v₀` at `x₀` into its parallel part, which becomes the state, and its
 perpendicular part, whose energy becomes the magnetic moment `μ = |v⊥|² / 2|B|`.
 
-`v₀` is contravariant and `b` covariant, so `u₀ = v₀ · b` contracts the two into the scalar parallel
-speed with no metric needed; `b⃗` is then the contravariant unit vector that rebuilds the parallel
-velocity as a vector, `v∥ = u₀ b⃗`. `b`, `bₚ` and `b⃗` are the covariant, physical and contravariant
-triads and are distinct objects in a curvilinear chart, not interchangeable.
+`v₀` is contravariant and `b♭` covariant, so `u₀ = v₀ · b♭` contracts the two into the scalar
+parallel speed with no metric needed; `b♯` is then the contravariant unit vector that rebuilds the
+parallel velocity as a vector, `v∥ = u₀ b♯`. `b♭`, `b♮` and `b♯` are the covariant, physical and
+contravariant triads and are distinct objects in a curvilinear chart, not interchangeable.
 """
-function initial_conditions(x₀, v₀::AbstractVector)
-    u₀ = v₀' * b(0, x₀)
-    vpar = u₀ .* b⃗(0, x₀)
+function initial_conditions(field, x₀, v₀::AbstractVector)
+    u₀ = v₀' * EMF.b♭(field, 0, x₀)
+    vpar = Vector(u₀ .* EMF.b♯(field, 0, x₀))
     vper = v₀ .- vpar
-    μ = vper' * vper / 2 / B(0, x₀)
+    μ = vper' * vper / 2 / EMF.B(field, 0, x₀)
 
-    (q = x₀, v = vpar, params = (μ = μ,))
+    (q = x₀, v = vpar, params = (field = field, μ = μ))
 end
 
 """
-    initial_conditions(x₀, u₀::Real, μ)
+    initial_conditions(field, x₀, u₀::Real, μ)
 
 The initial condition of parallel velocity `u₀` and magnetic moment `μ` at `x₀` — the same
 `(x, u, μ)` triple the `GuidingCenter3d` and `GuidingCenter4d` modules are started from, so that the
 three families can be compared on one condition.
 
-The velocity is `u₀ b⃗(x₀)`, i.e. purely parallel, which places the particle on the slow manifold
+The velocity is `u₀ b♯(x₀)`, i.e. purely parallel, which places the particle on the slow manifold
 `ẋ × b = 0` where the Pauli dynamics reduces to the guiding centre dynamics. The residual gyration
 `μ' = |ẋ × b|² / 2|B|` vanishes at `t = 0` and stays small, which is the sense in which the Pauli
 orbit tracks the guiding centre one; see the "Slow Manifolds" section of the manual.
@@ -69,15 +80,18 @@ orbit tracks the guiding centre one; see the "Slow Manifolds" section of the man
 Three modules carried a private copy of this; it is defined here so that every equilibrium has it and
 they cannot drift apart.
 """
-initial_conditions(x₀, u₀::Real, μ) = (q = x₀, v = u₀ .* b⃗(0, x₀), params = (μ = μ,))
+function initial_conditions(field, x₀, u₀::Real, μ)
+    (q = x₀, v = Vector(u₀ .* EMF.b♯(field, 0, x₀)), params = (field = field, μ = μ))
+end
 
-function pauli_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ)
+function pauli_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ, params)
     pᵢ = zero(qᵢ)
-    ϑ(pᵢ, tᵢ, qᵢ, vᵢ)
+    ϑ(pᵢ, tᵢ, fieldpoint(params.field, tᵢ, qᵢ), vᵢ)
     return pᵢ
 end
 
 function pauli_particle_3d_pode_v(v, t, q, p, params)
+    q = fieldpoint(params.field, t, q)
     v[1] = v¹(t, q, p)
     v[2] = v²(t, q, p)
     v[3] = v³(t, q, p)
@@ -86,6 +100,7 @@ end
 
 function pauli_particle_3d_pode_f(f, t, q, p, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     f[1] = dA₁dx₁(t, q) * v¹(t, q, p) + dA₂dx₁(t, q) * v²(t, q, p) +
            dA₃dx₁(t, q) * v³(t, q, p) + E₁(t, q) - μ * dBdx₁(t, q) +
            (dg₁₁dx₁(t, q) * v¹(t, q, p)^2 + dg₂₂dx₁(t, q) * v²(t, q, p)^2 +
@@ -101,10 +116,11 @@ function pauli_particle_3d_pode_f(f, t, q, p, params)
     nothing
 end
 
-pauli_particle_3d_iode_ϑ(θ, t, q, v, params) = ϑ(θ, t, q, v)
+pauli_particle_3d_iode_ϑ(θ, t, q, v, params) = ϑ(θ, t, fieldpoint(params.field, t, q), v)
 
 function pauli_particle_3d_iode_f(f, t, q, v, params)
     @unpack μ = params
+    q = fieldpoint(params.field, t, q)
     f[1] = dA₁dx₁(t, q) * v[1] + dA₂dx₁(t, q) * v[2] + dA₃dx₁(t, q) * v[3] + E₁(t, q) -
            μ * dBdx₁(t, q) +
            (dg₁₁dx₁(t, q) * v[1]^2 + dg₂₂dx₁(t, q) * v[2]^2 + dg₃₃dx₁(t, q) * v[3]^2) / 2
@@ -121,6 +137,7 @@ end
 # from `v` alone, leaving the multiplier `λ` unused, so the projection did not depend on what it
 # was projecting.
 function pauli_particle_3d_iode_g(g, t, q, v, λ, params)
+    q = fieldpoint(params.field, t, q)
     g[1] = dA₁dx₁(t, q) * λ[1] + dA₂dx₁(t, q) * λ[2] + dA₃dx₁(t, q) * λ[3] +
            dg₁₁dx₁(t, q) * v[1] * λ[1] + dg₂₂dx₁(t, q) * v[2] * λ[2] +
            dg₃₃dx₁(t, q) * v[3] * λ[3]
@@ -134,27 +151,27 @@ function pauli_particle_3d_iode_g(g, t, q, v, λ, params)
 end
 
 """
-    podeproblem(q₀, v₀; kwargs...)
-    podeproblem(ics::NamedTuple; kwargs...)
-    podeproblem(; kwargs...)
+    podeproblem(q₀, v₀; timespan, timestep, parameters)
+    podeproblem(ics::NamedTuple; timespan, timestep)
 
-The Pauli particle as a `PODEProblem`.
+The Pauli particle as a `PODEProblem`. `parameters` carries the field as `field` and the magnetic
+moment as `μ`.
 
 !!! note "`v₀` is the parallel velocity"
     The state is the position and the *parallel* velocity, not the full one, and `μ` is the moment
-    of the perpendicular part. `initial_conditions(x₀, v₀)` performs that split and returns both,
-    which is why the no-argument form goes through it rather than handing the module's `vᵢ` to the
-    constructor directly.
+    of the perpendicular part. `initial_conditions(field, x₀, v₀)` performs that split and returns
+    both, which is why the no-argument form of each equilibrium module goes through it rather than
+    handing the module's `vᵢ` to the constructor directly.
 
-The second form takes the named tuple `initial_conditions` returns; the third splits the module's
-own `(qᵢ, vᵢ)`.
+The second form takes the named tuple `initial_conditions` returns. Each equilibrium module adds
+`podeproblem(; kwargs...)`, which splits the module's own `(qᵢ, vᵢ)`, and
+`podeproblem(q₀, v₀, μ)`, and defaults `timespan`, `timestep` and `parameters` to its own.
 """
-function podeproblem(q₀::AbstractVector, v₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
-        timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
+function podeproblem(q₀::AbstractVector, v₀::AbstractVector; timespan, timestep, parameters)
     PODEProblem(
         pauli_particle_3d_pode_v,
         pauli_particle_3d_pode_f,
-        timespan, timestep, q₀, pauli_particle_3d_pᵢ(timespan[begin], q₀, v₀);
+        timespan, timestep, q₀, pauli_particle_3d_pᵢ(timespan[begin], q₀, v₀, parameters);
         parameters = parameters,
         invariants = (h = hamiltonian,)
     )
@@ -166,13 +183,12 @@ end
 
 The Pauli particle as an `HODEProblem`; see [`podeproblem`](@ref) for the argument forms.
 """
-function hodeproblem(q₀::AbstractVector, v₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
-        timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
+function hodeproblem(q₀::AbstractVector, v₀::AbstractVector; timespan, timestep, parameters)
     HODEProblem(
         pauli_particle_3d_pode_v,
         pauli_particle_3d_pode_f,
         hamiltonian,
-        timespan, timestep, q₀, pauli_particle_3d_pᵢ(timespan[begin], q₀, v₀);
+        timespan, timestep, q₀, pauli_particle_3d_pᵢ(timespan[begin], q₀, v₀, parameters);
         parameters = parameters)
 end
 
@@ -182,31 +198,20 @@ end
 
 The Pauli particle as an `IODEProblem`; see [`podeproblem`](@ref) for the argument forms.
 """
-function iodeproblem(q₀::AbstractVector, v₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
-        timestep = DEFAULT_TIMESTEP, parameters = default_parameters())
+function iodeproblem(q₀::AbstractVector, v₀::AbstractVector; timespan, timestep, parameters)
     IODEProblem(
         pauli_particle_3d_iode_ϑ,
         pauli_particle_3d_iode_f,
         pauli_particle_3d_iode_g,
-        timespan, timestep, q₀, pauli_particle_3d_pᵢ(timespan[begin], q₀, v₀);
+        timespan, timestep, q₀, pauli_particle_3d_pᵢ(timespan[begin], q₀, v₀, parameters);
         parameters = parameters,
         invariants = (h = hamiltonian,),
         v̄ = pauli_particle_3d_pode_v)
 end
 
 for problem in (:podeproblem, :hodeproblem, :iodeproblem)
-    # `μ` on its own, for callers that have the moment rather than a parameter tuple
-    @eval $problem(q₀::AbstractVector, v₀::AbstractVector, μ::Real; kwargs...) = $problem(
-        q₀, v₀; parameters = (μ = μ,), kwargs...)
-
     # the named tuple `initial_conditions` returns, whose `v` is already the parallel velocity
     @eval $problem(ics::NamedTuple; kwargs...) = $problem(ics.q, ics.v; parameters = ics.params, kwargs...)
-
-    # no arguments: split the module's own `(qᵢ, vᵢ)`. This must go through `initial_conditions`
-    # rather than defaulting `v₀ = vᵢ` in the signature above — `vᵢ` is the *full* velocity, and
-    # handing it to the constructor as if it were the parallel one puts the particle on a
-    # trajectory the solver cannot follow.
-    @eval $problem(; kwargs...) = $problem(initial_conditions(qᵢ, vᵢ); kwargs...)
 end
 
 # function lodeproblem(q₀::AbstractVector, v₀::AbstractVector, parameters::NamedTuple; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP)

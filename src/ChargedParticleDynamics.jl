@@ -1,5 +1,7 @@
 module ChargedParticleDynamics
 
+include("utils/field_points.jl")
+include("utils/periodicity.jl")
 include("utils/coordinates.jl")
 include("utils/initial_conditions.jl")
 

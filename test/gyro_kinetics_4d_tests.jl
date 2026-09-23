@@ -56,6 +56,7 @@ end
 end
 
 @safetestset "Gyrokinetic GC Model: the vector field is the guiding centre one, rescaled by ωabs                   " begin
+    using ChargedParticleDynamics
     using ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
     using ChargedParticleDynamics.GuidingCenter4d.SolovevIterXpoint
     using GeometricIntegrators
@@ -67,22 +68,26 @@ end
     # direction, in the reparametrised time dt = `ωabs` ds.
     #
     # `ωabs = J B*∥` is positive in every chart, including this left-handed Solov'ev one, because it
-    # carries the chart's `orientation()`; see `ωabs` in `gc_common.jl`. The equality below is what
+    # carries the chart's `orientation(field)`; see `ωabs` in `gc_common.jl`. The equality below is what
     # pins the two together, and the "one orbit in three charts" block at the end of this file is
     # what pins the sign.
     GK = GuidingCenter4dSolovevIterXpoint
     GC = SolovevIterXpoint
 
-    params = (μ = 1E-2,)
+    # the equations the two modules forward to
+    FK = ChargedParticleDynamics.GyroKinetics4d
+    FC = ChargedParticleDynamics.GuidingCenter4d
+
+    params = (field = GK.FIELD, μ = 1E-2)
 
     for q in ([6.2, 0.3, 0.0, 3.4E-1], [5.5, -0.8, 1.1, -2.0E-1], [7.0, 0.5, 2.0, 5.0E-1])
         vgk = zeros(4)
         GK.v(vgk, 0.0, q, params)
 
         vgc = zeros(4)
-        GC.guiding_center_4d_v(vgc, 0.0, q, params)
+        FC.guiding_center_4d_v(vgc, 0.0, q, params)
 
-        @test vgk ≈ GK.ωabs(0.0, q) .* vgc
+        @test vgk ≈ GK.ωabs(0.0, q, params) .* vgc
     end
 
     # The six subsystems of the splitting must sum to the full vector field.
@@ -91,7 +96,7 @@ end
     GK.v(vfull, 0.0, q, params)
 
     vsum = zeros(4)
-    for V in (GK.v₁, GK.v₂, GK.v₃, GK.v₄, GK.v₅, GK.v₆)
+    for V in (FK.v₁, FK.v₂, FK.v₃, FK.v₄, FK.v₅, FK.v₆)
         vᵢ = zeros(4)
         V(vᵢ, 0.0, q, params)
         vsum .+= vᵢ
@@ -158,6 +163,7 @@ end
 @safetestset "Gyrokinetic GC Model: every equilibrium integrates and preserves volume                " begin
     using ChargedParticleDynamics
     using ChargedParticleDynamics.GyroKinetics4d
+    import ElectromagneticFields
     using ..GyroKinetics4dTests
     using GeometricIntegrators
     using LinearAlgebra
@@ -168,7 +174,7 @@ end
     # ϑᵢ = Aᵢ + u bᵢ in covariant components and Ω = dϑ need none — and the Liouville measure is
     # √det Ω in any chart, which is `ωabs` as this module computes it. So the volume-preserving
     # splitting must work unchanged in cylindrical and toroidal coordinates, and this is the assertion
-    # that says so. Applying the chart's `orientation()` to the field does not disturb it: negating a
+    # that says so. Applying the chart's `orientation(field)` to the field does not disturb it: negating a
     # divergence-free field leaves it divergence-free.
     #
     # Each module's time step is the 4D guiding centre's divided by the rescaling factor at its own
@@ -178,12 +184,13 @@ end
     #
     # `ωabs` is the phasespace Jacobian `J B*∥`, and it is **positive in every chart**. The bare
     # contraction it is built from is `det(DF) · B*∥` — `∂₂ϑ₃ - ∂₃ϑ₂` is the coordinate curl, which
-    # carries the signed Jacobian — so each module applies the `orientation()` its `@code` call
-    # generates, which restores it; see `ωabs` in `gc_common.jl`. Both facts are asserted below: that
-    # the generated sign really is the handedness of the chart, and that the factor that reaches the
+    # carries the signed Jacobian — so each module applies the `orientation(field)` of its field,
+    # which restores it; see `ωabs` in `gc_common.jl`. Both facts are asserted below: that the
+    # upstream sign really is the handedness of the chart, and that the factor that reaches the
     # dynamics is positive.
     equilibria = sort(filter(
-        n -> isa(getfield(GyroKinetics4d, n), Module) && n !== :GyroKinetics4d,
+        n -> isa(getfield(GyroKinetics4d, n), Module) && n !== :GyroKinetics4d &&
+             isdefined(getfield(GyroKinetics4d, n), :FIELD),
         names(GyroKinetics4d, all = true)))
 
     @test length(equilibria) == 8
@@ -211,17 +218,18 @@ end
         # vector field, and it holds for every chart rather than per chart.
         @test ωfac > 0
 
-        # And the `orientation()` this module gets from `ElectromagneticFields` really is the
+        # And the `orientation(field)` this module gets from `ElectromagneticFields` really is the
         # handedness of the curl this package computes, checked against the bare contraction rather
-        # than restated: `orientation() · (bare) = ωabs > 0` means the generated sign and the chart
-        # agree. This is the one assertion that spans the two packages — it used to check a constant
-        # declared here against its own chart, and now checks that upstream's sign is the one the
-        # dynamics needs. An upstream chart whose orientation went wrong would reverse the orbit
-        # silently, and this is what would catch it.
-        bare = M.ω₁(0.0, q₀) * M.dϑ₁dx₄(0.0, q₀) +
-               M.ω₂(0.0, q₀) * M.dϑ₂dx₄(0.0, q₀) +
-               M.ω₃(0.0, q₀) * M.dϑ₃dx₄(0.0, q₀)
-        @test sign(bare) == M.orientation()
+        # than restated: `orientation(field) · (bare) = ωabs > 0` means the upstream sign and the
+        # chart agree. This is the one assertion that spans the two packages: an upstream chart
+        # whose orientation went wrong would reverse the orbit silently, and this is what would
+        # catch it.
+        F = GyroKinetics4d
+        P = F.fieldpoint(M.FIELD, 0.0, q₀)
+        bare = F.ω₁(0.0, P) * F.dϑ₁dx₄(0.0, P) +
+               F.ω₂(0.0, P) * F.dϑ₂dx₄(0.0, P) +
+               F.ω₃(0.0, P) * F.dϑ₃dx₄(0.0, P)
+        @test sign(bare) == ElectromagneticFields.orientation(M.FIELD)
 
         step(q) = integrate(
             M.sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)),
@@ -248,7 +256,7 @@ end
     # The regression test for the sign of the rescaling factor.
     #
     # `ωabs` is built from a *coordinate* curl, which carries `det(DF)`, so before each module
-    # applied its chart's `orientation()` the factor was negative in the six left-handed charts —
+    # applied its chart's `orientation(field)` the factor was negative in the six left-handed charts —
     # and since the vector field carries the same factor, the model integrated those orbits
     # **backwards**. That is not a reparametrisation of time but chart-dependence: the same physical
     # particle in the same tokamak circulated one way in the cartesian chart and the other way in the
@@ -260,10 +268,12 @@ end
     # charts of a single equilibrium; started from the same physical point with the same `u` and
     # `μ`, the *physical* toroidal velocity `(scale factor) × (coordinate derivative) / ωabs` must
     # be the same number in all three, and must equal the guiding centre's.
+    using ElectromagneticFields: from_cartesian
+
     GK = GyroKinetics4d
     G4 = GuidingCenter4d
 
-    params = (μ = 2.448E-6,)
+    μ = 2.448E-6
     u = 1.623E-3
 
     # (gyrokinetic module, guiding centre module, toroidal coordinate index, its scale factor)
@@ -277,12 +287,15 @@ end
     reference = nothing
 
     for (Mk, Mg, i, scale) in charts
-        q = [Mg.from_cartesian(0, [1.05, 0.0, 0.0])..., u]
+        q = [from_cartesian(Mg.FIELD, 0, [1.05, 0.0, 0.0])..., u]
+
+        # the two modules of one chart hold the same equilibrium
+        params = (field = Mk.FIELD, μ = μ)
 
         vgk = zeros(4)
         Mk.v(vgk, 0.0, q, params)
         vgc = zeros(4)
-        Mg.guiding_center_4d_v(vgc, 0.0, q, params)
+        G4.guiding_center_4d_v(vgc, 0.0, q, (field = Mg.FIELD, μ = μ))
         ω = Mk.ωabs(0.0, q, params)
 
         # the gyrokinetic field, un-rescaled, is the guiding centre field — sign included

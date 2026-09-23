@@ -37,7 +37,7 @@ const ICS = (:initial_conditions_barely_passing, :initial_conditions_barely_trap
 # the same ϕ plus a multiple of 2π.
 function final_g4(M, x, u, μ, span, step)
     sol = integrate(
-        M.odeproblem([x..., u]; parameters = (μ = μ,), timespan = span,
+        M.odeproblem([x..., u]; parameters = (field = M.FIELD, μ = μ), timespan = span,
             timestep = step, periodic = false),
         Gauss(2);
         OPTS...)
@@ -45,12 +45,13 @@ function final_g4(M, x, u, μ, span, step)
 end
 
 function final_g3(M, x, u, μ, span, step)
+    params = (field = M.FIELD, μ = μ)
     sol = integrate(
-        M.hodeproblem([x..., u]; parameters = (μ = μ,), timespan = span,
+        M.hodeproblem([x..., u]; parameters = params, timespan = span,
             timestep = step, periodic = false),
         PartitionedGauss(2);
         OPTS...)
-    (collect(sol.q[end]), M.u(span[end], sol.q[end], sol.p[end]))
+    (collect(sol.q[end]), G3.u(span[end], sol.q[end], sol.p[end], params))
 end
 
 function final_pauli(M, x, v₀, μ, span, step)
@@ -66,13 +67,14 @@ function sharedmodules()
     sort([string(n)
           for n in names(P3, all = true)
           if isa(getfield(P3, n), Module) && n !== nameof(P3) &&
-                 isdefined(G3, n) && isdefined(G4, n)])
+                 isdefined(getfield(P3, n), :FIELD) && isdefined(G3, n) && isdefined(G4, n)])
 end
 
 end
 
 @safetestset "Model families: the declared initial conditions are the same across all three          " begin
     using ChargedParticleDynamics
+    using ElectromagneticFields: b♭
     using ..ModelAgreementUtils
 
     # This is the guard on the alignment rather than on any dynamics, and it is cheap. Before it, the
@@ -106,8 +108,8 @@ end
             @test ic3.q ≈ x
             @test icp.q ≈ x
             # parallel velocity, recovered from each family's own state
-            @test E3.u(0.0, ic3.q, ic3.p) ≈ u atol = 1E-12
-            @test icp.v' * Ep.b(0.0, icp.q) ≈ u atol = 1E-12
+            @test G3.u(0.0, ic3.q, ic3.p, ic3.params) ≈ u atol = 1E-12
+            @test icp.v' * b♭(Ep.FIELD, 0.0, icp.q) ≈ u atol = 1E-12
             # magnetic moment
             @test ic3.params.μ == μ
             @test icp.params.μ == μ
@@ -162,11 +164,12 @@ end
 
 @safetestset "Model families: the Pauli particle tracks the guiding centre on its slow manifold      " begin
     using ChargedParticleDynamics
+    using ElectromagneticFields: b♯
     using ..ModelAgreementUtils
 
     # Two statements, and the second is the substantive one.
     #
-    # `v = u b⃗` is the slow manifold to lowest order and tracks the guiding centre to 2E-2 at worst,
+    # `v = u b♯` is the slow manifold to lowest order and tracks the guiding centre to 2E-2 at worst,
     # the worst case being the ITER Solov'ev where ρ/L ≈ 0.24 and the expansion is barely valid.
     #
     # Supplying the guiding centre velocity itself removes the O(v_drift) mismatch in the initial
@@ -199,11 +202,11 @@ end
 
             ref = final_g4(M4, x, u, μ, span, step)[1]
 
-            parallel = final_pauli(Mp, x, u * Mp.b⃗(0.0, x), μ, span, step)[1]
+            parallel = final_pauli(Mp, x, u * b♯(Mp.FIELD, 0.0, x), μ, span, step)[1]
             @test reldiff(parallel, ref) < 3E-2
 
             vgc = zeros(4)
-            M4.guiding_center_4d_v(vgc, 0.0, [x..., u], (μ = μ,))
+            G4.guiding_center_4d_v(vgc, 0.0, [x..., u], (field = M4.FIELD, μ = μ))
             drifting = final_pauli(Mp, x, vgc[1:3], μ, span, step)[1]
             @test reldiff(drifting, ref) < 1E-3
         end

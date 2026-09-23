@@ -133,7 +133,7 @@ The three models can therefore be compared directly on the same physical orbit �
     ``4.095 \times 10^{-4}`` the module actually stores — the chart has ``g_{33} = R^{2}`` and
     ``R = 1.05``. And ``u_{0}`` is the contraction ``v_{0} \cdot b`` with the *covariant* `b`, not
     ``\vert v_{\parallel} \vert``: those agree to three digits here only because the parallel velocity is
-    almost entirely toroidal. The three triads `b`, `bₚ` and `b⃗` are covariant, physical and
+    almost entirely toroidal. The three triads `b♭`, `b♮` and `b♯` are covariant, physical and
     contravariant and are not interchangeable; see [Initialization](@ref).
 
     Both signs above were negative in this page before `ElectromagneticFields` 0.7.0, and one of the two
@@ -150,12 +150,15 @@ The three models can therefore be compared directly on the same physical orbit �
 ChargedParticleDynamics.PauliParticle3d
 ```
 
-Each equilibrium is its own module, and every one of them `include`s the same
-`pauli_particle_3d.jl`. The model's functions are therefore documented once, below, under
-`TokamakSmallCylindrical`, and hold verbatim for all eight. What differs between the modules is the
-chart, the equilibrium parameters and the initial conditions, which is what these docstrings record:
+The equations are written once, in `PauliParticle3d`, and read the field from `params.field`. They
+are documented below. Each equilibrium is its own module, holding its field as `FIELD`, its initial
+conditions and problem constructors that default to them. The constructors are documented once,
+under `TokamakSmallCylindrical`, and hold verbatim for all eight. What differs between the modules
+is the chart, the equilibrium parameters and the initial conditions, which is what these docstrings
+record:
 
 ```@docs
+ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical
 ChargedParticleDynamics.PauliParticle3d.SymmetricField
 ChargedParticleDynamics.PauliParticle3d.ThetaPinchField
 ChargedParticleDynamics.PauliParticle3d.TokamakSmallCartesian
@@ -166,5 +169,7 @@ ChargedParticleDynamics.PauliParticle3d.SolovevIterXpoint
 ```
 
 ```@autodocs
-Modules = [ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical]
+Modules = [ChargedParticleDynamics.PauliParticle3d,
+           ChargedParticleDynamics.PauliParticle3d.TokamakSmallCylindrical]
+Order   = [:function, :type, :constant, :macro]
 ```

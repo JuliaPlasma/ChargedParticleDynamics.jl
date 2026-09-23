@@ -13,15 +13,15 @@ export poincare_invariant_1st,
 # one ensemble member per point. Everything else — time span, time step — is taken from the
 # problem, so pass those here.
 function loop_odeproblem(; kwargs...)
-    odeproblem(f_loop(0.0); parameters = (μ = μ_loop(),), periodic = false, kwargs...)
+    odeproblem(f_loop(0.0); parameters = (field = FIELD, μ = μ_loop()), periodic = false, kwargs...)
 end
 
 function loop_iodeproblem(; kwargs...)
-    iodeproblem(f_loop(0.0); parameters = (μ = μ_loop(),), periodic = false, kwargs...)
+    iodeproblem(f_loop(0.0); parameters = (field = FIELD, μ = μ_loop()), periodic = false, kwargs...)
 end
 
 function loop_lodeproblem(; kwargs...)
-    lodeproblem(f_loop(0.0); parameters = (μ = μ_loop(),), periodic = false, kwargs...)
+    lodeproblem(f_loop(0.0); parameters = (field = FIELD, μ = μ_loop()), periodic = false, kwargs...)
 end
 
 @doc raw"""

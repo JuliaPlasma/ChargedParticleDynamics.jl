@@ -67,7 +67,7 @@ which is what this module integrates.
     The expressions above are written in the flat measure of a cartesian chart, where the phasespace
     Jacobian is ``B^{\star}_{\parallel}``. In a general chart it is the Liouville density
     ``\sqrt{\det \Omega} = J \, B^{\star}_{\parallel}``, which is what
-    [`ωabs`](@ref ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallCylindrical.ωabs)
+    [`ωabs`](@ref ChargedParticleDynamics.GyroKinetics4d.ωabs)
     computes and what the implemented ``dt = \omega_{abs} \, ds`` uses. Its magnitude is therefore
     chart-dependent — the three charts of the small tokamak give `0.9511`, `0.9986` and `0.0499` for
     a common `B*∥ = 0.9511` — while its *sign* is not: it is a measure density and positive in every
@@ -189,13 +189,15 @@ integrator exists yet; see `TODO.md` in the repository root for the design.
 ChargedParticleDynamics.GyroKinetics4d
 ```
 
-Each equilibrium is its own module, and each one `include`s the same `gc_common.jl`,
-`gc_equations.jl` and `coordinate_transformations.jl`, so the model's functions below are documented
-once, under `GuidingCenter4dTokamakSmallCylindrical`, and hold verbatim for all eight. What differs
-between them is the chart, the equilibrium parameters and the rescaled default time step, which is
-what these docstrings record:
+The equations are written once, in `GyroKinetics4d`, and read the field from `params.field`. They
+are documented in the next section. Each equilibrium is its own module, holding its field as
+`FIELD`, its initial conditions and problem constructors that default to them. The constructors
+are documented once, under `GuidingCenter4dTokamakSmallCylindrical`, and hold verbatim for all
+eight. What differs between them is the chart, the equilibrium parameters and the rescaled default
+time step, which is what these docstrings record:
 
 ```@docs
+ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallCylindrical
 ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallCartesian
 ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallToroidal
 ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakMediumCartesian
@@ -209,5 +211,7 @@ ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dSolovevIterXpoint
 ## Module
 
 ```@autodocs
-Modules = [ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallCylindrical]
+Modules = [ChargedParticleDynamics.GyroKinetics4d,
+           ChargedParticleDynamics.GyroKinetics4d.GuidingCenter4dTokamakSmallCylindrical]
+Order   = [:function, :type, :constant, :macro]
 ```

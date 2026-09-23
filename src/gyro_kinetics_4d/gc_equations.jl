@@ -1,36 +1,21 @@
 
-import ElectromagneticFields
-
 using GeometricEquations: ODEProblem, SODEProblem
+using ..ChargedParticleDynamics: periodic_domain
 
-export odeproblem, sodeproblem
-
-# `GeometricEquations` recognises periodicity only as an `(xmin, xmax)` tuple of arrays; the range
-# of the position coordinates comes from the coordinate system, via the `rangemin`/`rangemax`
-# injected with the field code. The parallel velocity is not periodic.
-#
-# Those two take an evaluation point only for uniformity with the other generated field functions.
-# The range of a coordinate is a property of the chart, and `minx¹`…`maxx³` are baked in as
-# literals, so the argument is discarded; pass the origin rather than `±Inf`.
-function guiding_center_4d_periodicity(::Type{T}, periodic = true) where {T}
-    xmin = -T(Inf) * ones(T, 4)
-    xmax = +T(Inf) * ones(T, 4)
-
-    if periodic
-        xmin[1:3] .= rangemin(zeros(T, 3))
-        xmax[1:3] .= rangemax(zeros(T, 3))
-    end
-
-    return (xmin, xmax)
+# `GeometricEquations` recognises periodicity only as an `(xmin, xmax)` tuple of arrays. Which
+# position coordinates are periodic, and on what range, is a property of the chart, answered by the
+# field; see `periodic_domain`. The parallel velocity is not periodic.
+function guiding_center_4d_periodicity(::Type{T}, field, periodic = true) where {T}
+    periodic ? periodic_domain(field, T, 4) : (fill(-T(Inf), 4), fill(+T(Inf), 4))
 end
 
 function guiding_center_4d_periodicity(
-        ::AbstractVector{<:AbstractArray{T}}, periodic = true) where {T <: Number}
-    guiding_center_4d_periodicity(T, periodic)
+        ::AbstractVector{<:AbstractArray{T}}, field, periodic = true) where {T <: Number}
+    guiding_center_4d_periodicity(T, field, periodic)
 end
-function guiding_center_4d_periodicity(::AbstractArray{T}, periodic = true) where {T <:
-                                                                                   Number}
-    guiding_center_4d_periodicity(T, periodic)
+function guiding_center_4d_periodicity(
+        ::AbstractArray{T}, field, periodic = true) where {T <: Number}
+    guiding_center_4d_periodicity(T, field, periodic)
 end
 
 @doc raw"""
@@ -48,7 +33,7 @@ formulation,
 ```
 
 with the vector potentials ``\beta`` and ``\gamma`` of [`β`](@ref) and [`γ`](@ref) and
-``\sigma =`` `orientation()` the sign of `det(DF)` for this module's chart.
+``\sigma =`` `orientation(field)` the sign of `det(DF)` for this module's chart.
 
 The independent variable is **not** the physical time: the right-hand side is the guiding centre
 vector field multiplied by ``\omega_{abs}``, so ``dt = \omega_{abs} \, ds``. One unit of ``s``
@@ -64,14 +49,13 @@ it so, and what went wrong while it was not — so ``s`` always runs with ``t``.
 The second form takes the named tuple that every `initial_conditions_*` of this module returns,
 whose `params` carry that condition's own magnetic moment `μ`.
 """
-function odeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
-        parameters = default_parameters(), periodic = true)
+function odeproblem(qᵢ; timespan, timestep, parameters, periodic = true)
     ODEProblem(
         v,
         timespan, timestep, qᵢ;
         parameters = parameters,
         invariants = (h = hamiltonian,),
-        periodicity = guiding_center_4d_periodicity(qᵢ, periodic)
+        periodicity = guiding_center_4d_periodicity(qᵢ, parameters.field, periodic)
     )
 end
 
@@ -100,8 +84,7 @@ each of which freezes two of the four variables and is symplectic in the remaini
 symplectic integrators for the subsystems therefore preserves phasespace volume exactly; a
 symmetric composition of second-order methods gives a second-order volume-preserving scheme.
 """
-function sodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
-        parameters = default_parameters(), periodic = true)
+function sodeproblem(qᵢ; timespan, timestep, parameters, periodic = true)
     # `v̄` is the vector field the library uses for everything that is not a substep: the `q̇` it
     # stores alongside every solution, the backward extrapolation that fills the pre-history of the
     # solution step, and hence the initial guess of the nonlinear solves. `ODE` defaults it to `v`,
@@ -117,7 +100,7 @@ function sodeproblem(qᵢ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAUL
         v̄ = v,
         parameters = parameters,
         invariants = (h = hamiltonian,),
-        periodicity = guiding_center_4d_periodicity(qᵢ, periodic)
+        periodicity = guiding_center_4d_periodicity(qᵢ, parameters.field, periodic)
     )
 end
 

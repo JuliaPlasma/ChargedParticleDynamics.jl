@@ -45,9 +45,9 @@ u_1 = 0.01, \quad
 """
 module SymmetricField
 
-import ElectromagneticFields.SymmetricQuadratic
+using ElectromagneticFields: FieldFunctions, SymmetricQuadraticEquilibrium
 
-SymmetricQuadratic.@code() # inject magnetic field code
+const FIELD = FieldFunctions(SymmetricQuadraticEquilibrium())
 
 const DEFAULT_TIMESTEP = 1.0
 const DEFAULT_TIMESPAN = (0.0, 1000.0)
@@ -92,19 +92,18 @@ end
 
 export default_parameters, default_constraints
 
-"The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T} = Float64) where {T} = (μ = T(1E-2),)
+"The field, and the magnetic moment μ this equilibrium is set up for."
+default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(1E-2))
 
 """
-The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+The constraint pair [`hodeproblem`](@ref ChargedParticleDynamics.GuidingCenter3d.hodeproblem) and its siblings use here by default.
 
 `b = e₃` throughout this equilibrium, which leaves `(g¹, g²)` as the
 only regular pair.
 """
 default_constraints() = :g12
 
-include("guiding_center_3d_equations.jl")
-include("guiding_center_3d_canonical.jl")
+include("guiding_center_3d_presets.jl")
 include("guiding_center_3d_diagnostics.jl")
 
 end

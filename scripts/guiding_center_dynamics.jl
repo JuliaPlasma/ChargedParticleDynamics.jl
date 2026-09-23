@@ -8,6 +8,7 @@
 
 using GeometricIntegrators
 using CairoMakie
+using ElectromagneticFields: coordinates
 
 # Choose problem
 import ChargedParticleDynamics.GuidingCenter4d.TokamakIterCylindrical as prob
@@ -53,11 +54,12 @@ isol = integrate(iode, VPRKGauss(2); options...)
 function plot_solution(prob, problem, sol, prefix)
     # Compute cartesian coordinates from the solution. The first three components of the state are
     # the guiding centre position in the equilibrium's own chart; the fourth is the parallel
-    # velocity.
-    R = prob.R.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
-    X = prob.X.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
-    Y = prob.Y.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
-    Z = prob.Z.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
+    # velocity. The coordinate helpers come with the field.
+    crd = coordinates(prob.FIELD)
+    R = crd.R.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
+    X = crd.X.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
+    Y = crd.Y.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
+    Z = crd.Z.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
 
     # Compute energy. The guiding centre Hamiltonian is a function of the state alone — unlike the
     # Pauli particle's, which takes (q, p) — so it is evaluated on `sol.q` only.

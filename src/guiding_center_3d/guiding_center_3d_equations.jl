@@ -2,20 +2,21 @@ using LinearAlgebra
 using Parameters
 
 import GeometricEquations: HODEProblem
-import GeometricSolutions: GeometricSolution, DataSeries, TimeSeries
+using ..FieldPoints
+using ..ChargedParticleDynamics: periodic_domain
 
 export hamiltonian, hamiltonian_canonical
-export hodeproblem, hodeproblem_canonical
 
-# The constraints and the index accessors every generic expression below is written with. Included
-# from here rather than from the equilibrium modules so that adding it did not need thirteen edits;
-# `include` resolves relative to the file containing the call. The compact form is pulled in the same
-# way at the foot of this file.
+# The constraints and the index accessors every generic expression below is written with.
+# `include` resolves relative to the file containing the call. The compact form is pulled in the
+# same way at the foot of this file.
 include("guiding_center_3d_constraints.jl")
 
-@views ϑ₁(t, Q) = A₁(t, Q[1:3]) + Q[4] * b₁(t, Q[1:3])
-@views ϑ₂(t, Q) = A₂(t, Q[1:3]) + Q[4] * b₂(t, Q[1:3])
-@views ϑ₃(t, Q) = A₃(t, Q[1:3]) + Q[4] * b₃(t, Q[1:3])
+# The one-form on the four-component state `Q = (x, u)`, read from a `FieldPoint` of `Q`; the field
+# is evaluated at `Q[1:3]`.
+ϑ₁(t, Q) = A₁(t, Q) + Q[4] * b₁(t, Q)
+ϑ₂(t, Q) = A₂(t, Q) + Q[4] * b₂(t, Q)
+ϑ₃(t, Q) = A₃(t, Q) + Q[4] * b₃(t, Q)
 
 # The named `v` and its first derivatives, kept because the second derivatives of the Hamiltonian in
 # `guiding_center_3d_canonical.jl` are written out per index and read better that way. They are
@@ -31,60 +32,57 @@ for i in 1:3
     end
 end
 
-function u(t, q, p)
+function u(t, q::FieldPoint, p)
     v₁(t, q, p) * g¹¹(t, q) * b₁(t, q) + v₂(t, q, p) * g²²(t, q) * b₂(t, q) +
     v₃(t, q, p) * g³³(t, q) * b₃(t, q)
 end
 
-function initial_momentum(tᵢ, Qᵢ::AbstractArray{T}) where {T <: Number}
+"""
+    u(t, q, p, params)
+
+The parallel velocity `Σᵢ gⁱⁱ (pᵢ - Aᵢ) bᵢ` of the state `(q, p)`.
+"""
+u(t, q, p, params) = u(t, fieldpoint(params.field, t, q), p)
+
+function initial_momentum(tᵢ, Qᵢ::AbstractArray{T}, params) where {T <: Number}
+    P = fieldpoint(params.field, tᵢ, Qᵢ)
     pᵢ = zeros(T, 3)
-    pᵢ[1] = ϑ₁(tᵢ, Qᵢ)
-    pᵢ[2] = ϑ₂(tᵢ, Qᵢ)
-    pᵢ[3] = ϑ₃(tᵢ, Qᵢ)
+    pᵢ[1] = ϑ₁(tᵢ, P)
+    pᵢ[2] = ϑ₂(tᵢ, P)
+    pᵢ[3] = ϑ₃(tᵢ, P)
     return pᵢ
 end
 
-function fix_initial_momentum(tᵢ, qᵢ::AbstractArray{T}, pᵢ::AbstractArray{T}) where {T <:
-                                                                                     Number}
+function fix_initial_momentum(tᵢ, qᵢ::AbstractArray{T}, pᵢ::AbstractArray{T}, params) where {T <:
+                                                                                             Number}
     # `u` raises the index with the inverse metric; spelling the contraction out here without it
     # made this disagree with `u(t, q, p)` above in every curvilinear coordinate system.
-    initial_momentum(tᵢ, [qᵢ..., u(tᵢ, qᵢ, pᵢ)])
+    initial_momentum(tᵢ, [qᵢ..., u(tᵢ, qᵢ, pᵢ, params)], params)
 end
 
-function initial_conditions(tᵢ, Qᵢ::AbstractArray{T}) where {T <: Number}
+function initial_conditions(tᵢ, Qᵢ::AbstractArray{T}, params) where {T <: Number}
     qᵢ = Qᵢ[1:3]
-    pᵢ = initial_momentum(tᵢ, Qᵢ)
+    pᵢ = initial_momentum(tᵢ, Qᵢ, params)
     (q = qᵢ, p = pᵢ)
 end
 
-# `rangemin`/`rangemax` take an evaluation point only for uniformity with the other generated field
-# functions (`B(t,x)`, `A₁(t,x)`, …). The range of a coordinate is a property of the chart, not a
-# field sampled at a point: `ElectromagneticFields` bakes `minx¹`…`maxx³` in as literals when it
-# injects the field code, so the argument is discarded. Pass the origin rather than the `±Inf` that
-# `xmin`/`xmax` are initialised to, which read as if the range were being asked for at the point at
-# infinity.
-function guiding_center_3d_periodicity(::Type{T}, periodic = true) where {T}
-    xmin = -Inf * ones(T, 3)
-    xmax = +Inf * ones(T, 3)
-
-    if periodic
-        xmin[1:3] .= rangemin(zeros(T, 3))
-        xmax[1:3] .= rangemax(zeros(T, 3))
-    end
-
-    return (xmin, xmax)
+# Which coordinates are periodic, and on what range, is a property of the chart, answered by the
+# field; see `periodic_domain`.
+function guiding_center_3d_periodicity(::Type{T}, field, periodic = true) where {T}
+    periodic ? periodic_domain(field, T, 3) : (fill(-T(Inf), 3), fill(+T(Inf), 3))
 end
 
 function guiding_center_3d_periodicity(
-        ::AbstractVector{<:AbstractArray{T}}, periodic = true) where {T <: Number}
-    guiding_center_3d_periodicity(T, periodic)
+        ::AbstractVector{<:AbstractArray{T}}, field, periodic = true) where {T <: Number}
+    guiding_center_3d_periodicity(T, field, periodic)
 end
-function guiding_center_3d_periodicity(::AbstractArray{T}, periodic = true) where {T <:
-                                                                                   Number}
-    guiding_center_3d_periodicity(T, periodic)
+function guiding_center_3d_periodicity(
+        ::AbstractArray{T}, field, periodic = true) where {T <: Number}
+    guiding_center_3d_periodicity(T, field, periodic)
 end
 
 function hamiltonian(t, q, p, params)
+    q = fieldpoint(params.field, t, q)
     g¹¹(t, q) * v₁(t, q, p)^2 / 2 + g²²(t, q) * v₂(t, q, p)^2 / 2 +
     g³³(t, q) * v₃(t, q, p)^2 / 2 + params.μ * B(t, q) + φ(t, q)
 end
@@ -93,7 +91,10 @@ end
 # so their difference along a trajectory is a measure of the drift off the constraint manifold —
 # which is what `scripts/guiding_center_3d_*.jl` plot it for. It omitted `φ`, unlike `hamiltonian`
 # beside it, which made the two incomparable for any equilibrium with a potential.
-hamiltonian_u(t, q, p, params) = u(t, q, p)^2 / 2 + params.μ * B(t, q) + φ(t, q)
+function hamiltonian_u(t, q, p, params)
+    q = fieldpoint(params.field, t, q)
+    u(t, q, p)^2 / 2 + params.μ * B(t, q) + φ(t, q)
+end
 
 function dHdq₁(t, q, p, params)
     v₁(t, q, p) * g¹¹(t, q) * dv₁dq₁(t, q, p) +
@@ -164,7 +165,7 @@ end
                                                             dHdqᵢ(l, t, q, p, params))
 
 """
-    λₒ(t, q, p, c = default_constraint_pair())
+    λₒ(t, q, p, params, c)
 
 The Poisson bracket `{g₁, g₂}` of the two constraints of the pair `c`, which divides both Lagrange
 multipliers. It equals `±bₘ [B + (p-A)·(∇×b)]` with `m` the index of the constraint the pair omits, so
@@ -174,25 +175,30 @@ it is where the formulation becomes singular — see
 The sign depends on the pair's ordering and is `+` for `:g31` and `:g12`, `-` for `:g23`; see
 [`constraint_pair`](@ref). Only `λₒ = 0` matters for whether the pair is usable, so nothing turns on
 it, but `λₒ` and `bₘ` do not always share a sign and the tabulated values reflect that.
+
+The four-argument form `λₒ(t, q, p, c)` takes a `FieldPoint` in place of `q`.
 """
-λₒ(t, q, p, c = default_constraint_pair()) = bracket_gg(c[1], c[2], t, q, p)
+λₒ(t, q::FieldPoint, p, c) = bracket_gg(c[1], c[2], t, q, p)
+λₒ(t, q, p, params, c) = λₒ(t, fieldpoint(params.field, t, q), p, c)
 
 """
-    λ₁(t, q, p, params, c = default_constraint_pair())
-    λ₂(t, q, p, params, c = default_constraint_pair())
+    λ₁(t, q, p, params, c)
+    λ₂(t, q, p, params, c)
 
 The two Lagrange multipliers, `λ₁ = {g₂, H} / {g₁, g₂}` and `λ₂ = -{g₁, H} / {g₁, g₂}`, for the
 constraint pair `c`.
 """
-function λ₁(t, q, p, params, c = default_constraint_pair())
+function λ₁(t, q, p, params, c)
+    q = fieldpoint(params.field, t, q)
     +bracket_gH(c[2], t, q, p, params) / λₒ(t, q, p, c)
 end
-function λ₂(t, q, p, params, c = default_constraint_pair())
+function λ₂(t, q, p, params, c)
+    q = fieldpoint(params.field, t, q)
     -bracket_gH(c[1], t, q, p, params) / λₒ(t, q, p, c)
 end
 
 """
-    multipliers(t, q, p, params, c = default_constraint_pair())
+    multipliers(t, q, p, params, c)
 
 Both Lagrange multipliers as a tuple, sharing the one evaluation of `λₒ` that divides them.
 
@@ -200,13 +206,15 @@ Both Lagrange multipliers as a tuple, sharing the one evaluation of `λₒ` that
 evaluated the twelve Poisson-bracket terms behind `{g₁, g₂}` four times per step-stage rather than
 twice. Nothing else divides by `λₒ`, so this is the only place the sharing is worth spelling out.
 """
-@inline function multipliers(t, q, p, params, c = default_constraint_pair())
+@inline function multipliers(t, q, p, params, c)
+    q = fieldpoint(params.field, t, q)
     lo = λₒ(t, q, p, c)
     (+bracket_gH(c[2], t, q, p, params) / lo,
         -bracket_gH(c[1], t, q, p, params) / lo)
 end
 
-function hamiltonian_canonical(t, q, p, params, c = default_constraint_pair())
+function hamiltonian_canonical(t, q, p, params, c)
+    q = fieldpoint(params.field, t, q)
     hamiltonian(t, q, p, params) + λ₁(t, q, p, params, c) * gᵏ(c[1], t, q, p) +
     λ₂(t, q, p, params, c) * gᵏ(c[2], t, q, p)
 end
@@ -227,11 +235,11 @@ end
     x
 end
 
-# `fieldvalues` evaluates each injected field function once and the expressions below read the
-# results out of it; see the header of `guiding_center_3d_constraints.jl` for why that is worth
-# doing. `F` goes where `q` would: everything downstream is generic in that argument.
-function guiding_center_3d_v(v, t, q, p, params, c = default_constraint_pair())
-    F = fieldvalues(t, q)
+# `fieldpoint` evaluates each field tensor once and the expressions below read the results out of
+# it; see the header of `guiding_center_3d_constraints.jl` for why that is worth doing. `F` goes
+# where `q` would: everything downstream is generic in that argument.
+function guiding_center_3d_v(v, t, q, p, params, c)
+    F = fieldpoint(params.field, t, q)
     l₁, l₂ = multipliers(t, F, p, params, c)
 
     components!(v,
@@ -240,8 +248,8 @@ function guiding_center_3d_v(v, t, q, p, params, c = default_constraint_pair())
     nothing
 end
 
-function guiding_center_3d_f(f, t, q, p, params, c = default_constraint_pair())
-    F = fieldvalues(t, q)
+function guiding_center_3d_f(f, t, q, p, params, c)
+    F = fieldpoint(params.field, t, q)
     l₁, l₂ = multipliers(t, F, p, params, c)
 
     components!(f,
@@ -252,8 +260,8 @@ function guiding_center_3d_f(f, t, q, p, params, c = default_constraint_pair())
 end
 
 """
-    hodeproblem(q₀, p₀; kwargs...)
-    hodeproblem(x₀ = qᵢ; kwargs...)
+    hodeproblem(q₀, p₀; timespan, timestep, parameters, constraints, periodic = true)
+    hodeproblem(x₀; timespan, timestep, parameters, constraints, periodic = true)
     hodeproblem(ics::NamedTuple; kwargs...)
 
 The constrained canonical guiding centre system as an `HODEProblem` in the position and its
@@ -261,17 +269,18 @@ conjugate momentum — the Hamilton-Dirac form, with the Lagrange multipliers su
 
 The first form takes the position and momentum directly. The second takes the four-component state
 ``(x, u)`` and recovers the momentum from it through `initial_conditions`; this is the form
-the module constant `qᵢ` is in. The third takes the named tuple that every `initial_conditions_*`
-returns, so `hodeproblem(initial_conditions_barely_passing())` carries that condition's own `μ`.
+an equilibrium module's constant `qᵢ` is in. The third takes the named tuple that every
+`initial_conditions_*` returns, so `hodeproblem(initial_conditions_barely_passing())` carries that
+condition's own `μ`. Each equilibrium module defaults all of these to its own.
 
 `constraints` selects which pair of the three constraints is retained; see
-[`constraint_pair`](@ref). It defaults to [`default_constraints`](@ref), which each equilibrium sets
-to a pair that is regular at its own initial condition. Where the pair is singular the multipliers
+[`constraint_pair`](@ref). Each equilibrium module defaults it to its `default_constraints()`, a
+pair that is regular at its own initial condition. Where the pair is singular the multipliers
 are infinite and the problem cannot be integrated at all, so this is not a free choice.
 """
-function hodeproblem(q₀::AbstractVector, p₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
-        timestep = DEFAULT_TIMESTEP, parameters = default_parameters(), periodic = true,
-        constraints = default_constraints())
+function hodeproblem(
+        q₀::AbstractVector, p₀::AbstractVector; timespan, timestep, parameters,
+        periodic = true, constraints)
     c = constraint_pair(constraints)
 
     _v(v, t, q, p, params) = guiding_center_3d_v(v, t, q, p, params, c)
@@ -283,12 +292,12 @@ function hodeproblem(q₀::AbstractVector, p₀::AbstractVector; timespan = DEFA
         hamiltonian,
         timespan, timestep, q₀, p₀;
         parameters = parameters,
-        periodicity = guiding_center_3d_periodicity(q₀, periodic))
+        periodicity = guiding_center_3d_periodicity(q₀, parameters.field, periodic))
 end
 
-function hodeproblem(x₀::AbstractVector = qᵢ; timespan = DEFAULT_TIMESPAN, kwargs...)
-    ics = initial_conditions(timespan[begin], x₀)
-    hodeproblem(ics.q, ics.p; timespan = timespan, kwargs...)
+function hodeproblem(x₀::AbstractVector; timespan, parameters, kwargs...)
+    ics = initial_conditions(timespan[begin], x₀, parameters)
+    hodeproblem(ics.q, ics.p; timespan = timespan, parameters = parameters, kwargs...)
 end
 
 function hodeproblem(ics::NamedTuple; kwargs...)

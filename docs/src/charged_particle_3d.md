@@ -81,14 +81,19 @@ B_3 & 0 & - B_1 \\
 ChargedParticleDynamics.ChargedParticle3d
 ```
 
-Each equilibrium is its own module, and each `include`s one of the two formulations —
-`charged_particle_3d_canonical.jl` on the phasespace ``(x, p)`` or
-`charged_particle_3d_noncanonical.jl` on ``(x, v)``. Each formulation's functions are therefore
-documented once, below, under `TokamakSmallCylindrical` and `TokamakSmallNoncanonical`
-respectively, and hold verbatim for every module sharing it. What differs between the modules is the
-chart, the equilibrium parameters and the initial conditions, which is what these docstrings record:
+The equations are written once per formulation, in `ChargedParticle3d.Canonical` on the phasespace
+``(x, p)`` and in `ChargedParticle3d.Noncanonical` on ``(x, v)``, and read the field from
+`params.field`. They are documented below. Each equilibrium is its own module, holding its field as
+`FIELD`, its initial conditions and problem constructors that default to them. The constructors
+are documented once, under `TokamakSmallCylindrical` and `TokamakSmallNoncanonical`, and hold
+verbatim for every module of the same formulation. What differs between the modules is the chart,
+the equilibrium parameters and the initial conditions, which is what these docstrings record:
 
 ```@docs
+ChargedParticleDynamics.ChargedParticle3d.Canonical
+ChargedParticleDynamics.ChargedParticle3d.Noncanonical
+ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCylindrical
+ChargedParticleDynamics.ChargedParticle3d.TokamakSmallNoncanonical
 ChargedParticleDynamics.ChargedParticle3d.SingularField
 ChargedParticleDynamics.ChargedParticle3d.SingularFieldCanonical
 ChargedParticleDynamics.ChargedParticle3d.SymmetricField
@@ -102,6 +107,9 @@ ChargedParticleDynamics.ChargedParticle3d.SolovevIterXpoint
 ```
 
 ```@autodocs
-Modules = [ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCylindrical,
+Modules = [ChargedParticleDynamics.ChargedParticle3d.Canonical,
+           ChargedParticleDynamics.ChargedParticle3d.Noncanonical,
+           ChargedParticleDynamics.ChargedParticle3d.TokamakSmallCylindrical,
            ChargedParticleDynamics.ChargedParticle3d.TokamakSmallNoncanonical]
+Order   = [:function, :type, :constant, :macro]
 ```

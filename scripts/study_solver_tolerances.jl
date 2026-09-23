@@ -34,6 +34,7 @@
 #
 
 using ChargedParticleDynamics
+using ElectromagneticFields: A♭, b♭
 using GeometricIntegrators
 using LinearAlgebra
 using Logging
@@ -127,12 +128,12 @@ function residual_scale(family, M)
     if family == "GC4d"
         q = ic[1]
         x, u = q[1:3], q[4]
-        A = [M.A₁(0.0, x), M.A₂(0.0, x), M.A₃(0.0, x)]
-        b = [M.b₁(0.0, x), M.b₂(0.0, x), M.b₃(0.0, x)]
+        A = A♭(M.FIELD, 0.0, x)
+        b = b♭(M.FIELD, 0.0, x)
         return (x = x, normA = norm(A), normp = norm(A .+ u .* b), what = "‖ϑ‖")
     else
         q, p = ic[1], ic[2]
-        A = [M.A₁(0.0, q), M.A₂(0.0, q), M.A₃(0.0, q)]
+        A = A♭(M.FIELD, 0.0, q)
         return (x = q, normA = norm(A), normp = norm(p), what = "‖p‖")
     end
 end
@@ -305,34 +306,11 @@ function step_costs()
     in one iteration, and `TokamakMediumCartesian` is *slower* than the ITER Solov'ev — so the two
     ten-minute 3D blocks in CI were a step-count and per-step-cost problem, not a convergence one.
 
-    This used to say the cost was nested ForwardDiff over the second derivatives of the Hamiltonian,
-    re-evaluated by the line search. None of that was true of this path. `ElectromagneticFields`
-    generates its field functions symbolically with SymEngine at precompile time and does not depend on
-    ForwardDiff; `hodeproblem` never evaluates a second derivative of the Hamiltonian, only
-    `hodeproblem_canonical` does; and of the ~98 right-hand side evaluations per step exactly 4 are on
-    `Dual`, the line search being 8% of wall clock against the Jacobian's 13%.
-
-    The cost was `MidpointExtrapolation(5)` at 70% of wall clock — not the default for either method, and
-    dropped — over a right-hand side that re-entered the generated field code once per bracket term. On
-    ElectromagneticFields 0.6.2, `db₁dx₁` was 1905 statements with 108 separate evaluations of `log(x₁)`
-    for the ITER Solov'ev X-point, and was called seventy times per evaluation; it is now called once.
-
-    The third cost was the expression swell in that generated code, and lived upstream. It is delivered:
-    ElectromagneticFields 0.6.3 eliminates common subexpressions in the bodies it emits, taking `db₁dx₁`
-    from 549 ns to 57 and `d²b₁dx₁dx₁` from 1733 to 80, and changing no value — every field function
-    this package injects is bit-identical between 0.6.2 and 0.6.3.
-
-    `Project.toml` now requires 0.7.0, which unlike 0.6.3 is *not* value-preserving: it reverses `b` in
-    the four left-handed charts, so six of this package's equilibria — every cylindrical, toroidal and
-    Solov'ev one bar `SolovevSymmetricField`, which is cartesian despite the name — integrate a
-    different orbit than they did. It changes the sign of terms in the generated code rather than the
-    amount of arithmetic, so the timings above re-measure inside their previous spread. See
-    docs/src/findings.md, "The reversed field of the left-handed charts".
-
-    `docs/src/findings.md` measures all four combinations of the two changes, because they are not the
-    same factor: for `hodeproblem` they are separable and multiplicative, 6.9x here and 2.8x upstream,
-    while for `hodeproblem_canonical` they reinforce each other, the second derivatives that form needs
-    having gained the most from the elimination.""")
+    The cost is not nested ForwardDiff over the second derivatives of the Hamiltonian: `hodeproblem`
+    never evaluates one, and only `hodeproblem_canonical` does. Each right-hand side evaluates the
+    field tensors it reads once per call, into a `FieldPoint` (see `ChargedParticleDynamics.FieldPoints`),
+    so the per-step cost is the number of right-hand side evaluations times the arithmetic of the
+    formulation on that point.""")
 end
 
 function main()

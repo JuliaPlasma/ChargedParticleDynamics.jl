@@ -15,11 +15,16 @@ module GyroKinetics4d
 #   * `SymmetricField` and `ThetaPinchField` carry only a Poincaré loop and surface
 #     parameterisation and no point initial condition, and this model has no loop/surface
 #     machinery, so there is nothing for them to integrate here.
-#   * `SolovevSymmetricField` cannot host this model at all: `SolovevSymmetric.@code` injects
-#     the equilibrium parameters `α` and `β` into the module as constants, and `β` collides
-#     with the vector potential `β` of `gc_common.jl` — "cannot define function β; it already
-#     has a value". Renaming the model's `β` would diverge from the notes it follows and change
-#     its exported interface, so the equilibrium is left out instead.
+#   * `SolovevSymmetricField` has no module here, and nothing blocks one: the field is a value in
+#     `params`, so its equilibrium parameters `α` and `β` do not collide with the vector potential
+#     `β` of `gc_common.jl`. The module is not written.
+#
+# The equations, written once and reading the field from `params.field`. The equilibrium modules
+# below each hold a field, an initial condition and the problem constructors that default to them.
+include("gyro_kinetics_4d/coordinate_transformations.jl")
+include("gyro_kinetics_4d/gc_common.jl")
+include("gyro_kinetics_4d/gc_equations.jl")
+
 include("gyro_kinetics_4d/gc_solovev_iter.jl")
 include("gyro_kinetics_4d/gc_solovev_iter_xpoint.jl")
 include("gyro_kinetics_4d/gc_tokamak_iter_cylindrical.jl")

@@ -7,6 +7,10 @@ needs no projection onto a constraint manifold. See the [Pauli Particles in 3D](
 """
 module PauliParticle3d
 
+# The equations, written once and reading the field from `params.field`. The equilibrium modules
+# below each hold a field, an initial condition and the problem constructors that default to them.
+include("pauli_particle_3d/pauli_particle_3d.jl")
+
 include("pauli_particle_3d/symmetric_field.jl")
 include("pauli_particle_3d/theta_pinch.jl")
 include("pauli_particle_3d/solovev_iter.jl")

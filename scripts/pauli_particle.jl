@@ -1,5 +1,6 @@
 using GeometricIntegrators
 using CairoMakie
+using ElectromagneticFields: coordinates
 
 # Choose problem
 import ChargedParticleDynamics.PauliParticle3d.TokamakIterCylindrical as prob
@@ -43,11 +44,12 @@ isol = integrate(iode, method; options...)
 
 # Plot solution and energy error
 function plot_solution(prob, ode, sol, prefix)
-    # Compute Cartesian coordinates from solution
-    R = prob.R.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
-    X = prob.X.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
-    Y = prob.Y.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
-    Z = prob.Z.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
+    # Compute Cartesian coordinates from solution, with the coordinate helpers of the field
+    crd = coordinates(prob.FIELD)
+    R = crd.R.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
+    X = crd.X.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
+    Y = crd.Y.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
+    Z = crd.Z.(sol.t[:], sol.q[:, 1], sol.q[:, 2], sol.q[:, 3])
 
     # Compute energy
     hamiltonian = (t, q, p) -> prob.hamiltonian(t, q, p, ode.parameters)

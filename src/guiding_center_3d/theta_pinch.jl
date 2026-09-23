@@ -22,9 +22,9 @@ u_0 = 0.5, \quad
 """
 module ThetaPinchField
 
-import ElectromagneticFields.ThetaPinch
+using ElectromagneticFields: FieldFunctions, ThetaPinchEquilibrium
 
-ThetaPinch.@code() # inject magnetic field code
+const FIELD = FieldFunctions(ThetaPinchEquilibrium())
 
 const DEFAULT_TIMESTEP = 1.0
 const DEFAULT_TIMESPAN = (0.0, 1000.0)
@@ -48,18 +48,17 @@ end
 
 export default_parameters, default_constraints
 
-"The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T} = Float64) where {T} = (μ = T(2.5E-6),)
+"The field, and the magnetic moment μ this equilibrium is set up for."
+default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(2.5E-6))
 
 """
-The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+The constraint pair [`hodeproblem`](@ref ChargedParticleDynamics.GuidingCenter3d.hodeproblem) and its siblings use here by default.
 
 `B = B₀ e_z`, so `b₁ = b₂ = 0` and `(g¹, g²)` is the only regular pair.
 """
 default_constraints() = :g12
 
-include("guiding_center_3d_equations.jl")
-include("guiding_center_3d_canonical.jl")
+include("guiding_center_3d_presets.jl")
 include("guiding_center_3d_diagnostics.jl")
 
 end

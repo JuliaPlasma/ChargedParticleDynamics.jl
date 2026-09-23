@@ -10,27 +10,29 @@ Pauli particle model rather than values derived here.
 """
 module TokamakIterCylindrical
 
-import ElectromagneticFields.AxisymmetricTokamakCylindrical
+using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCylindricalITER,
+                             from_cartesian
 
-export podeproblem, hamiltonian, toroidal_momentum
+export podeproblem, hamiltonian
 export initial_conditions_barely_passing, initial_conditions_barely_trapped
 export initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 export initial_conditions_trapped
 
-AxisymmetricTokamakCylindrical.@code_iter() # inject magnetic field code
+const FIELD = FieldFunctions(AxisymmetricTokamakCylindricalITER())
 
 const qᵢ = [7.0-1.4, 0.0, 0.0]
 const vᵢ = [3.43E-3, 6.75, -3.41E-1]
 
-include("pauli_particle_3d.jl")
+include("pauli_particle_3d_presets.jl")
 
 export default_parameters
 
 """
-The magnetic moment μ of the default initial condition `(qᵢ, vᵢ)`, obtained by splitting
-`vᵢ` into its parallel and perpendicular parts at `qᵢ`.
+The field, and the magnetic moment μ of the default initial condition `(qᵢ, vᵢ)`, obtained by
+splitting `vᵢ` into its parallel and perpendicular parts at `qᵢ`.
 """
-default_parameters(::Type{T} = Float64) where {T} = (μ = T(initial_conditions(qᵢ, vᵢ).params.μ),)
+default_parameters(::Type{T} = Float64) where {T} = (
+    field = FIELD, μ = T(initial_conditions(qᵢ, vᵢ).params.μ))
 
 const DEFAULT_TIMESTEP = 1.0
 const DEFAULT_TIMESPAN = (0.0, 1E3)
@@ -38,10 +40,15 @@ const DEFAULT_TIMESPAN = (0.0, 1E3)
 # The same `(x, u, μ)` as this equilibrium's `GuidingCenter3d` and `GuidingCenter4d` modules.
 # `barely_passing` was missing, which is why nothing exercised the condition the other two
 # families lead with.
-initial_conditions_barely_passing() = initial_conditions(from_cartesian(0, [2.5, 0.0, 0.0]), 3.425E-1, 1E-2)
-initial_conditions_barely_trapped() = initial_conditions(from_cartesian(0, [2.5, 0.0, 0.0]), 3.375E-1, 1E-2)
-initial_conditions_deeply_passing() = initial_conditions(from_cartesian(0, [2.5, 0.0, 0.0]), 5E-1, 1E-2)
-initial_conditions_deeply_trapped() = initial_conditions(from_cartesian(0, [2.5, 0.0, 0.0]), 1E-1, 1E-2)
-initial_conditions_trapped() = initial_conditions(from_cartesian(0, [7.0, 0.0, 0.0]), -2E-3, 1.88E-7)
+initial_conditions_barely_passing() = initial_conditions(
+    Vector(from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])), 3.425E-1, 1E-2)
+initial_conditions_barely_trapped() = initial_conditions(
+    Vector(from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])), 3.375E-1, 1E-2)
+initial_conditions_deeply_passing() = initial_conditions(
+    Vector(from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])), 5E-1, 1E-2)
+initial_conditions_deeply_trapped() = initial_conditions(
+    Vector(from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])), 1E-1, 1E-2)
+initial_conditions_trapped() = initial_conditions(
+    Vector(from_cartesian(FIELD, 0, [7.0, 0.0, 0.0])), -2E-3, 1.88E-7)
 
 end

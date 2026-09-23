@@ -29,6 +29,7 @@
 #
 
 using ChargedParticleDynamics
+using ElectromagneticFields: B, DB, b♭, b♯
 using GeometricIntegrators
 using LinearAlgebra
 using Printf
@@ -61,7 +62,8 @@ label(icn) = replace(string(icn), "initial_conditions_" => "")
 # how these two rows first looked.
 function g4(M, x, u, μ, span, step)
     sol = integrate(
-        M.odeproblem([x..., u]; parameters = (μ = μ,), timespan = span, timestep = step,
+        M.odeproblem([x..., u]; parameters = (field = M.FIELD, μ = μ), timespan = span,
+            timestep = step,
             periodic = false),
         Gauss(2);
         OPTS...)
@@ -69,12 +71,13 @@ function g4(M, x, u, μ, span, step)
 end
 
 function g3(M, x, u, μ, span, step)
+    params = (field = M.FIELD, μ = μ)
     sol = integrate(
-        M.hodeproblem([x..., u]; parameters = (μ = μ,), timespan = span, timestep = step,
+        M.hodeproblem([x..., u]; parameters = params, timespan = span, timestep = step,
             periodic = false),
         PartitionedGauss(2);
         OPTS...)
-    (collect(sol.q[end]), M.u(span[end], sol.q[end], sol.p[end]))
+    (collect(sol.q[end]), G3.u(span[end], sol.q[end], sol.p[end], params))
 end
 
 """
@@ -84,16 +87,16 @@ lowest-order slow manifold, the guiding centre velocity for the drift-corrected 
 function pauli(M, x, v₀, μ, span, step)
     sol = integrate(M.hodeproblem(x, v₀, μ; timespan = span, timestep = step),
         PartitionedGauss(2); OPTS...)
-    q, p = sol.q[end], sol.p[end]
-    (collect(q), M.v(span[end], q, p)' * M.b(span[end], q))
+    q, p, t = sol.q[end], sol.p[end], span[end]
+    (collect(q), P3.v(t, P3.fieldpoint(M.FIELD, t, q), p)' * b♭(M.FIELD, t, q))
 end
 
 reldiff(a, b) = norm(a - b) / max(norm(b), 1E-30)
 
 "The gyroradius over the field's own gradient scale length, ρ/L with ρ = √(2μ/B) and L = B/|∇B|."
 function ρ_over_L(M, x, μ)
-    B₀ = M.B(0.0, x)
-    ∇B = norm([M.dBdx₁(0.0, x), M.dBdx₂(0.0, x), M.dBdx₃(0.0, x)])
+    B₀ = B(M.FIELD, 0.0, x)
+    ∇B = norm(DB(M.FIELD, 0.0, x))
     sqrt(2μ / B₀) * ∇B / B₀
 end
 
@@ -168,7 +171,7 @@ function slowmanifold()
         M4 = getfield(G4, Symbol(name))
         r4 = g4(M4, x, u, μ, span, step)
         rp = pauli(getfield(P3, Symbol(name)), x,
-            u * getfield(P3, Symbol(name)).b⃗(0.0, x), μ, span, step)
+            u * b♯(getfield(P3, Symbol(name)).FIELD, 0.0, x), μ, span, step)
         @printf("  %-24s %-16s %12.3e %12.3e %12.3e\n", name, label(icn),
             reldiff(rp[1], r4[1]), abs(rp[2] - r4[2]) / max(abs(r4[2]), 1E-30),
             ρ_over_L(M4, x, μ))
@@ -216,9 +219,9 @@ function driftcorrection()
         ref = g4(M4, x, u, μ, span, step)[1]
 
         vgc = zeros(4)
-        M4.guiding_center_4d_v(vgc, 0.0, [x..., u], (μ = μ,))
+        G4.guiding_center_4d_v(vgc, 0.0, [x..., u], (field = M4.FIELD, μ = μ))
 
-        da = reldiff(pauli(Mp, x, u * Mp.b⃗(0.0, x), μ, span, step)[1], ref)
+        da = reldiff(pauli(Mp, x, u * b♯(Mp.FIELD, 0.0, x), μ, span, step)[1], ref)
         db = reldiff(pauli(Mp, x, vgc[1:3], μ, span, step)[1], ref)
 
         @printf("  %-24s %-16s %12.3e %12.3e %8.1f\n", name, label(icn), da, db, da / db)

@@ -3,7 +3,7 @@ Analytic ITER-like Solov'ev equilibrium with X-point.
 """
 module SolovevIterXpoint
 
-import ElectromagneticFields.Solovev
+using ElectromagneticFields: FieldFunctions, SolovevXpointEquilibriumITER, from_cartesian
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -11,7 +11,7 @@ export initial_conditions_barely_passing, initial_conditions_barely_trapped,
 
 export hamiltonian, toroidal_momentum
 
-Solovev.@code_iter_xpoint() # inject magnetic field code
+const FIELD = FieldFunctions(SolovevXpointEquilibriumITER())
 
 # A thousand steps of the shipped initial conditions. The relative energy error over the run is
 # 1.0E-2, against 1.6E-2 at `Δt = 0.2` and 2.7 at `Δt = 0.5`; `Δt = 1` is not integrable here at all
@@ -26,23 +26,24 @@ const DEFAULT_TIMESTEP = 0.1
 const DEFAULT_TIMESPAN = (0.0, 1E2)
 
 const xᵢ = [7.0 - 1.4, 0.0, 0.0]
-const qᵢ = [from_cartesian(0, xᵢ)..., 2.8166280889939737]
+const qᵢ = [from_cartesian(FIELD, 0, xᵢ)..., 2.8166280889939737]
 
 export default_parameters, default_constraints
 
-"The magnetic moment μ this equilibrium is set up for."
-default_parameters(::Type{T} = Float64) where {T} = (μ = T(4.607782183567846),)
+"The field, and the magnetic moment μ this equilibrium is set up for."
+function default_parameters(::Type{T} = Float64) where {T}
+    (field = FIELD, μ = T(4.607782183567846))
+end
 
 """
-The constraint pair [`hodeproblem`](@ref) and its siblings use here by default.
+The constraint pair [`hodeproblem`](@ref ChargedParticleDynamics.GuidingCenter3d.hodeproblem) and its siblings use here by default.
 
 `b₁` is small but non-zero at every initial condition of this
 equilibrium, so the historical pair is still usable.
 """
 default_constraints() = :g31
 
-include("guiding_center_3d_equations.jl")
-include("guiding_center_3d_canonical.jl")
+include("guiding_center_3d_presets.jl")
 
 # The canonical toroidal momentum is the covariant φ-component of the momentum. Since p = ϑ on the
 # constraint manifold this is simply p₃ — the previous R(t,q) * ϑ₃(t,q) both indexed q[4] of a
@@ -52,19 +53,24 @@ toroidal_momentum(t, q, p) = p[3]
 include("guiding_center_3d_diagnostics.jl")
 
 function initial_conditions_barely_passing()
-    merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 3.425E-1]), (params = (μ = 1E-2,),))
+    merge(initial_conditions(0, [from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])..., 3.425E-1]),
+        (params = (field = FIELD, μ = 1E-2),))
 end
 function initial_conditions_barely_trapped()
-    merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 3.375E-1]), (params = (μ = 1E-2,),))
+    merge(initial_conditions(0, [from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])..., 3.375E-1]),
+        (params = (field = FIELD, μ = 1E-2),))
 end
 function initial_conditions_deeply_passing()
-    merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 5E-1]), (params = (μ = 1E-2,),))
+    merge(initial_conditions(0, [from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])..., 5E-1]),
+        (params = (field = FIELD, μ = 1E-2),))
 end
 function initial_conditions_deeply_trapped()
-    merge(initial_conditions(0, [from_cartesian(0, [2.5, 0.0, 0.0])..., 1E-1]), (params = (μ = 1E-2,),))
+    merge(initial_conditions(0, [from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])..., 1E-1]),
+        (params = (field = FIELD, μ = 1E-2),))
 end
 function initial_conditions_trapped()
-    merge(initial_conditions(0, [from_cartesian(0, [7.0, 0.0, 0.0])..., -2E-3]), (params = (μ = 1.88E-7,),))
+    merge(initial_conditions(0, [from_cartesian(FIELD, 0, [7.0, 0.0, 0.0])..., -2E-3]),
+        (params = (field = FIELD, μ = 1.88E-7),))
 end
 
 end
