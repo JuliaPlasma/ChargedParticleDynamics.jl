@@ -6,7 +6,7 @@ module SymmetricField
 
 using ElectromagneticFields: FieldFunctions, SymmetricQuadraticEquilibrium
 
-export podeproblem, hamiltonian, toroidal_momentum
+export podeproblem, hamiltonian
 
 const FIELD = FieldFunctions(SymmetricQuadraticEquilibrium())
 

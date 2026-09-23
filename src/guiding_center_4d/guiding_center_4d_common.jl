@@ -21,6 +21,12 @@ end
 ϑ₃(t, q) = A₃(t, q) + u(t, q) * b₃(t, q)
 ϑ₄(t, q) = zero(eltype(q))
 
+# The components of the one-form at a coordinate vector, with the field read from `params`.
+ϑ₁(t, q, params) = ϑ₁(t, fieldpoint(params.field, t, q))
+ϑ₂(t, q, params) = ϑ₂(t, fieldpoint(params.field, t, q))
+ϑ₃(t, q, params) = ϑ₃(t, fieldpoint(params.field, t, q))
+ϑ₄(t, q, params) = ϑ₄(t, q)
+
 dϑ₁dx₁(t, q) = dA₁dx₁(t, q) + u(t, q) * db₁dx₁(t, q)
 dϑ₁dx₂(t, q) = dA₁dx₂(t, q) + u(t, q) * db₁dx₂(t, q)
 dϑ₁dx₃(t, q) = dA₁dx₃(t, q) + u(t, q) * db₁dx₃(t, q)
@@ -56,7 +62,9 @@ function ϑ(θ::AbstractVector, t::Number, q::AbstractVector, params)
     ϑ(θ, t, fieldpoint(params.field, t, q))
 end
 
-function ϑ(t::Number, q::AbstractVector, k::Int)
+ϑ(t::Number, q::AbstractVector, params, k::Int) = ϑ(t, fieldpoint(params.field, t, q), k)
+
+function ϑ(t::Number, q::FieldPoint, k::Int)
     if k == 1
         ϑ₁(t, q)
     elseif k == 2
@@ -233,6 +241,10 @@ end
 β₁(t, q) = dϑ₃dx₂(t, q) - dϑ₂dx₃(t, q)
 β₂(t, q) = dϑ₁dx₃(t, q) - dϑ₃dx₁(t, q)
 β₃(t, q) = dϑ₂dx₁(t, q) - dϑ₁dx₂(t, q)
+
+β₁(t, q, params) = β₁(t, fieldpoint(params.field, t, q))
+β₂(t, q, params) = β₂(t, fieldpoint(params.field, t, q))
+β₃(t, q, params) = β₃(t, fieldpoint(params.field, t, q))
 
 # function β(t,q)
 #    return sqrt(β1(t,q)^2 + β2(t,q)^2 + β3(t,q)^2)

@@ -13,7 +13,7 @@ module TokamakSmallCylindrical
 using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCylindricalEquilibrium,
                              from_cartesian, DF̄
 
-export podeproblem, hamiltonian, toroidal_momentum
+export podeproblem, hamiltonian
 export initial_conditions_barely_passing, initial_conditions_barely_trapped
 export initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 export initial_conditions_pauli

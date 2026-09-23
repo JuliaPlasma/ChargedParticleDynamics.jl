@@ -7,7 +7,7 @@ module ThetaPinchCanonical
 using ElectromagneticFields: FieldFunctions, ThetaPinchEquilibrium
 using ..Canonical: tᵢ, charged_particle_3d_pᵢ
 
-export iodeproblem, hamiltonian, angular_momentum
+export iodeproblem, hamiltonian
 
 const FIELD = FieldFunctions(ThetaPinchEquilibrium())
 

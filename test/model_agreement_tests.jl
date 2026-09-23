@@ -51,7 +51,7 @@ function final_g3(M, x, u, μ, span, step)
             timestep = step, periodic = false),
         PartitionedGauss(2);
         OPTS...)
-    (collect(sol.q[end]), M.u(span[end], sol.q[end], sol.p[end], params))
+    (collect(sol.q[end]), G3.u(span[end], sol.q[end], sol.p[end], params))
 end
 
 function final_pauli(M, x, v₀, μ, span, step)
@@ -108,7 +108,7 @@ end
             @test ic3.q ≈ x
             @test icp.q ≈ x
             # parallel velocity, recovered from each family's own state
-            @test E3.u(0.0, ic3.q, ic3.p, ic3.params) ≈ u atol = 1E-12
+            @test G3.u(0.0, ic3.q, ic3.p, ic3.params) ≈ u atol = 1E-12
             @test icp.v' * b♭(Ep.FIELD, 0.0, icp.q) ≈ u atol = 1E-12
             # magnetic moment
             @test ic3.params.μ == μ

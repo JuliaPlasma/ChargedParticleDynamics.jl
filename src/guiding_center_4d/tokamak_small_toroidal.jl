@@ -5,6 +5,7 @@ module TokamakSmallToroidal
 
 using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakToroidalEquilibrium,
                              from_cartesian
+using ...ChargedParticleDynamics: check_chart
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -95,8 +96,8 @@ include("guiding_center_4d_surface.jl")
 # previously multiplied by R, which destroys the conservation: on the small tokamak the
 # relative variation over 10³ time units is 2e-13 for ϑ₃ and 3e-3 for R ϑ₃.
 function toroidal_momentum(t, q, params)
-    q = fieldpoint(params.field, t, q)
-    ϑ₃(t, q)
+    check_chart(params.field, FIELD)
+    ϑ₃(t, q, params)
 end
 
 include("guiding_center_4d_diagnostics.jl")

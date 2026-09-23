@@ -3,10 +3,10 @@ using SimpleSolvers
 
 using ElectromagneticFields: b♭
 
+using ChargedParticleDynamics.GuidingCenter3d: hamiltonian_u, λₒ, λ₁, λ₂, constraint_pair
 using ChargedParticleDynamics.GuidingCenter3d.Dipole3d
-using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: FIELD, hamiltonian, hamiltonian_u,
-                                                        g₁, g₂, g₃, λₒ, λ₁, λ₂,
-                                                        constraint_pair, default_constraints
+using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: FIELD, hamiltonian, g₁, g₂, g₃,
+                                                        default_constraints
 
 # `f_abstol` has to sit above the round-off floor of the residual, which for the variational
 # residual is `‖ϑ‖ eps`. `Dipole3d` ships `‖p‖ ≈ 152`, i.e. a floor of `3.4E-14`, so the `8eps() =

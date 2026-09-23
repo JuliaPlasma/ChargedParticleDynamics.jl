@@ -2,7 +2,6 @@ using LinearAlgebra
 using Parameters
 
 import GeometricEquations: HODEProblem
-import GeometricSolutions: GeometricSolution, DataSeries, TimeSeries
 using ..FieldPoints
 using ..ChargedParticleDynamics: periodic_domain
 

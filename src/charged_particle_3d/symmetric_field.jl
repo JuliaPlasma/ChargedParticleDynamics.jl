@@ -5,7 +5,7 @@ Charged Particle in an axisymmetric magnetic field of the form
 module SymmetricField
 
 using ElectromagneticFields: FieldFunctions, SymmetricQuadraticEquilibrium
-using ..Noncanonical: ϑ₁, ϑ₂, fieldpoint
+using ..Noncanonical: ϑ₁, ϑ₂, fieldpoint, compute_energy, compute_energy_error
 
 export odeproblem, iodeproblem
 export hamiltonian, angular_momentum

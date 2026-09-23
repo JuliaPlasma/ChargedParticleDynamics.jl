@@ -5,9 +5,9 @@ Charged Particle in a singular magnetic field of the form
 module SingularFieldCanonical
 
 using ElectromagneticFields: FieldFunctions, SingularEquilibrium
-using ..Canonical: tᵢ, charged_particle_3d_pᵢ
+using ..Canonical: tᵢ, charged_particle_3d_pᵢ, compute_energy, compute_energy_error
 
-export odeproblem, iodeproblem
+export iodeproblem
 export hamiltonian#, angular_momentum
 export compute_energy, compute_energy_error
 

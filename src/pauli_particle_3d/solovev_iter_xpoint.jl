@@ -13,7 +13,7 @@ module SolovevIterXpoint
 
 using ElectromagneticFields: FieldFunctions, SolovevXpointEquilibriumITER, from_cartesian
 
-export podeproblem, hamiltonian, toroidal_momentum
+export podeproblem, hamiltonian
 export initial_conditions_barely_passing, initial_conditions_barely_trapped
 export initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 

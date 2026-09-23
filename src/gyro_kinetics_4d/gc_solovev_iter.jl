@@ -9,6 +9,8 @@ deeply passing initial condition, so the defaults below are the 4D guiding centr
 module GuidingCenter4dSolovevIter
 
 using ElectromagneticFields: FieldFunctions, SolovevEquilibriumITER, from_cartesian
+using ...ChargedParticleDynamics: check_chart
+using ..GyroKinetics4d: fieldpoint, ϑ₃
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -40,6 +42,7 @@ default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(μ₀
 const qᵢ = [x₀..., 5.0E-1]
 
 function toroidal_momentum(t, q, params)
+    check_chart(params.field, FIELD)
     q = fieldpoint(params.field, t, q)
     ϑ₃(t, q)
 end

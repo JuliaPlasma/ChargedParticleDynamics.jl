@@ -54,18 +54,41 @@ tuple it needs beside its equations.
 A `FieldPoint` passed in is returned as it is, so a right-hand side that calls another hands its
 point on rather than evaluating the field twice. It must then hold every tensor the callee reads:
 an accessor for a tensor that was not requested fails on the missing `NamedTuple` field.
+
+Where `names` includes `g♭` or `g♯`, an `ArgumentError` is thrown if that metric has a non-zero
+off-diagonal entry at the point: the accessors read the metric through its diagonal alone, which
+is the whole metric only in an orthogonal chart.
 """
 @inline function fieldpoint(field, t, q::AbstractVector, names::Val)
-    FieldPoint(q, fieldvalues(field, t, SVector(q[1], q[2], q[3]), names))
+    x = SVector(q[1], q[2], q[3])
+    values = fieldvalues(field, t, x, names)
+    check_orthogonal(values, x)
+    FieldPoint(q, values)
 end
 
 @inline fieldpoint(field, t, P::FieldPoint, ::Val) = P
+
+@inline function check_orthogonal(values::NamedTuple{names}, x) where {names}
+    :g♭ in names && check_diagonal(values.g♭, :g♭, x)
+    :g♯ in names && check_diagonal(values.g♯, :g♯, x)
+    nothing
+end
+
+@inline function check_diagonal(g, name, x)
+    iszero(g[1, 2]) && iszero(g[1, 3]) && iszero(g[2, 3]) || nonorthogonal(name, x)
+    nothing
+end
+
+@noinline function nonorthogonal(name, x)
+    throw(ArgumentError("the chart is not orthogonal: $name has a non-zero off-diagonal entry " *
+                        "at x = $x, and FieldPoints reads the metric through its diagonal only"))
+end
 
 #
 # The scalar accessors, named in the component notation the equations are written in:
 # `A₁` is the first covariant component of `A♭`, `b¹` the first contravariant one of `b♯`,
 # `dA₁dx₂` is `DA♭[1, 2]`, `dg¹¹dx₂` is `Dg♯[1, 1, 2]`, and so on. The metric appears only through
-# its diagonal, since every chart this package uses is orthogonal.
+# its diagonal, which `fieldpoint` checks is the whole of it.
 #
 
 const SUB = ('₁', '₂', '₃')

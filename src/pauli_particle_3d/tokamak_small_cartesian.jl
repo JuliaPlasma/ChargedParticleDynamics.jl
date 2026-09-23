@@ -12,7 +12,7 @@ module TokamakSmallCartesian
 
 using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCartesianEquilibrium
 
-export podeproblem, hamiltonian, toroidal_momentum
+export podeproblem, hamiltonian
 export initial_conditions_barely_passing, initial_conditions_barely_trapped
 export initial_conditions_deeply_passing, initial_conditions_deeply_trapped
 export initial_conditions_pauli

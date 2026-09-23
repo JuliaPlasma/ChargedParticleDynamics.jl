@@ -4,9 +4,7 @@
 # the defaults. Included into each equilibrium module.
 
 import ..GuidingCenter3d
-using ..GuidingCenter3d: hamiltonian, hamiltonian_canonical, hamiltonian_u, u, g₁, g₂, g₃,
-                         λₒ, λ₁, λ₂, multipliers, constraint_pair, compact_index, unval,
-                         fieldpoint, fieldpoint²
+using ..GuidingCenter3d: hamiltonian, hamiltonian_canonical, g₁, g₂, g₃
 
 export hamiltonian, hamiltonian_canonical
 export hodeproblem, hodeproblem_canonical, hodeproblem_compact

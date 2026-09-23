@@ -2,6 +2,7 @@
 import GeometricEquations
 using GeometricSolutions
 using GeometricSolutions: compute_error_drift, compute_momentum_error, compute_one_form
+using ...ChargedParticleDynamics: check_chart
 
 export compute_energy, compute_energy_error,
        compute_toroidal_momentum, compute_toroidal_momentum_error,
@@ -40,8 +41,10 @@ function compute_energy_error(sol::GeometricSolution, params = GeometricEquation
 end
 
 # Defined only by the equilibria that have a symmetry direction; calling these on one that does not
-# raises an `UndefVarError` for `toroidal_momentum`, as it does for the 4D model.
+# raises an `UndefVarError` for `toroidal_momentum`, as it does for the 4D model. `toroidal_momentum`
+# is written in this module's chart, so a solution whose field is in another is refused.
 function compute_toroidal_momentum(t::SolutionTimes, q::DataSeries, p::DataSeries, params)
+    check_chart(params.field, FIELD)
     compute_invariant(t, q, p, params, (t, q, p, params) -> toroidal_momentum(t, q, p))
 end
 function compute_toroidal_momentum(sol::GeometricSolution, params = GeometricEquations.parameters(sol.problem))
@@ -54,6 +57,7 @@ end
 Returns a `(value, error)` pair; see [`compute_energy_error`](@ref).
 """
 function compute_toroidal_momentum_error(t::SolutionTimes, q::DataSeries, p::DataSeries, params)
+    check_chart(params.field, FIELD)
     compute_invariant_error(
         t, q, p, params, (t, q, p, params) -> toroidal_momentum(t, q, p))
 end
@@ -70,9 +74,9 @@ which the momentum equals the guiding centre one-form, returned as a named tuple
 `DataSeries`.
 
 Any two of the three make up the constraint pair a problem was built with — see
-[`constraint_pair`](@ref) — but all three vanish along the flow whichever pair that was, so
-reporting all three is independent of the choice and shows a drift that is invisible in the retained
-pair alone.
+[`constraint_pair`](@ref ChargedParticleDynamics.GuidingCenter3d.constraint_pair) — but all three
+vanish along the flow whichever pair that was, so reporting all three is independent of the choice
+and shows a drift that is invisible in the retained pair alone.
 
 They vanish identically along the continuous flow, so their magnitude measures how far a numerical
 solution has drifted off that manifold — the quantity the approximately symplectic methods of Li,

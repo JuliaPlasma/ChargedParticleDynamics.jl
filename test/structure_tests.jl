@@ -471,7 +471,7 @@ end
         ic = M.initial_conditions_barely_passing()
         t, p, par = 0.0, ic.p, ic.params
         q = ic.q .+ 0.01 .* [1.0, 2.0, 3.0]
-        c = M.constraint_pair(M.default_constraints())
+        c = G.constraint_pair(M.default_constraints())
         S = G.fieldpoint²(M.FIELD, t, q)
 
         # Same reasoning as the constraint block above: a central difference at h = 1e-6 carries about
@@ -542,7 +542,7 @@ end
         for constraints in (:g12, :parallel)
             # The two branches differ only in how they evaluate the parallel velocity and the
             # denominator, which agree on the constraint manifold the initial condition sits on.
-            m = M.compact_index(constraints)
+            m = G.compact_index(constraints)
             v̄ = zeros(3)
             f̄ = zeros(3)
             G.guiding_center_3d_compact_v(v̄, t, q, p, par, m)
@@ -584,6 +584,40 @@ end
             # central difference of an O(1) quantity at h = 1e-6 carries ~1e-10 of noise.
             @test isapprox(ana, num; rtol = 1e-5, atol = 1e-9)
         end
+    end
+end
+
+@safetestset "4D guiding centre: the one-form and its curl take a coordinate vector and params                    " begin
+    using ChargedParticleDynamics.GuidingCenter4d
+    using ElectromagneticFields: A♭, b♭
+    using ..StructureTestUtils
+    using Test
+
+    # `ϑ₁`…`ϑ₄`, `β₁`…`β₃` and `ϑ(t, q, params, k)` are exported, and a caller holds a coordinate
+    # vector rather than a `FieldPoint`. The expected values do not come from the code under test:
+    # the one-form is the field's own `A♭ + u b♭`, and its curl `β = ∇ × ϑ` is taken by central
+    # differences of the one-form.
+    G = GuidingCenter4d
+
+    for M in (G.SolovevIterXpoint, G.TokamakSmallCartesian, G.TokamakSmallToroidal)
+        ic = M.initial_conditions_barely_passing()
+        t, q, par = 0.0, ic.q, ic.params
+        x = q[1:3]
+        θ = A♭(par.field, t, x) .+ q[4] .* b♭(par.field, t, x)
+        ϑs = (G.ϑ₁, G.ϑ₂, G.ϑ₃)
+
+        for k in 1:3
+            @test ϑs[k](t, q, par) ≈ θ[k] rtol = 1e-14
+            @test G.ϑ(t, q, par, k) == ϑs[k](t, q, par)
+        end
+        @test G.ϑ₄(t, q, par) == 0
+        @test G.ϑ(t, q, par, 4) == 0
+
+        d(k, j) = central_difference(y -> ϑs[k](t, y, par), q, j)
+        atol = 1e-8 * max(1.0, maximum(abs, θ))
+        @test isapprox(G.β₁(t, q, par), d(3, 2) - d(2, 3); rtol = 1e-6, atol = atol)
+        @test isapprox(G.β₂(t, q, par), d(1, 3) - d(3, 1); rtol = 1e-6, atol = atol)
+        @test isapprox(G.β₃(t, q, par), d(2, 1) - d(1, 2); rtol = 1e-6, atol = atol)
     end
 end
 
@@ -692,6 +726,39 @@ end
     end
 end
 
+@safetestset "A formula written in one chart refuses a field in another                                           " begin
+    using ChargedParticleDynamics
+    using ChargedParticleDynamics.GuidingCenter4d
+    using Test
+
+    # The right-hand sides take any field whose chart is orthogonal. Two things are narrower, and
+    # both refuse rather than answer wrongly: `toroidal_momentum`, whose formula each module writes
+    # in its own chart, and the metric accessors of `FieldPoints`, which read the diagonal only.
+    G = GuidingCenter4d
+    cart, cyl = G.TokamakSmallCartesian, G.TokamakSmallCylindrical
+    ic = cyl.initial_conditions_barely_passing()
+    foreign = (field = cart.FIELD, μ = ic.params.μ)
+
+    @test cyl.toroidal_momentum(0.0, ic.q, ic.params) isa Float64
+    @test_throws ArgumentError cyl.toroidal_momentum(0.0, ic.q, foreign)
+    @test_throws ArgumentError cart.toroidal_momentum(0.0, ic.q, ic.params)
+
+    # The same kind of equilibrium with other parameters is the same chart; `GuidingCenter3d`'s
+    # `compute_toroidal_momentum` goes through this check.
+    @test ChargedParticleDynamics.check_chart(
+        cyl.FIELD, G.TokamakMediumCylindrical.FIELD) === nothing
+    @test_throws ArgumentError ChargedParticleDynamics.check_chart(cart.FIELD, cyl.FIELD)
+
+    FP = ChargedParticleDynamics.FieldPoints
+    x = [1.0, 0.0, 0.0]
+    diagonal = [1.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 3.0]
+    skew = [1.0 0.1 0.0; 0.1 2.0 0.0; 0.0 0.0 3.0]
+    @test FP.check_orthogonal((g♭ = diagonal, g♯ = diagonal), x) === nothing
+    @test FP.check_orthogonal((B = 1.0,), x) === nothing
+    @test_throws ArgumentError FP.check_orthogonal((g♭ = skew,), x)
+    @test_throws ArgumentError FP.check_orthogonal((g♯ = skew,), x)
+end
+
 @safetestset "3D guiding centre diagnostics                                                                       " begin
     using ChargedParticleDynamics.GuidingCenter3d
     using GeometricIntegrators
@@ -771,13 +838,13 @@ end
         G = GuidingCenter3d
         bs = map(b -> (t, x) -> b(t, G.fieldpoint(M.FIELD, t, x)), (G.b₁, G.b₂, G.b₃))
 
-        retained = map(M.unval, M.constraint_pair(M.default_constraints()))
+        retained = map(G.unval, G.constraint_pair(M.default_constraints()))
         omitted = only(setdiff(1:3, retained))
 
         # `compact_index` is the component of `b` the pair divides by, which is not `omitted`: the
         # labelling of the `gᵏ` is not the antisymmetric one, so `(g³, g¹)` omits `g²` but divides by
         # `b₁`.
-        m = M.unval(M.compact_index(M.default_constraints()))
+        m = G.unval(G.compact_index(M.default_constraints()))
         bmin = minimum(abs(bs[m](sol.t[i], sol.q[i])) for i in eachindex(sol.t))
 
         for k in retained

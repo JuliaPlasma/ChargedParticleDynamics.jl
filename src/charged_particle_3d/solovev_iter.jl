@@ -11,7 +11,7 @@ charged particle model rather than values derived here.
 module SolovevIter
 
 using ElectromagneticFields: FieldFunctions, SolovevEquilibriumITER, from_cartesian, b♯, B
-using ..Canonical: tᵢ, charged_particle_3d_pᵢ
+using ..Canonical: tᵢ, charged_particle_3d_pᵢ, toroidal_momentum
 
 export podeproblem, iodeproblem,
        hamiltonian, toroidal_momentum
@@ -46,16 +46,12 @@ function initial_conditions(x₀, u₀, μ)
         params = default_parameters())
 end
 
-initial_conditions_barely_passing() = initial_conditions(
-    from_cartesian(FIELD, 0, [2.5, 0.0, 0.0]), 3.425E-1, 1E-2)
-initial_conditions_barely_trapped() = initial_conditions(
-    from_cartesian(FIELD, 0, [2.5, 0.0, 0.0]), 3.375E-1, 1E-2)
-initial_conditions_deeply_passing() = initial_conditions(
-    from_cartesian(FIELD, 0, [
-        2.5, 0.0, 0.0]), 5E-1, 1E-2)
-initial_conditions_deeply_trapped() = initial_conditions(
-    from_cartesian(FIELD, 0, [
-        2.5, 0.0, 0.0]), 1E-1, 1E-2)
-initial_conditions_trapped() = initial_conditions(from_cartesian(FIELD, 0, [2.5, 0.0, 0.0]), -2E-3, 1.88E-7)
+const x₀ = from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])
+
+initial_conditions_barely_passing() = initial_conditions(x₀, 3.425E-1, 1E-2)
+initial_conditions_barely_trapped() = initial_conditions(x₀, 3.375E-1, 1E-2)
+initial_conditions_deeply_passing() = initial_conditions(x₀, 5E-1, 1E-2)
+initial_conditions_deeply_trapped() = initial_conditions(x₀, 1E-1, 1E-2)
+initial_conditions_trapped() = initial_conditions(x₀, -2E-3, 1.88E-7)
 
 end

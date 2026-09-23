@@ -8,13 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] — targeting 0.5.0
 
-`ElectromagneticFields` 0.9 replaces the SymEngine code generator, and the `@code` macros that
-injected a field's functions into a module with it, by `FieldFunctions`: the field is a value. This
-release follows it. Each equation is written once per model family and reads its field from
-`params.field`, and each equilibrium module is a preset — a field, an initial condition and
-constructors that default to them. It is breaking. Every result is unchanged: 4531 recorded values
-of right-hand sides, one-forms, Hamiltonians, invariants and initial conditions, across all five
-families, agree with 0.4.1 to a relative 1e-10.
+`ElectromagneticFields` 0.9 replaces the SymEngine code generator, and the `@code` macros
+that injected a field's functions into a module with it, by `FieldFunctions`: the field is a
+value. This release follows it. Each equation is written once per model family and reads its
+field from `params.field`, and each equilibrium module is a preset — a field, an initial
+condition and constructors that default to them. It is breaking. Results across all five
+families agree with 0.4.1 to a relative 1e-10 on 4531 recorded values of right-hand sides,
+one-forms, Hamiltonians, invariants and initial conditions, verified outside the repository;
+this comparison is not part of the test suite.
 
 ### Changed
 
@@ -22,11 +23,13 @@ families, agree with 0.4.1 to a relative 1e-10.
   `docs/` and `scripts/` environments. `test/` now depends on it directly, with the same bound,
   because the tests read the field through its accessors. `StaticArrays` is a new dependency.
 - **The field travels in `parameters`.** Every equilibrium module defines `const FIELD =
-  FieldFunctions(…)`, and its `default_parameters()` returns `(field = FIELD, …)`. For the charged
-  particle, which has no physical parameter, that is `(field = FIELD,)`. So any model runs in any
-  field: pass `parameters = (field = FieldFunctions(equilibrium), μ = …)` to a constructor.
-  A `parameters` tuple without `field`, such as the `(μ = μ,)` that 0.4 accepted, now fails
-  with an error that names the missing `field`.
+  FieldFunctions(…)`, and its `default_parameters()` returns `(field = FIELD, …)`. For the
+  charged particle, which has no physical parameter, that is `(field = FIELD,)`. The right-hand
+  sides read the field through `params.field` and work in any orthogonal chart; the charged
+  particle, Pauli and 3D guiding centre models use the metric through its diagonal only and
+  throw an `ArgumentError` if a non-orthogonal field is passed. Constructors that read
+  `parameters.field` fail if it is missing; the canonical charged particle's `podeproblem(q, p;
+  parameters = NamedTuple())` constructs without error and fails on its first evaluation.
 - **The injected field namespace is gone.** An equilibrium module no longer defines `A₁`…`A₃`,
   `b₁`…`b₃`, `b⃗`, `B`, `g₁₁`…`g₃₃`, `ḡ`, `aₚ`/`bₚ`/`cₚ`, `DF̄`, `J`, `R`, `from_cartesian`,
   `orientation`, the equilibrium parameters such as `R₀`, or their derivatives. Read them from the
@@ -37,7 +40,9 @@ families, agree with 0.4.1 to a relative 1e-10.
   the public ones: `GuidingCenter3d.u(t, q, p, params)`, `g₁`…`g₃(t, q, p, params)`,
   `λₒ(t, q, p, params, c)`, `initial_conditions(tᵢ, Qᵢ, params)` and
   `compute_constraints(t, q, p, params)`; `GuidingCenter4d.ϑ(θ, t, q, params)`, `ω` and `dϑ`
-  likewise; `GyroKinetics4d.ωabs(t, q, params)`; and
+  likewise; `GuidingCenter4d.ϑ₁`…`ϑ₄` and `β₁`…`β₃` as `(t, q, params)` and
+  `ϑ(t, q, params, k)`, whose forms without `params` take a `FieldPoint`;
+  `GyroKinetics4d.ωabs(t, q, params)`; and
   `ChargedParticle3d.Canonical.charged_particle_3d_pᵢ(tᵢ, qᵢ, vᵢ, params)`. Each module's own
   `initial_conditions` and constructors keep their 0.4 call forms and supply the module's field.
 - **The 3D guiding centre constraint pair is required** where it used to default: in `λₒ`, `λ₁`,
@@ -69,6 +74,37 @@ families, agree with 0.4.1 to a relative 1e-10.
   along with the identifiers: the field list of `IntegratorCacheFIRKwCT` names `ṽ`, which
   recomposes with the field it documents. No other string literal is affected, and that docstring
   is rendered rather than compared.
+- **The `toroidal_momentum(t, q, params)` of every module that defines one in `GuidingCenter4d`,
+  `GyroKinetics4d`, and the noncanonical `ChargedParticle3d` modules
+  (`TokamakSmallNoncanonical`, `ThetaPinchNoncanonical`), plus `GuidingCenter3d`'s per-module
+  `compute_toroidal_momentum` and `compute_toroidal_momentum_error`, throws an `ArgumentError`
+  if the field holds a different kind of equilibrium than the module itself.** The formula is
+  written in the module's chart — `ϑ₃` where the third coordinate is the toroidal angle,
+  `x ϑ₂ − y ϑ₁` in a cartesian chart — so a field in a different chart gives a wrong value
+  silently without the check. The canonical charged particle's `toroidal_momentum(t, q, p) = p[3]`
+  takes no field and is unchanged.
+- **Equilibrium modules import only what they export or their own definitions use.** Any
+  other family internal no longer resolves on the module; reach it through the family
+  module, which works for every module — `GuidingCenter3d.λₒ`, not
+  `SolovevIterXpoint.λₒ`. In 0.4.1 these were each module's own injected functions, so
+  `M.λₒ` worked. What no longer resolves: in `GuidingCenter3d` modules `u`,
+  `hamiltonian_u`, `λₒ`, `λ₁`, `λ₂`, `multipliers`, `constraint_pair`,
+  `compact_index`, `unval`, `fieldpoint` and `fieldpoint²`; in
+  `ChargedParticle3d` modules `lagrangian`, and `compute_energy`, `compute_energy_error`,
+  `toroidal_momentum` and `ϑ` where the module does not export them; `fieldpoint` in
+  every `GuidingCenter4d` module except `TokamakSmallCartesian`, which still imports it;
+  `fieldpoint` and `ϑ₁`…`ϑ₃` in the two `GyroKinetics4d` modules without a `toroidal_momentum`,
+  `GuidingCenter4dSolovevIterXpoint` and `GuidingCenter4dTokamakMediumCartesian`;
+  and in the other six, the components of `ϑ` their `toroidal_momentum` does not read.
+- **Ten exports that named nothing are removed**: `SingularFieldCanonical.odeproblem`,
+  `ThetaPinchCanonical.angular_momentum`, and `toroidal_momentum` / `angular_momentum` in the
+  eight `PauliParticle3d` equilibrium modules. `Aqua.test_undefined_exports` now passes.
+- **On Julia 1.10, the test suite runs the 3D guiding centre integration blocks for
+  `SolovevIterXpoint` only** (all three formulations, and every constraint pair in "the
+  constraint formulations agree"); the other eight equilibrium blocks run on Julia 1.11 and
+  later. Reason: Julia 1.10 compiles each formulation afresh per field, taking 10–16 minutes
+  per equilibrium on the CI runners, which exceeded the job limit. The CI workflow's
+  `timeout-minutes` is also 120, up from 90.
 
 ### Performance
 
@@ -90,7 +126,7 @@ components from there. Minimum over three cold runs, BLAS pinned to one thread, 
 **The canonicalised 3D guiding centre is about 11 % slower**, and the compact form about 2 %. For
 the canonical form the field evaluation is faster, 1592 ns against 898 ns, so the loss is in the
 arithmetic on the evaluated point. Its typed IR is 1206 lines against 125, which points at inlining
-rather than at the field layer, but that has not been measured further.
+rather than at the field layer.
 
 ## [0.4.1] - 2026-08-10
 

@@ -4,8 +4,7 @@
 # equilibrium module.
 
 import ..GuidingCenter4d
-using ..GuidingCenter4d: hamiltonian, u, ω, ϑ, ϑ₁, ϑ₂, ϑ₃, ϑ₄, dϑ, β₁, β₂, β₃, dH,
-                         fieldpoint
+using ..GuidingCenter4d: hamiltonian, u, ω, ϑ, ϑ₁, ϑ₂, ϑ₃, ϑ₄, dϑ, β₁, β₂, β₃, dH
 
 export hamiltonian, u, ω, ϑ, ϑ₁, ϑ₂, ϑ₃, ϑ₄, dϑ, β₁, β₂, β₃, dH
 export odeproblem, iodeproblem, iodeproblem_λ,

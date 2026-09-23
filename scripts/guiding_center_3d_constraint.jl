@@ -2,21 +2,19 @@ using GeometricIntegrators
 using SimpleSolvers: Options
 
 using ElectromagneticFields: b♭
-using ChargedParticleDynamics.GuidingCenter3d: gᵏ, dgᵏdqₗ, dgᵏdpₗ
+using ChargedParticleDynamics.GuidingCenter3d: gᵏ, dgᵏdqₗ, dgᵏdpₗ, hamiltonian_u, λₒ, λ₁,
+                                               λ₂, constraint_pair, fieldpoint²
 
 using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian
 using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian: FIELD, hamiltonian,
-                                                                      hamiltonian_u, g₁, g₂,
-                                                                      g₃, λₒ, λ₁, λ₂,
-                                                                      constraint_pair,
-                                                                      default_constraints,
-                                                                      fieldpoint²
+                                                                      g₁, g₂, g₃,
+                                                                      default_constraints
 
 # using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical
-# using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical: FIELD, hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, constraint_pair, default_constraints, fieldpoint²
+# using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical: FIELD, hamiltonian, g₁, g₂, g₃, default_constraints
 
 # using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal
-# using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal: FIELD, hamiltonian, hamiltonian_u, g₁, g₂, g₃, λₒ, λ₁, λ₂, constraint_pair, default_constraints, fieldpoint²
+# using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal: FIELD, hamiltonian, g₁, g₂, g₃, default_constraints
 
 # `f_abstol` is an absolute bound on the residual and has to stay above its round-off floor, which
 # for these models is `‖ϑ‖ eps`. The 1E-14 this script used to ask for is below it, so the solver

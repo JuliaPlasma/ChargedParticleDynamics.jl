@@ -278,6 +278,17 @@ particle models, which take no physical parameters, the field is the only entry,
 problem in the package can be constructed the same way. To integrate a model in another field,
 pass `parameters = (field = FieldFunctions(equilibrium), …)` to any constructor.
 
+Two limits apply. The charged particle, Pauli and 3D guiding centre models read the metric through
+its diagonal only, so they need an orthogonal chart, and `fieldpoint` throws an `ArgumentError`
+where the metric has a non-zero off-diagonal entry. The 4D guiding centre and gyrokinetic models
+read no metric. And the `toroidal_momentum` of a 4D guiding centre, gyrokinetic or noncanonical
+charged particle module is written in that module's chart, so it, and the
+`compute_toroidal_momentum` built on it, throw an `ArgumentError` for a field that holds a
+different kind of equilibrium. The 3D guiding centre's `toroidal_momentum(t, q, p)` takes no field,
+so there its `compute_toroidal_momentum` throws. The canonical charged particle's
+`toroidal_momentum(t, q, p)` is `p[3]`; it takes no field, and it is the toroidal momentum only
+where the third coordinate is the toroidal angle.
+
 Every right-hand side reads the field through one `FieldPoint`, built on entry:
 
 ```@docs

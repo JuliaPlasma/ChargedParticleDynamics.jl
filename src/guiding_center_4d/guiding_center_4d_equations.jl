@@ -1,6 +1,5 @@
 
 using GeometricEquations: ODEProblem, IODEProblem, LODEProblem
-using GeometricSolutions: GeometricSolution, DataSeries, TimeSeries
 using ..ChargedParticleDynamics: periodic_domain
 
 # Which coordinates are periodic, and on what range, is a property of the chart, answered by the

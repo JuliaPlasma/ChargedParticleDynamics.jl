@@ -8,7 +8,8 @@ and the Boris splitting of `sodeproblem` is a valid splitting of the model here.
 module ThetaPinchNoncanonical
 
 using ElectromagneticFields: FieldFunctions, ThetaPinchEquilibrium
-using ..Noncanonical: ϑ₃, fieldpoint
+using ..Noncanonical: ϑ, ϑ₃, fieldpoint
+using ...ChargedParticleDynamics: check_chart
 
 export odeproblem, sodeproblem, iodeproblem,
        hamiltonian, toroidal_momentum, ϑ
@@ -17,7 +18,10 @@ const qᵢ = [2.5, 0.0, 0.0, 0.0, 0.2, 0.1]
 
 const FIELD = FieldFunctions(ThetaPinchEquilibrium())
 
-toroidal_momentum(t, q, params) = ϑ₃(t, fieldpoint(params.field, t, q))
+function toroidal_momentum(t, q, params)
+    check_chart(params.field, FIELD)
+    ϑ₃(t, fieldpoint(params.field, t, q))
+end
 
 include("charged_particle_3d_noncanonical_presets.jl")
 

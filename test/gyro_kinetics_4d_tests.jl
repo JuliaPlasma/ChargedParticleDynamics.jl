@@ -163,6 +163,7 @@ end
 @safetestset "Gyrokinetic GC Model: every equilibrium integrates and preserves volume                " begin
     using ChargedParticleDynamics
     using ChargedParticleDynamics.GyroKinetics4d
+    import ElectromagneticFields
     using ..GyroKinetics4dTests
     using GeometricIntegrators
     using LinearAlgebra
@@ -228,7 +229,7 @@ end
         bare = F.ω₁(0.0, P) * F.dϑ₁dx₄(0.0, P) +
                F.ω₂(0.0, P) * F.dϑ₂dx₄(0.0, P) +
                F.ω₃(0.0, P) * F.dϑ₃dx₄(0.0, P)
-        @test sign(bare) == ChargedParticleDynamics.GyroKinetics4d.orientation(M.FIELD)
+        @test sign(bare) == ElectromagneticFields.orientation(M.FIELD)
 
         step(q) = integrate(
             M.sodeproblem(q; parameters = params, timestep = Δs, timespan = (0.0, Δs)),

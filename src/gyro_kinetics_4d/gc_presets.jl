@@ -4,7 +4,7 @@
 # equilibrium module.
 
 import ..GyroKinetics4d
-using ..GyroKinetics4d: hamiltonian, ϑ, ω, ωabs, β, γ, v, ϑ₁, ϑ₂, ϑ₃, fieldpoint
+using ..GyroKinetics4d: hamiltonian, ϑ, ω, ωabs, β, γ, v
 using ..GyroKinetics4d: transform_q_to_q̃!, transform_q_to_q̃, transform_q̃_to_q!,
                         transform_q̃_to_q
 

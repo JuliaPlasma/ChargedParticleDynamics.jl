@@ -2,11 +2,10 @@ using GeometricIntegrators
 
 using ElectromagneticFields: b♭
 
+using ChargedParticleDynamics.GuidingCenter3d: hamiltonian_u, λₒ, λ₁, λ₂, constraint_pair
 using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCartesian
 using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCartesian: FIELD, hamiltonian,
-                                                                     hamiltonian_u, g₁, g₂,
-                                                                     g₃, λₒ, λ₁, λ₂,
-                                                                     constraint_pair,
+                                                                     g₁, g₂, g₃,
                                                                      default_constraints
 
 # See `guiding_center_3d_constraint.jl` for why `f_abstol` cannot be pushed to the round-off floor:

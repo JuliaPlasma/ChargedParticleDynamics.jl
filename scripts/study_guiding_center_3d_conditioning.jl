@@ -159,7 +159,7 @@ function conditioning()
         ic = initial(M, icsname)
         q, p, t = ic.q, ic.p, 0.0
 
-        λ = [M.λₒ(t, q, p, ic.params, M.constraint_pair(s)) for s in PAIRS]
+        λ = [G3.λₒ(t, q, p, ic.params, G3.constraint_pair(s)) for s in PAIRS]
 
         @printf("  %-26s %-12s %10.3e %10.3e %10.3e   %11.3e %11.3e %11.3e   %10.3e %8s\n",
             name, coords, b♭(M.FIELD, t, q)..., λ...,
@@ -219,9 +219,9 @@ function variants(M, ic)
 
     # a pair is usable where the bracket it divides by does not vanish …
     pairok(s) = (
-        λ = M.λₒ(t, q, p, ic.params, M.constraint_pair(s)); isfinite(λ) && !iszero(λ))
+        λ = G3.λₒ(t, q, p, ic.params, G3.constraint_pair(s)); isfinite(λ) && !iszero(λ))
     # … and the literal compact form where the single component of b it divides by does not
-    compactok(s) = !iszero(G3.bᵢ(M.compact_index(s), t, M.fieldpoint(M.FIELD, t, q)))
+    compactok(s) = !iszero(G3.bᵢ(G3.compact_index(s), t, G3.fieldpoint(M.FIELD, t, q)))
 
     (("hode :g31", pairok(:g31), ic -> M.hodeproblem(ic; constraints = :g31, w...)),
         ("hode :g12", pairok(:g12), ic -> M.hodeproblem(ic; constraints = :g12, w...)),

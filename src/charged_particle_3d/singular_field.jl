@@ -5,7 +5,7 @@ Charged Particle in a singular magnetic field of the form
 module SingularField
 
 using ElectromagneticFields: FieldFunctions, SingularEquilibrium
-using ..Noncanonical: ϑ₁, ϑ₂, fieldpoint
+using ..Noncanonical: ϑ₁, ϑ₂, fieldpoint, compute_energy, compute_energy_error
 
 export odeproblem, iodeproblem
 export hamiltonian, angular_momentum

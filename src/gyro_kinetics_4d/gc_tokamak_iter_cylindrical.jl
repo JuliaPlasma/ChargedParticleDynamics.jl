@@ -10,6 +10,8 @@ module GuidingCenter4dTokamakIterCylindrical
 
 using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCylindricalITER,
                              from_cartesian
+using ...ChargedParticleDynamics: check_chart
+using ..GyroKinetics4d: fieldpoint, ϑ₃
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -37,6 +39,7 @@ default_parameters(::Type{T} = Float64) where {T} = (field = FIELD, μ = T(1E-2)
 const qᵢ = [x₀..., 5E-1]
 
 function toroidal_momentum(t, q, params)
+    check_chart(params.field, FIELD)
     q = fieldpoint(params.field, t, q)
     ϑ₃(t, q)
 end

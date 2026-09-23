@@ -10,6 +10,8 @@ passing initial condition, so the rescaling is close to a no-op and the defaults
 module GuidingCenter4dTokamakSmallCartesian
 
 using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCartesianEquilibrium
+using ...ChargedParticleDynamics: check_chart
+using ..GyroKinetics4d: fieldpoint, ϑ₁, ϑ₂
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -42,6 +44,7 @@ const qᵢ = [1.05, 0.0, 0.0, 0.00045135897235326736]
 # In cartesian coordinates the third coordinate is `z` rather than an angle, so the conserved
 # quantity is the generator of rotation about the z-axis, not `ϑ₃`.
 function toroidal_momentum(t, q, params)
+    check_chart(params.field, FIELD)
     q = fieldpoint(params.field, t, q)
     q[1] * ϑ₂(t, q) - q[2] * ϑ₁(t, q)
 end

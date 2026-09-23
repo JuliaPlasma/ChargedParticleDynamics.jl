@@ -4,6 +4,8 @@ Analytic axisymmetric small tokamak equilibrium in cartesian coordinates.
 module TokamakSmallCartesian
 
 using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCartesianEquilibrium
+using ...ChargedParticleDynamics: check_chart
+using ..GuidingCenter4d: fieldpoint
 
 export initial_conditions_barely_passing, initial_conditions_barely_trapped,
        initial_conditions_deeply_passing, initial_conditions_deeply_trapped,
@@ -84,6 +86,7 @@ include("guiding_center_4d_surface.jl")
 # the generator of rotation about the z-axis, x ϑ₂ - y ϑ₁, rather than ϑ₃. Neither ϑ₃ nor R ϑ₃
 # is conserved here; this is, to the order of the integrator.
 function toroidal_momentum(t, q, params)
+    check_chart(params.field, FIELD)
     q = fieldpoint(params.field, t, q)
     q[1] * ϑ₂(t, q) - q[2] * ϑ₁(t, q)
 end

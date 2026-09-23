@@ -11,7 +11,7 @@ charged particle model rather than values derived here.
 module TokamakIterCylindrical
 
 using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakCylindricalITER
-using ..Canonical: tᵢ, charged_particle_3d_pᵢ
+using ..Canonical: tᵢ, charged_particle_3d_pᵢ, toroidal_momentum
 
 export podeproblem, iodeproblem,
        hamiltonian, toroidal_momentum

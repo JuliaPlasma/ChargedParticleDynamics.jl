@@ -18,7 +18,8 @@ module TokamakSmallNoncanonical
 
 using ElectromagneticFields: FieldFunctions, AxisymmetricTokamakToroidalEquilibrium,
                              from_cartesian, DF̄
-using ..Noncanonical: ϑ₃, fieldpoint
+using ..Noncanonical: ϑ, ϑ₃, fieldpoint
+using ...ChargedParticleDynamics: check_chart
 
 # `sodeproblem` is deliberately not exported here: this equilibrium is toroidal,
 # and the Boris splitting is only a valid splitting of the model where the metric is trivial.
@@ -32,7 +33,10 @@ const xᵢ = [1.05, 0.0, 0.0]
 const qᵢ = Vector(vcat(from_cartesian(FIELD, 0, xᵢ), DF̄(FIELD, 0, xᵢ) *
                                                      [2.1E-3, 4.3E-4, 0.0]))
 
-toroidal_momentum(t, q, params) = ϑ₃(t, fieldpoint(params.field, t, q))
+function toroidal_momentum(t, q, params)
+    check_chart(params.field, FIELD)
+    ϑ₃(t, fieldpoint(params.field, t, q))
+end
 
 include("charged_particle_3d_noncanonical_presets.jl")
 

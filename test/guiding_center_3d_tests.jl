@@ -102,6 +102,17 @@ function test_guiding_center_3d(equ::Union{IODEProblem, LODEProblem})
     @test integrate(equ, VPRKGauss(2); options...) isa GeometricSolution
 end
 
+# Julia 1.10 compiles every formulation afresh for each field it meets, which costs 10 to 16 minutes
+# per equilibrium on the CI runners and takes the suite past the job limit there. The blocks marked
+# with this macro are therefore not run on 1.10, only named: there the integration tests cover
+# `SolovevIterXpoint` alone — every formulation, and in the last block every constraint pair — and
+# every other equilibrium integrates on Julia 1.11 and later.
+macro skip_on_julia_1_10(ex)
+    VERSION >= v"1.11" && return esc(ex)
+    name = strip(ex.args[3])
+    :(@info $("Not run on Julia $(VERSION.major).$(VERSION.minor): $name"))
+end
+
 end
 
 @safetestset "Guiding Centre Dynamics in 3D with ITER-like Solov'ev Equilibrium with X-Point                      " begin
@@ -141,9 +152,9 @@ end
 
 # `Dipole3d` and `QuadraticPotentials3d` are the two equilibria that are *not* blocked by the
 # `b₁ = 0` singularity of the `(g³, g¹)` constraint pair — `b₁` is -0.41 and 2E-3 at their
-# respective initial conditions — and until now neither had a test block at all. With these two,
-# the 3D model's dynamics is exercised on four equilibria of eleven rather than two.
-@safetestset "Guiding Centre Dynamics in 3D in a Dipole Field                                                     " begin
+# respective initial conditions. The blocks in this file integrate nine of the thirteen equilibria
+# on Julia 1.11 and later, and `SolovevIterXpoint` alone on Julia 1.10; see `@skip_on_julia_1_10`.
+GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics in 3D in a Dipole Field                                                    " begin
     using ChargedParticleDynamics.GuidingCenter3d.Dipole3d
     using ..GuidingCenter3dTests
 
@@ -158,7 +169,7 @@ end
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_dipole()))
 end
 
-@safetestset "Guiding Centre Dynamics in 3D in Quadratic Potentials                                               " begin
+GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics in 3D in Quadratic Potentials                                              " begin
     using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d
     using ..GuidingCenter3dTests
 
@@ -174,7 +185,7 @@ end
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_quadratic()))
 end
 
-@safetestset "Guiding Centre Dynamics in 3D with medium-size Tokamak Equilibrium in Cartesian Coordinates         " begin
+GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics in 3D with medium-size Tokamak Equilibrium in Cartesian Coordinates        " begin
     using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian
     using ..GuidingCenter3dTests
 
@@ -221,7 +232,7 @@ end
 
 end
 
-@safetestset "Guiding Centre Dynamics in 3D with medium-size Tokamak Equilibrium in Cylindrical Coordinates       " begin
+GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics in 3D with medium-size Tokamak Equilibrium in Cylindrical Coordinates      " begin
     using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCylindrical
     using ..GuidingCenter3dTests
 
@@ -237,7 +248,7 @@ end
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 end
 
-@safetestset "Guiding Centre Dynamics in 3D with small-size Tokamak Equilibrium in Cartesian Coordinates          " begin
+GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics in 3D with small-size Tokamak Equilibrium in Cartesian Coordinates         " begin
     using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCartesian
     using ..GuidingCenter3dTests
 
@@ -253,7 +264,7 @@ end
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 end
 
-@safetestset "Guiding Centre Dynamics in 3D with small-size Tokamak Equilibrium in Cylindrical Coordinates        " begin
+GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics in 3D with small-size Tokamak Equilibrium in Cylindrical Coordinates       " begin
     using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCylindrical
     using ..GuidingCenter3dTests
 
@@ -269,7 +280,7 @@ end
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 end
 
-@safetestset "Guiding Centre Dynamics in 3D with small-size Tokamak Equilibrium in Toroidal Coordinates           " begin
+GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics in 3D with small-size Tokamak Equilibrium in Toroidal Coordinates          " begin
     using ChargedParticleDynamics.GuidingCenter3d.TokamakSmallToroidal
     using ..GuidingCenter3dTests
 
@@ -291,7 +302,7 @@ end
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
 end
 
-@safetestset "Guiding Centre Dynamics in 3D with symmetric Solov'ev Equilibrium                                   " begin
+GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics in 3D with symmetric Solov'ev Equilibrium                                  " begin
     using ChargedParticleDynamics.GuidingCenter3d.SolovevSymmetricField
     using ..GuidingCenter3dTests
 

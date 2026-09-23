@@ -4,8 +4,7 @@
 # noncanonical equilibrium module.
 
 import ..Noncanonical
-using ..Noncanonical: hamiltonian, lagrangian, ϑ
-using ..Noncanonical: compute_energy, compute_energy_error
+using ..Noncanonical: hamiltonian
 
 for problem in (:odeproblem, :sodeproblem, :iodeproblem, :lodeproblem)
     @eval begin

@@ -3,8 +3,7 @@
 # carries its field — as the defaults. Included into each canonical equilibrium module.
 
 import ..Canonical
-using ..Canonical: hamiltonian, lagrangian, toroidal_momentum
-using ..Canonical: compute_energy, compute_energy_error
+using ..Canonical: hamiltonian
 
 for problem in (:podeproblem, :iodeproblem, :lodeproblem)
     @eval begin

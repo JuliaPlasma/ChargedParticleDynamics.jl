@@ -2,11 +2,10 @@ using GeometricIntegrators
 
 using ElectromagneticFields: b♭
 
+using ChargedParticleDynamics.GuidingCenter3d: hamiltonian_u, λₒ, λ₁, λ₂, constraint_pair
 using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d
 using ChargedParticleDynamics.GuidingCenter3d.QuadraticPotentials3d: FIELD, hamiltonian,
-                                                                     hamiltonian_u, g₁, g₂,
-                                                                     g₃, λₒ, λ₁, λ₂,
-                                                                     constraint_pair,
+                                                                     g₁, g₂, g₃,
                                                                      default_constraints
 
 # As in `guiding_center_3d_dipole.jl`: `f_abstol` has to stay above the residual's `‖ϑ‖ eps` floor,

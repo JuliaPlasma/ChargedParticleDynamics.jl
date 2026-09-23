@@ -6,7 +6,7 @@ module ThetaPinchField
 
 using ElectromagneticFields: FieldFunctions, ThetaPinchEquilibrium
 
-export podeproblem, hamiltonian, angular_momentum
+export podeproblem, hamiltonian
 
 const FIELD = FieldFunctions(ThetaPinchEquilibrium())
 

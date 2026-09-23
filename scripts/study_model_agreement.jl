@@ -77,7 +77,7 @@ function g3(M, x, u, μ, span, step)
             periodic = false),
         PartitionedGauss(2);
         OPTS...)
-    (collect(sol.q[end]), M.u(span[end], sol.q[end], sol.p[end], params))
+    (collect(sol.q[end]), G3.u(span[end], sol.q[end], sol.p[end], params))
 end
 
 """
