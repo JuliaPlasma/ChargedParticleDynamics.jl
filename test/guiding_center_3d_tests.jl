@@ -114,12 +114,6 @@ end
     using ChargedParticleDynamics.GuidingCenter3d.SolovevIterXpoint
     using ..GuidingCenter3dTests
 
-    # test_guiding_center_3d(ode(initial_conditions_trapped(); timestep = 1E4, timespan = (0, 1E6)))
-    # test_guiding_center_3d(ode(initial_conditions_barely_passing()))
-    # test_guiding_center_3d(ode(initial_conditions_barely_trapped()))
-    # test_guiding_center_3d(ode(initial_conditions_deeply_passing()))
-    # test_guiding_center_3d(ode(initial_conditions_deeply_trapped()))
-
     test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing()))
     test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped()))
     test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing()))
@@ -132,13 +126,6 @@ end
 
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_barely_passing()))
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_deeply_trapped()))
-
-    # test_guiding_center_3d(iode(initial_conditions_trapped(); timestep = 1E4, timespan = (0, 1E6)))
-    # test_guiding_center_3d(iode(initial_conditions_barely_passing()))
-    # test_guiding_center_3d(iode(initial_conditions_barely_trapped()))
-    # test_guiding_center_3d(iode(initial_conditions_deeply_passing()))#; timestep = 1E-2, timespan = (0, 1E1)
-    # test_guiding_center_3d(iode(initial_conditions_deeply_trapped()))#; timestep = 1E-2, timespan = (0, 1E1)
-
 end
 
 # `Dipole3d` and `QuadraticPotentials3d` are the two equilibria that are *not* blocked by the
@@ -180,11 +167,6 @@ GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics i
     using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian
     using ..GuidingCenter3dTests
 
-    # test_guiding_center_3d(ode(initial_conditions_barely_passing()))
-    # test_guiding_center_3d(ode(initial_conditions_barely_trapped()))
-    # test_guiding_center_3d(ode(initial_conditions_deeply_passing()))
-    # test_guiding_center_3d(ode(initial_conditions_deeply_trapped()))
-
     test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing()))
     test_guiding_center_3d(hodeproblem(initial_conditions_barely_trapped()))
     test_guiding_center_3d(hodeproblem(initial_conditions_deeply_passing()))
@@ -211,12 +193,6 @@ GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics i
     # comparison moved to `SolovevIterXpoint`; see the "the constraint formulations agree" block at the
     # end of this file.
     test_guiding_center_3d(hodeproblem(initial_conditions_barely_passing(); constraints = :g12))
-
-    # test_guiding_center_3d(iode(initial_conditions_barely_passing()))
-    # test_guiding_center_3d(iode(initial_conditions_barely_trapped()))
-    # test_guiding_center_3d(iode(initial_conditions_deeply_passing()))
-    # test_guiding_center_3d(iode(initial_conditions_deeply_trapped()))
-
 end
 
 GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics in 3D with medium-size Tokamak Equilibrium in Cylindrical Coordinates      " begin
