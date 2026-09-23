@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased] — targeting 0.5.0
+## [0.5.0] - 2026-09-23
 
 `ElectromagneticFields` 0.9 replaces the SymEngine code generator, and the `@code` macros
 that injected a field's functions into a module with it, by `FieldFunctions`: the field is a
@@ -17,7 +17,7 @@ families agree with 0.4.1 to a relative 1e-10 on 4531 recorded values of right-h
 one-forms, Hamiltonians, invariants and initial conditions, verified outside the repository;
 this comparison is not part of the test suite.
 
-### Changed
+### Breaking Changes
 
 - **`ElectromagneticFields` 0.9 is now required**, up from 0.8, in the root project and in the
   `docs/` and `scripts/` environments. `test/` now depends on it directly, with the same bound,
@@ -59,21 +59,6 @@ this comparison is not part of the test suite.
 - **`plot_fieldlines(field; …)`, `plot_trajectory_poloidal(R, Z, field; …)` and
   `is_axisymmetric_cylindrical(field)`** take a field in place of an equilibrium module. The chart
   test now reads `periodic(field)`.
-- `docs/` and `scripts/` are ported. Twelve of the fourteen scripts read the injected namespace or a
-  removed params-free form, and are rewritten for the accessors; `study_invariant_conservation.jl`
-  and `study_volume_preservation.jl` needed no change. The model pages render the equations from the
-  family modules, where they now live, and the constructors from one equilibrium module each.
-- `src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl` and
-  `src/utils/initial_conditions.jl` are now Unicode NFC-normalised. They stored `ṽ`, `Ṽ`, `Ỹ`, `â`
-  and `ĉ` as a base letter plus a combining mark, inherited from macOS rather than chosen. Nothing
-  about the compiled code changes — Julia's parser normalises identifiers to NFC — but a `grep`
-  pattern or an editor search typed in NFC now matches, where before it silently matched nothing.
-  `b̂` has no precomposed codepoint and is unchanged.
-
-  Both files are byte-equal to the NFC normalisation of their predecessor. One docstring changes
-  along with the identifiers: the field list of `IntegratorCacheFIRKwCT` names `ṽ`, which
-  recomposes with the field it documents. No other string literal is affected, and that docstring
-  is rendered rather than compared.
 - **The `toroidal_momentum(t, q, params)` of every module that defines one in `GuidingCenter4d`,
   `GyroKinetics4d`, and the noncanonical `ChargedParticle3d` modules
   (`TokamakSmallNoncanonical`, `ThetaPinchNoncanonical`), plus `GuidingCenter3d`'s per-module
@@ -96,6 +81,24 @@ this comparison is not part of the test suite.
   `fieldpoint` and `ϑ₁`…`ϑ₃` in the two `GyroKinetics4d` modules without a `toroidal_momentum`,
   `GuidingCenter4dSolovevIterXpoint` and `GuidingCenter4dTokamakMediumCartesian`;
   and in the other six, the components of `ϑ` their `toroidal_momentum` does not read.
+
+### Changed
+
+- `docs/` and `scripts/` are ported. Twelve of the fourteen scripts read the injected namespace or a
+  removed params-free form, and are rewritten for the accessors; `study_invariant_conservation.jl`
+  and `study_volume_preservation.jl` needed no change. The model pages render the equations from the
+  family modules, where they now live, and the constructors from one equilibrium module each.
+- `src/gyro_kinetics_4d/irk_with_coordinate_transformation.jl` and
+  `src/utils/initial_conditions.jl` are now Unicode NFC-normalised. They stored `ṽ`, `Ṽ`, `Ỹ`, `â`
+  and `ĉ` as a base letter plus a combining mark, inherited from macOS rather than chosen. Nothing
+  about the compiled code changes — Julia's parser normalises identifiers to NFC — but a `grep`
+  pattern or an editor search typed in NFC now matches, where before it silently matched nothing.
+  `b̂` has no precomposed codepoint and is unchanged.
+
+  Both files are byte-equal to the NFC normalisation of their predecessor. One docstring changes
+  along with the identifiers: the field list of `IntegratorCacheFIRKwCT` names `ṽ`, which
+  recomposes with the field it documents. No other string literal is affected, and that docstring
+  is rendered rather than compared.
 - **Ten exports that named nothing are removed**: `SingularFieldCanonical.odeproblem`,
   `ThetaPinchCanonical.angular_momentum`, and `toroidal_momentum` / `angular_momentum` in the
   eight `PauliParticle3d` equilibrium modules. `Aqua.test_undefined_exports` now passes.
