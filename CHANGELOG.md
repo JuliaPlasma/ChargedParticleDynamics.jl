@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased] — targeting 0.5.1
+
+### New Features
+
+- **The 3D guiding centre has Poincaré-invariant problems.** The seven `GuidingCenter3d`
+  equilibria with a loop — `SymmetricField`, `ThetaPinchField`, `TokamakMediumCartesian`,
+  `TokamakMediumCylindrical`, `TokamakSmallCartesian`, `TokamakSmallCylindrical` and
+  `TokamakSmallToroidal` — export `loop_hodeproblem`, `loop_hodeproblem_canonical`,
+  `loop_hodeproblem_compact`, `poincare_invariant_1st` and `loop_ensemble`, and the six of them
+  with a surface (all but `ThetaPinchField`) the `surface_*` counterparts and
+  `poincare_invariant_2nd`. The ensembles lift each point `(x, u)` of `f_loop` or `f_surface` to
+  `(q, p)` through the module's `initial_conditions`, and the invariants are the canonical ones on
+  that six-dimensional phase space. On every one of these loops and surfaces they equal the
+  `GuidingCenter4d` invariants, sign included: the second invariant takes the sign convention of
+  the 4D model's `ω`, which is the negative of `PoincareInvariants.CanonicalSymplecticMatrix`.
+- **The Poincaré invariants of both guiding centre models are tested for conservation**, on every
+  loop and surface, in the new `test/poincare_invariants_tests.jl`. The tests integrate the whole
+  ensemble — the loop and surface tests in `guiding_center_4d_tests.jl` integrate only its
+  placeholder point — and bound the error at ten times its measured value.
+  `scripts/study_poincare_invariants.jl` measures those values, and the span over which each
+  invariant can be computed at all: the flow shears the loop or surface until the quadrature
+  fails, and more sample points only postpone that. At the default step of 500 this happens
+  between t ≈ 5500 and t ≈ 25000 in the cylindrical small tokamak of both models and in the 4D
+  cartesian one, well inside their default span of 5·10⁵; in the toroidal chart not before
+  t ≈ 4.3·10⁵.
+
 ## [0.5.0] - 2026-09-23
 
 `ElectromagneticFields` 0.9 replaces the SymEngine code generator, and the `@code` macros
