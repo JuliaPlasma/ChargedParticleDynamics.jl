@@ -18,10 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `QuadraticPotentials3d`, `SolovevSymmetricField`, `TokamakMediumCartesian`,
   `TokamakMediumCylindrical` and `TokamakSmallCartesian` (`hodeproblem`, `hodeproblem_canonical`,
   `hodeproblem_compact`); and `GyroKinetics4d.GuidingCenter4dSolovevIterXpoint` (`odeproblem`,
-  `sodeproblem`). Each now defines a `qᵢ` whose `μ` is that of its `default_parameters()`: the
-  deeply passing state for the Solov'ev and medium tokamak modules, as in the `GyroKinetics4d`
-  medium tokamaks; the one initial condition of `Dipole3d` and `QuadraticPotentials3d`; and the
-  state of `initial_conditions_default` for `GuidingCenter3d.TokamakSmallCartesian`.
+  `sodeproblem`). Each now defines a `qᵢ`, the state of an initial condition
+  whose `μ` is that of its `default_parameters()`: the deeply passing state for
+  the Solov'ev and medium tokamak modules, as in the `GyroKinetics4d` medium
+  tokamaks; the one initial condition of `Dipole3d` and `QuadraticPotentials3d`;
+  and the state of `initial_conditions_default` for `GuidingCenter3d.TokamakSmallCartesian`.
 - **The four Poincaré-invariant fixtures have no zero-argument point constructor.**
   `GuidingCenter3d.SymmetricField`, `GuidingCenter3d.ThetaPinchField`,
   `GuidingCenter4d.SymmetricField` and `GuidingCenter4d.ThetaPinchField` carry a loop or a surface
@@ -29,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `UndefVarError`; the presets files now define that method only where the module defines `qᵢ`,
   so the call is a `MethodError`. A structural test calls every zero-argument constructor of
   every equilibrium module, and asserts that these four have none.
+- **GuidingCenter4d constructors pass `copy(qᵢ)` instead of the module constant.** `odeproblem()`,
+  `iodeproblem()`, `iodeproblem_λ()`, `lodeproblem()`, `iodeproblem_dg()` and
+  `lodeproblem_formal_lagrangian()` now pass `copy(qᵢ)`; previously a mutation of the returned
+  problem's initial state — such as `prob.ics.q[1] = 99.0` — altered the module constant and so
+  every later default. The aliasing was present in 0.5.0 for the six modules with
+  `qᵢ`, and this fix covers all nine. `GuidingCenter3d` never aliased (`initial_conditions` slices);
+  `GyroKinetics4d` carries the same pattern and is not fixed here.
 
 ## [0.5.0] - 2026-09-23
 

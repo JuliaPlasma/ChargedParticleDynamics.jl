@@ -27,9 +27,10 @@ for problem in (:odeproblem, :iodeproblem, :iodeproblem_λ, :lodeproblem,
         $problem(ics::NamedTuple; kwargs...) = $problem(ics.q; parameters = ics.params, kwargs...)
     end
 
-    # No arguments: the module's own `qᵢ`. The Poincaré-invariant fixtures have a loop or a
-    # surface instead of a point, so they have no `qᵢ` and no zero-argument method.
+    # No arguments: a copy of the module's own `qᵢ`, which the problem would otherwise share. The
+    # Poincaré-invariant fixtures have a loop or a surface instead of a point, so they have no `qᵢ`
+    # and no zero-argument method.
     if isdefined(@__MODULE__, :qᵢ)
-        @eval $problem(; kwargs...) = $problem(qᵢ; kwargs...)
+        @eval $problem(; kwargs...) = $problem(copy(qᵢ); kwargs...)
     end
 end
