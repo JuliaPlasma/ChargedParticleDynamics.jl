@@ -59,6 +59,7 @@ The constraint pair [`hodeproblem`](@ref ChargedParticleDynamics.GuidingCenter3d
 default_constraints() = :g12
 
 include("guiding_center_3d_presets.jl")
+include("guiding_center_3d_loop.jl")
 include("guiding_center_3d_diagnostics.jl")
 
 end

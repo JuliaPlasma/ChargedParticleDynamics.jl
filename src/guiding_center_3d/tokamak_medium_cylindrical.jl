@@ -86,6 +86,8 @@ this equilibrium sits, so `(g³, g¹)` is singular there. `(g¹, g²)` divides b
 default_constraints() = :g12
 
 include("guiding_center_3d_presets.jl")
+include("guiding_center_3d_loop.jl")
+include("guiding_center_3d_surface.jl")
 
 # The canonical toroidal momentum is the covariant φ-component of the momentum. Since p = ϑ on the
 # constraint manifold this is simply p₃ — the previous R(t,q) * ϑ₃(t,q) both indexed q[4] of a

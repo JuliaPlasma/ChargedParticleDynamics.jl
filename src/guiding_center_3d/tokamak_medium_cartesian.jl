@@ -112,6 +112,8 @@ condition and it is the *orbit* that takes `b₁` and `b₂` through zero. See `
 default_constraints() = :g23
 
 include("guiding_center_3d_presets.jl")
+include("guiding_center_3d_loop.jl")
+include("guiding_center_3d_surface.jl")
 include("guiding_center_3d_diagnostics.jl")
 
 end

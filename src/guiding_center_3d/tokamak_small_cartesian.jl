@@ -100,6 +100,8 @@ component in this chart and the largest of the three.
 default_constraints() = :g23
 
 include("guiding_center_3d_presets.jl")
+include("guiding_center_3d_loop.jl")
+include("guiding_center_3d_surface.jl")
 
 # In cartesian coordinates the third coordinate is z, not an angle, so the toroidal momentum is the
 # generator of rotation about the z-axis, x p₂ - y p₁, rather than p₃.
