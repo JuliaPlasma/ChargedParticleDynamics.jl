@@ -104,8 +104,11 @@ end
     using ..PoincareInvariantsTests
 
     # (odeproblem with Gauss(2), iodeproblem with the projected VPRKGauss(2)), each over loop and
-    # surface. The variational formulation keeps the invariant far better in the cartesian charts,
-    # where Gauss(2) on the noncanonical ODE loses it at the order of the method.
+    # surface. The ODE is a noncanonical symplectic system whose structure Gauss(2) does not
+    # preserve, so it keeps the invariant only to the order of the method, most visibly in the
+    # cartesian charts. The unprojected VPRK is degenerate here and prone to instability; the
+    # symmetric projection makes it stable and keeps the invariant far better. Only the theta pinch
+    # runs it unprojected, where the projection has nothing to do; see below.
     bounds = (
         SymmetricField = (2E-14, 1E-14),
         ThetaPinchField = (1E-14, 1E-14),
