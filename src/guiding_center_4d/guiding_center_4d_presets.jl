@@ -1,7 +1,7 @@
 # The problem constructors of one equilibrium module. They forward to the family-level
 # constructors in `GuidingCenter4d`, with the module's own `qᵢ`, `default_parameters()` — which
 # carries its field — `DEFAULT_TIMESPAN` and `DEFAULT_TIMESTEP` as the defaults. Included into each
-# equilibrium module, after its `qᵢ`.
+# equilibrium module, after its `qᵢ` if it has one.
 
 import ..GuidingCenter4d
 using ..GuidingCenter4d: hamiltonian, u, ω, ϑ, ϑ₁, ϑ₂, ϑ₃, ϑ₄, dϑ, β₁, β₂, β₃, dH

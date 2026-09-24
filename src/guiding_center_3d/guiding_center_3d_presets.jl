@@ -1,7 +1,7 @@
 # The initial conditions and problem constructors of one equilibrium module. They forward to the
 # family-level functions in `GuidingCenter3d`, with the module's own `qᵢ`, `default_parameters()` —
 # which carries its field — `default_constraints()`, `DEFAULT_TIMESPAN` and `DEFAULT_TIMESTEP` as
-# the defaults. Included into each equilibrium module, after its `qᵢ`.
+# the defaults. Included into each equilibrium module, after its `qᵢ` if it has one.
 
 import ..GuidingCenter3d
 using ..GuidingCenter3d: hamiltonian, hamiltonian_canonical, g₁, g₂, g₃
