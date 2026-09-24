@@ -17,12 +17,14 @@
 #
 # Run with:  julia --project=test scripts/study_poincare_invariants.jl [horizons] [tests] 2>/dev/null
 #
-# `horizons` is section 1 and `tests` section 2; with no argument both run.
+# `horizons` is section 1 and `tests` section 2; with neither, both run. Name fixtures, for example
+# `SymmetricField`, to run only those.
 # The diverging members fill stderr with solver warnings; the table goes to stdout.
 #
 
 using ChargedParticleDynamics
 using GeometricIntegrators
+using GeometricIntegrators: MidpointExtrapolation
 using PoincareInvariants
 
 const G3 = ChargedParticleDynamics.GuidingCenter3d
@@ -40,8 +42,8 @@ const NSURFACE = (351, 861)
 # Integrate each member of the ensemble on its own, as `compute!` takes one trajectory per sample
 # point, and return the invariant at every time step. The 3D guiding centre is canonical, and its
 # invariants are taken on the stacked `(q, p)`; the 4D one reads `q` alone.
-function invariant(pinv, ensemble, method)
-    sols = [integrate(prob, method; OPTIONS...) for prob in ensemble]
+function invariant(pinv, ensemble, method; kwargs...)
+    sols = [integrate(prob, method; OPTIONS..., kwargs...) for prob in ensemble]
     nt = ntime(sols[begin])
     ts = [sols[begin].t[n] for n in 0:nt]
     point(s, n) = getdim(pinv) > length(s.q[n]) ? [s.q[n]; s.p[n]] : s.q[n]
@@ -73,9 +75,14 @@ function horizon(name, kind, prob, pinvs, ensemble, method)
     flush(stdout)
 end
 
-const FIXTURES = (:SymmetricField, :ThetaPinchField, :TokamakMediumCartesian,
+const ALL_FIXTURES = (:SymmetricField, :ThetaPinchField, :TokamakMediumCartesian,
     :TokamakMediumCylindrical, :TokamakSmallCartesian, :TokamakSmallCylindrical,
     :TokamakSmallToroidal)
+
+# the fixtures named on the command line, or all of them
+const FIXTURES = let named = filter(n -> string(n) in ARGS, ALL_FIXTURES)
+    isempty(named) ? ALL_FIXTURES : named
+end
 
 function guiding_centre_4d()
     println("4D guiding centre — ODEProblem, Gauss(2), over each module's default time span\n")
@@ -111,8 +118,8 @@ end
 const SMALL = (timestep = 50.0, timespan = (0.0, 5E3))
 
 const TEST_SETTINGS = (
-    SymmetricField = (G4 = NamedTuple(), G3 = NamedTuple()),
-    ThetaPinchField = (G4 = NamedTuple(), G3 = NamedTuple()),
+    SymmetricField = (G4 = (timespan = (0.0, 1E2),), G3 = (timespan = (0.0, 1E2),)),
+    ThetaPinchField = (G4 = (timespan = (0.0, 1E2),), G3 = (timespan = (0.0, 1E2),)),
     TokamakMediumCartesian = (G4 = (timespan = (0.0, 1E2),),
         G3 = (timespan = (0.0, 2.0),)),
     TokamakMediumCylindrical = (
@@ -121,8 +128,8 @@ const TEST_SETTINGS = (
     TokamakSmallCylindrical = (G4 = SMALL, G3 = SMALL),
     TokamakSmallToroidal = (G4 = SMALL, G3 = SMALL))
 
-function conservation(name, kind, formulation, pinv, ensemble, method)
-    t = @elapsed ts, I, nd = invariant(pinv, ensemble, method)
+function conservation(name, kind, formulation, pinv, ensemble, method; kwargs...)
+    t = @elapsed ts, I, nd = invariant(pinv, ensemble, method; kwargs...)
     scale = iszero(I[begin]) ? one(eltype(I)) : abs(I[begin])
     err = maximum(abs, I .- I[begin]) / scale
     println(rpad(name, 26), rpad(kind, 9), rpad(formulation, 24), "t ≤ ", rpad(ts[end], 8),
@@ -136,25 +143,29 @@ function test_settings()
     for name in FIXTURES
         M = getfield(G4, name)
         kw = TEST_SETTINGS[name].G4
-        # the theta pinch variational problem keeps the unprojected method; see its test block
-        vprk = name == :ThetaPinchField ? VPRKGauss(2) : SymmetricProjection(VPRKGauss(2))
-        for (formulation, loop, surface, method) in (
-            ("4D odeproblem", :loop_odeproblem, :surface_odeproblem, Gauss(2)),
-            ("4D iodeproblem", :loop_iodeproblem, :surface_iodeproblem, vprk))
+        # The theta pinch keeps the unprojected variational method and a one-entry initial guess,
+        # as in `test/poincare_invariants_tests.jl`: `p` is an exact invariant there.
+        θ = name == :ThetaPinchField
+        vprk = θ ? VPRKGauss(2) : SymmetricProjection(VPRKGauss(2))
+        ikw = θ ? (initialguess = MidpointExtrapolation(5),) : NamedTuple()
+        for (formulation, loop, surface, method, mkw) in (
+            (
+            "4D odeproblem", :loop_odeproblem, :surface_odeproblem, Gauss(2), NamedTuple()),
+            ("4D iodeproblem", :loop_iodeproblem, :surface_iodeproblem, vprk, ikw))
             p1 = M.poincare_invariant_1st(NLOOP[1])
             conservation(name, "loop", formulation, p1,
-                M.loop_ensemble(getfield(M, loop)(; kw...), p1), method)
+                M.loop_ensemble(getfield(M, loop)(; kw...), p1), method; mkw...)
             isdefined(M, surface) || continue
             p2 = M.poincare_invariant_2nd(NSURFACE[1])
             conservation(name, "surface", formulation, p2,
-                M.surface_ensemble(getfield(M, surface)(; kw...), p2), method)
+                M.surface_ensemble(getfield(M, surface)(; kw...), p2), method; mkw...)
         end
 
         M = getfield(G3, name)
         kw = TEST_SETTINGS[name].G3
         p1 = M.poincare_invariant_1st(NLOOP[1])
         conservation(name, "loop", "3D hodeproblem", p1,
-            M.loop_ensemble(M.loop_hodeproblem(; kw...), p1), PartitionedGauss(2))
+            M.loop_ensemble(M.loop_hodeproblem(; kw...), p1), PartitionedGauss(2); ikw...)
         isdefined(M, :surface_hodeproblem) || continue
         p2 = M.poincare_invariant_2nd(NSURFACE[1])
         conservation(name, "surface", "3D hodeproblem", p2,
@@ -162,8 +173,10 @@ function test_settings()
     end
 end
 
-if isempty(ARGS) || "horizons" in ARGS
+const SECTIONS = filter(in(("horizons", "tests")), ARGS)
+
+if isempty(SECTIONS) || "horizons" in SECTIONS
     guiding_centre_4d()
     guiding_centre_3d()
 end
-("tests" in ARGS || isempty(ARGS)) && test_settings()
+(isempty(SECTIONS) || "tests" in SECTIONS) && test_settings()

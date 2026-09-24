@@ -107,7 +107,7 @@ end
     # surface. The variational formulation keeps the invariant far better in the cartesian charts,
     # where Gauss(2) on the noncanonical ODE loses it at the order of the method.
     bounds = (
-        SymmetricField = (1E-12, 1E-12),
+        SymmetricField = (2E-14, 1E-14),
         ThetaPinchField = (1E-14, 1E-14),
         TokamakMediumCartesian = (5E-4, 2E-8),
         TokamakMediumCylindrical = (1E-7, 1E-11),
@@ -149,11 +149,11 @@ end
     using ..PoincareInvariantsTests
 
     bounds = (
-        SymmetricField = 1E-9,
+        SymmetricField = 5E-10,
         ThetaPinchField = 1E-14,
         TokamakMediumCartesian = 5E-10,
         TokamakMediumCylindrical = 1E-12,
-        TokamakSmallCartesian = 1E-12,
+        TokamakSmallCartesian = 3E-13,
         TokamakSmallCylindrical = 5E-12,
         TokamakSmallToroidal = 5E-12)
 
