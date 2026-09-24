@@ -20,6 +20,8 @@ const DEFAULT_TIMESPAN = (0.0, 5E2)
 # const DEFAULT_TIMESTEP = 0.35
 # const DEFAULT_TIMESPAN = (0.0, 12250.)
 
+const qᵢ = [0.3, 0.2, -1.4, 0.3]
+
 function initial_conditions_quadratic()
     merge(initial_conditions(0.0, [0.3, 0.2, -1.4, 0.3]), (params = (
         field = FIELD, μ = 2.5E-3),))

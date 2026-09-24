@@ -1,7 +1,7 @@
 # The problem constructors of one equilibrium module. They forward to the family-level
 # constructors in `GuidingCenter4d`, with the module's own `qᵢ`, `default_parameters()` — which
 # carries its field — `DEFAULT_TIMESPAN` and `DEFAULT_TIMESTEP` as the defaults. Included into each
-# equilibrium module.
+# equilibrium module, after its `qᵢ`.
 
 import ..GuidingCenter4d
 using ..GuidingCenter4d: hamiltonian, u, ω, ϑ, ϑ₁, ϑ₂, ϑ₃, ϑ₄, dϑ, β₁, β₂, β₃, dH
@@ -15,7 +15,7 @@ for problem in (:odeproblem, :iodeproblem, :iodeproblem_λ, :lodeproblem,
     :iodeproblem_dg, :lodeproblem_formal_lagrangian)
     @eval begin
         function $problem(
-                q₀ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
+                q₀; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
                 parameters = default_parameters(), kwargs...)
             GuidingCenter4d.$problem(q₀; timespan = timespan, timestep = timestep,
                 parameters = parameters, kwargs...)
@@ -25,5 +25,11 @@ for problem in (:odeproblem, :iodeproblem, :iodeproblem_λ, :lodeproblem,
         # named tuple directly. The parameters travel with the initial condition because `μ`
         # differs between them.
         $problem(ics::NamedTuple; kwargs...) = $problem(ics.q; parameters = ics.params, kwargs...)
+    end
+
+    # No arguments: the module's own `qᵢ`. The Poincaré-invariant fixtures have a loop or a
+    # surface instead of a point, so they have no `qᵢ` and no zero-argument method.
+    if isdefined(@__MODULE__, :qᵢ)
+        @eval $problem(; kwargs...) = $problem(qᵢ; kwargs...)
     end
 end

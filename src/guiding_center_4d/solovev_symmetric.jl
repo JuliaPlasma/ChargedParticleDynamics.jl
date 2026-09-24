@@ -16,6 +16,9 @@ const FIELD = FieldFunctions(SolovevSymmetricEquilibrium(2.0, 5.0, 1.0, 1.0))
 const DEFAULT_TIMESTEP = 1E0
 const DEFAULT_TIMESPAN = (0.0, 1E3)
 
+# the deeply passing initial condition
+const qᵢ = [2.5, 0.0, 0.0, 5E-1]
+
 function initial_conditions_barely_passing()
     (q = [2.5, 0.0, 0.0, 3.425E-1], params = (field = FIELD, μ = 1E-2))
 end # Δt=2.5, nt=50

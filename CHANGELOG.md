@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased] — targeting 0.5.1
+
+### Bug Fixes
+
+- **The zero-argument problem constructors build in ten more equilibrium modules.** The presets
+  files default the initial state to the module's `qᵢ`, which these modules did not define, so a
+  call with no argument raised `UndefVarError: qᵢ not defined`. They are
+  `GuidingCenter4d.SolovevSymmetricField`, `TokamakMediumCartesian` and
+  `TokamakMediumCylindrical` (all six constructors); `GuidingCenter3d.Dipole3d`,
+  `QuadraticPotentials3d`, `SolovevSymmetricField`, `TokamakMediumCartesian`,
+  `TokamakMediumCylindrical` and `TokamakSmallCartesian` (`hodeproblem`, `hodeproblem_canonical`,
+  `hodeproblem_compact`); and `GyroKinetics4d.GuidingCenter4dSolovevIterXpoint` (`odeproblem`,
+  `sodeproblem`). Each now defines a `qᵢ` whose `μ` is that of its `default_parameters()`: the
+  deeply passing state for the Solov'ev and medium tokamak modules, as in the `GyroKinetics4d`
+  medium tokamaks; the one initial condition of `Dipole3d` and `QuadraticPotentials3d`; and the
+  state of `initial_conditions_default` for `GuidingCenter3d.TokamakSmallCartesian`.
+- **The four Poincaré-invariant fixtures have no zero-argument point constructor.**
+  `GuidingCenter3d.SymmetricField`, `GuidingCenter3d.ThetaPinchField`,
+  `GuidingCenter4d.SymmetricField` and `GuidingCenter4d.ThetaPinchField` carry a loop or a surface
+  and no point initial condition. Their zero-argument constructors only ever raised
+  `UndefVarError`; the presets files now define that method only where the module defines `qᵢ`,
+  so the call is a `MethodError`. A structural test calls every zero-argument constructor of
+  every equilibrium module, and asserts that these four have none.
+
 ## [0.5.0] - 2026-09-23
 
 `ElectromagneticFields` 0.9 replaces the SymEngine code generator, and the `@code` macros

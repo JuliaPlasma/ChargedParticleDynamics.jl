@@ -30,6 +30,8 @@ const FIELD = FieldFunctions(DipoleField())
 const DEFAULT_TIMESTEP = 0.1
 const DEFAULT_TIMESPAN = (0.0, 1E2)
 
+const qᵢ = [1.0, 2.0, 1.0, 0.01]
+
 function initial_conditions_dipole()
     merge(initial_conditions(0.0, [1.0, 2.0, 1.0, 0.01]), (params = (
         field = FIELD, μ = 1E-2),))
