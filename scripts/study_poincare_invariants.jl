@@ -71,7 +71,7 @@ function horizon(name, kind, prob, pinvs, ensemble, method)
         "span ", rpad(ts[last], 10), n === nothing ? "(whole run)" : "           ",
         iszero(I₊[begin]) ? "  abs." : "  rel.", " error before it ", round(err; sigdigits = 2),
         "   I(0) = ", I₊[begin],
-        nd > 0 ? "   $nd of $(length(pinvs[2].points[:, 1])) members diverged" : "")
+        nd > 0 ? "   $nd of $(getpointnum(pinvs[2])) members diverged" : "")
     flush(stdout)
 end
 

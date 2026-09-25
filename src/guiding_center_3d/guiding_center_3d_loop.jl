@@ -1,5 +1,5 @@
 
-using GeometricEquations: timespan
+using GeometricEquations: parameters, timespan
 using PoincareInvariants
 
 export loop_hodeproblem,
@@ -58,6 +58,10 @@ the result with `GeometricIntegrators.integrate` and pass the solution to
 """
 function loop_ensemble(prob, pinv)
     t₀ = timespan(prob)[begin]
-    PIEnsembleProblem(prob, pinv, s -> (
-        ics = initial_conditions(t₀, f_loop(s)); [ics.q; ics.p]))
+    params = parameters(prob)
+    function lift(s)
+        ics = GuidingCenter3d.initial_conditions(t₀, f_loop(s), params)
+        [ics.q; ics.p]
+    end
+    PIEnsembleProblem(prob, pinv, lift)
 end

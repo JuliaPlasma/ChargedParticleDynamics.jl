@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `loop_hodeproblem_compact`, `poincare_invariant_1st` and `loop_ensemble`, and the six of them
   with a surface (all but `ThetaPinchField`) the `surface_*` counterparts and
   `poincare_invariant_2nd`. The ensembles lift each point `(x, u)` of `f_loop` or `f_surface` to
-  `(q, p)` through the module's `initial_conditions`, and the invariants are the canonical ones on
+  `(q, p)` with the problem's parameters, and the invariants are the canonical ones on
   that six-dimensional phase space. On every one of these loops and surfaces they equal the
   `GuidingCenter4d` invariants, sign included: the second invariant takes the sign convention of
   the 4D model's `ω`, which is the negative of `PoincareInvariants.CanonicalSymplecticMatrix`.

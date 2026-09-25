@@ -1,5 +1,5 @@
 
-using GeometricEquations: timespan
+using GeometricEquations: parameters, timespan
 using PoincareInvariants
 
 export surface_hodeproblem,
@@ -61,6 +61,10 @@ the result with `GeometricIntegrators.integrate` and pass the solution to
 """
 function surface_ensemble(prob, pinv)
     t₀ = timespan(prob)[begin]
-    PIEnsembleProblem(prob, pinv,
-        (s, t) -> (ics = initial_conditions(t₀, f_surface(s, t)); [ics.q; ics.p]))
+    params = parameters(prob)
+    function lift(s, t)
+        ics = GuidingCenter3d.initial_conditions(t₀, f_surface(s, t), params)
+        [ics.q; ics.p]
+    end
+    PIEnsembleProblem(prob, pinv, lift)
 end

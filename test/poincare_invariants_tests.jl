@@ -64,7 +64,7 @@ end
 @safetestset "Poincaré invariants: the 3D and 4D guiding centre agree on every loop and surface                   " begin
     using ChargedParticleDynamics: GuidingCenter3d, GuidingCenter4d
     using GeometricIntegrators: parameters
-    using PoincareInvariants: compute!
+    using PoincareInvariants: compute!, getdim
     using Test
     using ..PoincareInvariantsTests
 
@@ -72,7 +72,8 @@ end
     # one-form ϑ(x, u) along the loop, the 3D one lifts every point to (q, p) and integrates the
     # canonical p·dq — so this is where a wrong lift, a wrong ϑ or a wrong sign shows.
     at0(pinv, prob, ensemble) = compute!(pinv,
-        [[length(p.ics.q) < 4 ? [p.ics.q; p.ics.p] : p.ics.q] for p in ensemble(prob, pinv)],
+        [[getdim(pinv) > length(p.ics.q) ? [p.ics.q; p.ics.p] : p.ics.q]
+         for p in ensemble(prob, pinv)],
         [0.0], parameters(prob))[1]
 
     for name in keys(TEST_SETTINGS)
@@ -83,8 +84,8 @@ end
         I₄ = at0(M₄.poincare_invariant_1st(NLOOP), M₄.loop_odeproblem(), M₄.loop_ensemble)
         @test I₃≈I₄ rtol=1E-12 atol=1E-15
 
+        @test isdefined(M₃, :surface_hodeproblem) == isdefined(M₄, :surface_odeproblem)
         isdefined(M₄, :surface_odeproblem) || continue
-        @test isdefined(M₃, :surface_hodeproblem)
         J₃ = at0(M₃.poincare_invariant_2nd(NSURFACE), M₃.surface_hodeproblem(),
             M₃.surface_ensemble)
         J₄ = at0(M₄.poincare_invariant_2nd(NSURFACE), M₄.surface_odeproblem(),

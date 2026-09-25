@@ -219,10 +219,12 @@ ChargedParticleDynamics.GuidingCenter3d
 The equations are written once, in `GuidingCenter3d`, and read the field from `params.field`: the
 Hamilton-Dirac equations, the constraints, the compact form, the canonicalised system and the
 diagnostics. They are documented below. Each equilibrium is its own module, holding its field as
-`FIELD`, its initial conditions and problem constructors that default to them. The constructors
-are documented once, under `TokamakSmallCylindrical`, and hold verbatim for all thirteen. What
-differs between the modules is the chart, the equilibrium parameters, the initial conditions and the
-constraint pair they default to, which is what these docstrings record:
+`FIELD`, its initial conditions and problem constructors that default to them, and it `include`s
+`guiding_center_3d_loop.jl` and `guiding_center_3d_surface.jl` where it defines a Poincaré loop or
+surface. The constructors are documented once, under `TokamakSmallCylindrical`, and hold verbatim
+for every module that has them. What differs between the modules is the chart, the equilibrium
+parameters, the initial conditions and the constraint pair they default to, which is what these
+docstrings record:
 
 ```@docs
 ChargedParticleDynamics.GuidingCenter3d.TokamakSmallCylindrical
