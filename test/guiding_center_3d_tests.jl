@@ -305,12 +305,12 @@ GuidingCenter3dTests.@skip_on_julia_1_10 @safetestset "Guiding Centre Dynamics i
 
 end
 
-# `SymmetricField` and `ThetaPinchField` have no integration test block. Both are Poincaré-invariant
-# fixtures: they ship `f_loop`, and `SymmetricField` also `f_surface`, rather than
-# `initial_conditions_*`, and `GuidingCenter3d` defines no loop or surface problem to integrate them
-# with. Their constraints are checked by the constraint derivative tests in
-# `test/structure_tests.jl`, at a point on each loop. Note that `b = e₃` in both, so `(g¹, g²)` is
-# the only pair either of them can use.
+# `SymmetricField` and `ThetaPinchField` have no integration test block here. Both are
+# Poincaré-invariant fixtures: they ship `f_loop`, and `SymmetricField` also `f_surface`, rather
+# than `initial_conditions_*`. Their loop and surface problems are integrated, and their invariants
+# checked, in `test/poincare_invariants_tests.jl`; their constraints are checked by the constraint
+# derivative tests in `test/structure_tests.jl`, at a point on each loop. Note that `b = e₃` in
+# both, so `(g¹, g²)` is the only pair either of them can use.
 
 @safetestset "Guiding Centre Dynamics in 3D: the constraint formulations agree                                    " begin
     using ChargedParticleDynamics.GuidingCenter3d

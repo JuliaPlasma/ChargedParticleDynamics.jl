@@ -148,7 +148,9 @@ constraint pair and free of every `bₘ` denominator.
 Five of the seven commented-out 3D test blocks are re-enabled. The two that are not —
 `SymmetricField` and `ThetaPinchField` — never had integration content: they called
 `guiding_center_3d_loop_ode` and `guiding_center_3d_surface_ode`, which this package no longer
-defines. See the note where those blocks used to be.
+defines. See the note where those blocks used to be. Their loop and surface problems are
+`loop_hodeproblem` and `surface_hodeproblem` and their siblings, and their invariants are tested in
+`test/poincare_invariants_tests.jl`.
 
 Two things this left open, neither of them about the constraint pair:
 
@@ -415,9 +417,10 @@ here rather than lost in a pull request thread.
 
 * **Integration coverage of `GuidingCenter3d` was four equilibria of eleven** — the remaining seven
   were blocked by the `b₁ = 0` singularity of the one implemented constraint pair rather than by
-  anything the audit did. Selecting the pair per equilibrium lifted that: nine of the eleven now
-  integrate, and the two that do not (`SymmetricField`, `ThetaPinchField`) ship Poincaré-invariant
-  loops rather than initial conditions and never had integration tests to begin with.
+  anything the audit did. Selecting the pair per equilibrium lifted that: nine of the eleven
+  integrate from their point initial conditions, and the other two (`SymmetricField`,
+  `ThetaPinchField`) ship Poincaré-invariant loops rather than initial conditions, and integrate
+  through their loop and surface problems in `test/poincare_invariants_tests.jl`.
 * **The SciML reformat landed in the same commits as the semantic changes**, which makes several
   equilibrium modules read as whole-file rewrites; `git diff -w` is the way to review them. Worth
   keeping formatting sweeps to their own commit next time, now that `.JuliaFormatter.toml` exists

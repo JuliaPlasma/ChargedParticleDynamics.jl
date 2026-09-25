@@ -143,9 +143,11 @@ toroidal direction is split across ``b_{1}`` and ``b_{2}`` instead of sitting in
 
 **All three pairs are now implemented and selectable** through the `constraints` keyword, and each
 equilibrium declares a `default_constraints` that is regular at its own initial conditions. Nine of
-the eleven equilibria integrate as a result, and the two that do not — `SymmetricField` and
-`ThetaPinchField` — ship Poincaré-invariant loops rather than point initial conditions and never had
-integration tests. `SolovevSymmetricField` is the case that made all three necessary rather than two:
+the eleven equilibria integrate from their point initial conditions as a result. The other two,
+`SymmetricField` and `ThetaPinchField`, ship Poincaré-invariant loops rather than point initial
+conditions; they integrate through their `loop_hodeproblem` and `surface_hodeproblem`, whose
+invariants `test/poincare_invariants_tests.jl` checks. `SolovevSymmetricField` is the case that
+made all three necessary rather than two:
 ``b = e_{2}`` there, so ``b_{1}`` and ``b_{3}`` vanish together and only ``(g^{2}, g^{3})`` survives.
 
 Two residual limitations are worth knowing about, neither of them removable by choosing a pair.

@@ -104,6 +104,8 @@ only regular pair.
 default_constraints() = :g12
 
 include("guiding_center_3d_presets.jl")
+include("guiding_center_3d_loop.jl")
+include("guiding_center_3d_surface.jl")
 include("guiding_center_3d_diagnostics.jl")
 
 end
