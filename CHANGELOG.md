@@ -30,13 +30,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `UndefVarError`; the presets files now define that method only where the module defines `qᵢ`,
   so the call is a `MethodError`. A structural test calls every zero-argument constructor of
   every equilibrium module, and asserts that these four have none.
-- **GuidingCenter4d constructors pass `copy(qᵢ)` instead of the module constant.** `odeproblem()`,
-  `iodeproblem()`, `iodeproblem_λ()`, `lodeproblem()`, `iodeproblem_dg()` and
-  `lodeproblem_formal_lagrangian()` now pass `copy(qᵢ)`; previously a mutation of the returned
-  problem's initial state — such as `prob.ics.q[1] = 99.0` — altered the module constant and so
-  every later default. The aliasing was present in 0.5.0 for the six modules with
-  `qᵢ`, and this fix covers all nine. `GuidingCenter3d` never aliased (`initial_conditions` slices);
-  `GyroKinetics4d` carries the same pattern and is not fixed here.
+- **GuidingCenter4d and GyroKinetics4d constructors pass `copy(qᵢ)` instead of the module
+  constant.** In `GuidingCenter4d`, `odeproblem()`, `iodeproblem()`, `iodeproblem_λ()`,
+  `lodeproblem()`, `iodeproblem_dg()` and `lodeproblem_formal_lagrangian()` now pass `copy(qᵢ)`;
+  in `GyroKinetics4d`, `odeproblem()` and `sodeproblem()` do. Previously a mutation of the
+  returned problem's initial state — such as `prob.ics.q[1] = 99.0` — altered the module
+  constant and so every later default. The aliasing was present in 0.5.0 in every
+  `GuidingCenter4d` and `GyroKinetics4d` module with a `qᵢ`, and this fix covers all of them.
+  `GuidingCenter3d` never aliased (`initial_conditions` slices).
 
 ## [0.5.0] - 2026-09-23
 
