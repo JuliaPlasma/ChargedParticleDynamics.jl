@@ -36,6 +36,9 @@ const DEFAULT_TIMESPAN = (0.0, 1.0)
 const x₀ = from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])
 const μ₀ = 1E-2
 
+# the deeply passing initial condition, at which `default_parameters` evaluates `ω₀`
+const qᵢ = [x₀..., 5.0E-1]
+
 export default_parameters
 
 """

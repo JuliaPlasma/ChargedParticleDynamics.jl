@@ -1,7 +1,7 @@
 # The initial conditions and problem constructors of one equilibrium module. They forward to the
 # family-level functions in `GuidingCenter3d`, with the module's own `qᵢ`, `default_parameters()` —
 # which carries its field — `default_constraints()`, `DEFAULT_TIMESPAN` and `DEFAULT_TIMESTEP` as
-# the defaults. Included into each equilibrium module.
+# the defaults. Included into each equilibrium module, after its `qᵢ` if it has one.
 
 import ..GuidingCenter3d
 using ..GuidingCenter3d: hamiltonian, hamiltonian_canonical, g₁, g₂, g₃
@@ -29,7 +29,7 @@ for problem in (:hodeproblem, :hodeproblem_canonical, :hodeproblem_compact)
                 parameters = parameters, constraints = constraints, kwargs...)
         end
 
-        function $problem(x₀::AbstractVector = qᵢ; timespan = DEFAULT_TIMESPAN,
+        function $problem(x₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
                 timestep = DEFAULT_TIMESTEP, parameters = default_parameters(),
                 constraints = $constraints, kwargs...)
             GuidingCenter3d.$problem(x₀; timespan = timespan, timestep = timestep,
@@ -40,5 +40,11 @@ for problem in (:hodeproblem, :hodeproblem_canonical, :hodeproblem_compact)
         function $problem(ics::NamedTuple; kwargs...)
             $problem(ics.q, ics.p; parameters = ics.params, kwargs...)
         end
+    end
+
+    # No arguments: the module's own `qᵢ`. The Poincaré-invariant fixtures have a loop or a
+    # surface instead of a point, so they have no `qᵢ` and no zero-argument method.
+    if isdefined(@__MODULE__, :qᵢ)
+        @eval $problem(; kwargs...) = $problem(qᵢ; kwargs...)
     end
 end

@@ -15,7 +15,7 @@ export odeproblem, sodeproblem
 for problem in (:odeproblem, :sodeproblem)
     @eval begin
         function $problem(
-                q₀ = qᵢ; timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
+                q₀ = copy(qᵢ); timespan = DEFAULT_TIMESPAN, timestep = DEFAULT_TIMESTEP,
                 parameters = default_parameters(), kwargs...)
             GyroKinetics4d.$problem(q₀; timespan = timespan, timestep = timestep,
                 parameters = parameters, kwargs...)
