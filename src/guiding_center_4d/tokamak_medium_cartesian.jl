@@ -15,6 +15,9 @@ const FIELD = FieldFunctions(AxisymmetricTokamakCartesianEquilibrium(2.0, 5.0, 2
 const DEFAULT_TIMESTEP = 1.0
 const DEFAULT_TIMESPAN = (0.0, 1000.0)
 
+# the deeply passing initial condition, as in this equilibrium's `GyroKinetics4d` module
+const qᵢ = [2.5, 0.0, 0.0, 5E-1]
+
 function initial_conditions_barely_passing()
     (q = [2.5, 0.0, 0.0, 3.425E-1], params = (field = FIELD, μ = 1E-2))
 end # Δt=2.5, nt=50

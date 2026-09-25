@@ -32,6 +32,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cartesian one, well inside their default span of 5·10⁵; in the toroidal chart not before
   t ≈ 4.3·10⁵.
 
+### Bug Fixes
+
+- **The zero-argument problem constructors build in ten more equilibrium modules.** The presets
+  files default the initial state to the module's `qᵢ`, which these modules did not define, so a
+  call with no argument raised `UndefVarError: qᵢ not defined`. They are
+  `GuidingCenter4d.SolovevSymmetricField`, `TokamakMediumCartesian` and
+  `TokamakMediumCylindrical` (all six constructors); `GuidingCenter3d.Dipole3d`,
+  `QuadraticPotentials3d`, `SolovevSymmetricField`, `TokamakMediumCartesian`,
+  `TokamakMediumCylindrical` and `TokamakSmallCartesian` (`hodeproblem`, `hodeproblem_canonical`,
+  `hodeproblem_compact`); and `GyroKinetics4d.GuidingCenter4dSolovevIterXpoint` (`odeproblem`,
+  `sodeproblem`). Each now defines a `qᵢ`, the state of an initial condition
+  whose `μ` is that of its `default_parameters()`: the deeply passing state for
+  the Solov'ev and medium tokamak modules, as in the `GyroKinetics4d` medium
+  tokamaks; the one initial condition of `Dipole3d` and `QuadraticPotentials3d`;
+  and the state of `initial_conditions_default` for `GuidingCenter3d.TokamakSmallCartesian`.
+- **The four Poincaré-invariant fixtures have no zero-argument point constructor.**
+  `GuidingCenter3d.SymmetricField`, `GuidingCenter3d.ThetaPinchField`,
+  `GuidingCenter4d.SymmetricField` and `GuidingCenter4d.ThetaPinchField` carry a loop or a surface
+  and no point initial condition. Their zero-argument constructors only ever raised
+  `UndefVarError`; the presets files now define that method only where the module defines `qᵢ`,
+  so the call is a `MethodError`. A structural test calls every zero-argument constructor of
+  every equilibrium module, and asserts that these four have none.
+- **GuidingCenter4d and GyroKinetics4d constructors pass `copy(qᵢ)` instead of the module
+  constant.** In `GuidingCenter4d`, `odeproblem()`, `iodeproblem()`, `iodeproblem_λ()`,
+  `lodeproblem()`, `iodeproblem_dg()` and `lodeproblem_formal_lagrangian()` now pass `copy(qᵢ)`;
+  in `GyroKinetics4d`, `odeproblem()` and `sodeproblem()` do. Previously a mutation of the
+  returned problem's initial state — such as `prob.ics.q[1] = 99.0` — altered the module
+  constant and so every later default. The aliasing was present in 0.5.0 in every
+  `GuidingCenter4d` and `GyroKinetics4d` module with a `qᵢ`, and this fix covers all of them.
+  `GuidingCenter3d` never aliased (`initial_conditions` slices).
+
 ## [0.5.0] - 2026-09-23
 
 `ElectromagneticFields` 0.9 replaces the SymEngine code generator, and the `@code` macros

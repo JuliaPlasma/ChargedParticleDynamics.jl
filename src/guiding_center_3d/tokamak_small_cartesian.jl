@@ -25,6 +25,9 @@ const DEFAULT_TIMESPAN = (0.0, 1E2)
 # const DEFAULT_TIMESTEP = 500.0
 # const DEFAULT_TIMESPAN = (0.0, 5E6)
 
+# the state of `initial_conditions_default`, whose `μ` is that of `default_parameters`
+const qᵢ = [1.05, 0.0, -0.005, 0.000045]
+
 function initial_conditions_default()
     merge(initial_conditions(0, [1.05, 0.0, -0.005, 0.000045]), (params = (
         field = FIELD, μ = 3.2e-7),))

@@ -148,6 +148,42 @@ end
     @test n > 80
 end
 
+@safetestset "Every zero-argument problem constructor builds, or does not exist                                   " begin
+    using ..StructureTestUtils
+    using Test
+
+    ctors = (:odeproblem, :sodeproblem, :iodeproblem, :iodeproblem_λ, :lodeproblem,
+        :podeproblem, :iodeproblem_dg, :lodeproblem_formal_lagrangian,
+        :hodeproblem, :hodeproblem_canonical, :hodeproblem_compact)
+
+    # The Poincaré-invariant fixtures. They have a loop or a surface and no point to start from, so
+    # they define no `qᵢ` and no zero-argument constructor.
+    fixtures = Set([
+        (:GuidingCenter3d, :SymmetricField), (:GuidingCenter3d, :ThetaPinchField),
+        (:GuidingCenter4d, :SymmetricField), (:GuidingCenter4d, :ThetaPinchField)])
+
+    # The Boris splitting refuses a curvilinear chart; see `Noncanonical.sodeproblem`.
+    refused = Set([(:ChargedParticle3d, :TokamakSmallNoncanonical, :sodeproblem)])
+
+    n = 0
+    eachmodel() do fam, mname, M
+        @test isdefined(M, :qᵢ) == ((fam, mname) ∉ fixtures)
+        for c in ctors
+            isdefined(M, c) || continue
+            f = getfield(M, c)
+            if (fam, mname) in fixtures
+                @test !hasmethod(f, Tuple{})
+            elseif (fam, mname, c) in refused
+                @test_throws ArgumentError f()
+            else
+                @test (f(); true)
+            end
+            n += 1
+        end
+    end
+    @test n > 150
+end
+
 @safetestset "Noncanonical charged particle: constructors build and the splitting is consistent                   " begin
     using ChargedParticleDynamics.ChargedParticle3d
     using GeometricIntegrators

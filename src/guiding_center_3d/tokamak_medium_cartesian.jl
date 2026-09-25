@@ -24,6 +24,9 @@ const FIELD = FieldFunctions(AxisymmetricTokamakCartesianEquilibrium(2.0, 5.0, 2
 const DEFAULT_TIMESTEP = 0.1
 const DEFAULT_TIMESPAN = (0.0, 1E2)
 
+# the deeply passing initial condition, as in this equilibrium's `GyroKinetics4d` module
+const qᵢ = [2.5, 0.0, 0.0, 5E-1]
+
 # `y = 0`, matching this equilibrium's `GuidingCenter4d` counterpart and every other module in the
 # package. This read `y = 0.1` while the module defaulted to `:g31`, and had to: in a cartesian chart
 # `B_x` vanishes on `y = z = 0`, so `b₁ = 0` exactly here and the `(g³, g¹)` pair — which divides by it

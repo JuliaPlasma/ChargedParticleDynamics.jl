@@ -16,6 +16,9 @@ const FIELD = FieldFunctions(AxisymmetricTokamakCylindricalEquilibrium(2.0, 5.0,
 const DEFAULT_TIMESTEP = 0.1
 const DEFAULT_TIMESPAN = (0.0, 1E2)
 
+# the deeply passing initial condition, as in this equilibrium's `GyroKinetics4d` module
+const qᵢ = [from_cartesian(FIELD, 0, [2.5, 0.0, 0.0])..., 5E-1]
+
 # These read `[2.5, 0.1, 0.0]` until the families were aligned, matching neither this equilibrium's
 # `GuidingCenter4d` module nor its own `Cartesian` chart's reason for the offset. In a cylindrical
 # chart a cartesian `y` displacement is very nearly a toroidal rotation — it leaves `Z = 0` and so
