@@ -12,6 +12,11 @@
 #
 
 using SafeTestsets
+using Test
+
+include("../helpers/quiet_solver_warnings.jl")
+quiet_solver_warnings!()
+current_test_file!("integration/model_agreement.jl")
 
 module ModelAgreementUtils
 
@@ -85,7 +90,7 @@ end
     # All three offsets are gone. `TokamakMediumCartesian`'s cost the most to remove and is not shared
     # with the Pauli family: `y = 0` puts it on the `b₁ = b_x = 0` midplane, where `:g31` is singular,
     # so its `default_constraints` moved to `:g23` — the better conditioned pair in any case — and its
-    # `hodeproblem_canonical` now needs a tenth of the step. See `guiding_center_3d_tests.jl`.
+    # `hodeproblem_canonical` now needs a tenth of the step. See `GuidingCenter3d.jl`.
     #
     # Guarded against becoming vacuous: the loops below skip an equilibrium that no longer declares a
     # condition in all three families, so an empty module list would pass silently.
@@ -211,4 +216,20 @@ end
             @test reldiff(drifting, ref) < 1E-3
         end
     end
+end
+
+# This file is expected to be silent, and a nonlinear-solver warning from it is a regression — a
+# tolerance that has slipped below a residual floor, or a time step at which the integrators stop
+# converging. See the header of `helpers/quiet_solver_warnings.jl` for why this is assertable at
+# all, and for what keeps the count at zero. The count is reported *before* asserting, because a
+# failing `@testset` throws at its end.
+suppressed_warning_count() > 0 &&
+    @info "Suppressed $(suppressed_warning_count()) nonlinear-solver warnings " *
+          "(see test/helpers/quiet_solver_warnings.jl)" suppressed_warning_counts()
+
+# Per file, and then over everything: anything counted before `current_test_file!` is filed under
+# `<startup>`, which the first test cannot see.
+@testset "Nonlinear solver stays quiet" begin
+    @test all(iszero, values(suppressed_warning_counts()))
+    @test suppressed_warning_count() == 0
 end

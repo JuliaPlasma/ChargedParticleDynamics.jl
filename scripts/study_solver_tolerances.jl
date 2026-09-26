@@ -28,7 +28,7 @@
 # Section 3 measures the per-step cost of each model/formulation/integrator once the tolerances are
 # sound, which shows that the two slowest 3D blocks in CI were never an ITER effect at all.
 #
-# See the comment on `options` in `test/guiding_center_3d_tests.jl`.
+# See the comment on `options` in `test/GuidingCenter3d.jl`.
 #
 # Run with:  julia --project=scripts scripts/study_solver_tolerances.jl
 #
@@ -58,7 +58,7 @@ mean(x) = isempty(x) ? 0.0 : sum(x) / length(x)
 # (`SimpleSolvers.status`, `SimpleSolvers.isstalled`), which is deliberately *not* exported and needs
 # the solver to be driven a step at a time rather than through `integrate`.
 #
-# This is not why the test suite has `test/quiet_solver_warnings.jl`: that exists for the one block
+# This is not why the test suite has `test/helpers/quiet_solver_warnings.jl`: that exists for the one block
 # whose solves genuinely do not converge. See its header.
 # ---------------------------------------------------------------------------------------------
 

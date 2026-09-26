@@ -1,10 +1,10 @@
 #
 # Count the nonlinear-solver warnings the test suite provokes, per test file, and keep them out of
-# the log. There should be none, and `runtests.jl` asserts it.
+# the log. There should be none, and each test file asserts it at its end.
 #
 # `SimpleSolvers` warns when a solve reaches `warn_iterations`, and once per line search that cannot
 # find a step satisfying the sufficient-decrease condition. Both are dropped here and counted per
-# test file; `runtests.jl` then *asserts* that the count is zero for every file. The suppression is
+# test file; each test file then *asserts* that its count is zero. The suppression is
 # what keeps a regression from flooding the log on its way to failing that assertion.
 #
 # That assertion is the point, and it rests on `SimpleSolvers` 0.10: a converging solve is silent,
@@ -24,7 +24,7 @@
 # `GeometricIntegratorsBase` scales its default tolerance with the stage system,
 # `f_abstol = max(8, solversize(method, problem)) * eps(datatype(problem))`. That is what keeps the
 # calls which deliberately pass no options at all — `integrate(prob, Gauss(2))` in
-# `structure_tests.jl` and the three in `plots_tests.jl` — quiet while still exercising the library
+# `integration/structure.jl` and the three in `Plots.jl` — quiet while still exercising the library
 # defaults.
 #
 # Every equilibrium declares a step at which its own model integrates. Where one does not, the
@@ -35,11 +35,15 @@
 # The 4D variational problems are integrated with `SymmetricProjection(VPRKGauss(2))`. Plain
 # `VPRKGauss(2)` does not control the parasitic mode of the degenerate discretisation, and a solve
 # asked to continue a trajectory that has left the device caps rather than converges. See
-# `guiding_center_4d_tests.jl` and `docs/src/findings.md`.
+# `GuidingCenter4d.jl` and `docs/src/findings.md`.
 #
 # The count is per *run*, not per session: `quiet_solver_warnings!` resets it and is idempotent, so
-# re-running the include loop in a live session starts from zero rather than inheriting the previous
+# re-running a test file in a live session starts from zero rather than inheriting the previous
 # run's counts and failing the assertion spuriously.
+#
+# Each test file runs in a module of its own (`@safetestset`), includes this file there, and so has
+# a `QuietSolverWarnings` of its own. `quiet_solver_warnings!` therefore replaces a `QuietLogger`
+# that an earlier file installed, recognised by its type name, rather than nesting a second one.
 #
 # This is deliberately not a way of hiding failures: the tests assert that `integrate` returns a
 # solution, which is unaffected by the warnings. Note also that the converse does not hold — an
@@ -91,7 +95,11 @@ function quiet_solver_warnings!()
     empty!(COUNTS)
     CURRENT[] = "<startup>"
     logger = global_logger()
-    logger isa QuietLogger ? logger : global_logger(QuietLogger(logger))
+    logger isa QuietLogger && return logger
+    while nameof(typeof(logger)) === :QuietLogger
+        logger = logger.parent
+    end
+    global_logger(QuietLogger(logger))
 end
 
 """Attribute subsequent suppressed messages to test file `f`."""

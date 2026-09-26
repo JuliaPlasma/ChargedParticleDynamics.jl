@@ -2,7 +2,7 @@
 
 Numerical studies made while auditing the package that say something about the *models and
 algorithms*, as opposed to merely confirming that a line of code is correct. The verification
-checks that only did the latter became assertions in `test/structure_tests.jl` and are not
+checks that only did the latter became assertions in `test/integration/structure.jl` and are not
 repeated here.
 
 Each section names the script that reproduces it. They live in `scripts/` and run with
@@ -398,7 +398,7 @@ converges at fourth order, as befits Gauss(2):
 | 0.25  | 4.51e-08 | 16.0 |
 | 0.125 | 2.82e-09 | 16.0 |
 
-The conservation is now asserted in `test/structure_tests.jl`, but the comparison between
+The conservation is now asserted in `test/integration/structure.jl`, but the comparison between
 candidates is not, and it is what identifies the right expression should this ever be revisited for
 a new coordinate system.
 
@@ -436,7 +436,7 @@ equilibria backwards**. That is not a reparametrisation of time but chart-depend
 physical particle in the same tokamak circulated one way in the cartesian chart and the other way in
 the cylindrical one. Nothing in the suite noticed, because everything else it asserted was a
 magnitude — the proportionality above holds with either sign, and `|det J| = 1` cannot see a
-direction. `test/gyro_kinetics_4d_tests.jl` now compares the physical toroidal velocity across all
+direction. `test/GyroKinetics4d.jl` now compares the physical toroidal velocity across all
 three charts of the small tokamak, which is the one statement that is not.
 
 Applying the orientation costs nothing else: negating a divergence-free field leaves it
@@ -566,7 +566,7 @@ Three model families describe the guiding centre, and until the initial conditio
 compared them. `PauliParticle3d` declared `initial_conditions_*` for three of its eight equilibria, was
 missing `barely_passing` on one of those three, and `GuidingCenter3d` carried a cartesian `y = 0.1`
 offset on three modules that its 4D counterpart did not. All three families now declare the same
-`(x, u, μ)` for every equilibrium they share, and `test/model_agreement_tests.jl` asserts it.
+`(x, u, μ)` for every equilibrium they share, and `test/integration/model_agreement.jl` asserts it.
 
 The comparison runs with `periodic = false`. The guiding centre problems wrap their angular coordinate
 into the chart's range and the Pauli problems do not, so with wrapping left on a passing orbit's `ϕ` is

@@ -1,5 +1,10 @@
 
 using SafeTestsets
+using Test
+
+include("helpers/quiet_solver_warnings.jl")
+quiet_solver_warnings!()
+current_test_file!("GyroKinetics4d.jl")
 
 module GyroKinetics4dTests
 
@@ -7,7 +12,7 @@ using ChargedParticleDynamics.GyroKinetics4d
 using GeometricIntegrators
 using Test
 
-# See `guiding_center_3d_tests.jl` for why `f_abstol` has to stay above the residual's round-off
+# See `GuidingCenter3d.jl` for why `f_abstol` has to stay above the residual's round-off
 # floor and why `f_reltol` is left at its default.
 const options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 
@@ -15,7 +20,7 @@ export test_gyro_kinetics_4d_erk4, test_gyro_kinetics_4d_glrk, test_gyro_kinetic
 export strang_composition
 
 # Assert that the integration returns a solution rather than `@test_nowarn`; see the comment on the
-# corresponding functions in `guiding_center_3d_tests.jl` for why.
+# corresponding functions in `GuidingCenter3d.jl` for why.
 function test_gyro_kinetics_4d_erk4(equ::ODEProblem)
     @test integrate(equ, RK4()) isa GeometricSolution
 end
@@ -311,4 +316,20 @@ end
         @test toroidal ≈ reference
         @test toroidal > 0
     end
+end
+
+# This file is expected to be silent, and a nonlinear-solver warning from it is a regression — a
+# tolerance that has slipped below a residual floor, or a time step at which the integrators stop
+# converging. See the header of `helpers/quiet_solver_warnings.jl` for why this is assertable at
+# all, and for what keeps the count at zero. The count is reported *before* asserting, because a
+# failing `@testset` throws at its end.
+suppressed_warning_count() > 0 &&
+    @info "Suppressed $(suppressed_warning_count()) nonlinear-solver warnings " *
+          "(see test/helpers/quiet_solver_warnings.jl)" suppressed_warning_counts()
+
+# Per file, and then over everything: anything counted before `current_test_file!` is filed under
+# `<startup>`, which the first test cannot see.
+@testset "Nonlinear solver stays quiet" begin
+    @test all(iszero, values(suppressed_warning_counts()))
+    @test suppressed_warning_count() == 0
 end

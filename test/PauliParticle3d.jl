@@ -1,5 +1,10 @@
 
 using SafeTestsets
+using Test
+
+include("helpers/quiet_solver_warnings.jl")
+quiet_solver_warnings!()
+current_test_file!("PauliParticle3d.jl")
 
 module PauliParticle3dTests
 
@@ -31,12 +36,12 @@ export test_pauli_particle_3d
 # The theta pinch keeps `MidpointExtrapolation(5)` for a different reason, recorded at that block:
 # its momentum is constant along the orbit, so the default Hermite guess is degenerate.
 
-# See `guiding_center_3d_tests.jl` for why `f_abstol` has to stay above the residual's round-off
+# See `GuidingCenter3d.jl` for why `f_abstol` has to stay above the residual's round-off
 # floor and why `f_reltol` is left at its default.
 const options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 
 # Asserts that the integration returns a solution rather than `@test_nowarn`; see the comment on
-# the corresponding functions in `guiding_center_3d_tests.jl` for why.
+# the corresponding functions in `GuidingCenter3d.jl` for why.
 function test_pauli_particle_3d(equ::Union{HODEProblem, PODEProblem}; kwargs...)
     @test integrate(equ, PartitionedGauss(2); options..., kwargs...) isa GeometricSolution
 end
@@ -140,4 +145,20 @@ end
     test_pauli_particle_3d(TokamakSmallToroidal.podeproblem())
     test_pauli_particle_3d(TokamakSmallToroidal.hodeproblem())
     test_pauli_particle_3d(TokamakSmallToroidal.iodeproblem())
+end
+
+# This file is expected to be silent, and a nonlinear-solver warning from it is a regression — a
+# tolerance that has slipped below a residual floor, or a time step at which the integrators stop
+# converging. See the header of `helpers/quiet_solver_warnings.jl` for why this is assertable at
+# all, and for what keeps the count at zero. The count is reported *before* asserting, because a
+# failing `@testset` throws at its end.
+suppressed_warning_count() > 0 &&
+    @info "Suppressed $(suppressed_warning_count()) nonlinear-solver warnings " *
+          "(see test/helpers/quiet_solver_warnings.jl)" suppressed_warning_counts()
+
+# Per file, and then over everything: anything counted before `current_test_file!` is filed under
+# `<startup>`, which the first test cannot see.
+@testset "Nonlinear solver stays quiet" begin
+    @test all(iszero, values(suppressed_warning_counts()))
+    @test suppressed_warning_count() == 0
 end

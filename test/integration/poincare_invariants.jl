@@ -17,6 +17,11 @@
 #
 
 using SafeTestsets
+using Test
+
+include("../helpers/quiet_solver_warnings.jl")
+quiet_solver_warnings!()
+current_test_file!("integration/poincare_invariants.jl")
 
 module PoincareInvariantsTests
 
@@ -125,7 +130,7 @@ end
         ode, iode = bounds[name]
 
         # The theta pinch keeps the unprojected method and the one-entry initial guess of its
-        # point test in `guiding_center_4d_tests.jl`: `p` is an exact invariant there, so the
+        # point test in `GuidingCenter4d.jl`: `p` is an exact invariant there, so the
         # projection has nothing to do, and a Hermite guess would read two identical history entries.
         vprk, vkw = name == :ThetaPinchField ?
                     (VPRKGauss(2), (initialguess = MidpointExtrapolation(5),)) :
@@ -177,4 +182,20 @@ end
             M.surface_hodeproblem(; kw...), M.surface_ensemble, PartitionedGauss(2)) <
               bounds[name]
     end
+end
+
+# This file is expected to be silent, and a nonlinear-solver warning from it is a regression — a
+# tolerance that has slipped below a residual floor, or a time step at which the integrators stop
+# converging. See the header of `helpers/quiet_solver_warnings.jl` for why this is assertable at
+# all, and for what keeps the count at zero. The count is reported *before* asserting, because a
+# failing `@testset` throws at its end.
+suppressed_warning_count() > 0 &&
+    @info "Suppressed $(suppressed_warning_count()) nonlinear-solver warnings " *
+          "(see test/helpers/quiet_solver_warnings.jl)" suppressed_warning_counts()
+
+# Per file, and then over everything: anything counted before `current_test_file!` is filed under
+# `<startup>`, which the first test cannot see.
+@testset "Nonlinear solver stays quiet" begin
+    @test all(iszero, values(suppressed_warning_counts()))
+    @test suppressed_warning_count() == 0
 end

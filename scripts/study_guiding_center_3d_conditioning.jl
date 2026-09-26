@@ -77,7 +77,7 @@ const CASES = (("Dipole3d", "cartesian", G3.Dipole3d, :initial_conditions_dipole
 const PAIRS = (:g31, :g12, :g23)
 
 # The tolerance the test suite settled on; see the comment on `options` in
-# `test/guiding_center_3d_tests.jl`.
+# `test/GuidingCenter3d.jl`.
 const OPTIONS = (f_abstol = 1E-12, max_iterations = 50)
 
 const METHOD = PartitionedGauss(2)

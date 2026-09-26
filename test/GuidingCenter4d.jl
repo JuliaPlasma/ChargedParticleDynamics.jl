@@ -1,12 +1,17 @@
 
 using SafeTestsets
+using Test
+
+include("helpers/quiet_solver_warnings.jl")
+quiet_solver_warnings!()
+current_test_file!("GuidingCenter4d.jl")
 
 module GuidingCenter4dTests
 
 using GeometricIntegrators
 using Test
 
-# See `guiding_center_3d_tests.jl` for why `f_abstol` has to stay above the residual's round-off
+# See `GuidingCenter3d.jl` for why `f_abstol` has to stay above the residual's round-off
 # floor and why `f_reltol` is left at its default.
 const options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 
@@ -48,10 +53,10 @@ export test_guiding_center_4d
 #                                      warning the `MidpointExtrapolation` there exists to avoid.
 #
 # The steps above were chosen against energy rather than against solver silence, which proves less
-# than it looks; see the header of `quiet_solver_warnings.jl`.
+# than it looks; see the header of `helpers/quiet_solver_warnings.jl`.
 
 # Asserts that the integration returns a solution rather than `@test_nowarn`; see the comment on
-# the corresponding functions in `guiding_center_3d_tests.jl` for why.
+# the corresponding functions in `GuidingCenter3d.jl` for why.
 function test_guiding_center_4d(equ::ODEProblem; kwargs...)
     @test integrate(equ, Gauss(2); options..., kwargs...) isa GeometricSolution
 end
@@ -177,7 +182,7 @@ end
     test_guiding_center_4d(iodeproblem(initial_conditions_deeply_trapped()))
 
     # The κ-dependent "dg" formulation. Its `ḡ` is checked against finite differences in
-    # `structure_tests.jl`, but until now it had never been integrated — and `κ = 0`, which is the
+    # `integration/structure.jl`, but until now it had never been integrated — and `κ = 0`, which is the
     # default, reduces it to the plain `iodeproblem` and so would not exercise the κ terms at all.
     test_guiding_center_4d(iodeproblem_dg(initial_conditions_barely_passing(); κ = 0.0,
         timespan = (0.0, 1E3), timestep = 10.0))
@@ -247,7 +252,7 @@ end
 # These two equilibria carry only a Poincaré loop and surface parameterisation, no point initial
 # condition, so these blocks integrate the base problems of the loop and the surface from their
 # placeholder point. The ensembles over the whole loop and surface, and the conservation of their
-# invariants, are in `poincare_invariants_tests.jl`.
+# invariants, are in `integration/poincare_invariants.jl`.
 @safetestset "Guiding Centre Dynamics in 4D with symmetric Equilibrium                                            " begin
     using ChargedParticleDynamics.GuidingCenter4d.SymmetricField
     using ..GuidingCenter4dTests
@@ -273,7 +278,7 @@ end
     # equilibrium — no choice of loop avoids it. The default Hermite extrapolation of the initial
     # guess then finds two identical `p` history entries on every step, and warns while falling back
     # to the constant that is in fact the exact answer. Same degeneracy and same remedy as the Pauli
-    # theta pinch; see `pauli_particle_3d_tests.jl`. `MidpointExtrapolation` reads one history entry
+    # theta pinch; see `PauliParticle3d.jl`. `MidpointExtrapolation` reads one history entry
     # rather than two, so the trajectory is bitwise unchanged. The `odeproblem` above needs none of
     # this: its `q` does move, so its Hermite guess is well posed.
     #
@@ -284,4 +289,20 @@ end
     # `MidpointExtrapolation` above is here to avoid: two identical `p` history entries, and two
     # warnings that the plain method does not produce.
     test_guiding_center_4d(loop_iodeproblem(), VPRKGauss(2); initialguess = MidpointExtrapolation(5))
+end
+
+# This file is expected to be silent, and a nonlinear-solver warning from it is a regression — a
+# tolerance that has slipped below a residual floor, or a time step at which the integrators stop
+# converging. See the header of `helpers/quiet_solver_warnings.jl` for why this is assertable at
+# all, and for what keeps the count at zero. The count is reported *before* asserting, because a
+# failing `@testset` throws at its end.
+suppressed_warning_count() > 0 &&
+    @info "Suppressed $(suppressed_warning_count()) nonlinear-solver warnings " *
+          "(see test/helpers/quiet_solver_warnings.jl)" suppressed_warning_counts()
+
+# Per file, and then over everything: anything counted before `current_test_file!` is filed under
+# `<startup>`, which the first test cannot see.
+@testset "Nonlinear solver stays quiet" begin
+    @test all(iszero, values(suppressed_warning_counts()))
+    @test suppressed_warning_count() == 0
 end

@@ -27,7 +27,7 @@ method = Gauss(1)
 # that floor is `‖ϑ‖ eps` — of order 1E-14 for the ITER-scale equilibria. Asking for 1E-14, as this
 # script used to, leaves the solver no reachable criterion and it runs to its iteration limit on
 # most steps. `f_reltol` is deliberately left at the `SimpleSolvers` default: its relative term is
-# what lets a large-magnitude solve converge at all. See `test/guiding_center_3d_tests.jl`.
+# what lets a large-magnitude solve converge at all. See `test/GuidingCenter3d.jl`.
 options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 
 # Create partitioned ODE (Hamilton's equations) and implicit ODE (Euler-Lagrange equations)
