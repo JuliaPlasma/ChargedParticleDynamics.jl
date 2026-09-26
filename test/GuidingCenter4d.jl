@@ -182,8 +182,8 @@ end
     test_guiding_center_4d(iodeproblem(initial_conditions_deeply_trapped()))
 
     # The κ-dependent "dg" formulation. Its `ḡ` is checked against finite differences in
-    # `integration/structure.jl`, but until now it had never been integrated — and `κ = 0`, which is the
-    # default, reduces it to the plain `iodeproblem` and so would not exercise the κ terms at all.
+    # `integration/structure.jl`, and only this block integrates it. `κ = 0`, which is the default,
+    # reduces it to the plain `iodeproblem` and so would not exercise the κ terms at all.
     test_guiding_center_4d(iodeproblem_dg(initial_conditions_barely_passing(); κ = 0.0,
         timespan = (0.0, 1E3), timestep = 10.0))
     test_guiding_center_4d(iodeproblem_dg(initial_conditions_barely_passing(); κ = 0.5,

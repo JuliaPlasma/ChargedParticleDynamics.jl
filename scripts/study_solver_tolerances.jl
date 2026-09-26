@@ -58,8 +58,8 @@ mean(x) = isempty(x) ? 0.0 : sum(x) / length(x)
 # (`SimpleSolvers.status`, `SimpleSolvers.isstalled`), which is deliberately *not* exported and needs
 # the solver to be driven a step at a time rather than through `integrate`.
 #
-# This is not why the test suite has `test/helpers/quiet_solver_warnings.jl`: that exists for the one block
-# whose solves genuinely do not converge. See its header.
+# This is not why the test suite has `test/helpers/quiet_solver_warnings.jl`: that asserts that no
+# test file provokes a nonlinear-solver warning at all. See its header.
 # ---------------------------------------------------------------------------------------------
 
 mutable struct IterationLogger <: AbstractLogger

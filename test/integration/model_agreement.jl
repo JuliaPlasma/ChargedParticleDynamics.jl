@@ -90,7 +90,7 @@ end
     # All three offsets are gone. `TokamakMediumCartesian`'s cost the most to remove and is not shared
     # with the Pauli family: `y = 0` puts it on the `b₁ = b_x = 0` midplane, where `:g31` is singular,
     # so its `default_constraints` moved to `:g23` — the better conditioned pair in any case — and its
-    # `hodeproblem_canonical` now needs a tenth of the step. See `GuidingCenter3d.jl`.
+    # `hodeproblem_canonical` needs a tenth of the declared step. See `GuidingCenter3d.jl`.
     #
     # Guarded against becoming vacuous: the loops below skip an equilibrium that no longer declares a
     # condition in all three families, so an empty module list would pass silently.
