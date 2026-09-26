@@ -975,8 +975,7 @@ suppressed_warning_count() > 0 &&
     @info "Suppressed $(suppressed_warning_count()) nonlinear-solver warnings " *
           "(see test/helpers/quiet_solver_warnings.jl)" suppressed_warning_counts()
 
-# Per file, and then over everything: anything counted before `current_test_file!` is filed under
-# `<startup>`, which the first test cannot see.
+# For non-negative counts the two assertions are one statement; see K1 in `KNOWN_ISSUES.md`.
 @testset "Nonlinear solver stays quiet" begin
     @test all(iszero, values(suppressed_warning_counts()))
     @test suppressed_warning_count() == 0

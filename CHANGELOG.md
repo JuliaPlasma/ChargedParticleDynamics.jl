@@ -70,9 +70,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The renamed files — `ChargedParticle3d.jl`, `GuidingCenter3d.jl`, `GuidingCenter4d.jl`,
   `GyroKinetics4d.jl`, `PauliParticle3d.jl`, `Plots.jl` — replace the `*_tests.jl` files, and the
   whole-package tests moved to `test/integration/`. `GuidingCenter3d.jl` and
-  `test/integration/poincare_invariants.jl` belong to the `slow` group. Each test file now
-  includes its own nonlinear-solver-silence assertion, run at file end. New `test/quality/aqua.jl`
-  runs `Aqua.test_all`; `Project.toml` gains `LinearAlgebra = "1"` in `[compat]`.
+  `test/integration/poincare_invariants.jl` belong to the `slow` group. Each test file outside
+  `test/quality/` now includes its own nonlinear-solver-silence assertion, run at file end. New
+  `test/quality/aqua.jl` runs `Aqua.test_all`; `Project.toml` gains `LinearAlgebra = "1"` in `[compat]`.
 
 ## [0.5.0] - 2026-09-23
 

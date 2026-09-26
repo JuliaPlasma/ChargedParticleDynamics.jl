@@ -86,11 +86,12 @@ function Logging.handle_message(logger::QuietLogger, level, message, _module, gr
         logger.parent, level, message, _module, group, id, file, line; kwargs...)
 end
 
-# Installing resets the counters and is idempotent, so that re-running the suite's include loop in a
-# live session — the usual way to work on a test file — starts from zero instead of carrying the
-# previous run's counts into the assertion, and does not nest a second `QuietLogger` around the
-# first. (Re-`include`ing *this* file is not the case being handled: that replaces the module, and
-# the `using` below then fails on an ambiguous binding before any of this is reached.)
+# Installing resets the counters and is idempotent, so that re-running a test file in a live
+# session starts from zero instead of carrying the previous run's counts into the assertion, and
+# does not nest a second `QuietLogger` around the first — its own or another test file's,
+# recognised by its type name. (Re-`include`ing *this* file into the same module is not the case
+# being handled: that replaces the module, and the `using` below then fails on an ambiguous
+# binding before any of this is reached.)
 function quiet_solver_warnings!()
     empty!(COUNTS)
     CURRENT[] = "<startup>"
