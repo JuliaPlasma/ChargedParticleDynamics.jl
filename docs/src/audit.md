@@ -146,7 +146,7 @@ equilibrium declares a `default_constraints` that is regular at its own initial 
 the eleven equilibria integrate from their point initial conditions as a result. The other two,
 `SymmetricField` and `ThetaPinchField`, ship Poincaré-invariant loops rather than point initial
 conditions; they integrate through their `loop_hodeproblem` and `surface_hodeproblem`, whose
-invariants `test/poincare_invariants_tests.jl` checks. `SolovevSymmetricField` is the case that
+invariants `test/integration/poincare_invariants.jl` checks. `SolovevSymmetricField` is the case that
 made all three necessary rather than two:
 ``b = e_{2}`` there, so ``b_{1}`` and ``b_{3}`` vanish together and only ``(g^{2}, g^{3})`` survives.
 
@@ -197,7 +197,7 @@ equations of ``L = \vartheta \cdot \dot{z} - H`` read ``\Omega \, \dot{z} = - \n
 
 Note that no `GeometricIntegrators` integrator currently evaluates the two-form of an `LODE` — the
 only call site is commented out — so an error there would not show up in a simulation. The
-`ω` of every model is checked for antisymmetry in `test/structure_tests.jl` instead.
+`ω` of every model is checked for antisymmetry in `test/integration/structure.jl` instead.
 
 ### Callback signatures
 

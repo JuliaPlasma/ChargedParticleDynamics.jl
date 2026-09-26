@@ -1,5 +1,10 @@
 
 using SafeTestsets
+using Test
+
+include("helpers/quiet_solver_warnings.jl")
+quiet_solver_warnings!()
+current_test_file!("GuidingCenter3d.jl")
 
 module GuidingCenter3dTests
 
@@ -73,12 +78,12 @@ export test_guiding_center_3d
 #
 # Every step and span above was chosen against energy, and against the constraints where the 3D
 # model makes them available — not against solver silence, which proves less than it looks; see the
-# header of `quiet_solver_warnings.jl`.
+# header of `helpers/quiet_solver_warnings.jl`.
 
 # The tests assert that the integration runs to completion and returns a solution. Solver silence is
-# asserted separately and for the file as a whole, by `runtests.jl`, which is the stronger statement
+# asserted separately and for the file as a whole, at its end, which is the stronger statement
 # and does not depend on which orbit happens to trip a warning on which platform. See
-# `test/quiet_solver_warnings.jl`.
+# `test/helpers/quiet_solver_warnings.jl`.
 function test_guiding_center_3d(equ::ODEProblem)
     @test integrate(equ, Gauss(2); options...) isa GeometricSolution
 end
@@ -88,7 +93,7 @@ end
 # costs 70% of the runtime of a 3D guiding centre integration for nothing: Newton converges in one
 # iteration under either, and the trajectories agree to round-off (bit-identical for most equilibria,
 # 1.5E-14 relative at worst). The Pauli theta pinch is the one place that needs it, for a reason
-# recorded in `pauli_particle_3d_tests.jl`.
+# recorded in `PauliParticle3d.jl`.
 function test_guiding_center_3d(equ::Union{HODEProblem, PODEProblem})
     @test integrate(equ, PartitionedGauss(2); options...) isa GeometricSolution
 end
@@ -308,8 +313,8 @@ end
 # `SymmetricField` and `ThetaPinchField` have no integration test block here. Both are
 # Poincaré-invariant fixtures: they ship `f_loop`, and `SymmetricField` also `f_surface`, rather
 # than `initial_conditions_*`. Their loop and surface problems are integrated, and their invariants
-# checked, in `test/poincare_invariants_tests.jl`; their constraints are checked by the constraint
-# derivative tests in `test/structure_tests.jl`, at a point on each loop. Note that `b = e₃` in
+# checked, in `test/integration/poincare_invariants.jl`; their constraints are checked by the constraint
+# derivative tests in `test/integration/structure.jl`, at a point on each loop. Note that `b = e₃` in
 # both, so `(g¹, g²)` is the only pair either of them can use.
 
 @safetestset "Guiding Centre Dynamics in 3D: the constraint formulations agree                                    " begin
@@ -374,4 +379,19 @@ end
     # other two, which must say so rather than quietly picking something.
     @test_throws MethodError M.hodeproblem(ic; constraints = :parallel, workload...)
     @test_throws MethodError M.hodeproblem_canonical(ic; constraints = :parallel, workload...)
+end
+
+# This file is expected to be silent, and a nonlinear-solver warning from it is a regression — a
+# tolerance that has slipped below a residual floor, or a time step at which the integrators stop
+# converging. See the header of `helpers/quiet_solver_warnings.jl` for why this is assertable at
+# all, and for what keeps the count at zero. The count is reported *before* asserting, because a
+# failing `@testset` throws at its end.
+suppressed_warning_count() > 0 &&
+    @info "Suppressed $(suppressed_warning_count()) nonlinear-solver warnings " *
+          "(see test/helpers/quiet_solver_warnings.jl)" suppressed_warning_counts()
+
+# For non-negative counts the two assertions are one statement; see K1 in `KNOWN_ISSUES.md`.
+@testset "Nonlinear solver stays quiet" begin
+    @test all(iszero, values(suppressed_warning_counts()))
+    @test suppressed_warning_count() == 0
 end

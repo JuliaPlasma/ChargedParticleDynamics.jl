@@ -12,7 +12,7 @@ using ChargedParticleDynamics.GuidingCenter3d.Dipole3d: FIELD, hamiltonian, g₁
 # residual is `‖ϑ‖ eps`. `Dipole3d` ships `‖p‖ ≈ 152`, i.e. a floor of `3.4E-14`, so the `8eps() =
 # 1.8E-15` this asked for was unreachable and every solve stagnated there. `1E-12` is the value the
 # test suite and the other scripts use; see the comment on `options` in
-# `test/guiding_center_3d_tests.jl`. `verbosity` is left at its default of 1 deliberately: this is
+# `test/GuidingCenter3d.jl`. `verbosity` is left at its default of 1 deliberately: this is
 # an exploratory script and the solver's report of what it achieved is the point.
 const options = (f_abstol = 1E-12, verbosity = 1)
 

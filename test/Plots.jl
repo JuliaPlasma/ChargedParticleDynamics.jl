@@ -1,4 +1,9 @@
 using SafeTestsets
+using Test
+
+include("helpers/quiet_solver_warnings.jl")
+quiet_solver_warnings!()
+current_test_file!("Plots.jl")
 
 # Loading `CairoMakie` and `LaTeXStrings` activates the `ChargedParticlePlots` extension. Until
 # these tests existed the extension was never loaded by the suite, which is how two breaks from the
@@ -112,4 +117,19 @@ using SafeTestsets
         @test plot_poincare_surface(ts, X, Y, Z; nplot = 3) isa Tuple
         @test plot_poincare_trajectories(X, Y, Z; nplot = 3) isa Tuple
     end
+end
+
+# This file is expected to be silent, and a nonlinear-solver warning from it is a regression — a
+# tolerance that has slipped below a residual floor, or a time step at which the integrators stop
+# converging. See the header of `helpers/quiet_solver_warnings.jl` for why this is assertable at
+# all, and for what keeps the count at zero. The count is reported *before* asserting, because a
+# failing `@testset` throws at its end.
+suppressed_warning_count() > 0 &&
+    @info "Suppressed $(suppressed_warning_count()) nonlinear-solver warnings " *
+          "(see test/helpers/quiet_solver_warnings.jl)" suppressed_warning_counts()
+
+# For non-negative counts the two assertions are one statement; see K1 in `KNOWN_ISSUES.md`.
+@testset "Nonlinear solver stays quiet" begin
+    @test all(iszero, values(suppressed_warning_counts()))
+    @test suppressed_warning_count() == 0
 end

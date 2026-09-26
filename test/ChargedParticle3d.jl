@@ -1,5 +1,10 @@
 
 using SafeTestsets
+using Test
+
+include("helpers/quiet_solver_warnings.jl")
+quiet_solver_warnings!()
+current_test_file!("ChargedParticle3d.jl")
 
 module ChargedParticle3dTests
 
@@ -9,7 +14,7 @@ using Test
 export test_charged_particle_3d
 
 # Asserts that the integration returns a solution rather than `@test_nowarn`; see the comment
-# on the corresponding functions in `guiding_center_3d_tests.jl` for why.
+# on the corresponding functions in `GuidingCenter3d.jl` for why.
 function test_charged_particle_3d(equ::ODEProblem)
     @test integrate(equ, Gauss(1)) isa GeometricSolution
 end
@@ -81,4 +86,19 @@ end
     using ..ChargedParticle3dTests
 
     test_charged_particle_3d(TokamakSmallNoncanonical.iodeproblem())
+end
+
+# This file is expected to be silent, and a nonlinear-solver warning from it is a regression — a
+# tolerance that has slipped below a residual floor, or a time step at which the integrators stop
+# converging. See the header of `helpers/quiet_solver_warnings.jl` for why this is assertable at
+# all, and for what keeps the count at zero. The count is reported *before* asserting, because a
+# failing `@testset` throws at its end.
+suppressed_warning_count() > 0 &&
+    @info "Suppressed $(suppressed_warning_count()) nonlinear-solver warnings " *
+          "(see test/helpers/quiet_solver_warnings.jl)" suppressed_warning_counts()
+
+# For non-negative counts the two assertions are one statement; see K1 in `KNOWN_ISSUES.md`.
+@testset "Nonlinear solver stays quiet" begin
+    @test all(iszero, values(suppressed_warning_counts()))
+    @test suppressed_warning_count() == 0
 end
