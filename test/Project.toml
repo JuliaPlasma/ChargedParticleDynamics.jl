@@ -16,6 +16,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 # requires 0.11, and the tests identify its messages by originating module name rather than by
 # importing it.
 [compat]
+Aqua = "0.8.18"
 CairoMakie = "0.15"
 ElectromagneticFields = "0.9"
 GeometricIntegrators = "0.18"
