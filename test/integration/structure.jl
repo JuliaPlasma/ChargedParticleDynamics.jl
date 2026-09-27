@@ -14,6 +14,11 @@
 #
 
 using SafeTestsets
+using Test
+
+include("../helpers/quiet_solver_warnings.jl")
+quiet_solver_warnings!()
+current_test_file!("integration/structure.jl")
 
 module StructureTestUtils
 
@@ -816,7 +821,7 @@ end
     mx(ds) = maximum(abs(ds[i]) for i in eachindex(ds))
 
     # This block keeps its 1000 steps deliberately: it is where the long-time behaviour of the 3D
-    # model is checked, now that the integration tests in `guiding_center_3d_tests.jl` run 100. The
+    # model is checked, now that the integration tests in `GuidingCenter3d.jl` run 100. The
     # iteration cap is there because a handful of steps otherwise run to the library's limit of 1000
     # and accounted for most of the block's runtime (48 s of 49 s on the Solov'ev case).
     #
@@ -831,14 +836,14 @@ end
     # It used to restate the library default of `8eps() = 1.8E-15` so as to measure the conservation
     # an unconfigured `integrate` delivers. That was the wrong criterion to hold this block to: the
     # package's own measurements put the round-off floor of the ITER-scale residual at
-    # `‖ϑ‖ eps ≈ 3.5E-15`, so `8eps()` is unreachable there — `quiet_solver_warnings.jl` and
+    # `‖ϑ‖ eps ≈ 3.5E-15`, so `8eps()` is unreachable there — `helpers/quiet_solver_warnings.jl` and
     # `study_solver_tolerances.jl` both say so — and four steps of the Solov'ev X-point ran to the
     # iteration cap chasing it. `1E-12` is what every other test module, script and example in the
-    # package uses, for the reasons set out on `options` in `guiding_center_3d_tests.jl`.
+    # package uses, for the reasons set out on `options` in `GuidingCenter3d.jl`.
     #
     # Nothing is given up by stating it. The library defaults are still exercised, by the calls that
     # genuinely pass no options at all — `integrate(prob, Gauss(2))` earlier in this file, and the
-    # three in `plots_tests.jl` — which are silent, and which `runtests.jl` asserts to be.
+    # three in `Plots.jl` — which are silent, and which each file asserts to be.
     # The energy error here is identical at both tolerances (5.388E-15 on the X-point,
     # 3.226E-10 on the medium tokamak), the medium tokamak is bit-identical throughout, and the
     # X-point's constraint errors move by under a quarter of one order against five orders of slack
@@ -851,7 +856,7 @@ end
             0.0, 1e2))
         # No `initialguess`: `PartitionedGauss` defaults to `HermiteExtrapolation`, and the
         # `MidpointExtrapolation(5)` this used to request was 70% of the block's runtime while
-        # leaving the trajectory bit-identical. See `guiding_center_3d_tests.jl`.
+        # leaving the trajectory bit-identical. See `GuidingCenter3d.jl`.
         #
         # At the `8eps()` this block used to request, four of these thousand steps on the Solov'ev
         # X-point ran to the iteration cap: steps 261, 262, 263 and 271, where the orbit crosses
@@ -959,4 +964,19 @@ end
             @test isapprox(Ω[i, j], num; rtol = 1e-5, atol = 1e-9)
         end
     end
+end
+
+# This file is expected to be silent, and a nonlinear-solver warning from it is a regression — a
+# tolerance that has slipped below a residual floor, or a time step at which the integrators stop
+# converging. See the header of `helpers/quiet_solver_warnings.jl` for why this is assertable at
+# all, and for what keeps the count at zero. The count is reported *before* asserting, because a
+# failing `@testset` throws at its end.
+suppressed_warning_count() > 0 &&
+    @info "Suppressed $(suppressed_warning_count()) nonlinear-solver warnings " *
+          "(see test/helpers/quiet_solver_warnings.jl)" suppressed_warning_counts()
+
+# For non-negative counts the two assertions are one statement; see K1 in `KNOWN_ISSUES.md`.
+@testset "Nonlinear solver stays quiet" begin
+    @test all(iszero, values(suppressed_warning_counts()))
+    @test suppressed_warning_count() == 0
 end

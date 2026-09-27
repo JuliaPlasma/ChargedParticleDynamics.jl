@@ -54,7 +54,7 @@ function guiding_centre_3d()
     # pair is well conditioned — `(g², g³)` is the only regular one there, and λₒ ≈ -228 — but it is
     # the stiffest equilibrium in the package, `‖ϑ‖ ≈ 256`, and the constraint drift grows fast enough
     # that Newton meets a NaN a few hundred steps into the thousand this section runs. See the note in
-    # its test block in `test/guiding_center_3d_tests.jl`.
+    # its test block in `test/GuidingCenter3d.jl`.
     for (name, M) in (("SolovevIterXpoint", G3.SolovevIterXpoint),
         ("TokamakMediumCartesian", G3.TokamakMediumCartesian),
         ("TokamakSmallCylindrical", G3.TokamakSmallCylindrical),

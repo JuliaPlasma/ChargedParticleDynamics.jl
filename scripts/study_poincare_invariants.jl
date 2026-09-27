@@ -144,7 +144,7 @@ function test_settings()
         M = getfield(G4, name)
         kw = TEST_SETTINGS[name].G4
         # The theta pinch keeps the unprojected variational method and a one-entry initial guess,
-        # as in `test/poincare_invariants_tests.jl`: `p` is an exact invariant there.
+        # as in `test/integration/poincare_invariants.jl`: `p` is an exact invariant there.
         θ = name == :ThetaPinchField
         vprk = θ ? VPRKGauss(2) : SymmetricProjection(VPRKGauss(2))
         ikw = θ ? (initialguess = MidpointExtrapolation(5),) : NamedTuple()

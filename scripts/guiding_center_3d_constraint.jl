@@ -19,7 +19,7 @@ using ChargedParticleDynamics.GuidingCenter3d.TokamakMediumCartesian: FIELD, ham
 # `f_abstol` is an absolute bound on the residual and has to stay above its round-off floor, which
 # for these models is `‖ϑ‖ eps`. The 1E-14 this script used to ask for is below it, so the solver
 # had no reachable criterion and the line search ran to its 1000-iteration limit on every step.
-# `f_reltol` is left at the `SimpleSolvers` default deliberately; see `test/guiding_center_3d_tests.jl`.
+# `f_reltol` is left at the `SimpleSolvers` default deliberately; see `test/GuidingCenter3d.jl`.
 const options = (f_abstol = 1E-12, max_iterations = 50, warn_iterations = 50)
 
 equ = hodeproblem(initial_conditions_barely_passing())
