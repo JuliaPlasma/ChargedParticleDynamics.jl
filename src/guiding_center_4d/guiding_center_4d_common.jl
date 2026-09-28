@@ -344,10 +344,6 @@ function guiding_center_4d_v(v::AbstractVector, t, q::AbstractVector, params)
     @unpack μ = params
     q = fieldpoint(params.field, t, q)
 
-    local lB₁ = B₁(t, q)
-    local lB₂ = B₂(t, q)
-    local lB₃ = B₃(t, q)
-
     local lβ₁ = β₁(t, q)
     local lβ₂ = β₂(t, q)
     local lβ₃ = β₃(t, q)

@@ -63,6 +63,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GuidingCenter4d` and `GyroKinetics4d` module with a `qᵢ`, and this fix covers all of them.
   `GuidingCenter3d` never aliased (`initial_conditions` slices).
 
+### Internal
+
+- **Unused local bindings removed**, so that fatou reports no finding in `src/`: the `μ` in
+  `f_loop` of both `ThetaPinchField` modules, the unread `lB₁`, `lB₂`, `lB₃` field evaluations in
+  `guiding_center_4d_v`, and the renamed loop-body binding in `guiding_center_3d_presets.jl`
+  (`constraints` is now `default`; the keyword `constraints` is unchanged). No caller-visible
+  behaviour changes.
+
 ### Tests
 
 - **Test suite reorganised to follow the tree convention.** Test files mirror `src/` structure and

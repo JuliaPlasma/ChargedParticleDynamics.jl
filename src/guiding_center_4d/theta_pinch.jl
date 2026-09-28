@@ -32,7 +32,6 @@ const DEFAULT_TIMESPAN = (0.0, 1000.0)
 μ_loop() = 2.5E-6
 
 function f_loop(t)
-    μ = 2.5E-6
     Y0 = 0.0
     u0 = 4E-4
     r0 = 0.5
