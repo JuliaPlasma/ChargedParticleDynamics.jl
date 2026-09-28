@@ -12,10 +12,9 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 # The root `Project.toml` bounds the package's dependencies; this file bounds only the test-only
-# dependencies. `SimpleSolvers` is
-# deliberately absent: it reaches this suite only through `GeometricIntegrators`, whose 0.18
-# requires 0.11, and the tests identify its messages by originating module name rather than by
-# importing it.
+# dependencies. `SimpleSolvers` is deliberately absent: it reaches this suite only through
+# `GeometricIntegrators`, which bounds it, and the tests identify its messages by originating
+# module name rather than by importing it.
 [compat]
 Aqua = "0.8.18"
 CairoMakie = "0.15"
