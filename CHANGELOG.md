@@ -73,6 +73,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `test/integration/poincare_invariants.jl` belong to the `slow` group. Each test file outside
   `test/quality/` now includes its own nonlinear-solver-silence assertion, run at file end. New
   `test/quality/aqua.jl` runs `Aqua.test_all`; `Project.toml` gains `LinearAlgebra = "1"` in `[compat]`.
+- **A dependency of the package is bounded only in the root `Project.toml`.** The tree's compat
+  rule is that `test/Project.toml` and `docs/Project.toml` carry no `[compat]` entry for a
+  dependency in the root's `[deps]` or `[weakdeps]`, because a copy can only duplicate or narrow
+  the root's bound, and a duplicate drifts. `test/Project.toml` loses its entries for
+  `ElectromagneticFields`, `LaTeXStrings`, `LinearAlgebra` and `PoincareInvariants`, and
+  `docs/Project.toml` its entries for `ElectromagneticFields`, `LaTeXStrings` and `LinearAlgebra`.
+  The bounds of the test-only and docs-only dependencies stay where they are.
 
 ## [0.5.0] - 2026-09-23
 
