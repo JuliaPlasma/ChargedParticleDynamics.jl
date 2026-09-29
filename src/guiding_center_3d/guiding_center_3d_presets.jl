@@ -17,21 +17,21 @@ end
 for problem in (:hodeproblem, :hodeproblem_canonical, :hodeproblem_compact)
     # The compact form is independent of the pair by default; the other two retain this
     # equilibrium's own. See `default_constraints`.
-    constraints = problem == :hodeproblem_compact ? QuoteNode(:parallel) :
-                  :(default_constraints())
+    default = problem == :hodeproblem_compact ? QuoteNode(:parallel) :
+              :(default_constraints())
 
     @eval begin
         function $problem(
                 q₀::AbstractVector, p₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
                 timestep = DEFAULT_TIMESTEP, parameters = default_parameters(),
-                constraints = $constraints, kwargs...)
+                constraints = $default, kwargs...)
             GuidingCenter3d.$problem(q₀, p₀; timespan = timespan, timestep = timestep,
                 parameters = parameters, constraints = constraints, kwargs...)
         end
 
         function $problem(x₀::AbstractVector; timespan = DEFAULT_TIMESPAN,
                 timestep = DEFAULT_TIMESTEP, parameters = default_parameters(),
-                constraints = $constraints, kwargs...)
+                constraints = $default, kwargs...)
             GuidingCenter3d.$problem(x₀; timespan = timespan, timestep = timestep,
                 parameters = parameters, constraints = constraints, kwargs...)
         end
