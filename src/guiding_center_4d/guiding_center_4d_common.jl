@@ -7,7 +7,7 @@ export hamiltonian, u, ω, ϑ, ϑ₁, ϑ₂, ϑ₃, ϑ₄, dϑ, β₁, β₂, β
 # The field tensors this model reads; see `FieldPoints`. Every function below that takes `params`
 # evaluates them from `params.field` and hands the point on in place of `q`. Only the κ-forms read
 # second derivatives, so they alone evaluate the larger set.
-const FIELDS = (:A♭, :b♭, :B♭, :B, :DB, :E♭, :φ, :DA♭, :Db♭)
+const FIELDS = (:A♭, :b♭, :B, :DB, :E♭, :φ, :DA♭, :Db♭)
 
 fieldpoint(field, t, q) = FieldPoints.fieldpoint(field, t, q, Val(FIELDS))
 function fieldpoint²(field, t, q)
