@@ -56,21 +56,7 @@
 - **kind:** docs
 - **found:** 2026-09-26
 
-### K5 · The Documentation and Doctests jobs fail at resolution until GeometricIntegrators releases.
-
-- **location:** `docs/Project.toml`
-- **evidence:** The root `Project.toml` requires ElectromagneticFields 0.9.1, GeometricEquations
-  0.21.5 and GeometricSolutions 0.6.6, and these require GeometricBase 0.15. `docs/Project.toml`
-  needs `GeometricIntegrators = "0.18"`, and every registered GeometricIntegrators release, up to
-  0.18.5, bounds `GeometricBase = "0.14.8 - 0.14"` (General `G/GeometricIntegrators/Compat.toml`).
-  So `Pkg.instantiate` of the docs environment fails, in the Documentation job and in the
-  `Doctests` job of `CI.yml`. `docs/Project.toml` stays unchanged.
-- **heals:** GeometricIntegrators registers a release that allows GeometricBase 0.15. Then a
-  `workflow_dispatch` of `Documenter.yml` on `main`, and a later pull request deletes this entry.
-- **kind:** upstream
-- **found:** 2026-10-02
-
-### K6 · The `scripts/` environment is bounded to releases that its scripts have not run against.
+### K5 · The `scripts/` environment is bounded to releases that its scripts have not run against.
 
 - **location:** `scripts/Project.toml`
 - **evidence:** The floor raise to GeometricBase 0.15 sets `ElectromagneticFields = "0.9.1"`,
