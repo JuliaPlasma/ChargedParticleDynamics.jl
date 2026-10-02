@@ -1,6 +1,6 @@
 name = "ChargedParticleDynamics"
 uuid = "209b3593-7183-5600-9f8f-df5ce7fddd64"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Michael Kraus <michael.kraus@ipp.mpg.de>"]
 
 [deps]
@@ -20,16 +20,16 @@ Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 ChargedParticlePlots = ["Makie", "LaTeXStrings"]
 
 [compat]
-ElectromagneticFields = "0.9"
-GeometricEquations = "0.21"
-GeometricSolutions = "0.6"
+ElectromagneticFields = "0.9.1"
+GeometricEquations = "0.21.5"
+GeometricSolutions = "0.6.6"
 LaTeXStrings = "1"
 LinearAlgebra = "1"
 Makie = "0.24"
 Parameters = "0.12, 0.13"
 PoincareInvariants = "0.5"
 StaticArrays = "1"
-julia = "1.10"
+julia = "1.11"
 
 # The test dependencies and their bounds live in `test/Project.toml`, which Pkg uses in preference
 # to an `[extras]`/`[targets]` section as soon as it exists.

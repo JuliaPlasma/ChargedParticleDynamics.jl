@@ -63,6 +63,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GuidingCenter4d` and `GyroKinetics4d` module with a `qᵢ`, and this fix covers all of them.
   `GuidingCenter3d` never aliased (`initial_conditions` slices).
 
+### Changed
+
+- The floors rise to Julia 1.11, ElectromagneticFields 0.9.1, GeometricEquations 0.21.5 and
+  GeometricSolutions 0.6.6, because GeometricBase 0.15 declares its stubs public and requires
+  Julia 1.11.
+
 ### Internal
 
 - **Unused local bindings removed**, so that fatou reports no finding in `src/`: the `μ` in
@@ -88,6 +94,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ElectromagneticFields`, `LaTeXStrings`, `LinearAlgebra` and `PoincareInvariants`, and
   `docs/Project.toml` its entries for `ElectromagneticFields`, `LaTeXStrings` and `LinearAlgebra`.
   The bounds of the test-only and docs-only dependencies stay where they are.
+- **Every block of `test/GuidingCenter3d.jl` runs on every supported Julia.** The
+  `@skip_on_julia_1_10` macro, which only named eight of its ten blocks on Julia 1.10, goes with
+  the 1.10 floor.
 
 ## [0.5.0] - 2026-09-23
 

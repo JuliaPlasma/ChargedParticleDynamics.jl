@@ -55,3 +55,35 @@
   `test/integration/structure.jl`, `test/GuidingCenter3d.jl` and `test/GyroKinetics4d.jl`.
 - **kind:** docs
 - **found:** 2026-09-26
+
+### K5 · The Documentation and Doctests jobs fail at resolution until GeometricIntegrators releases.
+
+- **location:** `docs/Project.toml`
+- **evidence:** The root `Project.toml` requires ElectromagneticFields 0.9.1, GeometricEquations
+  0.21.5 and GeometricSolutions 0.6.6, and these require GeometricBase 0.15. `docs/Project.toml`
+  needs `GeometricIntegrators = "0.18"`, and every registered GeometricIntegrators release, up to
+  0.18.5, bounds `GeometricBase = "0.14.8 - 0.14"` (General `G/GeometricIntegrators/Compat.toml`).
+  So `Pkg.instantiate` of the docs environment fails, in the Documentation job and in the
+  `Doctests` job of `CI.yml`. `docs/Project.toml` stays unchanged.
+- **heals:** GeometricIntegrators registers a release that allows GeometricBase 0.15. Then a
+  `workflow_dispatch` of `Documenter.yml` on `main`, and a later pull request deletes this entry.
+- **kind:** upstream
+- **found:** 2026-10-02
+
+### K6 · The `scripts/` environment is bounded to releases that its scripts have not run against.
+
+- **location:** `scripts/Project.toml`
+- **evidence:** The floor raise to GeometricBase 0.15 sets `ElectromagneticFields = "0.9.1"`,
+  `GeometricIntegrators = "0.18.6"`, `GeometricIntegratorsBase = "0.6.9"` and
+  `SimpleSolvers = "0.14.1"`. The old bounds were `"0.9"`, `"0.17"`, `"0.5.1"` and `"0.10"`, so the
+  skipped versions are GeometricIntegrators 0.18.0–0.18.5, GeometricIntegratorsBase 0.6.0–0.6.8
+  and SimpleSolvers 0.11–0.14.0. No script source was changed and none was run. Known risks from
+  the skipped CHANGELOGs: SimpleSolvers 0.11 removes `Backtracking`'s `α₀`; SimpleSolvers 0.12
+  stops the line-search warnings inside `solver_step!`, so the warning string matches of
+  `scripts/study_solver_tolerances.jl` and `scripts/study_guiding_center_3d_conditioning.jl` can
+  silently match nothing; SimpleSolvers 0.13 changes the default linear solver for LAPACK element
+  types. GeometricIntegrators 0.18.6 is not registered yet, so the environment does not resolve.
+- **follow-up:** after GeometricIntegrators 0.18.6 registers, resolve the environment, run each
+  script, and fix the callers in a later pull request.
+- **kind:** not verified
+- **found:** 2026-10-02
