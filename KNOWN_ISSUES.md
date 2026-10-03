@@ -68,8 +68,10 @@
   stops the line-search warnings inside `solver_step!`, so the warning string matches of
   `scripts/study_solver_tolerances.jl` and `scripts/study_guiding_center_3d_conditioning.jl` can
   silently match nothing; SimpleSolvers 0.13 changes the default linear solver for LAPACK element
-  types. GeometricIntegrators 0.18.6 is not registered yet, so the environment does not resolve.
-- **follow-up:** after GeometricIntegrators 0.18.6 registers, resolve the environment, run each
-  script, and fix the callers in a later pull request.
+  types. GeometricIntegrators 0.18.0 renames `SymplecticEulerA` and `SymplecticEulerB` to
+  `SymplecticEulerARK` and `SymplecticEulerBRK`; `scripts/pauli_particle.jl:18–19` names the old
+  types in two commented-out lines, which break when they are uncommented.
+- **follow-up:** resolve the environment, run each script, and fix the callers in a later pull
+  request.
 - **kind:** not verified
 - **found:** 2026-10-02
