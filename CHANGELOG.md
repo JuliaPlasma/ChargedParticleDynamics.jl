@@ -13,12 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The floor rises to Julia 1.12**, so that the CI `min` job finishes inside its 2-hour limit. On
   Julia 1.11, where `Pkg.test` forces `--check-bounds=yes`, the tests compile each pair of
   equilibrium module and problem formulation afresh, and most of the test time is compilation.
-  The `min` job on Julia 1.11 passed on macOS in 1 h 32 min (`core` 36 min, `slow` 47.5 min), and
-  was cancelled at 2 h on ubuntu (`core` 59 min, `slow` cut off after 48 min) and on Windows.
+  In four CI runs on Julia 1.11, the `min` job was cancelled at 2 h on Windows in all four, on
+  ubuntu in three and on macOS in one. Where it passed, it took 1 h 17 min to 1 h 50 min on macOS
+  and 1 h 46 min on ubuntu. In one macOS run of 1 h 32 min, `core` took 36 min and `slow` 47.5 min;
+  in one cancelled ubuntu run, `core` took 59 min and `slow` was cut off after 48 min.
   With `--check-bounds=yes`, the whole suite on Julia 1.12.7 passed in two local runs on one
   macOS aarch64 machine that other jobs loaded: `core` 38 min and 15 min, `slow` 10 min and 9 min.
-  These times are not from CI; the `min` job times on Julia 1.12 come from the pull request's CI.
-  No test workload changes.
+  These times are not from CI. No test workload changes.
 
 ## [0.5.1] - 2026-10-03
 
