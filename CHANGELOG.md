@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased] — targeting 0.5.2
+
+### Changed
+
+- **The floor rises to Julia 1.12**, so that the CI `min` job finishes inside its 2-hour limit. On
+  Julia 1.11, where `Pkg.test` forces `--check-bounds=yes`, the tests compile each pair of
+  equilibrium module and problem formulation afresh, and most of the test time is compilation.
+  The `min` job on Julia 1.11 passed on macOS in 1 h 32 min (`core` 36 min, `slow` 47.5 min), and
+  was cancelled at 2 h on ubuntu (`core` 59 min, `slow` cut off after 48 min) and on Windows.
+  The first block of `Gyrokinetics 4D`, at a tenth of its span with `--check-bounds=yes`, took
+  58.8 s on Julia 1.12 against 135.9 s on 1.11 (134.4 s of it compilation), one cold run each on
+  one machine. No test workload changes.
+
 ## [0.5.1] - 2026-10-03
 
 ### New Features
