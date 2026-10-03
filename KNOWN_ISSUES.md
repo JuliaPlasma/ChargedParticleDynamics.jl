@@ -55,3 +55,23 @@
   `test/integration/structure.jl`, `test/GuidingCenter3d.jl` and `test/GyroKinetics4d.jl`.
 - **kind:** docs
 - **found:** 2026-09-26
+
+### K5 · The `scripts/` environment is bounded to releases that its scripts have not run against.
+
+- **location:** `scripts/Project.toml`
+- **evidence:** The floor raise to GeometricBase 0.15 sets `ElectromagneticFields = "0.9.1"`,
+  `GeometricIntegrators = "0.18.6"`, `GeometricIntegratorsBase = "0.6.9"` and
+  `SimpleSolvers = "0.14.1"`. The old bounds were `"0.9"`, `"0.17"`, `"0.5.1"` and `"0.10"`, so the
+  skipped versions are GeometricIntegrators 0.18.0–0.18.5, GeometricIntegratorsBase 0.6.0–0.6.8
+  and SimpleSolvers 0.11–0.14.0. No script source was changed and none was run. Known risks from
+  the skipped CHANGELOGs: SimpleSolvers 0.11 removes `Backtracking`'s `α₀`; SimpleSolvers 0.12
+  stops the line-search warnings inside `solver_step!`, so the warning string matches of
+  `scripts/study_solver_tolerances.jl` and `scripts/study_guiding_center_3d_conditioning.jl` can
+  silently match nothing; SimpleSolvers 0.13 changes the default linear solver for LAPACK element
+  types. GeometricIntegrators 0.18.0 renames `SymplecticEulerA` and `SymplecticEulerB` to
+  `SymplecticEulerARK` and `SymplecticEulerBRK`; `scripts/pauli_particle.jl:18–19` names the old
+  types in two commented-out lines, which break when they are uncommented.
+- **follow-up:** resolve the environment, run each script, and fix the callers in a later pull
+  request.
+- **kind:** not verified
+- **found:** 2026-10-02
