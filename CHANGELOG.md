@@ -15,9 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   equilibrium module and problem formulation afresh, and most of the test time is compilation.
   The `min` job on Julia 1.11 passed on macOS in 1 h 32 min (`core` 36 min, `slow` 47.5 min), and
   was cancelled at 2 h on ubuntu (`core` 59 min, `slow` cut off after 48 min) and on Windows.
-  The first block of `Gyrokinetics 4D`, at a tenth of its span with `--check-bounds=yes`, took
-  58.8 s on Julia 1.12 against 135.9 s on 1.11 (134.4 s of it compilation), one cold run each on
-  one machine. No test workload changes.
+  With `--check-bounds=yes`, the whole suite on Julia 1.12.7 passed in two local runs on one
+  macOS aarch64 machine that other jobs loaded: `core` 38 min and 15 min, `slow` 10 min and 9 min.
+  These times are not from CI; the `min` job times on Julia 1.12 come from the pull request's CI.
+  No test workload changes.
 
 ## [0.5.1] - 2026-10-03
 
