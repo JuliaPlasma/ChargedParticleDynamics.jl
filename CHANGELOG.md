@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CI uploads coverage from the `Julia 1 - ubuntu-latest` job instead of `Julia min`, and a test
   job saves the Julia cache only when it succeeds.
+- **The Aqua check no longer overrides `tmax`**, so `test/quality/aqua.jl` runs
+  `Aqua.test_all(ChargedParticleDynamics)` at Aqua's default of 30 s. `tmax` bounds only the second
+  phase of the persistent-task check — the wait for the precompilation process to exit after the
+  package has loaded — and the load phase before it is unbounded, so the check's total wall-clock
+  time is not evidence about `tmax`: the 53 s and 56 s totals measured on Julia 1.11 with CairoMakie
+  in the test environment do not show that the default is too small. The file passes at the default
+  on Julia 1.12.7, `PASS in 67 s` over 11 of 11 testsets. The Julia floor is not the cause: it rose
+  to 1.12 in 0.5.2, and the override outlived it.
 
 ## [0.5.2] - 2026-10-03
 
