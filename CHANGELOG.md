@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   check precompiles the package's Makie weak dependency and its extensions, do not show that the
   default is too small. The file passes at the default on Julia 1.12.7 over 11 of 11 testsets. The
   override was added on Julia 1.11 and survived the floor's rise to 1.12 in 0.5.2.
+- **Three lower bounds rise to versions that the other floors can reach**, so that the CI
+  downgrade job, which resolves `Project.toml` and `test/Project.toml` together at their lower
+  bounds, resolves every direct dependency to its floor. `StaticArrays` rises from 1 to 1.9.13,
+  because `SimpleSolvers` 0.4 and later, which `GeometricIntegrators` pulls into the tests,
+  requires 1.9.13. `LaTeXStrings` rises from 1 to 1.3, because `Symbolics` 7, which
+  `ElectromagneticFields` 0.9 requires, bounds its `LaTeXStrings` weak dependency at 1.3.0. The
+  test bound of `GeometricIntegrators` rises from 0.18 to 0.18.6, the first release that accepts
+  `GeometricBase` 0.15, which the `GeometricSolutions` floor 0.6.6 requires.
 
 ## [0.5.2] - 2026-10-03
 
