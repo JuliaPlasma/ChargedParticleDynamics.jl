@@ -34,7 +34,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failing count names the call that warned as well as its residual. The `Julia pre` job (1.14.0-alpha2,
   x86_64) counted one warning in `GuidingCenter3d.jl` and could not say which solve gave it; the
   same file on 1.14.0-alpha2 on aarch64, with the same `SimpleSolvers`, `GeometricIntegrators` and
-  `GeometricIntegratorsBase`, gives none. K6 records it.
+  `GeometricIntegratorsBase`, gives none.
+- **The canonical dipole problem in `GuidingCenter3d.jl` solves to `f_abstol = 1E-10`**, and the
+  other calls keep the file's `1E-12`. The warning that reached the log came from
+  `hodeproblem_canonical(initial_conditions_dipole())`: the solve used its 50 iterations and
+  stopped at a residual of 1.16E-12 (Julia 1.14 on x86_64). The round-off floor of that residual
+  is far above the `‖ϑ‖ eps` that the file's tolerance rests on: with `f_abstol = 0` and
+  `f_reltol = 1E-12`, it reaches 4.5E-12 under Julia 1.12 and 4.8E-12 under 1.14 on aarch64,
+  against at most 2.8E-13 for the other two dipole formulations. `1E-12` lies inside that range:
+  most canonical solves meet it, the others converge only through the relative tolerance, and a
+  step whose initial guess puts that tolerance below the floor cannot converge. `1E-10` leaves the
+  trajectory within 4E-12 relative of the one at `1E-12`. Fixes K6.
 
 ## [0.5.2] - 2026-10-03
 
