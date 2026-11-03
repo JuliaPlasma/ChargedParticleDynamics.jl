@@ -75,3 +75,16 @@
   request.
 - **kind:** not verified
 - **found:** 2026-10-02
+
+### K6 · On Julia 1.14 on x86_64, one solve in `GuidingCenter3d.jl` warns.
+
+- **location:** `test/GuidingCenter3d.jl`
+- **evidence:** the `Julia pre` job (1.14.0-alpha2, ubuntu, x86_64) of CI run 41499347652 fails
+  the testset `Nonlinear solver stays quiet` with `Evaluated: all(iszero, [1])`: one suppressed
+  `SimpleSolvers` warning in `GuidingCenter3d.jl`. The same file on 1.14.0-alpha2 on aarch64, with
+  `SimpleSolvers` 0.14.3, `GeometricIntegrators` 0.18.7 and `GeometricIntegratorsBase` 0.6.10 as in
+  CI, counts none, and every other job of the run that finished passes it; the `nightly` job was
+  cancelled. The helper lets the first warning of a file through, with the test-file lines that
+  led to it in its `caller` field, so the next `pre` run names the call and its residual.
+- **kind:** not verified
+- **found:** 2026-11-03

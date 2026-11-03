@@ -1,11 +1,13 @@
 #
-# Count the nonlinear-solver warnings the test suite provokes, per test file, and keep them out of
-# the log. There should be none, and each test file asserts it at its end.
+# Count the nonlinear-solver warnings the test suite provokes, per test file, and keep all but the
+# first of each file out of the log. There should be none, and each test file asserts it at its end.
 #
 # `SimpleSolvers` warns when a solve reaches `warn_iterations`, and once per line search that cannot
-# find a step satisfying the sufficient-decrease condition. Both are dropped here and counted per
-# test file; each test file then *asserts* that its count is zero. The suppression is
-# what keeps a regression from flooding the log on its way to failing that assertion.
+# find a step satisfying the sufficient-decrease condition. Both are counted per test file, and each
+# test file then *asserts* that its count is zero. The first message of a test file reaches the log
+# with a `caller` field, the test-file lines that led to it, so that a failing count names the solve
+# that warned; the rest are dropped. The suppression is what keeps a regression from flooding the
+# log on its way to failing that assertion.
 #
 # That assertion is the point, and it rests on `SimpleSolvers` 0.10: a converging solve is silent,
 # and a solve that cannot converge says so once, naming the residual it achieved. Anything that
@@ -58,6 +60,7 @@ export quiet_solver_warnings!, suppressed_warning_count, suppressed_warning_coun
 export current_test_file!
 
 const QUIET_MODULES = (:SimpleSolvers,)
+const TEST_DIR = dirname(@__DIR__)
 const COUNTS = Dict{String, Int}()
 const CURRENT = Ref("<startup>")
 
@@ -65,9 +68,10 @@ struct QuietLogger{L <: AbstractLogger} <: AbstractLogger
     parent::L
 end
 
-# `shouldlog` returns `true` for the quiet modules so that `handle_message` is reached; it drops the
-# record there. Counting cannot be done here, because `shouldlog` is consulted once per *call site*
-# for loggers that cache it, whereas `handle_message` runs once per message.
+# `shouldlog` returns `true` for the quiet modules so that `handle_message` is reached; it counts
+# the record there and passes on only the first of each test file. Counting cannot be done here,
+# because `shouldlog` is consulted once per *call site* for loggers that cache it, whereas
+# `handle_message` runs once per message.
 function Logging.shouldlog(logger::QuietLogger, level, _module, group, id)
     level < Logging.Error && nameof(_module) ∈ QUIET_MODULES && return true
     Logging.shouldlog(logger.parent, level, _module, group, id)
@@ -79,8 +83,15 @@ Logging.catch_exceptions(logger::QuietLogger) = Logging.catch_exceptions(logger.
 function Logging.handle_message(logger::QuietLogger, level, message, _module, group, id,
         file, line; kwargs...)
     if level < Logging.Error && nameof(_module) ∈ QUIET_MODULES
-        COUNTS[CURRENT[]] = get(COUNTS, CURRENT[], 0) + 1
-        return nothing
+        n = COUNTS[CURRENT[]] = get(COUNTS, CURRENT[], 0) + 1
+        n == 1 || return nothing
+        # The message names its place in SimpleSolvers; the frames in the test files name the
+        # call that reached it.
+        caller = [relpath(String(fr.file), TEST_DIR) * ":" * string(fr.line)
+                  for fr in stacktrace()
+                  if startswith(String(fr.file), TEST_DIR) && String(fr.file) != @__FILE__]
+        return Logging.handle_message(
+            logger.parent, level, message, _module, group, id, file, line; kwargs..., caller)
     end
     Logging.handle_message(
         logger.parent, level, message, _module, group, id, file, line; kwargs...)
@@ -103,13 +114,13 @@ function quiet_solver_warnings!()
     global_logger(QuietLogger(logger))
 end
 
-"""Attribute subsequent suppressed messages to test file `f`."""
+"""Attribute subsequent counted messages to test file `f`."""
 current_test_file!(f) = (CURRENT[] = f)
 
-"""Suppressed messages per test file."""
+"""Counted messages per test file, the first one that reaches the log included."""
 suppressed_warning_counts() = COUNTS
 
-"""Total number of suppressed messages, over all test files."""
+"""Total number of counted messages, over all test files."""
 suppressed_warning_count() = sum(values(COUNTS); init = 0)
 
 end

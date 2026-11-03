@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ElectromagneticFields` 0.9 requires, bounds its `LaTeXStrings` weak dependency at 1.3.0. The
   test bound of `GeometricIntegrators` rises from 0.18 to 0.18.6, the first release that accepts
   `GeometricBase` 0.15, which the `GeometricSolutions` floor 0.6.6 requires.
+- **The first nonlinear-solver warning of a test file reaches the log**, and only the rest are
+  dropped. The count and its assertion do not change, so a quiet file still prints nothing. The
+  warning that reaches the log carries a `caller` field, the test-file lines that led to it, so a
+  failing count names the call that warned as well as its residual. The `Julia pre` job (1.14.0-alpha2,
+  x86_64) counted one warning in `GuidingCenter3d.jl` and could not say which solve gave it; the
+  same file on 1.14.0-alpha2 on aarch64, with the same `SimpleSolvers`, `GeometricIntegrators` and
+  `GeometricIntegratorsBase`, gives none. K6 records it.
 
 ## [0.5.2] - 2026-10-03
 
