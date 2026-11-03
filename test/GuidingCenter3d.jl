@@ -94,8 +94,8 @@ end
 # iteration under either, and the trajectories agree to round-off (bit-identical for most equilibria,
 # 1.5E-14 relative at worst). The Pauli theta pinch is the one place that needs it, for a reason
 # recorded in `PauliParticle3d.jl`.
-function test_guiding_center_3d(equ::Union{HODEProblem, PODEProblem})
-    @test integrate(equ, PartitionedGauss(2); options...) isa GeometricSolution
+function test_guiding_center_3d(equ::Union{HODEProblem, PODEProblem}; kwargs...)
+    @test integrate(equ, PartitionedGauss(2); options..., kwargs...) isa GeometricSolution
 end
 
 function test_guiding_center_3d(equ::Union{IODEProblem, LODEProblem})
@@ -135,8 +135,18 @@ end
     # them stops being visible. What governs whether `hodeproblem_canonical` converges here is the
     # constraint pair rather than the step: `Dipole3d` is the one equilibrium whose pair is chosen on
     # its conditioning along the orbit rather than at the initial condition. See `dipole.jl`.
+    #
+    # The canonical residual has a round-off floor far above the `‖ϑ‖ eps` of the header, which is
+    # 3.4E-14 at the `‖p‖ ≈ 150` of this orbit. With `f_abstol = 0` and `f_reltol = 1E-12`, so that
+    # the solves have to stop on the floor, it reaches 4.5E-12 under Julia 1.12 and 4.8E-12 under
+    # 1.14 on aarch64, against 2.8E-13 for `hodeproblem` and 5.9E-14 for `hodeproblem_compact`. The
+    # file's `f_abstol = 1E-12` lies inside that range: most canonical solves meet it, the others
+    # converge only through the relative term, and a step whose initial guess is good enough to put
+    # that term below the floor spends the whole budget, 1.16E-12 on x86_64 under 1.14. `1E-10`
+    # clears the highest floor by a factor of twenty and costs nothing visible: the trajectory stays
+    # within 4E-12 relative of the one at `1E-12`, with the same `max|g¹|` and energy error.
     test_guiding_center_3d(hodeproblem(initial_conditions_dipole()))
-    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_dipole()))
+    test_guiding_center_3d(hodeproblem_canonical(initial_conditions_dipole()); f_abstol = 1E-10)
     test_guiding_center_3d(hodeproblem_compact(initial_conditions_dipole()))
 end
 

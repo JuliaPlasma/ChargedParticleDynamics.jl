@@ -20,6 +20,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   check precompiles the package's Makie weak dependency and its extensions, do not show that the
   default is too small. The file passes at the default on Julia 1.12.7 over 11 of 11 testsets. The
   override was added on Julia 1.11 and survived the floor's rise to 1.12 in 0.5.2.
+- **Three lower bounds rise to versions that the other floors can reach**, so that the CI
+  downgrade job, which resolves `Project.toml` and `test/Project.toml` together at their lower
+  bounds, resolves every direct dependency to its floor. `StaticArrays` rises from 1 to 1.9.13,
+  because `SimpleSolvers` 0.4 and later, which `GeometricIntegrators` pulls into the tests,
+  requires 1.9.13. `LaTeXStrings` rises from 1 to 1.3, because `Symbolics` 7, which
+  `ElectromagneticFields` 0.9 requires, bounds its `LaTeXStrings` weak dependency at 1.3.0. The
+  test bound of `GeometricIntegrators` rises from 0.18 to 0.18.6, the first release that accepts
+  `GeometricBase` 0.15, which the `GeometricSolutions` floor 0.6.6 requires.
+- **The first nonlinear-solver warning of a test file reaches the log**, and only the rest are
+  dropped. The count and its assertion do not change, so a quiet file still prints nothing. The
+  warning that reaches the log carries a `caller` field, the test-file lines that led to it, so a
+  failing count names the call that warned as well as its residual. The `Julia pre` job (1.14.0-alpha2,
+  x86_64) counted one warning in `GuidingCenter3d.jl` and could not say which solve gave it; the
+  same file on 1.14.0-alpha2 on aarch64, with the same `SimpleSolvers`, `GeometricIntegrators` and
+  `GeometricIntegratorsBase`, gives none.
+- **The canonical dipole problem in `GuidingCenter3d.jl` solves to `f_abstol = 1E-10`**, and the
+  other calls keep the file's `1E-12`. The warning that reached the log came from
+  `hodeproblem_canonical(initial_conditions_dipole())`: the solve used its 50 iterations and
+  stopped at a residual of 1.16E-12 (Julia 1.14 on x86_64). The round-off floor of that residual
+  is far above the `‖ϑ‖ eps` that the file's tolerance rests on: with `f_abstol = 0` and
+  `f_reltol = 1E-12`, it reaches 4.5E-12 under Julia 1.12 and 4.8E-12 under 1.14 on aarch64,
+  against at most 2.8E-13 for the other two dipole formulations. `1E-12` lies inside that range:
+  most canonical solves meet it, the others converge only through the relative tolerance, and a
+  step whose initial guess puts that tolerance below the floor cannot converge. `1E-10` leaves the
+  trajectory within 4E-12 relative of the one at `1E-12`. Fixes K6.
 
 ## [0.5.2] - 2026-10-03
 
