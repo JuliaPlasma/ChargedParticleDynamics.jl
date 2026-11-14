@@ -75,3 +75,18 @@
   request.
 - **kind:** not verified
 - **found:** 2026-10-02
+
+### K7 · `integration/model_agreement.jl` does not finish on Julia 1.14.0-beta1 and on nightly.
+
+- **location:** `test/integration/model_agreement.jl`
+- **evidence:** the CI jobs that run the whole suite stop at the 2 h limit after
+  `Pauli particle 3D`, with no output from "Model agreement" in between. Julia pre: on
+  1.14.0-alpha2 (`main`, job 125935516940, 2026-11-03) "Model agreement" passes, 279 tests in
+  52.7 s; on 1.14.0-beta1 (#62, job 132086057883) the last line is `Pauli particle 3D | 36 36 55.9s`
+  at 18:46:44, then "The operation was canceled." at 20:35:02. Nightly: on 1.15.0-DEV.420 (`main`,
+  job 125935517025) the last line is `Pauli particle 3D` at 13:37:38, then the cancel at 15:18:09;
+  #62's nightly job 132086057903 stops the same way. The test file is unchanged between the runs.
+  The pre and nightly jobs are no required checks. Whether the Julia version or a dependency
+  version causes the hang is not checked.
+- **kind:** upstream
+- **found:** #62
