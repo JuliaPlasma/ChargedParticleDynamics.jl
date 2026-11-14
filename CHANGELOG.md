@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The tests run in CI as the groups `core` and `slow`, one job each**, listed in
+  `test/ci-groups.toml`, so no required job runs the whole suite. `Pkg.test()` still runs both.
+  `.github/workflows/CI.yml`, `codecov.yml` and the git hooks in `.githooks/` follow the Harness
+  template, which runs one CI job per group and checks the group files.
 - CI uploads coverage from the `Julia 1 - ubuntu-latest` job instead of `Julia min`, and a test
   job saves the Julia cache only when it succeeds.
 - **The Aqua check no longer overrides `tmax`**, so `test/quality/aqua.jl` runs
