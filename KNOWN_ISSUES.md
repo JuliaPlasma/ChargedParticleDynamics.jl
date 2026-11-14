@@ -94,11 +94,11 @@
 ### K8 · The second field derivatives of the 3D guiding centre are wrong at random on Ubuntu with Julia 1.12.7.
 
 - **location:** ElectromagneticFields `src/analytic/field_functions.jl:265`
-- **evidence:** ElectromagneticFields derives `DDb` symbolically (`src/analytic/analytic_field.jl:510`),
-  compiles it with `Symbolics.build_function(…; cse = true)` (`field_functions.jl:265`) and stores
-  the compiled functions in its precompile image through the `@compile_workload` of
-  `src/ElectromagneticFields.jl`. This package only reads the values
-  (`src/guiding_center_3d/guiding_center_3d_constraints.jl:39-41`). When they are wrong,
+- **evidence:** ElectromagneticFields derives `DDb` symbolically
+  (`src/analytic/analytic_field.jl:510`), compiles it with `Symbolics.build_function(…; cse = true)`
+  (`field_functions.jl:265`) and stores the compiled functions in its precompile image through the
+  `@compile_workload` of `src/ElectromagneticFields.jl`. This package only reads the values
+  (`src/guiding_center_3d/guiding_center_3d_constraints.jl:39-41`). In job 132424694448,
   "Structure" fails 36 of 2025 tests: 7 in "the field accessors are the derivatives they name"
   (`d²bᵢdxⱼdxₖ` against a finite difference, `test/integration/structure.jl:345`), 23 in
   "constraint derivatives match finite differences" (`d²gᵏdqₗdqₘ`, lines 462 and 465: values such
