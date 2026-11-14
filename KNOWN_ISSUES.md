@@ -109,9 +109,12 @@
   132454364888 with the same resolved floor versions; `Julia min` fails in job 132466610216 and
   passes in jobs 132424694708, 132454364979 and 132549484618. The macOS and Windows jobs and
   `Julia 1` on Ubuntu pass in all four runs. The code that `build_function` generates differs from
-  one precompile to the next (on aarch64 macOS, in the order of the factors of a product). Nine
-  local runs on aarch64 macOS with Julia 1.12.7, five of them after a fresh precompile of
-  ElectromagneticFields, give the correct values for all 27 index triples. The cause is not
-  established, and Linux x86_64 is not checked locally.
+  one precompile to the next, in the order of the factors of a product. Nine local runs on aarch64
+  macOS with Julia 1.12.7, five of them after a fresh precompile of ElectromagneticFields, give the
+  correct values for all 27 index triples. So do 20 fresh precompiles of ElectromagneticFields
+  alone on `ubuntu-latest` with Julia 1.12.7, 10 with the latest and 10 with its floor versions
+  (JuliaPlasma/ElectromagneticFields.jl#36, run 43653932606): there, too, the `DDb♭` code of the
+  Cartesian tokamak takes two forms that differ only in such an order. The cause is not
+  established; a wrong value is not reproduced outside this package's test run.
 - **kind:** upstream
 - **found:** #62
