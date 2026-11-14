@@ -45,6 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   most canonical solves meet it, the others converge only through the relative tolerance, and a
   step whose initial guess puts that tolerance below the floor cannot converge. `1E-10` leaves the
   trajectory within 4E-12 relative of the one at `1E-12`. Fixes K6.
+- **The package accepts `GeometricSolutions` 0.7**: its compat bound widens from `"0.6.6"` to
+  `"0.6.6, 0.7"`. The breaking change of 0.7, a fifth type parameter `tsType` of `EnsembleSolution`,
+  does not reach the package: no source, extension, test or script names `EnsembleSolution` as a
+  type.
 
 ## [0.5.2] - 2026-10-03
 
