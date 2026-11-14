@@ -90,3 +90,22 @@
   version causes the hang is not checked.
 - **kind:** upstream
 - **found:** #62
+
+### K8 · The second field derivatives of the 3D guiding centre are wrong under the floor versions with Symbolics 7.49.0.
+
+- **location:** `test/integration/structure.jl:345`
+- **evidence:** the `Downgrade - ubuntu-latest - core` job of #62 fails 36 of 2025 tests in
+  "Structure": 7 in "the field accessors are the derivatives they name" (`d²bᵢdxⱼdxₖ` against a
+  finite difference, line 345), 23 in "constraint derivatives match finite differences"
+  (`d²gᵏdqₗdqₘ`, lines 462 and 465: values such as `3.3759` against `-0.1065`, `NaN` and `-Inf`,
+  and the symmetry in `l` and `m` broken) and 6 in "multiplier derivatives match finite
+  differences" (job 132424694448, 2026-11-14). The same job passed on 2026-11-13 (job
+  132086057531) with the same source; of the resolved packages only Symbolics (7.48.0 → 7.49.0),
+  FillArrays, InfiniteArrays, LazyArrays and BlockArrays differ. `Julia min - ubuntu-latest - core`
+  of the same run passes with Julia 1.12.7 and Symbolics 7.49.0 as well; it differs from the
+  downgrade job in the floor versions, among them DiffRules 1.17.0 (1.18.0), ElectromagneticFields
+  0.9.1 (0.9.2, no source change between the two), GeometricEquations 0.21.5 (0.21.6),
+  StaticArrays 1.9.13 (1.9.25), Interpolations 0.15.2 (0.16.3) and LogExpFunctions 0.3.29 (1.0.6).
+  Which floor version fails together with Symbolics 7.49.0 is not checked.
+- **kind:** upstream
+- **found:** #62
