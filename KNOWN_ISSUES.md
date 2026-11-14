@@ -91,21 +91,27 @@
 - **kind:** upstream
 - **found:** #62
 
-### K8 · The second field derivatives of the 3D guiding centre are wrong under the floor versions with Symbolics 7.49.0.
+### K8 · The second field derivatives of the 3D guiding centre are wrong at random on Ubuntu with Julia 1.12.7.
 
-- **location:** `test/integration/structure.jl:345`
-- **evidence:** the `Downgrade - ubuntu-latest - core` job of #62 fails 36 of 2025 tests in
-  "Structure": 7 in "the field accessors are the derivatives they name" (`d²bᵢdxⱼdxₖ` against a
-  finite difference, line 345), 23 in "constraint derivatives match finite differences"
-  (`d²gᵏdqₗdqₘ`, lines 462 and 465: values such as `3.3759` against `-0.1065`, `NaN` and `-Inf`,
-  and the symmetry in `l` and `m` broken) and 6 in "multiplier derivatives match finite
-  differences" (job 132424694448, 2026-11-14). The same job passed on 2026-11-13 (job
-  132086057531) with the same source; of the resolved packages only Symbolics (7.48.0 → 7.49.0),
-  FillArrays, InfiniteArrays, LazyArrays and BlockArrays differ. `Julia min - ubuntu-latest - core`
-  of the same run passes with Julia 1.12.7 and Symbolics 7.49.0 as well; it differs from the
-  downgrade job in the floor versions, among them DiffRules 1.17.0 (1.18.0), ElectromagneticFields
-  0.9.1 (0.9.2, no source change between the two), GeometricEquations 0.21.5 (0.21.6),
-  StaticArrays 1.9.13 (1.9.25), Interpolations 0.15.2 (0.16.3) and LogExpFunctions 0.3.29 (1.0.6).
-  Which floor version fails together with Symbolics 7.49.0 is not checked.
+- **location:** ElectromagneticFields `src/analytic/field_functions.jl:265`
+- **evidence:** ElectromagneticFields derives `DDb` symbolically (`src/analytic/analytic_field.jl:510`),
+  compiles it with `Symbolics.build_function(…; cse = true)` (`field_functions.jl:265`) and stores
+  the compiled functions in its precompile image through the `@compile_workload` of
+  `src/ElectromagneticFields.jl`. This package only reads the values
+  (`src/guiding_center_3d/guiding_center_3d_constraints.jl:39-41`). When they are wrong,
+  "Structure" fails 36 of 2025 tests: 7 in "the field accessors are the derivatives they name"
+  (`d²bᵢdxⱼdxₖ` against a finite difference, `test/integration/structure.jl:345`), 23 in
+  "constraint derivatives match finite differences" (`d²gᵏdqₗdqₘ`, lines 462 and 465: values such
+  as `3.3759` against `-0.1065`, `NaN` and `-Inf`, and the symmetry in `l` and `m` broken) and 6 in
+  "multiplier derivatives match finite differences". The failure is intermittent and does not
+  follow the versions. Of the `ubuntu-latest` core jobs with Julia 1.12.7 on 2026-11-14,
+  `Downgrade` fails in jobs 132424694448, 132466610116 and 132549484455 and passes in job
+  132454364888 with the same resolved floor versions; `Julia min` fails in job 132466610216 and
+  passes in jobs 132424694708, 132454364979 and 132549484618. The macOS and Windows jobs and
+  `Julia 1` on Ubuntu pass in all four runs. The code that `build_function` generates differs from
+  one precompile to the next (on aarch64 macOS, in the order of the factors of a product). Nine
+  local runs on aarch64 macOS with Julia 1.12.7, five of them after a fresh precompile of
+  ElectromagneticFields, give the correct values for all 27 index triples. The cause is not
+  established, and Linux x86_64 is not checked locally.
 - **kind:** upstream
 - **found:** #62
