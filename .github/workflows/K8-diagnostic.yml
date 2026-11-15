@@ -1,7 +1,7 @@
-# Diagnostic for K8, not for merging. Repeats the `Julia min - ubuntu-latest` and `Downgrade -
-# ubuntu-latest` core jobs of CI.yml, each six times and without the depot cache, so every job
-# precompiles from scratch. After the tests, the probe checks `DDb♭` against finite differences
-# and saves the generated code and the runner's CPU, whatever the tests gave.
+# Diagnostic for K8, not for merging. Does a CPU target other than the native one avoid the wrong
+# `DDb♭` values on AMD Zen 4 and Zen 5 runners? Each job runs the probe twice on Julia `min`, with
+# the latest dependencies and no depot cache: once with the native target, which shows whether the
+# runner reproduces K8, and once with the target of the job, which precompiles anew for it.
 
 name: K8 diagnostic
 
@@ -13,16 +13,16 @@ permissions:
 
 jobs:
     probe:
-        name: K8 - ${{ matrix.kind }} - ${{ matrix.rep }}
+        name: K8 - ${{ matrix.target }} - ${{ matrix.rep }}
         runs-on: ubuntu-latest
-        timeout-minutes: 120
+        timeout-minutes: 150
         env:
             JULIA_NUM_THREADS: 2
         strategy:
             fail-fast: false
             matrix:
-                kind: [min, downgrade]
-                rep: [1, 2, 3, 4, 5, 6]
+                target: [znver3, generic, "native,-avx512f"]
+                rep: [1, 2, 3, 4]
         steps:
             - uses: actions/checkout@v7
               with:
@@ -30,52 +30,29 @@ jobs:
             - uses: julia-actions/setup-julia@v3
               with:
                   version: min
-            - uses: julia-actions/julia-downgrade-compat@v2
-              if: matrix.kind == 'downgrade'
-              with:
-                  mode: forcedeps
-                  julia_version: min
-                  projects: ., test
-                  skip: ArgTools,Artifacts,Base64,CRC32c,Dates,DelimitedFiles,Distributed,Downloads,FileWatching,Future,InteractiveUtils,LazyArtifacts,LibCURL,LibGit2,Libdl,LinearAlgebra,Logging,Markdown,Mmap,NetworkOptions,Pkg,Printf,Profile,REPL,Random,SHA,Serialization,SharedArrays,Sockets,SparseArrays,Statistics,TOML,Tar,Test,UUIDs,Unicode
             - uses: julia-actions/julia-buildpkg@v1
             - name: CPU
-              run: lscpu | grep -E 'Model name|Flags' | cut -c1-200
-            - uses: julia-actions/julia-runtest@v1
-              id: test
-              if: matrix.kind == 'min'
+              run: lscpu | grep -E 'Model name' | cut -c1-200
+            - name: Probe, native target
+              id: native
               continue-on-error: true
-              with:
-                  check_bounds: auto
-                  coverage: false
-                  test_args: core
-            - uses: julia-actions/julia-runtest@v1
-              id: test-downgrade
-              if: matrix.kind == 'downgrade'
+              run: julia --check-bounds=auto --project=. .github/k8/probe.jl k8-out/native
+            - name: Probe, target ${{ matrix.target }}
+              id: target
               continue-on-error: true
-              with:
-                  check_bounds: auto
-                  allow_reresolve: false
-                  force_latest_compatible_version: false
-                  test_args: core
-            - name: Probe
-              id: probe
-              if: always()
-              continue-on-error: true
-              # The flags of the test process: `--check-bounds=auto`, and coverage in the
-              # downgrade job, whose julia-runtest step keeps the default `coverage: true`.
               env:
-                  COVERAGE_FLAG: ${{ matrix.kind == 'downgrade' && format('--code-coverage=@{0}', github.workspace) || '' }}
-              run: julia --check-bounds=auto ${COVERAGE_FLAG:+"$COVERAGE_FLAG"} --project=. .github/k8/probe.jl k8-out
+                  TARGET: ${{ matrix.target }}
+              run: julia -C "$TARGET" --check-bounds=auto --project=. .github/k8/probe.jl k8-out/target
             - uses: actions/upload-artifact@v7
               if: always()
               with:
-                  name: k8-${{ matrix.kind }}-${{ matrix.rep }}
+                  name: k8-${{ strategy.job-index }}
                   path: k8-out
             - name: Verdict
               if: always()
               env:
-                  TEST: ${{ matrix.kind == 'min' && steps.test.outcome || steps.test-downgrade.outcome }}
-                  PROBE: ${{ steps.probe.outcome }}
+                  NATIVE: ${{ steps.native.outcome }}
+                  TARGET: ${{ steps.target.outcome }}
               run: |
-                  echo "tests: $TEST, probe: $PROBE"
-                  test "$TEST" = success && test "$PROBE" = success
+                  echo "native: $NATIVE, ${{ matrix.target }}: $TARGET"
+                  test "$TARGET" = success
