@@ -61,7 +61,11 @@ jobs:
               id: probe
               if: always()
               continue-on-error: true
-              run: julia --project=. .github/k8/probe.jl k8-out
+              # The flags of the test process: `--check-bounds=auto`, and coverage in the
+              # downgrade job, whose julia-runtest step keeps the default `coverage: true`.
+              env:
+                  COVERAGE_FLAG: ${{ matrix.kind == 'downgrade' && format('--code-coverage=@{0}', github.workspace) || '' }}
+              run: julia --check-bounds=auto ${COVERAGE_FLAG:+"$COVERAGE_FLAG"} --project=. .github/k8/probe.jl k8-out
             - uses: actions/upload-artifact@v7
               if: always()
               with:
@@ -70,7 +74,7 @@ jobs:
             - name: Verdict
               if: always()
               env:
-                  TEST: ${{ steps.test.outcome }}${{ steps.test-downgrade.outcome }}
+                  TEST: ${{ matrix.kind == 'min' && steps.test.outcome || steps.test-downgrade.outcome }}
                   PROBE: ${{ steps.probe.outcome }}
               run: |
                   echo "tests: $TEST, probe: $PROBE"

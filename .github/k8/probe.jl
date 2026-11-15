@@ -1,6 +1,7 @@
-# Diagnostic for K8, not for merging: for the 3D guiding-centre models whose structure tests fail,
-# compare every entry of `DDb♭`, from ElectromagneticFields and from this package's field point,
-# with a central difference of `Db♭`, and save the generated code of `Db♭` and `DDb♭`.
+# Diagnostic for K8, not for merging: at the points where the failing structure tests evaluate the
+# 3D guiding-centre fields, compare every entry of `DDb♭`, from ElectromagneticFields and from this
+# package's field point, with a central difference of `Db♭`, and save the generated code of `Db♭`
+# and `DDb♭`.
 # Usage: julia --project=. probe.jl <output directory>; exit code 2 when an entry is wrong.
 using ChargedParticleDynamics
 using ElectromagneticFields
@@ -28,10 +29,23 @@ function rgfexpr(::RuntimeGeneratedFunctions.RuntimeGeneratedFunction{
     Expr(:->, Expr(:tuple, A...), RuntimeGeneratedFunctions._lookup_body(C, I))
 end
 
-println("[k8] ", Sys.cpu_info()[1].model, ", ", Sys.CPU_NAME, ", ", VERSION)
+cpu = string(Sys.cpu_info()[1].model, ", ", Sys.CPU_NAME, ", ", VERSION)
+write(joinpath(OUT, "cpu.txt"), cpu)
+println("[k8] ", cpu)
 
-total = 0
+# The points of `test/integration/structure.jl`: the barely passing initial condition (field
+# accessors, constraint derivatives), that point displaced by `0.01 .* [1, 2, 3]` (multiplier
+# derivatives), and the point on the loop of each `b = e₃` fixture (constraint derivatives).
+points = []
 for M in (G.SolovevIterXpoint, G.TokamakMediumCartesian, G.TokamakSmallToroidal)
+    q = M.initial_conditions_barely_passing().q
+    push!(points, (M, q), (M, q .+ 0.01 .* [1.0, 2.0, 3.0]))
+end
+for M in (G.SymmetricField, G.ThetaPinchField)
+    push!(points, (M, M.initial_conditions(0.0, M.f_loop(0.1)).q))
+end
+
+for M in unique(first.(points))
     label = string(nameof(M))
     for name in (:Db♭, :DDb♭)
         r = findrgf(getfield(M.FIELD.functions, name))
@@ -40,8 +54,12 @@ for M in (G.SolovevIterXpoint, G.TokamakMediumCartesian, G.TokamakSmallToroidal)
         write(joinpath(OUT, "$(label)_$(name)_$(h).jl"), body)
         println("[k8] ", label, " ", name, " code hash ", h)
     end
+end
+
+total = 0
+for (M, q) in points
+    label = string(nameof(M))
     t = 0.0
-    q = collect(M.initial_conditions_barely_passing().q)[1:3]
     D = ElectromagneticFields.DDb♭(M.FIELD, t, q)
     S = G.fieldpoint²(M.FIELD, t, q)
     bad = 0
@@ -61,7 +79,7 @@ for M in (G.SolovevIterXpoint, G.TokamakMediumCartesian, G.TokamakSmallToroidal)
                 " CPD=", S.values.DDb♭[i, j, k], " fd=", fd)
         end
     end
-    println("[k8] ", label, " wrong entries: ", bad)
+    println("[k8] ", label, " q=", q, " wrong entries: ", bad)
     global total += bad
 end
 println("[k8] total wrong entries: ", total)
