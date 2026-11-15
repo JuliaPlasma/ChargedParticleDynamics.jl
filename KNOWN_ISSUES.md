@@ -114,7 +114,11 @@
   against `-0.171`; in job 132757499018 (`sapphirerapids`) it finds none. The generated code of
   that `DDb♭` has the same hash in both jobs, so the same Julia code gives wrong values on Zen 4
   and Zen 5 only: the defect is in the machine code that Julia 1.12.7 compiles for these CPUs,
-  not in the Symbolics output. The macOS and Windows jobs, `Julia 1` on Ubuntu, and nine local
-  runs on aarch64 macOS give correct values. Which compiler pass fails is not established.
+  not in the Symbolics output. Another CPU target avoids it: in run 43703272026 of #64, the probe
+  fails with the native target on each of the 3 runners with Zen 4 or Zen 5, and finds no wrong
+  entry on the same runner with `-C znver3` (1 job) or `-C generic` (2 jobs). Over both runs, 11
+  of 11 jobs on Zen 4 or Zen 5 give wrong values with the native target, and 0 of 13 jobs on
+  other CPUs do. The macOS and Windows jobs, `Julia 1` on Ubuntu, and nine local runs on aarch64
+  macOS give correct values. Which compiler pass fails is not established.
 - **kind:** upstream
 - **found:** #62
