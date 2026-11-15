@@ -91,7 +91,7 @@
 - **kind:** upstream
 - **found:** #62
 
-### K8 · The second field derivatives of the 3D guiding centre are wrong at random on Ubuntu with Julia 1.12.7.
+### K8 · The second field derivatives of the 3D guiding centre are wrong on AMD Zen 4 and Zen 5 CPUs with Julia 1.12.7.
 
 - **location:** ElectromagneticFields `src/analytic/field_functions.jl:265`
 - **evidence:** ElectromagneticFields derives `DDb` symbolically
@@ -103,18 +103,18 @@
   (`d²bᵢdxⱼdxₖ` against a finite difference, `test/integration/structure.jl:345`), 23 in
   "constraint derivatives match finite differences" (`d²gᵏdqₗdqₘ`, lines 462 and 465: values such
   as `3.3759` against `-0.1065`, `NaN` and `-Inf`, and the symmetry in `l` and `m` broken) and 6 in
-  "multiplier derivatives match finite differences". The failure is intermittent and does not
-  follow the versions. Of the `ubuntu-latest` core jobs with Julia 1.12.7 on 2026-11-14,
-  `Downgrade` fails in jobs 132424694448, 132466610116 and 132549484455 and passes in job
-  132454364888 with the same resolved floor versions; `Julia min` fails in job 132466610216 and
-  passes in jobs 132424694708, 132454364979 and 132549484618. The macOS and Windows jobs and
-  `Julia 1` on Ubuntu pass in all four runs. The code that `build_function` generates differs from
-  one precompile to the next, in the order of the factors of a product. Nine local runs on aarch64
-  macOS with Julia 1.12.7, five of them after a fresh precompile of ElectromagneticFields, give the
-  correct values for all 27 index triples. So do 20 fresh precompiles of ElectromagneticFields
-  alone on `ubuntu-latest` with Julia 1.12.7, 10 with the latest and 10 with its floor versions
-  (JuliaPlasma/ElectromagneticFields.jl#36, run 43653932606): there, too, the `DDb♭` code of the
-  Cartesian tokamak takes two forms that differ only in such an order. The cause is not
-  established; a wrong value is not reproduced outside this package's test run.
+  "multiplier derivatives match finite differences". The failure follows the CPU of the runner,
+  which `ubuntu-latest` assigns at random, and not the versions. The diagnostic run 43696308235 of
+  #64 repeats the `Julia min - ubuntu-latest` and `Downgrade - ubuntu-latest` core jobs six times
+  each, with no depot cache, and then probes `DDb♭` against a central difference of `Db♭`. All 8
+  jobs on AMD EPYC 9V74 (`znver4`) and 9V45 (`znver5`) fail "Structure"; all 4 jobs on Intel Xeon
+  8573C (`sapphirerapids`), Intel Xeon 6975P-C (`graniterapids`) and AMD EPYC 7763 (`znver3`) pass.
+  In job 132757499116 (`znver5`) the probe finds 14 wrong entries, all of the Cartesian tokamak field
+  of `TokamakMediumCartesian`, such as `81.98` against `0.0076`, `NaN` against `0.0` and `-Inf`
+  against `-0.171`; in job 132757499018 (`sapphirerapids`) it finds none. The generated code of
+  that `DDb♭` has the same hash in both jobs, so the same Julia code gives wrong values on Zen 4
+  and Zen 5 only: the defect is in the machine code that Julia 1.12.7 compiles for these CPUs,
+  not in the Symbolics output. The macOS and Windows jobs, `Julia 1` on Ubuntu, and nine local
+  runs on aarch64 macOS give correct values. Which compiler pass fails is not established.
 - **kind:** upstream
 - **found:** #62
