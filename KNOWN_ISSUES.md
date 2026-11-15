@@ -75,3 +75,37 @@
   request.
 - **kind:** not verified
 - **found:** 2026-10-02
+
+### K7 · `integration/model_agreement.jl` does not finish on Julia 1.14.0-beta1 and on nightly.
+
+- **location:** `test/integration/model_agreement.jl`
+- **evidence:** the CI jobs that run the whole suite stop at the 2 h limit after
+  `Pauli particle 3D`, with no output from "Model agreement" in between. Julia pre: on
+  1.14.0-alpha2 (`main`, job 125935516940, 2026-11-03) "Model agreement" passes, 279 tests in
+  52.7 s; on 1.14.0-beta1 (#62, job 132086057883) the last line is `Pauli particle 3D | 36 36 55.9s`
+  at 18:46:44, then "The operation was canceled." at 20:35:02. Nightly: on 1.15.0-DEV.420 (`main`,
+  job 125935517025) the last line is `Pauli particle 3D` at 13:37:38, then the cancel at 15:18:09;
+  #62's nightly job 132086057903 stops the same way. The test file is unchanged between the runs.
+  The pre and nightly jobs are no required checks. Whether the Julia version or a dependency
+  version causes the hang is not checked.
+- **kind:** upstream
+- **found:** #62
+
+### K8 · The second field derivatives of the 3D guiding centre are wrong under the floor versions with Symbolics 7.49.0.
+
+- **location:** `test/integration/structure.jl:345`
+- **evidence:** the `Downgrade - ubuntu-latest - core` job of #62 fails 36 of 2025 tests in
+  "Structure": 7 in "the field accessors are the derivatives they name" (`d²bᵢdxⱼdxₖ` against a
+  finite difference, line 345), 23 in "constraint derivatives match finite differences"
+  (`d²gᵏdqₗdqₘ`, lines 462 and 465: values such as `3.3759` against `-0.1065`, `NaN` and `-Inf`,
+  and the symmetry in `l` and `m` broken) and 6 in "multiplier derivatives match finite
+  differences" (job 132424694448, 2026-11-14). The same job passed on 2026-11-13 (job
+  132086057531) with the same source; of the resolved packages only Symbolics (7.48.0 → 7.49.0),
+  FillArrays, InfiniteArrays, LazyArrays and BlockArrays differ. `Julia min - ubuntu-latest - core`
+  of the same run passes with Julia 1.12.7 and Symbolics 7.49.0 as well; it differs from the
+  downgrade job in the floor versions, among them DiffRules 1.17.0 (1.18.0), ElectromagneticFields
+  0.9.1 (0.9.2, no source change between the two), GeometricEquations 0.21.5 (0.21.6),
+  StaticArrays 1.9.13 (1.9.25), Interpolations 0.15.2 (0.16.3) and LogExpFunctions 0.3.29 (1.0.6).
+  Which floor version fails together with Symbolics 7.49.0 is not checked.
+- **kind:** upstream
+- **found:** #62
