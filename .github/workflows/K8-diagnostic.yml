@@ -1,0 +1,77 @@
+# Diagnostic for K8, not for merging. Repeats the `Julia min - ubuntu-latest` and `Downgrade -
+# ubuntu-latest` core jobs of CI.yml, each six times and without the depot cache, so every job
+# precompiles from scratch. After the tests, the probe checks `DDb♭` against finite differences
+# and saves the generated code and the runner's CPU, whatever the tests gave.
+
+name: K8 diagnostic
+
+on:
+    pull_request:
+
+permissions:
+    contents: read
+
+jobs:
+    probe:
+        name: K8 - ${{ matrix.kind }} - ${{ matrix.rep }}
+        runs-on: ubuntu-latest
+        timeout-minutes: 120
+        env:
+            JULIA_NUM_THREADS: 2
+        strategy:
+            fail-fast: false
+            matrix:
+                kind: [min, downgrade]
+                rep: [1, 2, 3, 4, 5, 6]
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  persist-credentials: false
+            - uses: julia-actions/setup-julia@v3
+              with:
+                  version: min
+            - uses: julia-actions/julia-downgrade-compat@v2
+              if: matrix.kind == 'downgrade'
+              with:
+                  mode: forcedeps
+                  julia_version: min
+                  projects: ., test
+                  skip: ArgTools,Artifacts,Base64,CRC32c,Dates,DelimitedFiles,Distributed,Downloads,FileWatching,Future,InteractiveUtils,LazyArtifacts,LibCURL,LibGit2,Libdl,LinearAlgebra,Logging,Markdown,Mmap,NetworkOptions,Pkg,Printf,Profile,REPL,Random,SHA,Serialization,SharedArrays,Sockets,SparseArrays,Statistics,TOML,Tar,Test,UUIDs,Unicode
+            - uses: julia-actions/julia-buildpkg@v1
+            - name: CPU
+              run: lscpu | grep -E 'Model name|Flags' | cut -c1-200
+            - uses: julia-actions/julia-runtest@v1
+              id: test
+              if: matrix.kind == 'min'
+              continue-on-error: true
+              with:
+                  check_bounds: auto
+                  coverage: false
+                  test_args: core
+            - uses: julia-actions/julia-runtest@v1
+              id: test-downgrade
+              if: matrix.kind == 'downgrade'
+              continue-on-error: true
+              with:
+                  check_bounds: auto
+                  allow_reresolve: false
+                  force_latest_compatible_version: false
+                  test_args: core
+            - name: Probe
+              id: probe
+              if: always()
+              continue-on-error: true
+              run: julia --project=. .github/k8/probe.jl k8-out
+            - uses: actions/upload-artifact@v7
+              if: always()
+              with:
+                  name: k8-${{ matrix.kind }}-${{ matrix.rep }}
+                  path: k8-out
+            - name: Verdict
+              if: always()
+              env:
+                  TEST: ${{ steps.test.outcome }}${{ steps.test-downgrade.outcome }}
+                  PROBE: ${{ steps.probe.outcome }}
+              run: |
+                  echo "tests: $TEST, probe: $PROBE"
+                  test "$TEST" = success && test "$PROBE" = success
