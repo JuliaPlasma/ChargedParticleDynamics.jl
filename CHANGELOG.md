@@ -17,9 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--jobs=4`, goes to the runner, and an unknown group stops the run. `quality/aqua.jl` and
   `Plots.jl` move from `core` to a new group `quality`. `test/ci-groups.toml` lists
   `groups = ["core", "quality", "slow"]`, sets `split = false`, so CI runs all groups of a matrix
-  entry in one job, and `once = ["quality"]`, so a pull request and a push run `quality` on
-  Ubuntu with Julia 1 only. `harness ci-protection` then derives five required checks, the four
-  `Julia` jobs and the doctests, with no ` - <group>` in their names, in place of nine.
+  entry in one job, and `once = ["quality"]`, so a pull request and a push to a branch run
+  `quality` on Ubuntu with Julia 1 only. `harness ci-protection` then derives five required
+  checks, the four `Julia` jobs and the doctests, with no ` - <group>` in their names, in place
+  of nine.
 
 
 ## [0.5.3] - 2026-11-15
