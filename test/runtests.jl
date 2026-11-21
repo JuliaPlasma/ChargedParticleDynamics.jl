@@ -1,18 +1,39 @@
-using SafeTestsets
+using ParallelTestRunner
+using ChargedParticleDynamics
 
-const GROUPS = isempty(ARGS) ? ["core", "slow"] : ARGS
+const TESTS = [
+    "core" => [
+        "Structure" => "integration/structure.jl",
+        "Charged particle 3D" => "ChargedParticle3d.jl",
+        "Guiding centre 4D" => "GuidingCenter4d.jl",
+        "Gyrokinetics 4D" => "GyroKinetics4d.jl",
+        "Pauli particle 3D" => "PauliParticle3d.jl",
+        "Model agreement" => "integration/model_agreement.jl"
+    ],
+    "quality" => [
+        "Aqua" => "quality/aqua.jl",
+        "Plots" => "Plots.jl"
+    ],
+    "slow" => [
+        "Guiding centre 3D" => "GuidingCenter3d.jl",
+        "Poincaré invariants" => "integration/poincare_invariants.jl"
+    ]
+]
 
-if "core" in GROUPS
-    @safetestset "Aqua" include("quality/aqua.jl")
-    @safetestset "Structure" include("integration/structure.jl")
-    @safetestset "Charged particle 3D" include("ChargedParticle3d.jl")
-    @safetestset "Guiding centre 4D" include("GuidingCenter4d.jl")
-    @safetestset "Gyrokinetics 4D" include("GyroKinetics4d.jl")
-    @safetestset "Pauli particle 3D" include("PauliParticle3d.jl")
-    @safetestset "Model agreement" include("integration/model_agreement.jl")
-    @safetestset "Plots" include("Plots.jl")
-end
-if "slow" in GROUPS
-    @safetestset "Guiding centre 3D" include("GuidingCenter3d.jl")
-    @safetestset "Poincaré invariants" include("integration/poincare_invariants.jl")
-end
+const SELECTED = filter(!startswith("--"), ARGS)
+const GROUPS = isempty(SELECTED) ? ["core", "quality", "slow"] : SELECTED
+const UNKNOWN = setdiff(SELECTED, first.(TESTS))
+isempty(UNKNOWN) ||
+    error("no test group ", join(UNKNOWN, ", "), " in runtests.jl; its groups are ",
+        join(first.(TESTS), ", "))
+
+runtests(ChargedParticleDynamics, filter(startswith("--"), ARGS);
+    testsuite = Dict(label => :(include($(joinpath(@__DIR__, path))))
+    for (group, files) in TESTS if group in GROUPS for (label, path) in files),
+    serial = [label
+              for (group, files) in TESTS if group in ("metal", "cuda")
+              for (label, _) in files],
+    serial_position = :after,
+    retries = 0,
+    exeflags = ["--threads=$(Threads.nthreads())"],
+    max_default_jobs = max(1, Sys.CPU_THREADS ÷ Threads.nthreads()))
